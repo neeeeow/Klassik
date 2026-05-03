@@ -10,8 +10,10 @@ import com.github.neeeeow.klassik.kmenu as KMenu
 PlasmoidItem{
     id: root
 
+    preferredRepresentation: fullRepresentation
+
     KMenu.KMenu {
-        id: kmenu
+        id: kmenu // Create and initialize our KMenu plugin
     }
 
     fullRepresentation: ToolButton { // We can build the menu button in qml, since Qt Quick hands off buttons to Qt.
@@ -24,9 +26,7 @@ PlasmoidItem{
         Layout.preferredWidth: height // Set width equal to height
 
         onClicked: {
-
-            kmenu.showMenu()
-
+            kmenu.showMenu(menuButton, root, Plasmoid.location)
         }
 
     }
