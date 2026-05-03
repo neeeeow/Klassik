@@ -1,0 +1,18 @@
+{
+    "KPlugin": {
+        "Authors": [
+            {
+                "Name": "neeeeow"
+            }
+        ],
+        "Category": "Application menu",
+        "Description": "Classic KDE 3 style application menu",
+        "Id": "com.github.neeeeow.klassik.kmenu",
+        "Name": "Klassik K Menu",
+        "Version": "1",
+        "Website": "https://example.com/user/plasmoid-helloworldplugin"
+    },
+    "X-Plasma-API-Minimum-Version": "6.0",
+    "KPackageStructure": "Plasma/Applet",
+	"KPackageVersion": 2
+}
