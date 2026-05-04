@@ -1,4 +1,5 @@
 #include "kmenu.h"
+#include "popupmenutitle.h"
 
 #include <QPoint>
 #include <QRect>
@@ -15,6 +16,8 @@ KMenu::~KMenu() = default;
 void
 KMenu::initialize()
 {
+	m_menu->addAction(new PopupMenuTitle("All applications", m_menu));
+	
 	// Just add some random items for testing
 	QAction *test = m_menu->addAction("hello");
 	m_menu->addSeparator();
