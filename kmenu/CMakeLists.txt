@@ -2,7 +2,8 @@ cmake_minimum_required(VERSION 3.16)
 
 project(plasmoid-klassik-kmenu)
 
-find_package(ECM 1.4.0 REQUIRED NO_MODULE)
+set(KF6_MIN_VERSION "6.0.0")
+find_package(ECM ${KF6_MIN_VERSION} REQUIRED NO_MODULE)
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} ${ECM_MODULE_PATH})
 
 include(KDEInstallDirs)
@@ -22,7 +23,7 @@ find_package(KF6 REQUIRED COMPONENTS
   KIO
 )
 
-find_package(Plasma REQUIRED COMPONENTS) # Required for plasma_install_package
+find_package(Plasma REQUIRED) # Required for plasma_install_package
 find_package(PlasmaActivitiesStats REQUIRED)
 find_package(PlasmaActivities REQUIRED)
 
