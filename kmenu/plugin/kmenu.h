@@ -1,5 +1,7 @@
 #pragma once
 
+#include "popupmenutitle.h"
+
 #include <QObject>
 #include <QMenu>
 #include <QRect>
@@ -17,6 +19,11 @@ public:
 	~KMenu() override;
 
 private:
+	// Separator actions
+	PopupMenuTitle *m_recentHeader;
+	PopupMenuTitle *m_allAppsHeader;
+	PopupMenuTitle *m_actionsHeader;
+	
     KActivities::Stats::ResultModel *m_recentApps;; // ResultModel storing recent applications
 	QList<QAction *> m_recentActions; // List of actions linking to recent applications
 

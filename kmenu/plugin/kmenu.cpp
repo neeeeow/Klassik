@@ -23,15 +23,21 @@ KMenu::~KMenu() = default;
 void
 KMenu::initialize()
 {
+	// Add the section headers
+	m_recentHeader = new PopupMenuTitle(i18n("Recent Applications"), this);
+	m_allAppsHeader = new PopupMenuTitle(i18n("All Applications"), this);
+	m_actionsHeader = new PopupMenuTitle(i18n("Actions"), this);
+
+	this->addAction(m_recentHeader);
+	this->addAction(m_allAppsHeader);
+	this->addAction(m_actionsHeader);
+	
 	createRecentMenuItems();
 }
 
 void
 KMenu::createRecentMenuItems()
 {
-	// Add the section header
-	this->addAction(new PopupMenuTitle(i18n("Recent Applications"), this));
-
 	using namespace KActivities::Stats;
 	using namespace KActivities::Stats::Terms;
 	
@@ -67,7 +73,7 @@ KMenu::updateRecent()
 	using namespace KActivities::Stats;
 	using namespace KActivities::Stats::Terms;
 
-	for (int i=4; i >= 0; --i) {
+	for (int i=0; i < 5; ++i) {
 		QModelIndex index = m_recentApps->index(i,0);
 
 		const QString storageId = m_recentApps->data(index, ResultModel::ResourceRole).toString().mid(QStringLiteral("applications:").length());
@@ -82,7 +88,7 @@ KMenu::updateRecent()
 			job->start();
 		});
 
-	    this->insertAction(this->actions().value(1), action);
+	    this->insertAction(m_allAppsHeader, action);
 		m_recentActions.append(action);
 	}
 }
