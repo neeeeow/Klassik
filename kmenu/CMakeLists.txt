@@ -24,6 +24,7 @@ find_package(KF6 REQUIRED COMPONENTS
 
 find_package(Plasma REQUIRED COMPONENTS) # Required for plasma_install_package
 find_package(PlasmaActivitiesStats REQUIRED)
+find_package(PlasmaActivities REQUIRED)
 
 plasma_install_package(package com.github.neeeeow.klassik.kmenu)
 
@@ -46,6 +47,7 @@ target_link_libraries(kmenuplugin
   KF6::Service
   KF6::KIOGui
   Plasma::ActivitiesStats
+  Plasma::Activities
 )
 
 install(TARGETS kmenuplugin DESTINATION ${QT6_INSTALL_QML}/com/github/neeeeow/klassik/kmenu)

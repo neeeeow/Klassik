@@ -3,14 +3,14 @@
 
 #include <QPoint>
 #include <QRect>
+#include <QDebug>
 
 #include <KLocalizedString>
 #include <KService>
 #include <KIO/ApplicationLauncherJob>
 
 #include <PlasmaActivities/Stats/Query>
-#include <PlasmaActivities/Stats/ResultSet>
-
+#include <PlasmaActivities/ResourceInstance>
 
 KMenu::KMenu(QWidget *parent)
 	: QMenu(parent)
@@ -52,7 +52,11 @@ KMenu::createRecentMenuItems()
 	m_recentApps = new ResultModel(query, this);
 
 	// Whenever an application is launched, update the recent apps list
+	connect(m_recentApps, &ResultModel::dataChanged, this, &KMenu::updateRecent);
+	connect(m_recentApps, &ResultModel::modelReset, this, &KMenu::updateRecent);
 	connect(m_recentApps, &ResultModel::rowsInserted, this, &KMenu::updateRecent);
+	connect(m_recentApps, &ResultModel::rowsMoved, this, &KMenu::updateRecent);
+	connect(m_recentApps, &ResultModel::rowsRemoved, this, &KMenu::updateRecent);
 
 	// Update the list once to initially populate it
 	updateRecent();
@@ -60,7 +64,7 @@ KMenu::createRecentMenuItems()
 
 void
 KMenu::updateRecent()
-{
+{	
 	// First delete the actions from the menu
 	for (QAction *action : m_recentActions) {
 		this->removeAction(action);
@@ -71,7 +75,6 @@ KMenu::updateRecent()
 	m_recentActions.clear();
 
 	using namespace KActivities::Stats;
-	using namespace KActivities::Stats::Terms;
 
 	for (int i=0; i < 5; ++i) {
 		QModelIndex index = m_recentApps->index(i,0);
@@ -86,6 +89,11 @@ KMenu::updateRecent()
 		connect(action, &QAction::triggered, this, [service]() {
 			auto *job = new KIO::ApplicationLauncherJob(service);
 			job->start();
+
+			KActivities::ResourceInstance::notifyAccessed(
+			    QUrl(QStringLiteral("applications:") + service->storageId()),
+				QStringLiteral("com.github.neeeeow.klassik.kmenu")
+				);			
 		});
 
 	    this->insertAction(m_allAppsHeader, action);

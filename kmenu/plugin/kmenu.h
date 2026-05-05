@@ -8,7 +8,6 @@
 #include <QAction>
 
 #include <PlasmaActivities/Stats/ResultModel>
-#include <PlasmaActivities/Stats/Query>
 
 class KMenu : public QMenu
 {
