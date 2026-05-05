@@ -4,63 +4,85 @@
 #include <QPoint>
 #include <QRect>
 
-KMenu::KMenu(QObject *parent)
-	: QObject(parent), m_menu(new QMenu())
+#include <KLocalizedString>
+#include <KService>
+#include <KIO/ApplicationLauncherJob>
+
+#include <PlasmaActivities/Stats/Query>
+#include <PlasmaActivities/Stats/ResultSet>
+
+
+KMenu::KMenu(QWidget *parent)
+	: QMenu(parent)
 {
 	initialize(); // Populate menu items
 }
-
 
 KMenu::~KMenu() = default;
 
 void
 KMenu::initialize()
 {
-	m_menu->addAction(new PopupMenuTitle("All applications", m_menu));
-	
-	// Just add some random items for testing
-	QAction *test = m_menu->addAction("hello");
-	m_menu->addSeparator();
-	QAction *test1 = m_menu->addAction("world");
+	createRecentMenuItems();
 }
 
 void
-KMenu::showMenu(QQuickItem *button, QQuickItem *root, int location)
+KMenu::createRecentMenuItems()
 {
-	m_menu->popup(adjustedMenuPosition(button, root, location));
+	// Add the section header
+	this->addAction(new PopupMenuTitle(i18n("Recent Applications"), this));
+
+	using namespace KActivities::Stats;
+	using namespace KActivities::Stats::Terms;
+	
+	// Run our query once.
+	auto query = UsedResources
+		| RecentlyUsedFirst
+		| Url(QStringList{QStringLiteral("applications:*")})		
+		| Agent::any()
+		| Type::any()
+		| Activity::any();
+
+	m_recentApps = new ResultModel(query, this);
+
+	// Whenever an application is launched, update the recent apps list
+	connect(m_recentApps, &ResultModel::rowsInserted, this, &KMenu::updateRecent);
+
+	// Update the list once to initially populate it
+	updateRecent();
 }
 
-QPoint
-KMenu::adjustedMenuPosition(QQuickItem *button, QQuickItem *root, int location)
-{	
-	QSize menuSize = m_menu->sizeHint();
-
-	// Get button coordinates relative to the screen
-    QPoint btnGlobalPos = button->mapToGlobal(QPointF(0, 0)).toPoint(); // boundingRect()->topLeft() has x=0, y=0, so QPointF(0,0) is fine here
-	int x = btnGlobalPos.x();
-	int y = btnGlobalPos.y();
-
-	// Get the panel coordinates relative to the screen
-    QPoint rootGlobalPos = root->mapToGlobal(QPointF(0, 0)).toPoint();
-	QRect rootRect = root->boundingRect().translated(rootGlobalPos).toRect();
-
-	switch (location) {
-	case 3: // Top edge
-		y = rootRect.bottom();
-		break;
-	case 4: // Bottom edge
-		y = rootRect.top() - menuSize.height();
-		break;
-	case 5: // Left edge
-		x = rootRect.right();
-		break;
-	case 6: // Right edge
-		x = rootRect.left() - menuSize.width();
-		break;
-	default:
-		y -= menuSize.height();
-		break;
+void
+KMenu::updateRecent()
+{
+	// First delete the actions from the menu
+	for (QAction *action : m_recentActions) {
+		this->removeAction(action);
 	}
-	
-	return QPoint(x,y);
+
+	// Clear out the list itself
+	qDeleteAll(m_recentActions);
+	m_recentActions.clear();
+
+	using namespace KActivities::Stats;
+	using namespace KActivities::Stats::Terms;
+
+	for (int i=4; i >= 0; --i) {
+		QModelIndex index = m_recentApps->index(i,0);
+
+		const QString storageId = m_recentApps->data(index, ResultModel::ResourceRole).toString().mid(QStringLiteral("applications:").length());
+		KService::Ptr service = KService::serviceByStorageId(storageId);
+		if (!service) // This shouldn't happen, but it might
+			continue;
+
+		// Create the menu item itself
+		QAction *action = new QAction(QIcon::fromTheme(service->icon()), service->name(), this);
+		connect(action, &QAction::triggered, this, [service]() {
+			auto *job = new KIO::ApplicationLauncherJob(service);
+			job->start();
+		});
+
+	    this->insertAction(this->actions().value(1), action);
+		m_recentActions.append(action);
+	}
 }

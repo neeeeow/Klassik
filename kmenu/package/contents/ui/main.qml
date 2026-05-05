@@ -12,7 +12,7 @@ PlasmoidItem{
 
     preferredRepresentation: fullRepresentation
 
-    KMenu.KMenu {
+    KMenu.KMenuManager {
         id: kmenu // Create and initialize our KMenu plugin
     }
 
