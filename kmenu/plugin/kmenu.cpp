@@ -26,7 +26,7 @@ void
 KMenu::initialize()
 {
 	// Add the section headers
-	m_recentHeader = new PopupMenuTitle(i18n("Recent Applications"), this);
+	m_recentHeader = new PopupMenuTitle(i18n("Most Used Applications"), this);
 	m_allAppsHeader = new PopupMenuTitle(i18n("All Applications"), this);
 	m_actionsHeader = new PopupMenuTitle(i18n("Actions"), this);
 
@@ -48,7 +48,7 @@ KMenu::createRecentMenuItems()
 	
 	// Run our query once.
 	auto query = UsedResources
-		| RecentlyUsedFirst
+		| HighScoredFirst
 		| Url(QStringList{QStringLiteral("applications:*")})		
 		| Agent::any()
 		| Type::any()
@@ -69,13 +69,17 @@ KMenu::createRecentMenuItems()
 
 void
 KMenu::updateRecent()
-{	
+{
+	/* Updates the most used applications name. It probably *shouldn't* be called updateRecent,
+	   but we follow the convention used by the original KDE 3 KMenu, even if it doesn't
+	   make sense */
+	
 	// Cleanup the old menu items
 	cleanupActionList(m_recentActions);
 
 	using namespace KActivities::Stats;
 
-	for (int i=0; i < 5; ++i) {
+	for (int i=0; i < 3; ++i) {
 		QModelIndex index = m_recentApps->index(i,0);
 
 		const QString storageId = m_recentApps->data(index, ResultModel::ResourceRole).toString().mid(QStringLiteral("applications:").length());
