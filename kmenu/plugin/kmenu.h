@@ -19,7 +19,6 @@ public:
 
 private:
 	// Separator actions
-	PopupMenuTitle *m_recentHeader;
 	PopupMenuTitle *m_allAppsHeader;
 	PopupMenuTitle *m_actionsHeader;
 	

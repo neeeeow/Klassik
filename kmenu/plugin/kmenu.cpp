@@ -26,11 +26,9 @@ void
 KMenu::initialize()
 {
 	// Add the section headers
-	m_recentHeader = new PopupMenuTitle(i18n("Most Used Applications"), this);
 	m_allAppsHeader = new PopupMenuTitle(i18n("All Applications"), this);
 	m_actionsHeader = new PopupMenuTitle(i18n("Actions"), this);
 
-	this->addAction(m_recentHeader);
 	this->addAction(m_allAppsHeader);
 	this->addAction(m_actionsHeader);
 
@@ -74,10 +72,17 @@ KMenu::updateRecent()
 	   but we follow the convention used by the original KDE 3 KMenu, even if it doesn't
 	   make sense */
 	
-	// Cleanup the old menu items
 	cleanupActionList(m_recentActions);
 
 	using namespace KActivities::Stats;
+
+	if (m_recentApps->rowCount() == 0)
+		return;
+
+	// Add the section header here so we can clear it if necessary
+	PopupMenuTitle *recentHeader = new PopupMenuTitle(i18n("Most Used Applications"), this);
+	this->insertAction(m_allAppsHeader, recentHeader);
+	m_recentActions.append(recentHeader);
 
 	for (int i=0; i < 3; ++i) {
 		QModelIndex index = m_recentApps->index(i,0);
@@ -107,13 +112,12 @@ KMenu::updateRecent()
 void
 KMenu::updateApplications()
 {
-	// Cleanup old items
 	cleanupActionList(m_applicationActions);
 	
 	// The root of the applications menu
     KServiceGroup::Ptr root = KServiceGroup::root();
 
-	if (!root || !root->isValid()) // sanity check
+	if (!root || !root->isValid())
 		return;
 
 	// Define a recursive lambda for traversing the service groups and populating the submenus
