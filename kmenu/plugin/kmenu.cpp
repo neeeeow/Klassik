@@ -7,6 +7,8 @@
 
 #include <KLocalizedString>
 #include <KService>
+#include <KServiceGroup>
+#include <KSycoca>
 #include <KIO/ApplicationLauncherJob>
 
 #include <PlasmaActivities/Stats/Query>
@@ -31,8 +33,11 @@ KMenu::initialize()
 	this->addAction(m_recentHeader);
 	this->addAction(m_allAppsHeader);
 	this->addAction(m_actionsHeader);
-	
+
 	createRecentMenuItems();
+
+	connect(KSycoca::self(), &KSycoca::databaseChanged, this, &KMenu::updateApplications); // Update applications menu if it changes
+	updateApplications();
 }
 
 void
@@ -65,14 +70,8 @@ KMenu::createRecentMenuItems()
 void
 KMenu::updateRecent()
 {	
-	// First delete the actions from the menu
-	for (QAction *action : m_recentActions) {
-		this->removeAction(action);
-	}
-
-	// Clear out the list itself
-	qDeleteAll(m_recentActions);
-	m_recentActions.clear();
+	// Cleanup the old menu items
+	cleanupActionList(m_recentActions);
 
 	using namespace KActivities::Stats;
 
@@ -84,12 +83,12 @@ KMenu::updateRecent()
 		if (!service) // This shouldn't happen, but it might
 			continue;
 
-		// Create the menu item itself
-		QAction *action = new QAction(QIcon::fromTheme(service->icon()), service->name(), this);
+		// Create the menu item itself. Note, we use .replace(QStringLiteral("&"), QStringLiteral("&&")) to ensure that ampersands
+		// don't inadvertently get interpreted as mnemonics. There is probably an easier way to do this, but it works!
+		QAction *action = new QAction(QIcon::fromTheme(service->icon()), service->name().replace(QStringLiteral("&"), QStringLiteral("&&")), this);
 		connect(action, &QAction::triggered, this, [service]() {
 			auto *job = new KIO::ApplicationLauncherJob(service);
 			job->start();
-
 			KActivities::ResourceInstance::notifyAccessed(
 			    QUrl(QStringLiteral("applications:") + service->storageId()),
 				QStringLiteral("com.github.neeeeow.klassik.kmenu")
@@ -99,4 +98,79 @@ KMenu::updateRecent()
 	    this->insertAction(m_allAppsHeader, action);
 		m_recentActions.append(action);
 	}
+}
+
+void
+KMenu::updateApplications()
+{
+	// Cleanup old items
+	cleanupActionList(m_applicationActions);
+	
+	// The root of the applications menu
+    KServiceGroup::Ptr root = KServiceGroup::root();
+
+	if (!root || !root->isValid()) // sanity check
+		return;
+
+	// Define a recursive lambda for traversing the service groups and populating the submenus
+	std::function<void(QMenu *, KServiceGroup::Ptr)> populateSubmenu =
+		[&](QMenu *parent, KServiceGroup::Ptr group) {
+			for (const auto &entry : group->entries(true)) {
+				if (entry->isType(KST_KService)) {
+					// If the entry is a service, it's an individual application
+				    KService::Ptr service(static_cast<KService*>(entry.data()));
+
+					// Create the entry
+					QAction *action = new QAction(QIcon::fromTheme(service->icon()), service->name().replace(QStringLiteral("&"), QStringLiteral("&&")), this);
+					connect(action, &QAction::triggered, this, [service]() {
+						auto *job = new KIO::ApplicationLauncherJob(service);
+						job->start();
+						KActivities::ResourceInstance::notifyAccessed(
+							QUrl(QStringLiteral("applications:") + service->storageId()),
+							QStringLiteral("com.github.neeeeow.klassik.kmenu")
+							);			
+					});
+
+					if (group == root) {
+						this->insertAction(m_actionsHeader, action);
+						m_applicationActions.append(action);
+					} else
+						parent->addAction(action);
+				} else if (entry->isType(KST_KServiceGroup)) {
+					// If the entry is a service group, we need to make a submenu and recurse through this function
+				    KServiceGroup::Ptr subGroup(static_cast<KServiceGroup*>(entry.data()));
+					if (subGroup->childCount() == 0)
+						continue;
+					
+					QMenu *subMenu = new QMenu(subGroup->caption().replace(QStringLiteral("&"), QStringLiteral("&&")), this);
+					subMenu->setIcon(QIcon::fromTheme(subGroup->icon()));
+
+					if (group == root) {
+						// If the group is at the root, we insert the submenu in the main menu and keep track of it in our list
+						QAction *action = this->insertMenu(m_actionsHeader, subMenu);
+						m_applicationActions.append(action);
+					} else {
+						parent->addMenu(subMenu);
+					}
+
+					populateSubmenu(subMenu, subGroup);
+				}
+			}
+			
+		};
+
+	populateSubmenu(this, root);
+}
+
+void
+KMenu::cleanupActionList(QList<QAction *> &actionList)
+{
+	// Cleans up all member actions of our QList from the menu
+	for (QAction *action : actionList) {
+		this->removeAction(action);
+	}
+
+	// Clear out the list itself
+	qDeleteAll(actionList);
+	actionList.clear();
 }

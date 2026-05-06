@@ -25,8 +25,11 @@ private:
 	
     KActivities::Stats::ResultModel *m_recentApps;; // ResultModel storing recent applications
 	QList<QAction *> m_recentActions; // List of actions linking to recent applications
+	QList<QAction *> m_applicationActions; // List of actions in the root of the applications list
 
 	void initialize();
 	void createRecentMenuItems();
 	void updateRecent();
+	void updateApplications();
+	void cleanupActionList(QList<QAction *> &);
 };
