@@ -158,8 +158,8 @@ KMenu::colorize(QImage &image)
 	}
 	color.setRgb(r, g, b);
 
-	QVector<QRgb> data = image.colorTable();
-	int pixels = data.size();
+	int pixels = image.width() * image.height();
+	QRgb *data = reinterpret_cast<QRgb*>(image.bits());
 
 	int rval, gval, bval, val, alpha;
     float rcol = color.red(), gcol = color.green(), bcol = color.blue();
