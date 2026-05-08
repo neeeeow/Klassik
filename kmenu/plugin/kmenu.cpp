@@ -6,7 +6,9 @@
 #include <QHBoxLayout>
 #include <QToolButton>
 #include <QShortcut>
+#include <QPaintEvent>
 
+#include <KColorScheme>
 #include <KLocalizedString>
 #include <KService>
 #include <KServiceGroup>
@@ -16,10 +18,10 @@
 #include <PlasmaActivities/Stats/Query>
 #include <PlasmaActivities/ResourceInstance>
 
+
 KMenu::KMenu(QWidget *parent)
 	: QMenu(parent)
 {
-	this->installEventFilter(this);
 	initialize(); // Populate menu items
 }
 
@@ -34,25 +36,155 @@ KMenu::eventFilter(QObject *object, QEvent *event)
 			if (QWidget *widget = qobject_cast<QWidget *>(object))
 				widget->setFocus();
 		} else if (event->type() == QEvent::Leave)
-			this->setFocus();
+			setFocus();
 	}
 
 	return QMenu::eventFilter(object, event);
 }
 
 void
+KMenu::paintEvent(QPaintEvent *e)
+{
+	QMenu::paintEvent(e);
+	if (m_sidePixmap.isNull())
+		return;
+
+	QPainter p(this);
+
+	QRect r = sideImageRect();
+	r.setBottom( r.bottom() - m_sidePixmap.height() );
+	p.drawTiledPixmap( r, m_sideTilePixmap );
+
+	r = sideImageRect();
+	r.setTop( r.bottom() - m_sidePixmap.height() );
+	p.drawPixmap(r, m_sidePixmap);
+}
+
+void
 KMenu::initialize()
 {
+
+	if (loadSidePixmap()) {
+		setContentsMargins(
+			layoutDirection() == Qt::LeftToRight ? m_sidePixmap.width() : 0,
+			0,
+			layoutDirection() == Qt::RightToLeft ? m_sidePixmap.width() : 0,
+			0);
+	}	
+	
 	// Add the section headers
 	m_allAppsHeader = new PopupMenuTitle(i18n("All Applications"), this);
 	m_actionsHeader = new PopupMenuTitle(i18n("Actions"), this);
 
-	this->addAction(m_allAppsHeader);
-	this->addAction(m_actionsHeader);
+	addAction(m_allAppsHeader);
+	addAction(m_actionsHeader);
 
 	createRecentMenuItems();
 
 	createApplicationsItems();
+}
+
+bool
+KMenu::loadSidePixmap()
+{
+	/* Here we can follow the original KDE 3 code, mostly */
+
+	QImage image;
+	image.load(QStringLiteral(":/com/github/neeeeow/klassik/kmenu/plugin/img/kside.png"));
+	if (image.isNull())
+		return false;
+	colorize(image);
+	m_sidePixmap = QPixmap::fromImage(image);
+
+	image.load(QStringLiteral(":/com/github/neeeeow/klassik/kmenu/plugin/img/kside_tile.png"));
+	if (image.isNull())
+		return false;
+	colorize(image);
+	m_sideTilePixmap = QPixmap::fromImage(image);
+	
+	return true;
+}
+
+QRect
+KMenu::sideImageRect()
+{
+	int panelWidth = style()->pixelMetric(QStyle::PM_MenuPanelWidth, nullptr, this);
+    int hMargin = style()->pixelMetric(QStyle::PM_MenuHMargin, nullptr, this);
+    int vMargin = style()->pixelMetric(QStyle::PM_MenuVMargin, nullptr, this);
+
+	// Rectangle containing our side pixmap
+	QRect pixRect(panelWidth + hMargin, panelWidth + vMargin,
+				  m_sidePixmap.width(), height() - 2 * (panelWidth + vMargin));
+
+	// Convert to screen coordinates based on text direction
+	return style()->visualRect(layoutDirection(), rect(), pixRect);
+}
+
+void
+KMenu::colorize(QImage &image)
+{
+	/* Taken and adapted from KDE 3.5.10 source */
+	QColor color;
+	
+	KColorScheme activeScheme(QPalette::Active, KColorScheme::Selection);
+	QColor activeTitle = activeScheme.background().color();
+
+	KColorScheme inactiveScheme(QPalette::Inactive, KColorScheme::Selection);
+	QColor inactiveTitle = inactiveScheme.background().color();
+
+	// figure out which color is most suitable for recoloring to
+    int h1, s1, v1, h2, s2, v2, h3, s3, v3;
+    activeTitle.getHsv(&h1, &s1, &v1);
+    inactiveTitle.getHsv(&h2, &s2, &v2);
+    palette().color(QPalette::Active, QPalette::Window).getHsv(&h3, &s3, &v3);
+
+	if ( (qAbs(h1-h3)+qAbs(s1-s3)+qAbs(v1-v3) < qAbs(h2-h3)+qAbs(s2-s3)+qAbs(v2-v3)) &&
+		 ((qAbs(h1-h3)+qAbs(s1-s3)+qAbs(v1-v3) < 32) || (s1 < 32)) && (s2 > s1))
+		color = inactiveTitle;
+	else
+		color = activeTitle;
+
+	int r, g, b;
+	color.getRgb(&r, &g, &b);
+	int gray = qGray(r, g, b);
+	if (gray > 180) {
+		r = (r - (gray - 180) < 0 ? 0 : r - (gray - 180));
+		g = (g - (gray - 180) < 0 ? 0 : g - (gray - 180));
+		b = (b - (gray - 180) < 0 ? 0 : b - (gray - 180));
+	} else if (gray < 76) {
+		r = (r + (76 - gray) > 255 ? 255 : r + (76 - gray));
+		g = (g + (76 - gray) > 255 ? 255 : g + (76 - gray));
+        b = (b + (76 - gray) > 255 ? 255 : b + (76 - gray));
+	}
+	color.setRgb(r, g, b);
+
+	QVector<QRgb> data = image.colorTable();
+	int pixels = data.size();
+
+	int rval, gval, bval, val, alpha;
+    float rcol = color.red(), gcol = color.green(), bcol = color.blue();
+
+	for (int i = 0; i < pixels; ++i) {
+		val = qGray(data[i]);
+		if (val < 128) {
+			rval = static_cast<int>(rcol/128*val);
+			gval = static_cast<int>(gcol/128*val);
+			bval = static_cast<int>(bcol/128*val);
+		}
+		else if (val > 128) {
+			rval = static_cast<int>((val-128)*(2-rcol/128)+rcol-1);
+			gval = static_cast<int>((val-128)*(2-gcol/128)+gcol-1);
+			bval = static_cast<int>((val-128)*(2-bcol/128)+bcol-1);
+		}
+		else { // val == 128
+			rval = static_cast<int>(rcol);
+			gval = static_cast<int>(gcol);
+			bval = static_cast<int>(bcol);
+		}
+
+		alpha = qAlpha(data[i]);
+		data[i] = qRgba(rval, gval, bval, alpha);
+	}
 }
 
 void
@@ -98,7 +230,7 @@ KMenu::updateRecent()
 
 	// Add the section header here so we can clear it if necessary
 	PopupMenuTitle *recentHeader = new PopupMenuTitle(i18n("Most Used Applications"), this);
-	this->insertAction(m_allAppsHeader, recentHeader);
+	insertAction(m_allAppsHeader, recentHeader);
 	m_recentActions.append(recentHeader);
 
 	for (int i=0; i < 3; ++i) {
@@ -121,7 +253,7 @@ KMenu::updateRecent()
 				);			
 		});
 
-	    this->insertAction(m_allAppsHeader, action);
+	    insertAction(m_allAppsHeader, action);
 		m_recentActions.append(action);
 	}
 }
@@ -160,7 +292,7 @@ KMenu::createApplicationsItems()
 	QWidgetAction* searchAction = new QWidgetAction(this);
 	searchAction->setDefaultWidget(searchBar);
 
-	this->insertAction(m_actionsHeader, searchAction);
+	insertAction(m_actionsHeader, searchAction);
 
 	// Create the '/' shortcut
 	QShortcut *searchShortcut = new QShortcut(Qt::Key_Slash, this);
@@ -244,7 +376,7 @@ KMenu::updateApplications()
 					});
 
 					if (group == root) {
-						this->insertAction(m_actionsHeader, action);
+						insertAction(m_actionsHeader, action);
 						m_applicationActions.append(action);
 					} else
 						parent->addAction(action);
@@ -259,7 +391,7 @@ KMenu::updateApplications()
 
 					if (group == root) {
 						// If the group is at the root, we insert the submenu in the main menu and keep track of it in our list
-						QAction *action = this->insertMenu(m_actionsHeader, subMenu);
+						QAction *action = insertMenu(m_actionsHeader, subMenu);
 						m_applicationActions.append(action);
 					} else {
 						parent->addMenu(subMenu);
@@ -279,7 +411,7 @@ KMenu::cleanupActionList(QList<QAction *> &actionList)
 {
 	// Cleans up all member actions of our QList from the menu
 	for (QAction *action : actionList) {
-		this->removeAction(action);
+		removeAction(action);
 	}
 
 	// Clear out the list itself

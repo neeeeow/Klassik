@@ -21,6 +21,7 @@ find_package(KF6 REQUIRED COMPONENTS
   I18n
   Service
   KIO
+  ColorScheme
 )
 
 find_package(Plasma REQUIRED) # Required for plasma_install_package
@@ -47,9 +48,17 @@ target_link_libraries(kmenuplugin
   KF6::I18n
   KF6::Service
   KF6::KIOGui
+  KF6::ColorScheme
   Plasma::ActivitiesStats
   Plasma::Activities
 )
+
+qt_add_resources(kmenuplugin "img"
+  PREFIX "/com/github/neeeeow/klassik/kmenu"
+  FILES
+  "plugin/img/kside.png"
+  "plugin/img/kside_tile.png"
+  )
 
 install(TARGETS kmenuplugin DESTINATION ${QT6_INSTALL_QML}/com/github/neeeeow/klassik/kmenu)
 install(FILES plugin/qmldir DESTINATION ${QT6_INSTALL_QML}/com/github/neeeeow/klassik/kmenu)
