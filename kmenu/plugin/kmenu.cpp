@@ -3,7 +3,9 @@
 
 #include <QPoint>
 #include <QRect>
-#include <QDebug>
+#include <QHBoxLayout>
+#include <QToolButton>
+#include <QShortcut>
 
 #include <KLocalizedString>
 #include <KService>
@@ -17,10 +19,26 @@
 KMenu::KMenu(QWidget *parent)
 	: QMenu(parent)
 {
+	this->installEventFilter(this);
 	initialize(); // Populate menu items
 }
 
 KMenu::~KMenu() = default;
+
+bool
+KMenu::eventFilter(QObject *object, QEvent *event)
+{
+	// Give the search bar focus as soon as the mouse enters it
+	if (object == m_searchLineEdit) {
+		if (event->type() == QEvent::Enter) {
+			if (QWidget *widget = qobject_cast<QWidget *>(object))
+				widget->setFocus();
+		} else if (event->type() == QEvent::Leave)
+			this->setFocus();
+	}
+
+	return QMenu::eventFilter(object, event);
+}
 
 void
 KMenu::initialize()
@@ -34,8 +52,7 @@ KMenu::initialize()
 
 	createRecentMenuItems();
 
-	connect(KSycoca::self(), &KSycoca::databaseChanged, this, &KMenu::updateApplications); // Update applications menu if it changes
-	updateApplications();
+	createApplicationsItems();
 }
 
 void
@@ -110,6 +127,92 @@ KMenu::updateRecent()
 }
 
 void
+KMenu::createApplicationsItems()
+{
+	// Create the search bar container
+	QWidget *searchBar = new QWidget(this);
+	int iconSize = style()->pixelMetric(QStyle::PM_SmallIconSize); // The size of menu item icons (by default)
+	QStyleOptionMenuItem opt; // Call sizeFromContents to get the height of a menu item in the current QStyle,
+	opt.initFrom(this);       // ensuring the search bar is the same height as a menu item, giving a more consistent look
+	int menuHeight = style()->sizeFromContents(QStyle::CT_MenuItem, &opt, QSize(0, qMax(opt.fontMetrics.height(), iconSize))).height();
+	searchBar->setFixedHeight(menuHeight);
+	
+	QHBoxLayout *layout = new QHBoxLayout(searchBar); // layout to hold the button and lineedit
+	layout->setContentsMargins(0, 0, 0, 0);
+	layout->setSpacing(0);
+	
+	QToolButton *clearBtn = new QToolButton(searchBar); // Clear button
+	clearBtn->setFixedSize(menuHeight, menuHeight); // ensure the button is square	
+	clearBtn->setIconSize(QSize(iconSize, iconSize));
+	clearBtn->setIcon(QIcon::fromTheme(QStringLiteral("edit-clear")));
+	clearBtn->setAutoRaise(true);
+	clearBtn->setFocusPolicy(Qt::StrongFocus);
+	
+    m_searchLineEdit = new QLineEdit(searchBar); // Line edit
+	m_searchLineEdit->setPlaceholderText(i18n("Press '/' to search..."));
+	m_searchLineEdit->setFocusPolicy(Qt::StrongFocus);
+	m_searchLineEdit->installEventFilter(this);
+
+	layout->addWidget(clearBtn);
+	layout->addWidget(m_searchLineEdit);
+
+	// Create the action which contains our search bar
+	QWidgetAction* searchAction = new QWidgetAction(this);
+	searchAction->setDefaultWidget(searchBar);
+
+	this->insertAction(m_actionsHeader, searchAction);
+
+	// Create the '/' shortcut
+	QShortcut *searchShortcut = new QShortcut(Qt::Key_Slash, this);
+
+	// Connect the necessary signals to their respective slots
+	connect(searchShortcut, &QShortcut::activated, m_searchLineEdit, qOverload<>(&QLineEdit::setFocus));
+	connect(this, &QMenu::aboutToShow, m_searchLineEdit, &QLineEdit::clear);
+	connect(clearBtn, &QToolButton::clicked, m_searchLineEdit, &QLineEdit::clear);
+	connect(m_searchLineEdit, &QLineEdit::textChanged, this, &KMenu::updateSearchResults);	
+	connect(KSycoca::self(), &KSycoca::databaseChanged, this, &KMenu::updateApplications);
+	updateApplications(); // Call the function to populate the menu itself
+}
+
+void
+KMenu::updateSearchResults()
+{
+	QLineEdit *lineEdit = qobject_cast<QLineEdit *>(sender());
+	if (!lineEdit)
+		return;
+
+	QString text = lineEdit->text();
+
+	std::function<bool(QAction *, QList<QAction *>)> setActionStates =
+		[&](QAction *parent, QList<QAction *> children) {
+
+			bool enableParent = false;
+			
+			for (QAction *action : children) {
+				if (QMenu *subMenu = action->menu()) {
+					// If the action is a sub menu, recurse through it and check to see if the current action (which
+					// opens a sub menu) must be enabled, if so, set enableParent to true for now.
+					enableParent = setActionStates(action, subMenu->actions());
+				} else {					
+					if (text.isEmpty() || (QStringView(action->data().toString()).left(text.length()).compare(text, Qt::CaseInsensitive) == 0)) {
+						// Item must be enabled either if the search string matches the action name, or if the search bar is empty
+						enableParent = true;
+						action->setEnabled(true);
+					} else
+						action->setEnabled(false);
+				}
+			}
+
+			if (parent)
+				parent->setEnabled(enableParent);
+
+			return enableParent;
+		};
+
+	setActionStates(nullptr, m_applicationActions);
+}
+
+void
 KMenu::updateApplications()
 {
 	cleanupActionList(m_applicationActions);
@@ -130,6 +233,7 @@ KMenu::updateApplications()
 
 					// Create the entry
 					QAction *action = new QAction(QIcon::fromTheme(service->icon()), service->name().replace(QStringLiteral("&"), QStringLiteral("&&")), this);
+					action->setData(service->name()); // Store the unmodified name for searching
 					connect(action, &QAction::triggered, this, [service]() {
 						auto *job = new KIO::ApplicationLauncherJob(service);
 						job->start();
