@@ -101,6 +101,16 @@ KMenu::loadSidePixmap()
 		return false;
 	colorize(image);
 	m_sideTilePixmap = QPixmap::fromImage(image);
+
+	// pretile the pixmap to a height of at least 100 pixels
+    if (m_sideTilePixmap.height() < 100)
+    {
+		int tiles = (int)(100 / m_sideTilePixmap.height()) + 1;
+		QPixmap preTiledPixmap(m_sideTilePixmap.width(), m_sideTilePixmap.height() * tiles);
+		QPainter p(&preTiledPixmap);
+		p.drawTiledPixmap(preTiledPixmap.rect(), m_sideTilePixmap);
+		m_sideTilePixmap = preTiledPixmap;
+    }
 	
 	return true;
 }
