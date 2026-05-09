@@ -15,6 +15,7 @@
 #include <KSycoca>
 #include <KIO/ApplicationLauncherJob>
 
+#include <Plasma/Plasma>
 #include <PlasmaActivities/Stats/Query>
 #include <PlasmaActivities/ResourceInstance>
 
@@ -46,7 +47,7 @@ void
 KMenu::paintEvent(QPaintEvent *e)
 {
 	QMenu::paintEvent(e);
-	if (m_sidePixmap.isNull())
+	if (m_sidePixmap.isNull() || m_sideTilePixmap.isNull())
 		return;
 
 	QPainter p(this);
@@ -96,6 +97,24 @@ KMenu::loadSidePixmap()
 	colorize(image);
 	m_sidePixmap = QPixmap::fromImage(image);
 
+	// Create the painter for drawing the side text
+	QPainter sidePainter(&m_sidePixmap);
+	QFont sideFont(QStringLiteral("Nimbus Sans"), 12, QFont::Bold); // TODO: use a better font
+	sidePainter.setFont(sideFont);
+	sidePainter.translate(0, m_sidePixmap.height());
+	sidePainter.rotate(-90);
+
+	// Area in which to draw the text
+	QRect textRect(5, 1, m_sidePixmap.height() - 5, m_sidePixmap.width() - 2);
+
+	// Draw the text. The KDE version is queried at compile-time, meaning the menu
+	// must be recompiled whenever plasma is updated to emsure this is accurate.
+	QString sideText = QStringLiteral("KDE %1.%2").arg(PLASMA_VERSION_MAJOR).arg(PLASMA_VERSION_MINOR);
+	sidePainter.setPen(Qt::black);
+	sidePainter.drawText(textRect.translated(-1, 1), Qt::AlignVCenter | Qt::AlignLeft, sideText);
+	sidePainter.setPen(Qt::white);
+	sidePainter.drawText(textRect, Qt::AlignVCenter | Qt::AlignLeft, sideText);
+
 	image.load(QStringLiteral(":/com/github/neeeeow/klassik/kmenu/plugin/img/kside_tile.png"));
 	if (image.isNull())
 		return false;
@@ -107,8 +126,8 @@ KMenu::loadSidePixmap()
     {
 		int tiles = (int)(100 / m_sideTilePixmap.height()) + 1;
 		QPixmap preTiledPixmap(m_sideTilePixmap.width(), m_sideTilePixmap.height() * tiles);
-		QPainter p(&preTiledPixmap);
-		p.drawTiledPixmap(preTiledPixmap.rect(), m_sideTilePixmap);
+		QPainter tilePainter(&preTiledPixmap);
+		tilePainter.drawTiledPixmap(preTiledPixmap.rect(), m_sideTilePixmap);
 		m_sideTilePixmap = preTiledPixmap;
     }
 	

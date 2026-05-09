@@ -49,6 +49,7 @@ target_link_libraries(kmenuplugin
   KF6::Service
   KF6::KIOGui
   KF6::ColorScheme
+  Plasma::Plasma
   Plasma::ActivitiesStats
   Plasma::Activities
 )
