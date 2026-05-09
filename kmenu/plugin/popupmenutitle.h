@@ -59,10 +59,6 @@ private:
 				p.setFont(m_font);
 				p.drawText(r, Qt::AlignCenter | Qt::TextSingleLine, m_text);
 			}
-
-			// Top highlight line (not sure what purpose this serves...)
-			p.setPen(palette().highlight().color());
-			p.drawLine(0, 0, r.right(), 0);
 		}
 		
 		QSize sizeHint() const override
