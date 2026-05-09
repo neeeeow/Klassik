@@ -44,6 +44,15 @@ KMenu::eventFilter(QObject *object, QEvent *event)
 }
 
 void
+KMenu::changeEvent(QEvent *event)
+{
+	if (event->type() == QEvent::PaletteChange && !m_sidePixmap.isNull() && !m_sideTilePixmap.isNull()) {
+		loadSidePixmap();
+	}
+	QMenu::changeEvent(event);
+}
+
+void
 KMenu::paintEvent(QPaintEvent *e)
 {
 	QMenu::paintEvent(e);
@@ -64,7 +73,6 @@ KMenu::paintEvent(QPaintEvent *e)
 void
 KMenu::initialize()
 {
-
 	if (loadSidePixmap()) {
 		setContentsMargins(
 			layoutDirection() == Qt::LeftToRight ? m_sidePixmap.width() : 0,
@@ -88,8 +96,6 @@ KMenu::initialize()
 bool
 KMenu::loadSidePixmap()
 {
-	/* Here we can follow the original KDE 3 code, mostly */
-
 	QImage image;
 	image.load(QStringLiteral(":/com/github/neeeeow/klassik/kmenu/plugin/img/kside.png"));
 	if (image.isNull())
@@ -302,14 +308,14 @@ KMenu::createApplicationsItems()
 	layout->setContentsMargins(0, 0, 0, 0);
 	layout->setSpacing(0);
 	
-	QToolButton *clearBtn = new QToolButton(searchBar); // Clear button
+	QToolButton *clearBtn = new QToolButton(searchBar);
 	clearBtn->setFixedSize(menuHeight, menuHeight); // ensure the button is square	
 	clearBtn->setIconSize(QSize(iconSize, iconSize));
 	clearBtn->setIcon(QIcon::fromTheme(QStringLiteral("edit-clear")));
 	clearBtn->setAutoRaise(true);
 	clearBtn->setFocusPolicy(Qt::StrongFocus);
 	
-    m_searchLineEdit = new QLineEdit(searchBar); // Line edit
+    m_searchLineEdit = new QLineEdit(searchBar);
 	m_searchLineEdit->setPlaceholderText(i18n("Press '/' to search..."));
 	m_searchLineEdit->setFocusPolicy(Qt::StrongFocus);
 	m_searchLineEdit->installEventFilter(this);

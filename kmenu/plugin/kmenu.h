@@ -20,6 +20,7 @@ public:
 
 protected:
 	bool eventFilter(QObject *, QEvent *) override;
+	void changeEvent(QEvent *) override;
 	void paintEvent(QPaintEvent *) override;
 
 private:
