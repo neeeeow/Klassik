@@ -36,11 +36,18 @@ private:
 	// Separator actions
 	PopupMenuTitle *m_allAppsHeader;
 	PopupMenuTitle *m_actionsHeader;
-	
-    KActivities::Stats::ResultModel *m_recentApps;; // ResultModel storing recent applications
+
+	// ResultModels for recent apps/documents
+    KActivities::Stats::ResultModel *m_recentApps;
+	KActivities::Stats::ResultModel *m_recentDocuments;
+
+	// Action lists
 	QList<QAction *> m_recentActions; // List of actions linking to recent applications
+	QList<QAction *> m_recentDocumentsActions; // List of actions linking to recent documents
 	QList<QAction *> m_applicationActions; // List of actions in the root of the applications list
-	
+
+	// Other
+	QMenu *m_recentDocumentsMenu;	
 	QLineEdit *m_searchLineEdit;
 	
 	void initialize();
@@ -52,7 +59,8 @@ private:
 	void createApplicationsItems();
 	void updateSearchResults();
 	void updateApplications();
-	void cleanupActionList(QList<QAction *> &);
+	void cleanupActionList(QList<QAction *> &, QMenu * = nullptr);
 	void createActionsItems();
-	void createSettingsMenu();
+	void createRecentDocumentsItems();
+	void updateRecentDocuments();
 };

@@ -7,6 +7,7 @@
 #include <QToolButton>
 #include <QShortcut>
 #include <QPaintEvent>
+#include <QMimeDatabase>
 
 #include <KColorScheme>
 #include <KLocalizedString>
@@ -14,11 +15,12 @@
 #include <KServiceGroup>
 #include <KSycoca>
 #include <KIO/ApplicationLauncherJob>
+#include <KIO/OpenUrlJob>
+#include <KIO/JobUiDelegateFactory>
 
 #include <Plasma/Plasma>
 #include <PlasmaActivities/Stats/Query>
 #include <PlasmaActivities/ResourceInstance>
-
 
 KMenu::KMenu(QWidget *parent)
 	: QMenu(parent), m_session(this)
@@ -232,10 +234,10 @@ KMenu::createRecentMenuItems()
 	
 	// Run our query once.
 	auto query = UsedResources
-		| HighScoredFirst
-		| Url(QStringList{QStringLiteral("applications:*")})		
+		| HighScoredFirst		
 		| Agent::any()
 		| Type::any()
+		| Url::startsWith(QStringLiteral("applications:"))
 		| Activity::any();
 
 	m_recentApps = new ResultModel(query, this);
@@ -260,8 +262,6 @@ KMenu::updateRecent()
 	
 	cleanupActionList(m_recentActions);
 
-	using namespace KActivities::Stats;
-
 	if (m_recentApps->rowCount() == 0)
 		return;
 
@@ -270,22 +270,25 @@ KMenu::updateRecent()
 	insertAction(m_allAppsHeader, recentHeader);
 	m_recentActions.append(recentHeader);
 
-	for (int i=0; i < 3; ++i) {
+	for (int i=0; i < qMin(3, m_recentApps->rowCount()); ++i) {
 		QModelIndex index = m_recentApps->index(i,0);
 
-		const QString storageId = m_recentApps->data(index, ResultModel::ResourceRole).toString().mid(QStringLiteral("applications:").length());
+		const QString storageId = m_recentApps->data(index, KActivities::Stats::ResultModel::ResourceRole).toString().mid(QStringLiteral("applications:").length());
 		KService::Ptr service = KService::serviceByStorageId(storageId);
 		if (!service) // This shouldn't happen, but it might
 			continue;
+		QUrl url(service->storageId());
+		url.setScheme(QStringLiteral("applications"));
 
 		// Create the menu item itself. Note, we use .replace(QStringLiteral("&"), QStringLiteral("&&")) to ensure that ampersands
 		// don't inadvertently get interpreted as mnemonics. There is probably an easier way to do this, but it works!
 		QAction *action = new QAction(QIcon::fromTheme(service->icon()), service->name().replace(QStringLiteral("&"), QStringLiteral("&&")), this);
-		connect(action, &QAction::triggered, this, [service]() {
+		connect(action, &QAction::triggered, this, [service, url]() {
 			auto *job = new KIO::ApplicationLauncherJob(service);
+			job->setUiDelegate(KIO::createDefaultJobUiDelegate(KJobUiDelegate::AutoHandlingEnabled, nullptr));
 			job->start();
 			KActivities::ResourceInstance::notifyAccessed(
-			    QUrl(QStringLiteral("applications:") + service->storageId()),
+			    url,
 				QStringLiteral("com.github.neeeeow.klassik.kmenu")
 				);			
 		});
@@ -399,15 +402,19 @@ KMenu::updateApplications()
 				if (entry->isType(KST_KService)) {
 					// If the entry is a service, it's an individual application
 				    KService::Ptr service(static_cast<KService*>(entry.data()));
+					QUrl url(service->storageId());
+					url.setScheme(QStringLiteral("applications"));
 
 					// Create the entry
 					QAction *action = new QAction(QIcon::fromTheme(service->icon()), service->name().replace(QStringLiteral("&"), QStringLiteral("&&")), this);
 					action->setData(service->name()); // Store the unmodified name for searching
-					connect(action, &QAction::triggered, this, [service]() {
+					connect(action, &QAction::triggered, this, [service, url]() {
 						auto *job = new KIO::ApplicationLauncherJob(service);
+						job->setUiDelegate(KIO::createDefaultJobUiDelegate(KJobUiDelegate::AutoHandlingEnabled, nullptr));
 						job->start();
 						KActivities::ResourceInstance::notifyAccessed(
-							QUrl(QStringLiteral("applications:") + service->storageId()),
+							//QUrl(QStringLiteral("applications:") + service->storageId()),
+							url,
 							QStringLiteral("com.github.neeeeow.klassik.kmenu")
 							);			
 					});
@@ -444,11 +451,14 @@ KMenu::updateApplications()
 }
 
 void
-KMenu::cleanupActionList(QList<QAction *> &actionList)
-{
+KMenu::cleanupActionList(QList<QAction *> &actionList, QMenu *menu)
+{	
+	if (!menu)
+		menu = this;
+	
 	// Cleans up all member actions of our QList from the menu
 	for (QAction *action : actionList) {
-		removeAction(action);
+		menu->removeAction(action);
 	}
 
 	// Clear out the list itself
@@ -459,8 +469,8 @@ KMenu::cleanupActionList(QList<QAction *> &actionList)
 void
 KMenu::createActionsItems()
 {
-	createSettingsMenu();
-
+	createRecentDocumentsItems();
+	
 	// Add the power/session options
 	addSeparator();
 	if (m_session.canSwitchUser()) {
@@ -478,8 +488,79 @@ KMenu::createActionsItems()
 }
 
 void
-KMenu::createSettingsMenu()
-{	
-	// First create the recent documents submenu
-	QMenu *settingsMenu = addMenu(QIcon::fromTheme(QStringLiteral("preferences-system")), i18n("Settings"));
+KMenu::createRecentDocumentsItems()
+{
+	// NB: document-open-recent is a more appropriate icon, but KDE 3 used document, so we stick to that for
+	// the sake of keeping with convention.
+	m_recentDocumentsMenu = addMenu(QIcon::fromTheme(QStringLiteral("document")), i18n("Recent Documents"));
+
+	QAction *clearAction = m_recentDocumentsMenu->addAction(QIcon::fromTheme(QStringLiteral("history-clear")), i18n("Clear History"));
+
+	m_recentDocumentsMenu->addSeparator();
+
+	using namespace KActivities::Stats;
+	using namespace KActivities::Stats::Terms;
+	
+	// Run our query once.
+	auto query = UsedResources
+		| RecentlyUsedFirst
+		| Agent::any()
+		| Type::files()
+		| Url::file()
+		| Activity::any();
+
+	m_recentDocuments = new ResultModel(query, this);
+
+	connect(clearAction, &QAction::triggered, m_recentDocuments, &ResultModel::forgetAllResources);
+
+	// Whenever an application is launched, update the recent apps list
+	connect(m_recentDocuments, &ResultModel::dataChanged, this, &KMenu::updateRecentDocuments);
+	connect(m_recentDocuments, &ResultModel::modelReset, this, &KMenu::updateRecentDocuments);
+	connect(m_recentDocuments, &ResultModel::rowsInserted, this, &KMenu::updateRecentDocuments);
+	connect(m_recentDocuments, &ResultModel::rowsMoved, this, &KMenu::updateRecentDocuments);
+	connect(m_recentDocuments, &ResultModel::rowsRemoved, this, &KMenu::updateRecentDocuments);
+
+	updateRecentDocuments();
+}
+
+void
+KMenu::updateRecentDocuments()
+{
+	cleanupActionList(m_recentDocumentsActions, m_recentDocumentsMenu);
+
+	if (m_recentDocuments->rowCount() == 0) {
+		QAction *emptyAction = m_recentDocumentsMenu->addAction(i18n("No Entries"));
+		emptyAction->setEnabled(false);
+		m_recentDocumentsActions.append(emptyAction);
+		return;
+	}
+
+	for (int i=0; i < qMin(15, m_recentDocuments->rowCount()); ++i) {
+		QModelIndex index = m_recentDocuments->index(i,0);
+
+		// Fetch the url to the file
+		QUrl url = QUrl::fromUserInput(m_recentDocuments->data(index, KActivities::Stats::ResultModel::ResourceRole).toString());
+		if (!url.isValid())
+			continue;
+
+		QString fileName = url.fileName().replace(QStringLiteral("&"), QStringLiteral("&&")); // name to display in the menu
+		
+		QMimeDatabase db; // use QMimeDatabase to fetch the icon name
+		QMimeType mime = db.mimeTypeForUrl(url);
+		QIcon icon = QIcon::fromTheme(mime.iconName());
+
+		QAction *action = new QAction(icon, fileName, m_recentDocumentsMenu);
+		connect(action, &QAction::triggered, this, [url]() {
+			auto *job = new KIO::OpenUrlJob(url);
+			job->setUiDelegate(KIO::createDefaultJobUiDelegate(KJobUiDelegate::AutoHandlingEnabled, nullptr));
+			job->start();
+			KActivities::ResourceInstance::notifyAccessed(
+			    url,
+				QStringLiteral("com.github.neeeeow.klassik.kmenu")
+				);			
+		});
+		
+	    m_recentDocumentsMenu->addAction(action);
+		m_recentDocumentsActions.append(action);
+	}
 }
