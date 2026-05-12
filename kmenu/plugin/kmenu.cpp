@@ -21,7 +21,7 @@
 
 
 KMenu::KMenu(QWidget *parent)
-	: QMenu(parent)
+	: QMenu(parent), m_session(this)
 {
 	initialize(); // Populate menu items
 }
@@ -91,6 +91,8 @@ KMenu::initialize()
 	createRecentMenuItems();
 
 	createApplicationsItems();
+
+	createActionsItems();
 }
 
 bool
@@ -452,4 +454,32 @@ KMenu::cleanupActionList(QList<QAction *> &actionList)
 	// Clear out the list itself
 	qDeleteAll(actionList);
 	actionList.clear();
+}
+
+void
+KMenu::createActionsItems()
+{
+	createSettingsMenu();
+
+	// Add the power/session options
+	addSeparator();
+	if (m_session.canSwitchUser()) {
+		QAction *action = addAction(QIcon::fromTheme(QStringLiteral("system-switch-user")), i18n("Switch User"));
+		connect(action, &QAction::triggered, &m_session, &SessionManagement::switchUser);
+	}
+	if (m_session.canLock()) {
+		QAction *action = addAction(QIcon::fromTheme(QStringLiteral("system-lock-screen")), i18n("Lock"));
+		connect(action, &QAction::triggered, &m_session, &SessionManagement::lock);
+	}
+	if (m_session.canLogout()) {
+		QAction *action = addAction(QIcon::fromTheme(QStringLiteral("system-log-out")), i18n("Log Out..."));
+		connect(action, &QAction::triggered, &m_session, &SessionManagement::requestLogoutPrompt);
+	}
+}
+
+void
+KMenu::createSettingsMenu()
+{	
+	// First create the recent documents submenu
+	QMenu *settingsMenu = addMenu(QIcon::fromTheme(QStringLiteral("preferences-system")), i18n("Settings"));
 }

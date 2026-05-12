@@ -10,6 +10,8 @@
 
 #include <PlasmaActivities/Stats/ResultModel>
 
+#include <sessionmanagement.h>
+
 class KMenu : public QMenu
 {
 	Q_OBJECT;
@@ -24,6 +26,9 @@ protected:
 	void paintEvent(QPaintEvent *) override;
 
 private:
+	// Session manager
+	SessionManagement m_session;
+	
 	// Side pixmaps
 	QPixmap m_sidePixmap;
 	QPixmap m_sideTilePixmap;
@@ -48,4 +53,6 @@ private:
 	void updateSearchResults();
 	void updateApplications();
 	void cleanupActionList(QList<QAction *> &);
+	void createActionsItems();
+	void createSettingsMenu();
 };

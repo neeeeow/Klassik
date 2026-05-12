@@ -27,6 +27,7 @@ find_package(KF6 REQUIRED COMPONENTS
 find_package(Plasma REQUIRED) # Required for plasma_install_package
 find_package(PlasmaActivitiesStats REQUIRED)
 find_package(PlasmaActivities REQUIRED)
+find_package(LibKWorkspace REQUIRED)
 
 plasma_install_package(package com.github.neeeeow.klassik.kmenu)
 
@@ -52,6 +53,7 @@ target_link_libraries(kmenuplugin
   Plasma::Plasma
   Plasma::ActivitiesStats
   Plasma::Activities
+  PW::KWorkspace
 )
 
 qt_add_resources(kmenuplugin "img"
