@@ -481,7 +481,7 @@ KMenu::createRecentDocumentsItems()
 void
 KMenu::updateRecentDocuments()
 {
-	cleanupActionList(m_recentDocumentsActions, m_recentDocumentsMenu);
+	m_recentDocumentsMenu->cleanupActionList(m_recentDocumentsActions);
 
 	if (m_recentDocuments->rowCount() == 0) {
 		QAction *emptyAction = m_recentDocumentsMenu->addAction(i18n("No Entries"));
@@ -498,7 +498,7 @@ KMenu::updateRecentDocuments()
 		if (!url.isValid())
 			continue;
 
-		QAction *action = createActionFromUrl(url, m_recentDocumentsMenu);
+		QAction *action = m_recentDocumentsMenu->createActionFromUrl(url);
 		
 	    m_recentDocumentsMenu->addAction(action);
 		m_recentDocumentsActions.append(action);

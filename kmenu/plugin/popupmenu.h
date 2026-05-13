@@ -15,8 +15,8 @@ public:
 	explicit PopupMenu(const QString &title, QWidget *parent = nullptr);
 	~PopupMenu() override;
 
-protected:	
-	void cleanupActionList(QList<QAction *> &, QMenu * = nullptr);
-	QAction* createActionFromService(KService::Ptr, QObject * = nullptr);
-	QAction* createActionFromUrl(QUrl, QObject * = nullptr);
+	void cleanupActionList(QList<QAction *> &);
+	QAction* createActionFromService(KService::Ptr);
+	QAction* createActionFromUrl(QUrl);
+
 };

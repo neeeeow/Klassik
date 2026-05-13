@@ -22,14 +22,11 @@ PopupMenu::PopupMenu(const QString &title, QWidget *parent)
 PopupMenu::~PopupMenu() = default;
 
 void
-PopupMenu::cleanupActionList(QList<QAction *> &actionList, QMenu *menu)
-{	
-	if (!menu)
-		menu = this;
-	
+PopupMenu::cleanupActionList(QList<QAction *> &actionList)
+{		
 	// Cleans up all member actions of our QList from the menu
 	for (QAction *action : actionList) {
-		menu->removeAction(action);
+		removeAction(action);
 	}
 
 	// Clear out the list itself
@@ -38,11 +35,8 @@ PopupMenu::cleanupActionList(QList<QAction *> &actionList, QMenu *menu)
 }
 
 QAction*
-PopupMenu::createActionFromService(KService::Ptr service, QObject *parent)
+PopupMenu::createActionFromService(KService::Ptr service)
 {
-	if (!parent)
-		parent = this;
-
 	// Create the menu item itself. Note, we use .replace(QStringLiteral("&"), QStringLiteral("&&")) to ensure that ampersands
 	// don't inadvertently get interpreted as mnemonics. There is probably an easier way to do this, but it works!
 	QAction *action = new QAction(QIcon::fromTheme(service->icon()), service->name().replace(QStringLiteral("&"), QStringLiteral("&&")), this);
@@ -52,7 +46,7 @@ PopupMenu::createActionFromService(KService::Ptr service, QObject *parent)
 	url.setScheme(QStringLiteral("applications"));
 	action->setData(url);
 	
-	connect(action, &QAction::triggered, parent, [service, url]() {
+	connect(action, &QAction::triggered, this, [service, url]() {
 		auto *job = new KIO::ApplicationLauncherJob(service);
 		job->setUiDelegate(KIO::createDefaultJobUiDelegate(KJobUiDelegate::AutoHandlingEnabled, nullptr));
 		job->start();
@@ -66,21 +60,18 @@ PopupMenu::createActionFromService(KService::Ptr service, QObject *parent)
 }
 
 QAction*
-PopupMenu::createActionFromUrl(QUrl url, QObject *parent)
+PopupMenu::createActionFromUrl(QUrl url)
 {
-	if (!parent)
-		parent = this;
-
 	QString fileName = url.fileName().replace(QStringLiteral("&"), QStringLiteral("&&")); // name to display in the menu
 		
 	QMimeDatabase db; // use QMimeDatabase to fetch the icon name
 	QMimeType mime = db.mimeTypeForUrl(url);
 	QIcon icon = QIcon::fromTheme(mime.iconName());
 
-	QAction *action = new QAction(icon, fileName, parent);
+	QAction *action = new QAction(icon, fileName, this);
 	action->setData(url);
 	
-	connect(action, &QAction::triggered, parent, [url]() {
+	connect(action, &QAction::triggered, this, [url]() {
 		auto *job = new KIO::OpenUrlJob(url);
 		job->setUiDelegate(KIO::createDefaultJobUiDelegate(KJobUiDelegate::AutoHandlingEnabled, nullptr));
 		job->start();
