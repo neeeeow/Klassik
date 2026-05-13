@@ -508,3 +508,49 @@ KMenu::updateRecentDocuments()
 		m_recentDocumentsActions.append(action);
 	}
 }
+
+/* Mouse events adapted from KDE 3.5 kicker source code.
+   Copyright (c) 1996-2000 the KDE 3 kicker authors.
+   Source available: https://kde.org/info/1-2-3/3.5.10/ */
+
+QMouseEvent*
+KMenu::translateMouseEvent( QMouseEvent* e )
+{
+    QRect side = sideImageRect();
+
+	if (!side.contains(e->position().toPoint())) {
+		return e->clone();
+	}
+
+	QPointF newpos( e->position() );
+	layoutDirection() == Qt::RightToLeft ?
+		newpos.setX( newpos.x() - side.width() ) :
+		newpos.setX( newpos.x() + side.width() );
+	QPointF newglobal( e->globalPosition() );
+	layoutDirection() == Qt::RightToLeft ?
+		newglobal.setX( newpos.x() - side.width() ) :
+		newglobal.setX( newpos.x() + side.width() );
+	
+	return new QMouseEvent(e->type(), newpos, newglobal, e->button(), e->buttons(), e->modifiers());
+}
+
+void
+KMenu::mousePressEvent(QMouseEvent * e)
+{
+    QMouseEvent *newEvent = translateMouseEvent(e);
+    PopupMenu::mousePressEvent( newEvent );
+}
+
+void
+KMenu::mouseReleaseEvent(QMouseEvent *e)
+{
+    QMouseEvent *newEvent = translateMouseEvent(e);
+    PopupMenu::mouseReleaseEvent( newEvent );
+}
+
+void
+KMenu::mouseMoveEvent(QMouseEvent *e)
+{
+    QMouseEvent *newEvent = translateMouseEvent(e);
+    PopupMenu::mouseMoveEvent( newEvent );
+}

@@ -23,6 +23,10 @@ protected:
 	void changeEvent(QEvent *) override;
 	void paintEvent(QPaintEvent *) override;
 
+	void mousePressEvent(QMouseEvent *) override;
+	void mouseReleaseEvent(QMouseEvent *) override;
+	void mouseMoveEvent(QMouseEvent *) override;
+
 private:
 	// Session manager
 	SessionManagement m_session;
@@ -49,9 +53,11 @@ private:
 	QLineEdit *m_searchLineEdit;
 	
 	void initialize();
+	
 	bool loadSidePixmap();
 	QRect sideImageRect();
 	void colorize(QImage &);
+	
 	void createRecentMenuItems();
 	void updateRecent();
 	void createApplicationsItems();
@@ -60,4 +66,6 @@ private:
 	void createActionsItems();
 	void createRecentDocumentsItems();
 	void updateRecentDocuments();
+
+	QMouseEvent* translateMouseEvent( QMouseEvent* e );
 };
