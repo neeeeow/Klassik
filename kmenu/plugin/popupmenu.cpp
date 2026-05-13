@@ -78,6 +78,8 @@ PopupMenu::createActionFromUrl(QUrl url, QObject *parent)
 	QIcon icon = QIcon::fromTheme(mime.iconName());
 
 	QAction *action = new QAction(icon, fileName, parent);
+	action->setData(url);
+	
 	connect(action, &QAction::triggered, parent, [url]() {
 		auto *job = new KIO::OpenUrlJob(url);
 		job->setUiDelegate(KIO::createDefaultJobUiDelegate(KJobUiDelegate::AutoHandlingEnabled, nullptr));
