@@ -1,5 +1,6 @@
 #pragma once
 
+#include "popupmenu.h"
 #include "popupmenutitle.h"
 
 #include <QObject>
@@ -12,7 +13,7 @@
 
 #include <sessionmanagement.h>
 
-class KMenu : public QMenu
+class KMenu : public PopupMenu
 {
 	Q_OBJECT;
 	
@@ -47,7 +48,7 @@ private:
 	QList<QAction *> m_applicationActions; // List of actions in the root of the applications list
 
 	// Other
-	QMenu *m_recentDocumentsMenu;	
+	PopupMenu *m_recentDocumentsMenu;	
 	QLineEdit *m_searchLineEdit;
 	
 	void initialize();
@@ -59,7 +60,6 @@ private:
 	void createApplicationsItems();
 	void updateSearchResults();
 	void updateApplications();
-	void cleanupActionList(QList<QAction *> &, QMenu * = nullptr);
 	void createActionsItems();
 	void createRecentDocumentsItems();
 	void updateRecentDocuments();

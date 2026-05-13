@@ -34,6 +34,7 @@ plasma_install_package(package com.github.neeeeow.klassik.kmenu)
 add_definitions(-DTRANSLATION_DOMAIN=\"plasma_applet_com.github.neeeeow.klassik.kmenu\")
 
 set(kmenuplugin_SRCS
+  plugin/popupmenu.cpp
   plugin/kmenu.cpp
   plugin/kmenumanager.cpp
   plugin/kmenuplugin.cpp

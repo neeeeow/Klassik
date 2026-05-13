@@ -7,23 +7,18 @@
 #include <QToolButton>
 #include <QShortcut>
 #include <QPaintEvent>
-#include <QMimeDatabase>
 
 #include <KColorScheme>
 #include <KLocalizedString>
 #include <KService>
 #include <KServiceGroup>
 #include <KSycoca>
-#include <KIO/ApplicationLauncherJob>
-#include <KIO/OpenUrlJob>
-#include <KIO/JobUiDelegateFactory>
 
 #include <Plasma/Plasma>
 #include <PlasmaActivities/Stats/Query>
-#include <PlasmaActivities/ResourceInstance>
 
 KMenu::KMenu(QWidget *parent)
-	: QMenu(parent), m_session(this)
+	: PopupMenu(parent), m_session(this)
 {
 	initialize(); // Populate menu items
 }
@@ -277,21 +272,8 @@ KMenu::updateRecent()
 		KService::Ptr service = KService::serviceByStorageId(storageId);
 		if (!service) // This shouldn't happen, but it might
 			continue;
-		QUrl url(service->storageId());
-		url.setScheme(QStringLiteral("applications"));
 
-		// Create the menu item itself. Note, we use .replace(QStringLiteral("&"), QStringLiteral("&&")) to ensure that ampersands
-		// don't inadvertently get interpreted as mnemonics. There is probably an easier way to do this, but it works!
-		QAction *action = new QAction(QIcon::fromTheme(service->icon()), service->name().replace(QStringLiteral("&"), QStringLiteral("&&")), this);
-		connect(action, &QAction::triggered, this, [service, url]() {
-			auto *job = new KIO::ApplicationLauncherJob(service);
-			job->setUiDelegate(KIO::createDefaultJobUiDelegate(KJobUiDelegate::AutoHandlingEnabled, nullptr));
-			job->start();
-			KActivities::ResourceInstance::notifyAccessed(
-			    url,
-				QStringLiteral("com.github.neeeeow.klassik.kmenu")
-				);			
-		});
+		QAction *action = createActionFromService(service);
 
 	    insertAction(m_allAppsHeader, action);
 		m_recentActions.append(action);
@@ -402,22 +384,9 @@ KMenu::updateApplications()
 				if (entry->isType(KST_KService)) {
 					// If the entry is a service, it's an individual application
 				    KService::Ptr service(static_cast<KService*>(entry.data()));
-					QUrl url(service->storageId());
-					url.setScheme(QStringLiteral("applications"));
 
 					// Create the entry
-					QAction *action = new QAction(QIcon::fromTheme(service->icon()), service->name().replace(QStringLiteral("&"), QStringLiteral("&&")), this);
-					action->setData(service->name()); // Store the unmodified name for searching
-					connect(action, &QAction::triggered, this, [service, url]() {
-						auto *job = new KIO::ApplicationLauncherJob(service);
-						job->setUiDelegate(KIO::createDefaultJobUiDelegate(KJobUiDelegate::AutoHandlingEnabled, nullptr));
-						job->start();
-						KActivities::ResourceInstance::notifyAccessed(
-							//QUrl(QStringLiteral("applications:") + service->storageId()),
-							url,
-							QStringLiteral("com.github.neeeeow.klassik.kmenu")
-							);			
-					});
+					QAction *action = createActionFromService(service);
 
 					if (group == root) {
 						insertAction(m_actionsHeader, action);
@@ -451,22 +420,6 @@ KMenu::updateApplications()
 }
 
 void
-KMenu::cleanupActionList(QList<QAction *> &actionList, QMenu *menu)
-{	
-	if (!menu)
-		menu = this;
-	
-	// Cleans up all member actions of our QList from the menu
-	for (QAction *action : actionList) {
-		menu->removeAction(action);
-	}
-
-	// Clear out the list itself
-	qDeleteAll(actionList);
-	actionList.clear();
-}
-
-void
 KMenu::createActionsItems()
 {
 	createRecentDocumentsItems();
@@ -492,8 +445,10 @@ KMenu::createRecentDocumentsItems()
 {
 	// NB: document-open-recent is a more appropriate icon, but KDE 3 used document, so we stick to that for
 	// the sake of keeping with convention.
-	m_recentDocumentsMenu = addMenu(QIcon::fromTheme(QStringLiteral("document")), i18n("Recent Documents"));
-
+	m_recentDocumentsMenu = new PopupMenu(i18n("Recent Documents"), this);
+	m_recentDocumentsMenu->setIcon(QIcon::fromTheme(QStringLiteral("document")));
+	addMenu(m_recentDocumentsMenu);
+	
 	QAction *clearAction = m_recentDocumentsMenu->addAction(QIcon::fromTheme(QStringLiteral("history-clear")), i18n("Clear History"));
 
 	m_recentDocumentsMenu->addSeparator();
@@ -543,22 +498,7 @@ KMenu::updateRecentDocuments()
 		if (!url.isValid())
 			continue;
 
-		QString fileName = url.fileName().replace(QStringLiteral("&"), QStringLiteral("&&")); // name to display in the menu
-		
-		QMimeDatabase db; // use QMimeDatabase to fetch the icon name
-		QMimeType mime = db.mimeTypeForUrl(url);
-		QIcon icon = QIcon::fromTheme(mime.iconName());
-
-		QAction *action = new QAction(icon, fileName, m_recentDocumentsMenu);
-		connect(action, &QAction::triggered, this, [url]() {
-			auto *job = new KIO::OpenUrlJob(url);
-			job->setUiDelegate(KIO::createDefaultJobUiDelegate(KJobUiDelegate::AutoHandlingEnabled, nullptr));
-			job->start();
-			KActivities::ResourceInstance::notifyAccessed(
-			    url,
-				QStringLiteral("com.github.neeeeow.klassik.kmenu")
-				);			
-		});
+		QAction *action = createActionFromUrl(url, m_recentDocumentsMenu);
 		
 	    m_recentDocumentsMenu->addAction(action);
 		m_recentDocumentsActions.append(action);
