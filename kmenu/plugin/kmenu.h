@@ -5,9 +5,6 @@
 
 #include <QObject>
 #include <QMenu>
-#include <QEvent>
-#include <QAction>
-#include <QLineEdit>
 
 #include <PlasmaActivities/Stats/ResultModel>
 

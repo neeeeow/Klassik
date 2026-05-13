@@ -19,4 +19,11 @@ public:
 	QAction* createActionFromService(KService::Ptr);
 	QAction* createActionFromUrl(QUrl);
 
+protected:
+	void mousePressEvent(QMouseEvent *) override;
+	void mouseMoveEvent(QMouseEvent *) override;
+
+private:
+	QPointF m_startPos;
+
 };

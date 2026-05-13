@@ -2,6 +2,9 @@
 #include "popupmenutitle.h"
 
 #include <QPoint>
+#include <QEvent>
+#include <QAction>
+#include <QLineEdit>
 #include <QRect>
 #include <QHBoxLayout>
 #include <QToolButton>
@@ -268,6 +271,7 @@ KMenu::updateRecent()
 	for (int i=0; i < qMin(3, m_recentApps->rowCount()); ++i) {
 		QModelIndex index = m_recentApps->index(i,0);
 
+		// Remove the "applications:" to get the actual storageId
 		const QString storageId = m_recentApps->data(index, KActivities::Stats::ResultModel::ResourceRole).toString().mid(QStringLiteral("applications:").length());
 		KService::Ptr service = KService::serviceByStorageId(storageId);
 		if (!service) // This shouldn't happen, but it might
@@ -399,7 +403,7 @@ KMenu::updateApplications()
 					if (subGroup->childCount() == 0)
 						continue;
 					
-					QMenu *subMenu = new QMenu(subGroup->caption().replace(QStringLiteral("&"), QStringLiteral("&&")), this);
+					PopupMenu *subMenu = new PopupMenu(subGroup->caption().replace(QStringLiteral("&"), QStringLiteral("&&")), this);
 					subMenu->setIcon(QIcon::fromTheme(subGroup->icon()));
 
 					if (group == root) {
