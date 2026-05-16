@@ -15,7 +15,7 @@ class KMenu : public PopupMenu
 	Q_OBJECT;
 	
 public:
-	explicit KMenu(QWidget *parent = nullptr);
+	explicit KMenu(Plasma::Containment *containment, QWidget *parent = nullptr);
 	~KMenu() override;
 
 protected:
@@ -27,7 +27,7 @@ protected:
 	void mouseReleaseEvent(QMouseEvent *) override;
 	void mouseMoveEvent(QMouseEvent *) override;
 
-private:
+private:	
 	// Session manager
 	SessionManagement m_session;
 	

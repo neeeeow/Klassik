@@ -8,23 +8,36 @@
 #include <QDrag>
 #include <QStyle>
 
+#include <KLocalizedString>
+#include <KNotificationJobUiDelegate>
+
 #include <KIO/ApplicationLauncherJob>
 #include <KIO/OpenUrlJob>
-#include <KIO/JobUiDelegateFactory>
 
 #include <PlasmaActivities/ResourceInstance>
 
-PopupMenu::PopupMenu(QWidget *parent)
+PopupMenu::PopupMenu(Plasma::Containment *containment, QWidget *parent)
 	: QMenu(parent)
 {
+	m_containment = new ContainmentInterface(containment, this);
+	initialize();
 }
 
-PopupMenu::PopupMenu(const QString &title, QWidget *parent)
-	: QMenu(title, parent) 
+PopupMenu::PopupMenu(const QString &title, Plasma::Containment *containment, QWidget *parent)
+	: QMenu(title, parent)
 {
+	m_containment = new ContainmentInterface(containment, this);
+	initialize();
 }
 
 PopupMenu::~PopupMenu() = default;
+
+void
+PopupMenu::initialize()
+{	
+	this->setContextMenuPolicy(Qt::CustomContextMenu);
+	connect(this, &QMenu::customContextMenuRequested, this, &PopupMenu::showContextMenu);   
+}
 
 void
 PopupMenu::cleanupActionList(QList<QAction *> &actionList)
@@ -40,7 +53,7 @@ PopupMenu::cleanupActionList(QList<QAction *> &actionList)
 }
 
 QAction*
-PopupMenu::createActionFromService(KService::Ptr service)
+PopupMenu::createActionFromService(const KService::Ptr &service)
 {
 	// Create the menu item itself. Note, we use .replace(QStringLiteral("&"), QStringLiteral("&&")) to ensure that ampersands
 	// don't inadvertently get interpreted as mnemonics. There is probably an easier way to do this, but it works!
@@ -52,10 +65,10 @@ PopupMenu::createActionFromService(KService::Ptr service)
 	
 	connect(action, &QAction::triggered, this, [service, url]() {
 		auto *job = new KIO::ApplicationLauncherJob(service);
-		job->setUiDelegate(KIO::createDefaultJobUiDelegate(KJobUiDelegate::AutoHandlingEnabled, nullptr));
+		job->setUiDelegate(new KNotificationJobUiDelegate(KJobUiDelegate::AutoHandlingEnabled));
 		job->start();
 		KActivities::ResourceInstance::notifyAccessed(
-			url,
+			QUrl(QStringLiteral("applications:") + service->storageId()),
 			QStringLiteral("com.github.neeeeow.klassik.kmenu")
 			);			
 	});
@@ -64,7 +77,7 @@ PopupMenu::createActionFromService(KService::Ptr service)
 }
 
 QAction*
-PopupMenu::createActionFromUrl(QUrl url)
+PopupMenu::createActionFromUrl(const QUrl &url)
 {
 	QString fileName = url.fileName().replace(QStringLiteral("&"), QStringLiteral("&&")); // name to display in the menu
 		
@@ -77,7 +90,7 @@ PopupMenu::createActionFromUrl(QUrl url)
 	
 	connect(action, &QAction::triggered, this, [url]() {
 		auto *job = new KIO::OpenUrlJob(url);
-		job->setUiDelegate(KIO::createDefaultJobUiDelegate(KJobUiDelegate::AutoHandlingEnabled, nullptr));
+	    job->setUiDelegate(new KNotificationJobUiDelegate(KJobUiDelegate::AutoHandlingEnabled));
 		job->start();
 		KActivities::ResourceInstance::notifyAccessed(
 			url,
@@ -86,6 +99,40 @@ PopupMenu::createActionFromUrl(QUrl url)
 	});
 
 	return action;
+}
+
+void
+PopupMenu::showContextMenu(const QPoint &pos)
+{
+	QAction *action = actionAt(pos);
+	if (!action)
+		return;
+
+	QUrl url = action->data().toUrl();
+	if (!url.isValid())
+		return;
+
+	QMenu contextMenu(this);
+
+	QAction *addPanelAction = new QAction(
+        QIcon::fromTheme(QStringLiteral("kicker")), 
+        i18n("Add File to Main Panel"), 
+        &contextMenu
+    );
+
+	contextMenu.addAction(addPanelAction); 
+	
+	/*if (url.scheme() == QStringLiteral("applications")) {
+		// We need to discriminate between KService and KServiceGroup now
+	} else {	   
+	}*/
+
+	// Display the menu
+	QAction *selectedAction = contextMenu.exec(mapToGlobal(pos));
+
+	/*if (selectedAction == addPanelAction) {
+
+		}*/
 }
 
 /* Mouse events adapted from KDE 3.5 kicker source code.

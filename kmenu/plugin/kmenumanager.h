@@ -7,6 +7,8 @@
 #include <QQuickItem>
 #include <QtQml/qqml.h>
 
+#include <Plasma/Containment>
+
 class KMenuManager : public QObject
 {
 	/* This class is in charge of creating our actual K Menu object. It is not possible to
@@ -16,10 +18,12 @@ class KMenuManager : public QObject
 public:
 	explicit KMenuManager(QObject *parent = nullptr);
 	~KMenuManager() override;
-
+	
+	Q_INVOKABLE void initialize(QObject *);
 	Q_INVOKABLE void showMenu(QQuickItem *, QQuickItem *, int);
 
 private:
+	Plasma::Containment *m_containment;
 	KMenu *m_menu; // Pointer to our actual KMenu object
 	
 	QPoint adjustedMenuPosition(QQuickItem *, QQuickItem *, int);

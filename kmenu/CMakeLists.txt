@@ -1,5 +1,8 @@
 cmake_minimum_required(VERSION 3.16)
 
+set(CMAKE_CXX_STANDARD 20)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
+
 project(plasmoid-klassik-kmenu)
 
 set(KF6_MIN_VERSION "6.0.0")
@@ -22,11 +25,13 @@ find_package(KF6 REQUIRED COMPONENTS
   Service
   KIO
   ColorScheme
+  JobWidgets
 )
 
 find_package(Plasma REQUIRED) # Required for plasma_install_package
 find_package(PlasmaActivitiesStats REQUIRED)
 find_package(PlasmaActivities REQUIRED)
+find_package(PlasmaQuick REQUIRED)
 find_package(LibKWorkspace REQUIRED)
 
 plasma_install_package(package com.github.neeeeow.klassik.kmenu)
@@ -34,6 +39,7 @@ plasma_install_package(package com.github.neeeeow.klassik.kmenu)
 add_definitions(-DTRANSLATION_DOMAIN=\"plasma_applet_com.github.neeeeow.klassik.kmenu\")
 
 set(kmenuplugin_SRCS
+  plugin/containmentinterface.cpp
   plugin/popupmenu.cpp
   plugin/kmenu.cpp
   plugin/kmenumanager.cpp
@@ -51,9 +57,11 @@ target_link_libraries(kmenuplugin
   KF6::Service
   KF6::KIOGui
   KF6::ColorScheme
+  KF6::JobWidgets
   Plasma::Plasma
   Plasma::ActivitiesStats
   Plasma::Activities
+  Plasma::PlasmaQuick
   PW::KWorkspace
 )
 

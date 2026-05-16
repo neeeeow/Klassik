@@ -14,6 +14,7 @@ PlasmoidItem{
 
     KMenu.KMenuManager {
         id: kmenu // Create and initialize our KMenu plugin
+	Component.onCompleted: kmenu.initialize(Plasmoid.containment)
     }
 
     fullRepresentation: ToolButton { // We can build the menu button in qml, since Qt Quick hands off buttons to Qt.

@@ -20,8 +20,8 @@
 #include <Plasma/Plasma>
 #include <PlasmaActivities/Stats/Query>
 
-KMenu::KMenu(QWidget *parent)
-	: PopupMenu(parent), m_session(this)
+KMenu::KMenu(Plasma::Containment *containment, QWidget *parent)
+	: PopupMenu(containment, parent), m_session(this)
 {
 	initialize(); // Populate menu items
 }
@@ -403,7 +403,7 @@ KMenu::updateApplications()
 					if (subGroup->childCount() == 0)
 						continue;
 					
-					PopupMenu *subMenu = new PopupMenu(subGroup->caption().replace(QStringLiteral("&"), QStringLiteral("&&")), this);
+					PopupMenu *subMenu = new PopupMenu(subGroup->caption().replace(QStringLiteral("&"), QStringLiteral("&&")), containmentInterface()->containmentPtr(), this);
 					subMenu->setIcon(QIcon::fromTheme(subGroup->icon()));
 
 					if (group == root) {
@@ -449,7 +449,7 @@ KMenu::createRecentDocumentsItems()
 {
 	// NB: document-open-recent is a more appropriate icon, but KDE 3 used document, so we stick to that for
 	// the sake of keeping with convention.
-	m_recentDocumentsMenu = new PopupMenu(i18n("Recent Documents"), this);
+	m_recentDocumentsMenu = new PopupMenu(i18n("Recent Documents"), containmentInterface()->containmentPtr(), this);
 	m_recentDocumentsMenu->setIcon(QIcon::fromTheme(QStringLiteral("document")));
 	addMenu(m_recentDocumentsMenu);
 	

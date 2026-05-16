@@ -5,11 +5,20 @@
 #include <QRect>
 
 KMenuManager::KMenuManager(QObject *parent)
-	: QObject(parent), m_menu(new KMenu())
+	: QObject(parent)
 {
 }
 
 KMenuManager::~KMenuManager() = default;
+
+void
+KMenuManager::initialize(QObject *containmentObject)
+{
+	m_containment = qobject_cast<Plasma::Containment*>(containmentObject);
+	if (!m_containment)
+		qWarning() << "KMenuManager: failed to obtain plasmoid containment!";
+	m_menu = new KMenu(m_containment);
+}
 
 void
 KMenuManager::showMenu(QQuickItem *button, QQuickItem *root, int location)
