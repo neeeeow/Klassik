@@ -352,7 +352,7 @@ KMenu::updateSearchResults()
 					// opens a sub menu) must be enabled, if so, set enableParent to true for now.
 					enableParent = setActionStates(action, subMenu->actions());
 				} else {					
-					if (text.isEmpty() || (QStringView(action->data().toString()).left(text.length()).compare(text, Qt::CaseInsensitive) == 0)) {
+					if (text.isEmpty() || (action->text().left(text.length()).compare(text, Qt::CaseInsensitive) == 0)) {
 						// Item must be enabled either if the search string matches the action name, or if the search bar is empty
 						enableParent = true;
 						action->setEnabled(true);

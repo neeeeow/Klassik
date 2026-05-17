@@ -2,6 +2,8 @@
 
 #include <QObject>
 
+#include <KService>
+
 #include <Plasma/Containment>
 
 class ContainmentInterface : public QObject
@@ -22,9 +24,9 @@ public:
 
 	Plasma::Containment* containmentPtr() const { return m_containment; }
 
-	bool mayAddLauncher(ContainmentInterface::Target, const QUrl &);
-	bool hasLauncher(ContainmentInterface::Target, const QUrl &);
-	void addLauncher(ContainmentInterface::Target, const QUrl &);
+	bool mayAddLauncher(ContainmentInterface::Target);
+	bool hasLauncher(ContainmentInterface::Target, const KService::Ptr &);
+	void addLauncher(ContainmentInterface::Target, const KService::Ptr &);
 
 private:
 	QStringList m_knownTaskManagers{

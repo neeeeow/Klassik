@@ -10,8 +10,10 @@
 
 #include <KLocalizedString>
 #include <KNotificationJobUiDelegate>
+#include <KDesktopFile>
 
 #include <KIO/ApplicationLauncherJob>
+#include <KIO/CommandLauncherJob>
 #include <KIO/OpenUrlJob>
 
 #include <PlasmaActivities/ResourceInstance>
@@ -59,11 +61,9 @@ PopupMenu::createActionFromService(const KService::Ptr &service)
 	// don't inadvertently get interpreted as mnemonics. There is probably an easier way to do this, but it works!
 	QAction *action = new QAction(QIcon::fromTheme(service->icon()), service->name().replace(QStringLiteral("&"), QStringLiteral("&&")), this);
 
-	// Find the url and save it
-	QUrl url = QUrl::fromLocalFile(service->entryPath());
-	action->setData(url);
+    action->setData(QVariant::fromValue(service)); // Store the KService
 	
-	connect(action, &QAction::triggered, this, [service, url]() {
+	connect(action, &QAction::triggered, this, [service]() {
 		auto *job = new KIO::ApplicationLauncherJob(service);
 		job->setUiDelegate(new KNotificationJobUiDelegate(KJobUiDelegate::AutoHandlingEnabled));
 		job->start();
@@ -108,31 +108,65 @@ PopupMenu::showContextMenu(const QPoint &pos)
 	if (!action)
 		return;
 
-	QUrl url = action->data().toUrl();
-	if (!url.isValid())
-		return;
-
 	QMenu contextMenu(this);
 
-	QAction *addPanelAction = new QAction(
-        QIcon::fromTheme(QStringLiteral("kicker")), 
-        i18n("Add File to Main Panel"), 
-        &contextMenu
-    );
+	if (action->data().canConvert<KService::Ptr>()) {
+		// KService means application!
+		KService::Ptr service = action->data().value<KService::Ptr>();
+		
+		if (m_containment->mayAddLauncher(ContainmentInterface::Desktop)) {
+			QAction *desktopAction = contextMenu.addAction(QIcon::fromTheme(QStringLiteral("list-add")), i18n("Add to Desktop"));
+			connect(desktopAction, &QAction::triggered, m_containment, [this, service]() {
+				m_containment->addLauncher(ContainmentInterface::Desktop, service);
+			});
+		}
 
-	contextMenu.addAction(addPanelAction); 
-	
-	/*if (url.scheme() == QStringLiteral("applications")) {
-		// We need to discriminate between KService and KServiceGroup now
-	} else {	   
-	}*/
+		if (m_containment->mayAddLauncher(ContainmentInterface::TaskManager)) {
+			if (!m_containment->hasLauncher(ContainmentInterface::TaskManager, service)) {
+				QAction *taskManagerAction = contextMenu.addAction(QIcon::fromTheme(QStringLiteral("pin")), i18n("Pin to Task Manager"));
+				connect(taskManagerAction, &QAction::triggered, m_containment, [this, service]() {
+					m_containment->addLauncher(ContainmentInterface::TaskManager, service);
+				});
+			}
+		}
+
+		if (m_containment->mayAddLauncher(ContainmentInterface::Panel)) {
+			QAction *panelAction = contextMenu.addAction(QIcon::fromTheme(QStringLiteral("list-add")), i18n("Add to Panel"));
+			connect(panelAction, &QAction::triggered, m_containment, [this, service]() {
+				m_containment->addLauncher(ContainmentInterface::Panel, service);
+			});
+		}
+
+		if (!contextMenu.isEmpty())
+			contextMenu.addSeparator();
+
+		QAction *editAction = contextMenu.addAction(QIcon::fromTheme(QStringLiteral("kmenuedit")), i18n("Edit Application..."));
+		connect(editAction, &QAction::triggered, this, [this, service]() {
+			runMenuEditor(service->menuId());
+		});
+	}
 
 	// Display the menu
-	QAction *selectedAction = contextMenu.exec(mapToGlobal(pos));
+	contextMenu.exec(mapToGlobal(pos));
+}
 
-	/*if (selectedAction == addPanelAction) {
+void
+PopupMenu::runMenuEditor(QString arg)
+{
+	const auto service = KService::serviceByDesktopName(QStringLiteral("org.kde.kmenuedit"));
+	if (!service) {
+		qWarning() << "Could not find kmenuedit";
+		return;
+	}
+	
+	if (arg.isEmpty()) {
+		arg = QStringLiteral("/"); // If already open, will collapse editor tree
+	}
 
-		}*/
+    auto *job = new KIO::CommandLauncherJob(service->exec(), {arg});
+	job->setDesktopName(service->desktopEntryName());
+	job->setUiDelegate(new KNotificationJobUiDelegate(KJobUiDelegate::AutoErrorHandlingEnabled));
+	job->start();
 }
 
 /* Mouse events adapted from KDE 3.5 kicker source code.
@@ -167,9 +201,18 @@ PopupMenu::mouseMoveEvent(QMouseEvent *ev)
 	if (!action)
 		return;
 
-	QUrl url = action->data().toUrl();
+	/*QUrl url = action->data().toUrl();
 	if (!url.isValid())
-		return;
+	return;*/
+
+	QUrl url = action->data().toUrl();
+	if (!url.isValid()) {
+		if (action->data().canConvert<KService::Ptr>()) {
+			KService::Ptr service = action->data().value<KService::Ptr>();
+			url = QUrl::fromLocalFile(service->entryPath());
+		} else
+			return;
+	}
 
 	QDrag *drag = new QDrag(this);
 	QMimeData *mimeData = new QMimeData;

@@ -12,7 +12,7 @@ ContainmentInterface::ContainmentInterface(Plasma::Containment *containment, QOb
 ContainmentInterface::~ContainmentInterface() = default;
 
 bool
-ContainmentInterface::mayAddLauncher(ContainmentInterface::Target target, const QUrl &url)
+ContainmentInterface::mayAddLauncher(ContainmentInterface::Target target)
 {
 	Plasma::Corona *corona = m_containment->corona();
 	if (!corona)
@@ -33,7 +33,7 @@ ContainmentInterface::mayAddLauncher(ContainmentInterface::Target target, const 
 		break;
     }
 	case TaskManager: {
-		if (url.isValid() && m_containment->pluginMetaData().pluginId() == QLatin1String("org.kde.panel")) {
+		if (m_containment->pluginMetaData().pluginId() == QLatin1String("org.kde.panel")) {
 			auto *taskManager = findTaskManagerApplet();
 			if (!taskManager)
 				return false;
@@ -53,12 +53,12 @@ ContainmentInterface::mayAddLauncher(ContainmentInterface::Target target, const 
 }
 
 bool
-ContainmentInterface::hasLauncher(ContainmentInterface::Target target, const QUrl &url)
+ContainmentInterface::hasLauncher(ContainmentInterface::Target target, const KService::Ptr &service)
 {
 	if (target != TaskManager)
 		return false;
 
-	if (url.isValid() && m_containment->pluginMetaData().pluginId() == QLatin1String("org.kde.panel")) {
+	if (service && m_containment->pluginMetaData().pluginId() == QLatin1String("org.kde.panel")) {
 		auto *taskManager = findTaskManagerApplet();
 		if (!taskManager)
 			return false;
@@ -71,7 +71,7 @@ ContainmentInterface::hasLauncher(ContainmentInterface::Target target, const QUr
 		QMetaObject::invokeMethod(taskManagerQuickItem,
 								  "hasLauncher",
 								  Q_RETURN_ARG(bool, ret),
-								  Q_ARG(QUrl, url));
+								  Q_ARG(QUrl, QUrl(QLatin1String("applications:") + service->storageId())));
 		return ret;
 	}
 
@@ -79,11 +79,13 @@ ContainmentInterface::hasLauncher(ContainmentInterface::Target target, const QUr
 }
 
 void
-ContainmentInterface::addLauncher(ContainmentInterface::Target target, const QUrl &url)
+ContainmentInterface::addLauncher(ContainmentInterface::Target target, const KService::Ptr &service)
 {
 	Plasma::Corona *corona = m_containment->corona();
 	if (!corona)
 		return;
+
+	QUrl url = QUrl::fromLocalFile(service->entryPath());
 
 	switch (target) {
 

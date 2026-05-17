@@ -34,4 +34,5 @@ private:
 
 	void initialize();
 	void showContextMenu(const QPoint &);
+	void runMenuEditor(QString);
 };
