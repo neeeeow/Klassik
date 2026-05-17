@@ -403,15 +403,17 @@ KMenu::updateApplications()
 					if (subGroup->childCount() == 0)
 						continue;
 					
-					PopupMenu *subMenu = new PopupMenu(subGroup->caption().replace(QStringLiteral("&"), QStringLiteral("&&")), containmentInterface()->containmentPtr(), this);
+					PopupMenu *subMenu = new PopupMenu(subGroup->caption().replace(QStringLiteral("&"), QStringLiteral("&&")), containmentInterface()->containmentPtr(), parent);
 					subMenu->setIcon(QIcon::fromTheme(subGroup->icon()));
 
 					if (group == root) {
 						// If the group is at the root, we insert the submenu in the main menu and keep track of it in our list
 						QAction *action = insertMenu(m_actionsHeader, subMenu);
-						m_applicationActions.append(action);
+						action->setData(QVariant::fromValue(subGroup));
+						m_applicationActions.append(action);						
 					} else {
-						parent->addMenu(subMenu);
+						QAction *action = parent->addMenu(subMenu);
+						action->setData(QVariant::fromValue(subGroup));
 					}
 
 					populateSubmenu(subMenu, subGroup);

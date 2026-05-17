@@ -10,7 +10,7 @@
 
 #include <KLocalizedString>
 #include <KNotificationJobUiDelegate>
-#include <KDesktopFile>
+#include <KServiceGroup>
 
 #include <KIO/ApplicationLauncherJob>
 #include <KIO/CommandLauncherJob>
@@ -140,10 +140,20 @@ PopupMenu::showContextMenu(const QPoint &pos)
 		if (!contextMenu.isEmpty())
 			contextMenu.addSeparator();
 
-		QAction *editAction = contextMenu.addAction(QIcon::fromTheme(QStringLiteral("kmenuedit")), i18n("Edit Application..."));
-		connect(editAction, &QAction::triggered, this, [this, service]() {
+		QAction *editAction = contextMenu.addAction(QIcon::fromTheme(QStringLiteral("kmenuedit")), i18n("Edit Application"));
+		connect(editAction, &QAction::triggered, &contextMenu, [this, service]() {
 			runMenuEditor(service->menuId());
 		});
+	} else if (action->data().canConvert<KServiceGroup::Ptr>()) {
+		// KServiceGroup means sub menu container
+		KServiceGroup::Ptr serviceGroup = action->data().value<KServiceGroup::Ptr>();
+		QAction *editAction = contextMenu.addAction(QIcon::fromTheme(QStringLiteral("kmenuedit")), i18n("Edit Menu"));
+		connect(editAction, &QAction::triggered, &contextMenu, [this, serviceGroup]() {
+			runMenuEditor(serviceGroup->relPath());
+		});
+	} else if (action->data().canConvert<QUrl>()) {
+		// QUrl means a file path
+		QUrl url = action->data().toUrl();
 	}
 
 	// Display the menu
@@ -178,6 +188,15 @@ PopupMenu::mousePressEvent(QMouseEvent *ev)
 {
 	if (ev->button() == Qt::LeftButton)
 		m_startPos = ev->position();
+
+	if (ev->button() == Qt::RightButton) {
+		QAction *action = actionAt(ev->pos());
+		if (action && action->menu()) {
+			action->menu()->close();
+			showContextMenu(ev->pos());
+			return;
+		}		
+	}
 	
 	QMenu::mousePressEvent(ev);
 }
