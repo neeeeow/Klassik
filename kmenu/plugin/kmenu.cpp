@@ -354,31 +354,29 @@ KMenu::updateSearchResults()
 
 	QString text = lineEdit->text();
 
-	std::function<bool(QAction *, QList<QAction *>)> setActionStates =
-		[&](QAction *parent, QList<QAction *> children) {
-
-			bool enableParent = false;
+	auto setActionStates = [&](this auto&& self, QAction *parent, QList<QAction *> children) -> bool {
+		bool enableParent = false;
 			
-			for (QAction *action : children) {
-				if (QMenu *subMenu = action->menu()) {
-					// If the action is a sub menu, recurse through it and check to see if the current action (which
-					// opens a sub menu) must be enabled, if so, set enableParent to true for now.
-					enableParent = setActionStates(action, subMenu->actions());
-				} else {					
-					if (text.isEmpty() || (action->text().left(text.length()).compare(text, Qt::CaseInsensitive) == 0)) {
-						// Item must be enabled either if the search string matches the action name, or if the search bar is empty
-						enableParent = true;
-						action->setEnabled(true);
-					} else
-						action->setEnabled(false);
-				}
+		for (QAction *action : children) {
+			if (QMenu *subMenu = action->menu()) {
+				// If the action is a sub menu, recurse through it and check to see if the current action (which
+				// opens a sub menu) must be enabled, if so, set enableParent to true for now.
+			    enableParent |= self(action, subMenu->actions());
+			} else {					
+				if (text.isEmpty() || (action->text().left(text.length()).compare(text, Qt::CaseInsensitive) == 0)) {
+					// Item must be enabled either if the search string matches the action name, or if the search bar is empty
+					enableParent = true;
+					action->setEnabled(true);
+				} else
+					action->setEnabled(false);
 			}
+		}
 
-			if (parent)
-				parent->setEnabled(enableParent);
+		if (parent)
+			parent->setEnabled(enableParent);
 
-			return enableParent;
-		};
+		return enableParent;
+	};
 
 	setActionStates(nullptr, m_applicationActions);
 }
@@ -395,45 +393,44 @@ KMenu::updateApplications()
 		return;
 
 	// Define a recursive lambda for traversing the service groups and populating the submenus
-	std::function<void(QMenu *, KServiceGroup::Ptr)> populateSubmenu =
-		[&](QMenu *parent, KServiceGroup::Ptr group) {
-			for (const auto &entry : group->entries(true)) {
-				if (entry->isType(KST_KService)) {
-					// If the entry is a service, it's an individual application
-				    KService::Ptr service(static_cast<KService*>(entry.data()));
+	auto populateSubmenu = [&](this auto&& self, QMenu *parent, KServiceGroup::Ptr group) -> void {
+		for (const auto &entry : group->entries(true)) {
+			if (entry->isType(KST_KService)) {
+				// If the entry is a service, it's an individual application
+				KService::Ptr service(static_cast<KService*>(entry.data()));
 
-					// Create the entry
-					QAction *action = createActionFromService(service);
+				// Create the entry
+				QAction *action = createActionFromService(service);
 
-					if (group == root) {
-						insertAction(m_actionsHeader, action);
-						m_applicationActions.append(action);
-					} else
-						parent->addAction(action);
-				} else if (entry->isType(KST_KServiceGroup)) {
-					// If the entry is a service group, we need to make a submenu and recurse through this function
-				    KServiceGroup::Ptr subGroup(static_cast<KServiceGroup*>(entry.data()));
-					if (subGroup->childCount() == 0)
-						continue;
+				if (group == root) {
+					insertAction(m_actionsHeader, action);
+					m_applicationActions.append(action);
+				} else
+					parent->addAction(action);
+			} else if (entry->isType(KST_KServiceGroup)) {
+				// If the entry is a service group, we need to make a submenu and recurse through this function
+				KServiceGroup::Ptr subGroup(static_cast<KServiceGroup*>(entry.data()));
+				if (subGroup->childCount() == 0)
+					continue;
 					
-					PopupMenu *subMenu = new PopupMenu(subGroup->caption().replace(QStringLiteral("&"), QStringLiteral("&&")), containmentInterface()->containmentPtr(), parent);
-					subMenu->setIcon(QIcon::fromTheme(subGroup->icon()));
+				PopupMenu *subMenu = new PopupMenu(subGroup->caption().replace(QStringLiteral("&"), QStringLiteral("&&")), containmentInterface()->containmentPtr(), parent);
+				subMenu->setIcon(QIcon::fromTheme(subGroup->icon()));
 
-					if (group == root) {
-						// If the group is at the root, we insert the submenu in the main menu and keep track of it in our list
-						QAction *action = insertMenu(m_actionsHeader, subMenu);
-						action->setData(QVariant::fromValue(subGroup));
-						m_applicationActions.append(action);						
-					} else {
-						QAction *action = parent->addMenu(subMenu);
-						action->setData(QVariant::fromValue(subGroup));
-					}
-
-					populateSubmenu(subMenu, subGroup);
+				if (group == root) {
+					// If the group is at the root, we insert the submenu in the main menu and keep track of it in our list
+					QAction *action = insertMenu(m_actionsHeader, subMenu);
+					action->setData(QVariant::fromValue(subGroup));
+					m_applicationActions.append(action);						
+				} else {
+					QAction *action = parent->addMenu(subMenu);
+					action->setData(QVariant::fromValue(subGroup));
 				}
+
+				self(subMenu, subGroup);
 			}
+		}
 			
-		};
+	};
 
 	populateSubmenu(this, root);
 }
