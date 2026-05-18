@@ -18,8 +18,8 @@ public:
 	~PopupMenu() override;
 
 	void cleanupActionList(QList<QAction *> &);
-	QAction* createActionFromService(const KService::Ptr &);
-	QAction* createActionFromUrl(const QUrl &);
+	QAction* createActionFromService(const KService::Ptr &, const QUrl &url = QUrl(), QWidget *parent = nullptr);
+	QAction* createActionFromUrl(const QUrl &, QWidget *parent = nullptr);
 
 protected:
 	ContainmentInterface* containmentInterface() const { return m_containment; }

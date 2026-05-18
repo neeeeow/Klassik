@@ -1,4 +1,5 @@
 #include "popupmenu.h"
+#include "popupmenutitle.h"
 
 #include <QList>
 #include <QMimeData>
@@ -11,6 +12,8 @@
 #include <KLocalizedString>
 #include <KNotificationJobUiDelegate>
 #include <KServiceGroup>
+#include <KFileItem>
+#include <KApplicationTrader>
 
 #include <KIO/ApplicationLauncherJob>
 #include <KIO/CommandLauncherJob>
@@ -55,17 +58,24 @@ PopupMenu::cleanupActionList(QList<QAction *> &actionList)
 }
 
 QAction*
-PopupMenu::createActionFromService(const KService::Ptr &service)
+PopupMenu::createActionFromService(const KService::Ptr &service, const QUrl &url, QWidget *parent)
 {
-	// Create the menu item itself. Note, we use .replace(QStringLiteral("&"), QStringLiteral("&&")) to ensure that ampersands
-	// don't inadvertently get interpreted as mnemonics. There is probably an easier way to do this, but it works!
-	QAction *action = new QAction(QIcon::fromTheme(service->icon()), service->name().replace(QStringLiteral("&"), QStringLiteral("&&")), this);
+	/* parameters:
+	       service: the KService to launch
+		   url: the QUrl of any files the service should open
+	*/
+	if (!parent)
+		parent = this;
+	
+	QAction *action = new QAction(QIcon::fromTheme(service->icon()), service->name().replace(QStringLiteral("&"), QStringLiteral("&&")), parent);
 
     action->setData(QVariant::fromValue(service)); // Store the KService
 	
-	connect(action, &QAction::triggered, this, [service]() {
+	connect(action, &QAction::triggered, parent, [service, url]() {
 		auto *job = new KIO::ApplicationLauncherJob(service);
 		job->setUiDelegate(new KNotificationJobUiDelegate(KJobUiDelegate::AutoHandlingEnabled));
+		if (!url.isEmpty())
+			job->setUrls({url});
 		job->start();
 		KActivities::ResourceInstance::notifyAccessed(
 			QUrl(QStringLiteral("applications:") + service->storageId()),
@@ -77,18 +87,21 @@ PopupMenu::createActionFromService(const KService::Ptr &service)
 }
 
 QAction*
-PopupMenu::createActionFromUrl(const QUrl &url)
+PopupMenu::createActionFromUrl(const QUrl &url, QWidget *parent)
 {
+	if (!parent)
+		parent = this;
+	
 	QString fileName = url.fileName().replace(QStringLiteral("&"), QStringLiteral("&&")); // name to display in the menu
 		
 	QMimeDatabase db; // use QMimeDatabase to fetch the icon name
 	QMimeType mime = db.mimeTypeForUrl(url);
 	QIcon icon = QIcon::fromTheme(mime.iconName());
 
-	QAction *action = new QAction(icon, fileName, this);
+	QAction *action = new QAction(icon, fileName, parent);
 	action->setData(url);
 	
-	connect(action, &QAction::triggered, this, [url]() {
+	connect(action, &QAction::triggered, parent, [url]() {
 		auto *job = new KIO::OpenUrlJob(url);
 	    job->setUiDelegate(new KNotificationJobUiDelegate(KJobUiDelegate::AutoHandlingEnabled));
 		job->start();
@@ -154,7 +167,21 @@ PopupMenu::showContextMenu(const QPoint &pos)
 	} else if (action->data().canConvert<QUrl>()) {
 		// QUrl means a file path
 		QUrl url = action->data().toUrl();
-	}
+		KFileItem fileItem(url);
+
+		const KService::List services = KApplicationTrader::queryByMimeType(fileItem.mimetype());
+
+		if (!services.isEmpty()) {
+			contextMenu.addAction(new PopupMenuTitle(i18n("Open with"), &contextMenu));
+
+			for (const KService::Ptr &service : services) {
+				QAction *action = createActionFromService(service, url, &contextMenu);
+				contextMenu.addAction(action);
+			}						
+		} else
+			return;
+	} else
+		return;
 
 	// Display the menu
 	contextMenu.exec(mapToGlobal(pos));
@@ -189,6 +216,8 @@ PopupMenu::mousePressEvent(QMouseEvent *ev)
 	if (ev->button() == Qt::LeftButton)
 		m_startPos = ev->position();
 
+	// If the right-clicked action has a submenu, we must
+	// close it before displaying the context menu
 	if (ev->button() == Qt::RightButton) {
 		QAction *action = actionAt(ev->pos());
 		if (action && action->menu()) {
@@ -219,10 +248,6 @@ PopupMenu::mouseMoveEvent(QMouseEvent *ev)
 	QAction *action = actionAt(m_startPos.toPoint());
 	if (!action)
 		return;
-
-	/*QUrl url = action->data().toUrl();
-	if (!url.isValid())
-	return;*/
 
 	QUrl url = action->data().toUrl();
 	if (!url.isValid()) {
