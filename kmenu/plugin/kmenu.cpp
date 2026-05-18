@@ -263,24 +263,37 @@ KMenu::updateRecent()
 	if (m_recentApps->rowCount() == 0)
 		return;
 
+	QList<QAction *> actionList;
+
+	for (int i=0; i < qMin(3, m_recentApps->rowCount()); ++i) {
+		QModelIndex index = m_recentApps->index(i,0);
+		
+		const QUrl resourceUrl(m_recentApps->data(index, KActivities::Stats::ResultModel::ResourceRole).toString());
+		if (resourceUrl.scheme() != QStringLiteral("applications"))
+			continue; // The resource url should always point to an application, but just to be safe
+
+		// Remove the "applications:" to get the actual storageId
+		const QString storageId = resourceUrl.path();
+		KService::Ptr service = KService::serviceByStorageId(storageId);
+		if (!service)
+			continue;
+
+		QAction *action = createActionFromService(service);
+
+		actionList.append(action);
+	}
+
+	if (actionList.isEmpty())
+		return;
+
 	// Add the section header here so we can clear it if necessary
 	PopupMenuTitle *recentHeader = new PopupMenuTitle(i18n("Most Used Applications"), this);
 	insertAction(m_allAppsHeader, recentHeader);
 	m_recentActions.append(recentHeader);
 
-	for (int i=0; i < qMin(3, m_recentApps->rowCount()); ++i) {
-		QModelIndex index = m_recentApps->index(i,0);
-
-		// Remove the "applications:" to get the actual storageId
-		const QString storageId = m_recentApps->data(index, KActivities::Stats::ResultModel::ResourceRole).toString().mid(QStringLiteral("applications:").length());
-		KService::Ptr service = KService::serviceByStorageId(storageId);
-		if (!service) // This shouldn't happen, but it might
-			continue;
-
-		QAction *action = createActionFromService(service);
-
-	    insertAction(m_allAppsHeader, action);
-		m_recentActions.append(action);
+	for (QAction *action : actionList) {
+		insertAction(m_allAppsHeader, action);
+		m_recentActions.append(action);		
 	}
 }
 
@@ -489,12 +502,18 @@ KMenu::updateRecentDocuments()
 {
 	m_recentDocumentsMenu->cleanupActionList(m_recentDocumentsActions);
 
-	if (m_recentDocuments->rowCount() == 0) {
+	auto addNoEntries = [this]() {
 		QAction *emptyAction = m_recentDocumentsMenu->addAction(i18n("No Entries"));
 		emptyAction->setEnabled(false);
 		m_recentDocumentsActions.append(emptyAction);
+	};
+
+	if (m_recentDocuments->rowCount() == 0) {
+		addNoEntries();
 		return;
 	}
+
+	QList<QAction *> actionList;
 
 	for (int i=0; i < qMin(15, m_recentDocuments->rowCount()); ++i) {
 		QModelIndex index = m_recentDocuments->index(i,0);
@@ -505,8 +524,19 @@ KMenu::updateRecentDocuments()
 			continue;
 
 		QAction *action = m_recentDocumentsMenu->createActionFromUrl(url);
-		
-	    m_recentDocumentsMenu->addAction(action);
+		if (!action)
+			continue;
+
+		actionList.append(action);
+	}
+
+	if (actionList.isEmpty()) {
+		addNoEntries();
+		return;
+	}
+
+	for (QAction *action : actionList) {
+		m_recentDocumentsMenu->addAction(action);
 		m_recentDocumentsActions.append(action);
 	}
 }
