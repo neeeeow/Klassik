@@ -439,19 +439,25 @@ void
 KMenu::createActionsItems()
 {
 	createRecentDocumentsItems();
+
+	addSeparator();
+
+	// Add the run command option
+	QAction *action = addAction(QIcon::fromTheme(QStringLiteral("run")), i18n("Run Command..."));
+	connect(action, &QAction::triggered, this, &invokeKRunner);
 	
 	// Add the power/session options
 	addSeparator();
 	if (m_session.canSwitchUser()) {
-		QAction *action = addAction(QIcon::fromTheme(QStringLiteral("system-switch-user")), i18n("Switch User"));
+		action = addAction(QIcon::fromTheme(QStringLiteral("system-switch-user")), i18n("Switch User"));
 		connect(action, &QAction::triggered, &m_session, &SessionManagement::switchUser);
 	}
 	if (m_session.canLock()) {
-		QAction *action = addAction(QIcon::fromTheme(QStringLiteral("system-lock-screen")), i18n("Lock"));
+		action = addAction(QIcon::fromTheme(QStringLiteral("system-lock-screen")), i18n("Lock"));
 		connect(action, &QAction::triggered, &m_session, &SessionManagement::lock);
 	}
 	if (m_session.canLogout()) {
-		QAction *action = addAction(QIcon::fromTheme(QStringLiteral("system-log-out")), i18n("Log Out..."));
+		action = addAction(QIcon::fromTheme(QStringLiteral("system-log-out")), i18n("Log Out..."));
 		connect(action, &QAction::triggered, &m_session, &SessionManagement::requestLogoutPrompt);
 	}
 }

@@ -23,6 +23,9 @@ public:
 
 protected:
 	ContainmentInterface* containmentInterface() const { return m_containment; }
+
+	static void runMenuEditor(QString);
+	static void invokeKRunner();
 	
 	void mousePressEvent(QMouseEvent *) override;
 	void mouseMoveEvent(QMouseEvent *) override;
@@ -34,5 +37,4 @@ private:
 
 	void initialize();
 	void showContextMenu(const QPoint &);
-	void runMenuEditor(QString);
 };

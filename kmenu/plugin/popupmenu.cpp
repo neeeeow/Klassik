@@ -8,6 +8,7 @@
 #include <QApplication>
 #include <QDrag>
 #include <QStyle>
+#include <QDBusInterface>
 
 #include <KLocalizedString>
 #include <KNotificationJobUiDelegate>
@@ -204,6 +205,16 @@ PopupMenu::runMenuEditor(QString arg)
 	job->setDesktopName(service->desktopEntryName());
 	job->setUiDelegate(new KNotificationJobUiDelegate(KJobUiDelegate::AutoErrorHandlingEnabled));
 	job->start();
+}
+
+void
+PopupMenu::invokeKRunner()
+{
+	QDBusInterface krunner(QStringLiteral("org.kde.krunner"), QStringLiteral("/App"), QStringLiteral("org.kde.krunner.App"));
+
+	krunner.call(QStringLiteral("query"), QStringLiteral(""));
+
+	krunner.call(QStringLiteral("display"));
 }
 
 /* Mouse events adapted from KDE 3.5 kicker source code.
