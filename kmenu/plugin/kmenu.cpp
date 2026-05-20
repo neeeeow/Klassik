@@ -444,7 +444,7 @@ KMenu::createActionsItems()
 
 	// Add the run command option
 	QAction *action = addAction(QIcon::fromTheme(QStringLiteral("run")), i18n("Run Command..."));
-	connect(action, &QAction::triggered, this, &invokeKRunner);
+	connect(action, &QAction::triggered, this, [](){invokeKRunner();});
 	
 	// Add the power/session options
 	addSeparator();

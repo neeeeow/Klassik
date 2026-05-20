@@ -158,6 +158,10 @@ PopupMenu::showContextMenu(const QPoint &pos)
 		connect(editAction, &QAction::triggered, &contextMenu, [this, service]() {
 			runMenuEditor(service->menuId());
 		});
+
+		QAction *runAction = contextMenu.addAction(QIcon::fromTheme(QStringLiteral("run")), i18n("Put Into Run Dialog"));
+	    connect(runAction, &QAction::triggered, this, [service](){invokeKRunner(service->exec());});
+		
 	} else if (action->data().canConvert<KServiceGroup::Ptr>()) {
 		// KServiceGroup means sub menu container
 		KServiceGroup::Ptr serviceGroup = action->data().value<KServiceGroup::Ptr>();
@@ -208,11 +212,16 @@ PopupMenu::runMenuEditor(QString arg)
 }
 
 void
-PopupMenu::invokeKRunner()
+PopupMenu::invokeKRunner(QString arg)
 {
 	QDBusInterface krunner(QStringLiteral("org.kde.krunner"), QStringLiteral("/App"), QStringLiteral("org.kde.krunner.App"));
+	if (!krunner.isValid())
+		return;
 
-	krunner.call(QStringLiteral("query"), QStringLiteral(""));
+	if (arg.isEmpty())
+		arg = QStringLiteral("");
+
+	krunner.call(QStringLiteral("query"), arg);
 
 	krunner.call(QStringLiteral("display"));
 }

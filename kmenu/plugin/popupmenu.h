@@ -24,8 +24,8 @@ public:
 protected:
 	ContainmentInterface* containmentInterface() const { return m_containment; }
 
-	static void runMenuEditor(QString);
-	static void invokeKRunner();
+	static void runMenuEditor(QString arg = QString());
+	static void invokeKRunner(QString arg = QString());
 	
 	void mousePressEvent(QMouseEvent *) override;
 	void mouseMoveEvent(QMouseEvent *) override;
