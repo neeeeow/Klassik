@@ -279,7 +279,8 @@ KMenu::updateRecent()
 			continue;
 
 		QAction *action = createActionFromService(service);
-
+		if (!action)
+			continue;
 		actionList.append(action);
 	}
 
@@ -401,6 +402,8 @@ KMenu::updateApplications()
 
 				// Create the entry
 				QAction *action = createActionFromService(service);
+				if (!action)
+					continue;
 
 				if (group == root) {
 					insertAction(m_actionsHeader, action);
@@ -438,11 +441,14 @@ KMenu::updateApplications()
 void
 KMenu::createActionsItems()
 {
+	// Recent documents submenu
 	createRecentDocumentsItems();
 
-	addSeparator();
+	// My System submenu
+	createSystemItems();
 
 	// Add the run command option
+	addSeparator();
 	QAction *action = addAction(QIcon::fromTheme(QStringLiteral("run")), i18n("Run Command..."));
 	connect(action, &QAction::triggered, this, [](){invokeKRunner();});
 	
@@ -542,6 +548,12 @@ KMenu::updateRecentDocuments()
 		m_recentDocumentsMenu->addAction(action);
 		m_recentDocumentsActions.append(action);
 	}
+}
+
+void
+KMenu::createSystemItems()
+{
+	QMenu *systemMenu = addMenu(QIcon::fromTheme(QStringLiteral("system")), QStringLiteral("System Menu"));
 }
 
 /* Mouse events adapted from KDE 3.5 kicker source code.

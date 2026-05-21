@@ -20,6 +20,7 @@ public:
 	void cleanupActionList(QList<QAction *> &);
 	QAction* createActionFromService(const KService::Ptr &, const QUrl &url = QUrl(), QWidget *parent = nullptr);
 	QAction* createActionFromUrl(const QUrl &, QWidget *parent = nullptr);
+	QAction* createFileExplorerActionFromUrl(const QUrl &url, const QIcon &icon, const QString &title, QWidget *parent = nullptr);
 
 protected:
 	ContainmentInterface* containmentInterface() const { return m_containment; }

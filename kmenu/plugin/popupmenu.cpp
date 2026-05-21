@@ -19,6 +19,7 @@
 #include <KIO/ApplicationLauncherJob>
 #include <KIO/CommandLauncherJob>
 #include <KIO/OpenUrlJob>
+#include <KIO/OpenFileManagerWindowJob>
 
 #include <PlasmaActivities/ResourceInstance>
 
@@ -65,6 +66,9 @@ PopupMenu::createActionFromService(const KService::Ptr &service, const QUrl &url
 	       service: the KService to launch
 		   url: the QUrl of any files the service should open
 	*/
+	if (!service->isValid())
+		return nullptr;
+	
 	if (!parent)
 		parent = this;
 	
@@ -72,8 +76,8 @@ PopupMenu::createActionFromService(const KService::Ptr &service, const QUrl &url
 
     action->setData(QVariant::fromValue(service)); // Store the KService
 	
-	connect(action, &QAction::triggered, parent, [service, url]() {
-		auto *job = new KIO::ApplicationLauncherJob(service);
+	connect(action, &QAction::triggered, parent, [parent, service, url]() {
+		auto *job = new KIO::ApplicationLauncherJob(service, parent);
 		job->setUiDelegate(new KNotificationJobUiDelegate(KJobUiDelegate::AutoHandlingEnabled));
 		if (!url.isEmpty())
 			job->setUrls({url});
@@ -90,6 +94,9 @@ PopupMenu::createActionFromService(const KService::Ptr &service, const QUrl &url
 QAction*
 PopupMenu::createActionFromUrl(const QUrl &url, QWidget *parent)
 {
+	if (!url.isValid())
+		return nullptr;
+	
 	if (!parent)
 		parent = this;
 	
@@ -102,14 +109,36 @@ PopupMenu::createActionFromUrl(const QUrl &url, QWidget *parent)
 	QAction *action = new QAction(icon, fileName, parent);
 	action->setData(url);
 	
-	connect(action, &QAction::triggered, parent, [url]() {
-		auto *job = new KIO::OpenUrlJob(url);
+	connect(action, &QAction::triggered, parent, [parent, url]() {
+		auto *job = new KIO::OpenUrlJob(url, parent);
 	    job->setUiDelegate(new KNotificationJobUiDelegate(KJobUiDelegate::AutoHandlingEnabled));
 		job->start();
 		KActivities::ResourceInstance::notifyAccessed(
 			url,
 			QStringLiteral("com.github.neeeeow.klassik.kmenu")
 			);			
+	});
+
+	return action;
+}
+
+QAction*
+PopupMenu::createFileExplorerActionFromUrl(const QUrl &url, const QIcon &icon, const QString &title, QWidget *parent)
+{
+	if (!url.isValid())
+		return nullptr;
+	
+	if (!parent)
+		parent = this;
+	
+    QAction *action = new QAction(icon, title, parent);
+	action->setData(url);
+
+	connect(action, &QAction::triggered, parent, [parent, url]() {
+		auto *job = new KIO::OpenFileManagerWindowJob(parent);
+		job->setUiDelegate(new KNotificationJobUiDelegate(KJobUiDelegate::AutoHandlingEnabled));
+		job->setHighlightUrls({url});
+		job->start();
 	});
 
 	return action;
@@ -181,6 +210,8 @@ PopupMenu::showContextMenu(const QPoint &pos)
 
 			for (const KService::Ptr &service : services) {
 				QAction *action = createActionFromService(service, url, &contextMenu);
+				if (!action)
+					continue;
 				contextMenu.addAction(action);
 			}						
 		} else

@@ -66,6 +66,7 @@ private:
 	void createActionsItems();
 	void createRecentDocumentsItems();
 	void updateRecentDocuments();
+	void createSystemItems();
 
 	QMouseEvent* translateMouseEvent( QMouseEvent* e );
 };
