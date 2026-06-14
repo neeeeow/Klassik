@@ -1,5 +1,6 @@
 #include "kmenu.h"
 #include "popupmenutitle.h"
+#include "recentdocsmenu.h"
 
 #include <QPoint>
 #include <QEvent>
@@ -21,7 +22,7 @@
 #include <PlasmaActivities/Stats/Query>
 
 KMenu::KMenu(Plasma::Containment *containment, QWidget *parent)
-	: PopupMenu(containment, parent), m_session(this)
+	: ServiceMenu(containment, parent), m_session(this)
 {
 	initialize(); // Populate menu items
 }
@@ -73,6 +74,8 @@ KMenu::paintEvent(QPaintEvent *e)
 void
 KMenu::initialize()
 {
+	if (initialized()) return;
+	
 	if (loadSidePixmap()) {
 		setContentsMargins(
 			layoutDirection() == Qt::LeftToRight ? m_sidePixmap.width() : 0,
@@ -80,6 +83,8 @@ KMenu::initialize()
 			layoutDirection() == Qt::RightToLeft ? m_sidePixmap.width() : 0,
 			0);
 	}	
+
+	ServiceMenu::initialize();
 	
 	// Add the section headers
 	m_allAppsHeader = new PopupMenuTitle(i18n("All Applications"), this);
@@ -93,6 +98,8 @@ KMenu::initialize()
 	createApplicationsItems();
 
 	createActionsItems();
+
+	setInitialized(true);
 }
 
 bool
@@ -416,7 +423,8 @@ KMenu::updateApplications()
 				if (subGroup->childCount() == 0)
 					continue;
 					
-				PopupMenu *subMenu = new PopupMenu(subGroup->caption().replace(QStringLiteral("&"), QStringLiteral("&&")), containmentInterface()->containmentPtr(), parent);
+				ServiceMenu *subMenu = new ServiceMenu(subGroup->caption().replace(QStringLiteral("&"), QStringLiteral("&&")), containmentInterface()->containmentPtr(), parent);
+				subMenu->initialize();
 				subMenu->setIcon(QIcon::fromTheme(subGroup->icon()));
 
 				if (group == root) {
@@ -442,7 +450,9 @@ void
 KMenu::createActionsItems()
 {
 	// Recent documents submenu
-	createRecentDocumentsItems();
+	RecentDocsMenu *documentsMenu = new RecentDocsMenu(i18n("Recent Documents"), containmentInterface()->containmentPtr(), this);
+    documentsMenu->setIcon(QIcon::fromTheme(QStringLiteral("document")));
+	addMenu(documentsMenu);
 
 	// My System submenu
 	createSystemItems();
@@ -465,88 +475,6 @@ KMenu::createActionsItems()
 	if (m_session.canLogout()) {
 		action = addAction(QIcon::fromTheme(QStringLiteral("system-log-out")), i18n("Log Out..."));
 		connect(action, &QAction::triggered, &m_session, &SessionManagement::requestLogoutPrompt);
-	}
-}
-
-void
-KMenu::createRecentDocumentsItems()
-{
-	// NB: document-open-recent is a more appropriate icon, but KDE 3 used document, so we stick to that for
-	// the sake of keeping with convention.
-	m_recentDocumentsMenu = new PopupMenu(i18n("Recent Documents"), containmentInterface()->containmentPtr(), this);
-	m_recentDocumentsMenu->setIcon(QIcon::fromTheme(QStringLiteral("document")));
-	addMenu(m_recentDocumentsMenu);
-	
-	QAction *clearAction = m_recentDocumentsMenu->addAction(QIcon::fromTheme(QStringLiteral("history-clear")), i18n("Clear History"));
-
-	m_recentDocumentsMenu->addSeparator();
-
-	using namespace KActivities::Stats;
-	using namespace KActivities::Stats::Terms;
-	
-	// Run our query once.
-	auto query = UsedResources
-		| RecentlyUsedFirst
-		| Agent::any()
-		| Type::files()
-		| Url::file()
-		| Activity::any();
-
-	m_recentDocuments = new ResultModel(query, this);
-
-	connect(clearAction, &QAction::triggered, m_recentDocuments, &ResultModel::forgetAllResources);
-
-	// Whenever an application is launched, update the recent apps list
-	connect(m_recentDocuments, &ResultModel::dataChanged, this, &KMenu::updateRecentDocuments);
-	connect(m_recentDocuments, &ResultModel::modelReset, this, &KMenu::updateRecentDocuments);
-	connect(m_recentDocuments, &ResultModel::rowsInserted, this, &KMenu::updateRecentDocuments);
-	connect(m_recentDocuments, &ResultModel::rowsMoved, this, &KMenu::updateRecentDocuments);
-	connect(m_recentDocuments, &ResultModel::rowsRemoved, this, &KMenu::updateRecentDocuments);
-
-	updateRecentDocuments();
-}
-
-void
-KMenu::updateRecentDocuments()
-{
-	m_recentDocumentsMenu->cleanupActionList(m_recentDocumentsActions);
-
-	auto addNoEntries = [this]() {
-		QAction *emptyAction = m_recentDocumentsMenu->addAction(i18n("No Entries"));
-		emptyAction->setEnabled(false);
-		m_recentDocumentsActions.append(emptyAction);
-	};
-
-	if (m_recentDocuments->rowCount() == 0) {
-		addNoEntries();
-		return;
-	}
-
-	QList<QAction *> actionList;
-
-	for (int i=0; i < qMin(15, m_recentDocuments->rowCount()); ++i) {
-		QModelIndex index = m_recentDocuments->index(i,0);
-
-		// Fetch the url to the file
-		QUrl url = QUrl::fromUserInput(m_recentDocuments->data(index, KActivities::Stats::ResultModel::ResourceRole).toString());
-		if (!url.isValid())
-			continue;
-
-		QAction *action = m_recentDocumentsMenu->createActionFromUrl(url);
-		if (!action)
-			continue;
-
-		actionList.append(action);
-	}
-
-	if (actionList.isEmpty()) {
-		addNoEntries();
-		return;
-	}
-
-	for (QAction *action : actionList) {
-		m_recentDocumentsMenu->addAction(action);
-		m_recentDocumentsActions.append(action);
 	}
 }
 
@@ -585,19 +513,19 @@ void
 KMenu::mousePressEvent(QMouseEvent * e)
 {
     QMouseEvent *newEvent = translateMouseEvent(e);
-    PopupMenu::mousePressEvent( newEvent );
+    ServiceMenu::mousePressEvent( newEvent );
 }
 
 void
 KMenu::mouseReleaseEvent(QMouseEvent *e)
 {
     QMouseEvent *newEvent = translateMouseEvent(e);
-    PopupMenu::mouseReleaseEvent( newEvent );
+    ServiceMenu::mouseReleaseEvent( newEvent );
 }
 
 void
 KMenu::mouseMoveEvent(QMouseEvent *e)
 {
     QMouseEvent *newEvent = translateMouseEvent(e);
-    PopupMenu::mouseMoveEvent( newEvent );
+    ServiceMenu::mouseMoveEvent( newEvent );
 }

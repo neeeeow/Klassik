@@ -1,4 +1,4 @@
-#include "popupmenu.h"
+#include "servicemenu.h"
 #include "popupmenutitle.h"
 
 #include <QList>
@@ -23,31 +23,43 @@
 
 #include <PlasmaActivities/ResourceInstance>
 
-PopupMenu::PopupMenu(Plasma::Containment *containment, QWidget *parent)
-	: QMenu(parent)
+ServiceMenu::ServiceMenu(Plasma::Containment *containment, QWidget *parent)
+: QMenu(parent), m_initialized(false)
 {
 	m_containment = new ContainmentInterface(containment, this);
-	initialize();
 }
 
-PopupMenu::PopupMenu(const QString &title, Plasma::Containment *containment, QWidget *parent)
-	: QMenu(title, parent)
+ServiceMenu::ServiceMenu(const QString &title, Plasma::Containment *containment, QWidget *parent)
+	: QMenu(title, parent), m_initialized(false)
 {
 	m_containment = new ContainmentInterface(containment, this);
-	initialize();
 }
 
-PopupMenu::~PopupMenu() = default;
+ServiceMenu::~ServiceMenu() = default;
 
 void
-PopupMenu::initialize()
-{	
+ServiceMenu::initialize()
+{
+	if (initialized()) return;
 	this->setContextMenuPolicy(Qt::CustomContextMenu);
-	connect(this, &QMenu::customContextMenuRequested, this, &PopupMenu::showContextMenu);   
+	connect(this, &QMenu::customContextMenuRequested, this, &ServiceMenu::showContextMenu);
+	setInitialized(true);
+}
+
+bool
+ServiceMenu::initialized()
+{
+	return m_initialized;
 }
 
 void
-PopupMenu::cleanupActionList(QList<QAction *> &actionList)
+ServiceMenu::setInitialized(bool initialized)
+{
+	m_initialized = initialized;
+}
+
+void
+ServiceMenu::cleanupActionList(QList<QAction *> &actionList)
 {		
 	// Cleans up all member actions of our QList from the menu
 	for (QAction *action : actionList) {
@@ -60,7 +72,7 @@ PopupMenu::cleanupActionList(QList<QAction *> &actionList)
 }
 
 QAction*
-PopupMenu::createActionFromService(const KService::Ptr &service, const QUrl &url, QWidget *parent)
+ServiceMenu::createActionFromService(const KService::Ptr &service, const QUrl &url, QWidget *parent)
 {
 	/* parameters:
 	       service: the KService to launch
@@ -92,7 +104,7 @@ PopupMenu::createActionFromService(const KService::Ptr &service, const QUrl &url
 }
 
 QAction*
-PopupMenu::createActionFromUrl(const QUrl &url, QWidget *parent)
+ServiceMenu::createActionFromUrl(const QUrl &url, QWidget *parent)
 {
 	if (!url.isValid())
 		return nullptr;
@@ -123,7 +135,7 @@ PopupMenu::createActionFromUrl(const QUrl &url, QWidget *parent)
 }
 
 QAction*
-PopupMenu::createFileExplorerActionFromUrl(const QUrl &url, const QIcon &icon, const QString &title, QWidget *parent)
+ServiceMenu::createFileExplorerActionFromUrl(const QUrl &url, const QIcon &icon, const QString &title, QWidget *parent)
 {
 	if (!url.isValid())
 		return nullptr;
@@ -145,7 +157,7 @@ PopupMenu::createFileExplorerActionFromUrl(const QUrl &url, const QIcon &icon, c
 }
 
 void
-PopupMenu::showContextMenu(const QPoint &pos)
+ServiceMenu::showContextMenu(const QPoint &pos)
 {
 	QAction *action = actionAt(pos);
 	if (!action)
@@ -224,7 +236,7 @@ PopupMenu::showContextMenu(const QPoint &pos)
 }
 
 void
-PopupMenu::runMenuEditor(QString arg)
+ServiceMenu::runMenuEditor(QString arg)
 {
 	const auto service = KService::serviceByDesktopName(QStringLiteral("org.kde.kmenuedit"));
 	if (!service) {
@@ -243,7 +255,7 @@ PopupMenu::runMenuEditor(QString arg)
 }
 
 void
-PopupMenu::invokeKRunner(QString arg)
+ServiceMenu::invokeKRunner(QString arg)
 {
 	QDBusInterface krunner(QStringLiteral("org.kde.krunner"), QStringLiteral("/App"), QStringLiteral("org.kde.krunner.App"));
 	if (!krunner.isValid())
@@ -262,7 +274,7 @@ PopupMenu::invokeKRunner(QString arg)
    Source available: https://kde.org/info/1-2-3/3.5.10/ */
 
 void
-PopupMenu::mousePressEvent(QMouseEvent *ev)
+ServiceMenu::mousePressEvent(QMouseEvent *ev)
 {
 	if (ev->button() == Qt::LeftButton)
 		m_startPos = ev->position();
@@ -282,7 +294,7 @@ PopupMenu::mousePressEvent(QMouseEvent *ev)
 }
 
 void
-PopupMenu::mouseMoveEvent(QMouseEvent *ev)
+ServiceMenu::mouseMoveEvent(QMouseEvent *ev)
 {
 	if (!(ev->buttons() & Qt::LeftButton)) {
 		QMenu::mouseMoveEvent(ev);

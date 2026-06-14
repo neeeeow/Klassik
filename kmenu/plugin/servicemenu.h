@@ -8,14 +8,15 @@
 
 #include <KService>
 
-class PopupMenu : public QMenu
+class ServiceMenu : public QMenu
 {
 	Q_OBJECT;
 	
 public:
-	explicit PopupMenu(Plasma::Containment *containment, QWidget *parent = nullptr);
-	explicit PopupMenu(const QString &title, Plasma::Containment *containment, QWidget *parent = nullptr);
-	~PopupMenu() override;
+	explicit ServiceMenu(Plasma::Containment *containment, QWidget *parent = nullptr);
+	explicit ServiceMenu(const QString &title, Plasma::Containment *containment, QWidget *parent = nullptr);
+	~ServiceMenu() override;
+	void initialize();
 
 	void cleanupActionList(QList<QAction *> &);
 	QAction* createActionFromService(const KService::Ptr &, const QUrl &url = QUrl(), QWidget *parent = nullptr);
@@ -23,6 +24,12 @@ public:
 	QAction* createFileExplorerActionFromUrl(const QUrl &url, const QIcon &icon, const QString &title, QWidget *parent = nullptr);
 
 protected:
+	// Return the initialized flag
+	bool initialized();
+
+	// Set the initialized flag
+	void setInitialized(bool);
+	
 	ContainmentInterface* containmentInterface() const { return m_containment; }
 
 	static void runMenuEditor(QString arg = QString());
@@ -32,10 +39,10 @@ protected:
 	void mouseMoveEvent(QMouseEvent *) override;
 
 private:
-	ContainmentInterface *m_containment;
+	bool m_initialized; // Initialization state
 	
+	ContainmentInterface *m_containment;
 	QPointF m_startPos;
 
-	void initialize();
 	void showContextMenu(const QPoint &);
 };

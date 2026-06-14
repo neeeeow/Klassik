@@ -1,6 +1,6 @@
 #pragma once
 
-#include "popupmenu.h"
+#include "servicemenu.h"
 #include "popupmenutitle.h"
 
 #include <QObject>
@@ -10,7 +10,7 @@
 
 #include <sessionmanagement.h>
 
-class KMenu : public PopupMenu
+class KMenu : public ServiceMenu
 {
 	Q_OBJECT;
 	
@@ -39,9 +39,8 @@ private:
 	PopupMenuTitle *m_allAppsHeader;
 	PopupMenuTitle *m_actionsHeader;
 
-	// ResultModels for recent apps/documents
+	// ResultModels for recent apps
     KActivities::Stats::ResultModel *m_recentApps;
-	KActivities::Stats::ResultModel *m_recentDocuments;
 
 	// Action lists
 	QList<QAction *> m_recentActions; // List of actions linking to recent applications
@@ -49,7 +48,6 @@ private:
 	QList<QAction *> m_applicationActions; // List of actions in the root of the applications list
 
 	// Other
-	PopupMenu *m_recentDocumentsMenu;	
 	QLineEdit *m_searchLineEdit;
 	
 	void initialize();
@@ -64,8 +62,6 @@ private:
 	void updateSearchResults();
 	void updateApplications();
 	void createActionsItems();
-	void createRecentDocumentsItems();
-	void updateRecentDocuments();
 	void createSystemItems();
 
 	QMouseEvent* translateMouseEvent( QMouseEvent* e );

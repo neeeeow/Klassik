@@ -40,10 +40,11 @@ add_definitions(-DTRANSLATION_DOMAIN=\"plasma_applet_com.github.neeeeow.klassik.
 
 set(kmenuplugin_SRCS
   plugin/containmentinterface.cpp
-  plugin/popupmenu.cpp
+  plugin/servicemenu.cpp
   plugin/kmenu.cpp
   plugin/kmenumanager.cpp
   plugin/kmenuplugin.cpp
+  plugin/recentdocsmenu.cpp
 )
 
 add_library(kmenuplugin SHARED ${kmenuplugin_SRCS})
