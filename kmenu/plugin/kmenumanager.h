@@ -19,12 +19,12 @@ public:
 	explicit KMenuManager(QObject *parent = nullptr);
 	~KMenuManager() override;
 	
-	Q_INVOKABLE void initialize(QObject *);
-	Q_INVOKABLE void showMenu(QQuickItem *, QQuickItem *, int);
+	Q_INVOKABLE void initialize(QObject *containmentObject);
+	Q_INVOKABLE void showMenu(QQuickItem *button, QQuickItem *root, int location);
 
 private:
 	Plasma::Containment *m_containment;
 	KMenu *m_menu; // Pointer to our actual KMenu object
 	
-	QPoint adjustedMenuPosition(QQuickItem *, QQuickItem *, int);
+	QPoint adjustedMenuPosition(QQuickItem *button, QQuickItem *root, int location);
 };

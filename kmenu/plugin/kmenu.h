@@ -19,13 +19,13 @@ public:
 	~KMenu() override;
 
 protected:
-	bool eventFilter(QObject *, QEvent *) override;
-	void changeEvent(QEvent *) override;
-	void paintEvent(QPaintEvent *) override;
+	bool eventFilter(QObject *object, QEvent *event) override;
+	void changeEvent(QEvent *event) override;
+	void paintEvent(QPaintEvent *e) override;
 
-	void mousePressEvent(QMouseEvent *) override;
-	void mouseReleaseEvent(QMouseEvent *) override;
-	void mouseMoveEvent(QMouseEvent *) override;
+	void mousePressEvent(QMouseEvent *e) override;
+	void mouseReleaseEvent(QMouseEvent *e) override;
+	void mouseMoveEvent(QMouseEvent *e) override;
 
 private:	
 	// Session manager
@@ -54,7 +54,7 @@ private:
 	
 	bool loadSidePixmap();
 	QRect sideImageRect();
-	void colorize(QImage &);
+	void colorize(QImage &image);
 	
 	void createRecentMenuItems();
 	void updateRecent();

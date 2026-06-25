@@ -24,9 +24,9 @@ public:
 
 	Plasma::Containment* containmentPtr() const { return m_containment; }
 
-	bool mayAddLauncher(ContainmentInterface::Target);
-	bool hasLauncher(ContainmentInterface::Target, const KService::Ptr &);
-	void addLauncher(ContainmentInterface::Target, const KService::Ptr &);
+	bool mayAddLauncher(ContainmentInterface::Target target);
+	bool hasLauncher(ContainmentInterface::Target target, const KService::Ptr &service);
+	void addLauncher(ContainmentInterface::Target target, const KService::Ptr &service);
 
 private:
 	QStringList m_knownTaskManagers{

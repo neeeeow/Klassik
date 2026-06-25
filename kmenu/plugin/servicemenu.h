@@ -35,8 +35,8 @@ protected:
 	static void runMenuEditor(QString arg = QString());
 	static void invokeKRunner(QString arg = QString());
 	
-	void mousePressEvent(QMouseEvent *) override;
-	void mouseMoveEvent(QMouseEvent *) override;
+	void mousePressEvent(QMouseEvent *ev) override;
+	void mouseMoveEvent(QMouseEvent *ev) override;
 
 private:
 	bool m_initialized; // Initialization state
@@ -44,5 +44,5 @@ private:
 	ContainmentInterface *m_containment;
 	QPointF m_startPos;
 
-	void showContextMenu(const QPoint &);
+	void showContextMenu(const QPoint &pos);
 };
