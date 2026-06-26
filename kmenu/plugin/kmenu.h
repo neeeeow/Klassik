@@ -36,11 +36,11 @@ private:
 	QPixmap m_sideTilePixmap;
 	
 	// Separator actions
-	PopupMenuTitle *m_allAppsHeader;
-	PopupMenuTitle *m_actionsHeader;
+	PopupMenuTitle *m_allAppsHeader = nullptr;
+	PopupMenuTitle *m_actionsHeader = nullptr;
 
 	// ResultModels for recent apps
-    KActivities::Stats::ResultModel *m_recentApps;
+    KActivities::Stats::ResultModel *m_recentApps = nullptr;
 
 	// Action lists
 	QList<QAction *> m_recentActions; // List of actions linking to recent applications
@@ -61,8 +61,6 @@ private:
 	void createApplicationsItems();
 	void updateSearchResults();
 	void updateApplications();
-	void createActionsItems();
-	void createSystemItems();
 
 	QMouseEvent* translateMouseEvent( QMouseEvent* e );
 };

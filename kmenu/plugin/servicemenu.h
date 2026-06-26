@@ -7,6 +7,7 @@
 #include <QPointer>
 
 #include <KService>
+#include <KServiceGroup>
 
 class ServiceMenu : public QMenu
 {
@@ -19,9 +20,9 @@ public:
 	void initialize();
 
 	void cleanupActionList(QList<QAction *> &);
-	QAction* createActionFromService(const KService::Ptr &, const QUrl &url = QUrl(), QWidget *parent = nullptr);
-	QAction* createActionFromUrl(const QUrl &, QWidget *parent = nullptr);
-	QAction* createFileExplorerActionFromUrl(const QUrl &url, const QIcon &icon, const QString &title, QWidget *parent = nullptr);
+	QAction* createActionFromService(const KService::Ptr &, const QUrl &url = QUrl());
+	QAction* createActionFromUrl(const QUrl &);
+	QAction* createFileExplorerActionFromUrl(const QUrl &url, const QIcon &icon, const QString &title);
 
 protected:
 	// Return the initialized flag
@@ -31,6 +32,8 @@ protected:
 	void setInitialized(bool);
 	
 	ContainmentInterface* containmentInterface() const { return m_containment; }
+
+	QList<QAction*> actionListFromServiceGroup(const KServiceGroup::Ptr &root);
 
 	static void runMenuEditor(QString arg = QString());
 	static void invokeKRunner(QString arg = QString());

@@ -1,6 +1,7 @@
 #include "kmenu.h"
 #include "popupmenutitle.h"
 #include "recentdocsmenu.h"
+#include "settingsmenu.h"
 
 #include <QPoint>
 #include <QEvent>
@@ -89,15 +90,43 @@ KMenu::initialize()
 	// Add the section headers
 	m_allAppsHeader = new PopupMenuTitle(i18n("All Applications"), this);
 	m_actionsHeader = new PopupMenuTitle(i18n("Actions"), this);
-
 	addAction(m_allAppsHeader);
 	addAction(m_actionsHeader);
 
-	createRecentMenuItems();
-
+	// Add recent menu items and applications list
+	createRecentMenuItems();	
 	createApplicationsItems();
 
-	createActionsItems();
+	// Add actions section
+	// Settings submenu
+	SettingsMenu *settingsMenu = new SettingsMenu(i18n("Settings"), containmentInterface()->containmentPtr(), this);
+	settingsMenu->setIcon(QIcon::fromTheme(QStringLiteral("preferences-desktop")));
+	addMenu(settingsMenu);
+	
+	// Recent documents submenu
+	RecentDocsMenu *documentsMenu = new RecentDocsMenu(i18n("Recent Documents"), containmentInterface()->containmentPtr(), this);
+    documentsMenu->setIcon(QIcon::fromTheme(QStringLiteral("document-open-recent")));
+	addMenu(documentsMenu);
+
+	// Add the run command option
+	addSeparator();
+	QAction *action = addAction(QIcon::fromTheme(QStringLiteral("system-run")), i18n("Run Command..."));
+	connect(action, &QAction::triggered, this, [](){invokeKRunner();});
+	
+	// Add the power/session options
+	addSeparator();
+	if (m_session.canSwitchUser()) {
+		action = addAction(QIcon::fromTheme(QStringLiteral("system-switch-user")), i18n("Switch User"));
+		connect(action, &QAction::triggered, &m_session, &SessionManagement::switchUser);
+	}
+	if (m_session.canLock()) {
+		action = addAction(QIcon::fromTheme(QStringLiteral("system-lock-screen")), i18n("Lock"));
+		connect(action, &QAction::triggered, &m_session, &SessionManagement::lock);
+	}
+	if (m_session.canLogout()) {
+		action = addAction(QIcon::fromTheme(QStringLiteral("system-log-out")), i18n("Log Out..."));
+		connect(action, &QAction::triggered, &m_session, &SessionManagement::requestLogoutPrompt);
+	}	
 
 	setInitialized(true);
 }
@@ -234,6 +263,9 @@ KMenu::colorize(QImage &image)
 void
 KMenu::createRecentMenuItems()
 {
+	if (m_recentApps)
+		delete m_recentApps;
+	
 	using namespace KActivities::Stats;
 	using namespace KActivities::Stats::Terms;
 	
@@ -243,7 +275,8 @@ KMenu::createRecentMenuItems()
 		| Agent::any()
 		| Type::any()
 		| Url::startsWith(QStringLiteral("applications:"))
-		| Activity::any();
+		| Activity::current()
+		| Limit(3);
 
 	m_recentApps = new ResultModel(query, this);
 
@@ -267,28 +300,22 @@ KMenu::updateRecent()
 	
 	cleanupActionList(m_recentActions);
 
-	if (m_recentApps->rowCount() == 0)
+	if (!m_recentApps || m_recentApps->rowCount() == 0)
 		return;
 
 	QList<QAction *> actionList;
 
-	for (int i=0; i < qMin(3, m_recentApps->rowCount()); ++i) {
+	for (int i=0; i < m_recentApps->rowCount(); ++i) {
 		QModelIndex index = m_recentApps->index(i,0);
 		
 		const QUrl resourceUrl(m_recentApps->data(index, KActivities::Stats::ResultModel::ResourceRole).toString());
 		if (resourceUrl.scheme() != QStringLiteral("applications"))
 			continue; // The resource url should always point to an application, but just to be safe
-
-		// Remove the "applications:" to get the actual storageId
 		const QString storageId = resourceUrl.path();
 		KService::Ptr service = KService::serviceByStorageId(storageId);
-		if (!service)
-			continue;
-
 		QAction *action = createActionFromService(service);
-		if (!action)
-			continue;
-		actionList.append(action);
+		if (action)
+			actionList.append(action);
 	}
 
 	if (actionList.isEmpty())
@@ -296,13 +323,12 @@ KMenu::updateRecent()
 
 	// Add the section header here so we can clear it if necessary
 	PopupMenuTitle *recentHeader = new PopupMenuTitle(i18n("Most Used Applications"), this);
-	insertAction(m_allAppsHeader, recentHeader);
 	m_recentActions.append(recentHeader);
-
 	for (QAction *action : actionList) {
-		insertAction(m_allAppsHeader, action);
 		m_recentActions.append(action);		
 	}
+
+	insertActions(actions().first(), m_recentActions);
 }
 
 void
@@ -397,91 +423,19 @@ KMenu::updateApplications()
 	// The root of the applications menu
     KServiceGroup::Ptr root = KServiceGroup::root();
 
-	if (!root || !root->isValid())
-		return;
+	QList<QAction *> actionList = actionListFromServiceGroup(root);
 
-	// Define a recursive lambda for traversing the service groups and populating the submenus
-	auto populateSubmenu = [&](this auto&& self, QMenu *parent, KServiceGroup::Ptr group) -> void {
-		for (const auto &entry : group->entries(true)) {
-			if (entry->isType(KST_KService)) {
-				// If the entry is a service, it's an individual application
-				KService::Ptr service(static_cast<KService*>(entry.data()));
+	if (actionList.isEmpty()) {
+		QAction *emptyAction = new QAction(i18n("No Entries"), this);
+		emptyAction->setEnabled(false);
+		m_applicationActions.append(emptyAction);
+	} else {
+		for (QAction *action : actionList)
+			m_applicationActions.append(action);		
+	}
 
-				// Create the entry
-				QAction *action = createActionFromService(service);
-				if (!action)
-					continue;
-
-				if (group == root) {
-					insertAction(m_actionsHeader, action);
-					m_applicationActions.append(action);
-				} else
-					parent->addAction(action);
-			} else if (entry->isType(KST_KServiceGroup)) {
-				// If the entry is a service group, we need to make a submenu and recurse through this function
-				KServiceGroup::Ptr subGroup(static_cast<KServiceGroup*>(entry.data()));
-				if (subGroup->childCount() == 0)
-					continue;
-					
-				ServiceMenu *subMenu = new ServiceMenu(subGroup->caption().replace(QStringLiteral("&"), QStringLiteral("&&")), containmentInterface()->containmentPtr(), parent);
-				subMenu->initialize();
-				subMenu->setIcon(QIcon::fromTheme(subGroup->icon()));
-
-				if (group == root) {
-					// If the group is at the root, we insert the submenu in the main menu and keep track of it in our list
-					QAction *action = insertMenu(m_actionsHeader, subMenu);
-					action->setData(QVariant::fromValue(subGroup));
-					m_applicationActions.append(action);						
-				} else {
-					QAction *action = parent->addMenu(subMenu);
-					action->setData(QVariant::fromValue(subGroup));
-				}
-
-				self(subMenu, subGroup);
-			}
-		}
-			
-	};
-
-	populateSubmenu(this, root);
-}
-
-void
-KMenu::createActionsItems()
-{
-	// Recent documents submenu
-	RecentDocsMenu *documentsMenu = new RecentDocsMenu(i18n("Recent Documents"), containmentInterface()->containmentPtr(), this);
-    documentsMenu->setIcon(QIcon::fromTheme(QStringLiteral("document")));
-	addMenu(documentsMenu);
-
-	// My System submenu
-	createSystemItems();
-
-	// Add the run command option
-	addSeparator();
-	QAction *action = addAction(QIcon::fromTheme(QStringLiteral("run")), i18n("Run Command..."));
-	connect(action, &QAction::triggered, this, [](){invokeKRunner();});
+	insertActions(m_actionsHeader, m_applicationActions);
 	
-	// Add the power/session options
-	addSeparator();
-	if (m_session.canSwitchUser()) {
-		action = addAction(QIcon::fromTheme(QStringLiteral("system-switch-user")), i18n("Switch User"));
-		connect(action, &QAction::triggered, &m_session, &SessionManagement::switchUser);
-	}
-	if (m_session.canLock()) {
-		action = addAction(QIcon::fromTheme(QStringLiteral("system-lock-screen")), i18n("Lock"));
-		connect(action, &QAction::triggered, &m_session, &SessionManagement::lock);
-	}
-	if (m_session.canLogout()) {
-		action = addAction(QIcon::fromTheme(QStringLiteral("system-log-out")), i18n("Log Out..."));
-		connect(action, &QAction::triggered, &m_session, &SessionManagement::requestLogoutPrompt);
-	}
-}
-
-void
-KMenu::createSystemItems()
-{
-	QMenu *systemMenu = addMenu(QIcon::fromTheme(QStringLiteral("system")), QStringLiteral("System Menu"));
 }
 
 /* Mouse events adapted from KDE 3.5 kicker source code.

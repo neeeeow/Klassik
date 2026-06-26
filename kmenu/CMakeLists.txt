@@ -45,6 +45,7 @@ set(kmenuplugin_SRCS
   plugin/kmenumanager.cpp
   plugin/kmenuplugin.cpp
   plugin/recentdocsmenu.cpp
+  plugin/settingsmenu.cpp
 )
 
 add_library(kmenuplugin SHARED ${kmenuplugin_SRCS})
@@ -59,6 +60,7 @@ target_link_libraries(kmenuplugin
   KF6::KIOGui
   KF6::ColorScheme
   KF6::JobWidgets
+  KF6::KIOWidgets
   Plasma::Plasma
   Plasma::ActivitiesStats
   Plasma::Activities

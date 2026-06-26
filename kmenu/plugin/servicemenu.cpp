@@ -12,9 +12,9 @@
 
 #include <KLocalizedString>
 #include <KNotificationJobUiDelegate>
-#include <KServiceGroup>
 #include <KFileItem>
 #include <KApplicationTrader>
+#include <KPropertiesDialog>
 
 #include <KIO/ApplicationLauncherJob>
 #include <KIO/CommandLauncherJob>
@@ -72,27 +72,27 @@ ServiceMenu::cleanupActionList(QList<QAction *> &actionList)
 }
 
 QAction*
-ServiceMenu::createActionFromService(const KService::Ptr &service, const QUrl &url, QWidget *parent)
+ServiceMenu::createActionFromService(const KService::Ptr &service, const QUrl &url)
 {
-	/* parameters:
+	/*
+	  Creates a QAction which launches a service, parented to the menu.
+	  parameters:
 	       service: the KService to launch
 		   url: the QUrl of any files the service should open
 	*/
-	if (!service->isValid())
+	if (!service || !service->isValid())
 		return nullptr;
 	
-	if (!parent)
-		parent = this;
-	
-	QAction *action = new QAction(QIcon::fromTheme(service->icon()), service->name().replace(QStringLiteral("&"), QStringLiteral("&&")), parent);
+	QAction *action = new QAction(QIcon::fromTheme(service->icon()), service->name().replace(QStringLiteral("&"), QStringLiteral("&&")), this);
 
     action->setData(QVariant::fromValue(service)); // Store the KService
 	
-	connect(action, &QAction::triggered, parent, [parent, service, url]() {
-		auto *job = new KIO::ApplicationLauncherJob(service, parent);
+	connect(action, &QAction::triggered, this, [service, url]() {
+		auto *job = new KIO::ApplicationLauncherJob(service);
 		job->setUiDelegate(new KNotificationJobUiDelegate(KJobUiDelegate::AutoHandlingEnabled));
 		if (!url.isEmpty())
 			job->setUrls({url});
+		job->setAutoDelete(true);
 		job->start();
 		KActivities::ResourceInstance::notifyAccessed(
 			QUrl(QStringLiteral("applications:") + service->storageId()),
@@ -104,13 +104,10 @@ ServiceMenu::createActionFromService(const KService::Ptr &service, const QUrl &u
 }
 
 QAction*
-ServiceMenu::createActionFromUrl(const QUrl &url, QWidget *parent)
+ServiceMenu::createActionFromUrl(const QUrl &url)
 {
 	if (!url.isValid())
 		return nullptr;
-	
-	if (!parent)
-		parent = this;
 	
 	QString fileName = url.fileName().replace(QStringLiteral("&"), QStringLiteral("&&")); // name to display in the menu
 		
@@ -118,12 +115,13 @@ ServiceMenu::createActionFromUrl(const QUrl &url, QWidget *parent)
 	QMimeType mime = db.mimeTypeForUrl(url);
 	QIcon icon = QIcon::fromTheme(mime.iconName());
 
-	QAction *action = new QAction(icon, fileName, parent);
+	QAction *action = new QAction(icon, fileName, this);
 	action->setData(url);
 	
-	connect(action, &QAction::triggered, parent, [parent, url]() {
-		auto *job = new KIO::OpenUrlJob(url, parent);
+	connect(action, &QAction::triggered, this, [url]() {
+		auto *job = new KIO::OpenUrlJob(url);
 	    job->setUiDelegate(new KNotificationJobUiDelegate(KJobUiDelegate::AutoHandlingEnabled));
+		job->setAutoDelete(true);
 		job->start();
 		KActivities::ResourceInstance::notifyAccessed(
 			url,
@@ -135,25 +133,78 @@ ServiceMenu::createActionFromUrl(const QUrl &url, QWidget *parent)
 }
 
 QAction*
-ServiceMenu::createFileExplorerActionFromUrl(const QUrl &url, const QIcon &icon, const QString &title, QWidget *parent)
+ServiceMenu::createFileExplorerActionFromUrl(const QUrl &url, const QIcon &icon, const QString &title)
 {
 	if (!url.isValid())
 		return nullptr;
 	
-	if (!parent)
-		parent = this;
-	
-    QAction *action = new QAction(icon, title, parent);
-	action->setData(url);
+    QAction *action = new QAction(icon, title, this);
 
-	connect(action, &QAction::triggered, parent, [parent, url]() {
-		auto *job = new KIO::OpenFileManagerWindowJob(parent);
+	connect(action, &QAction::triggered, this, [url]() {
+		auto *job = new KIO::OpenFileManagerWindowJob();
 		job->setUiDelegate(new KNotificationJobUiDelegate(KJobUiDelegate::AutoHandlingEnabled));
 		job->setHighlightUrls({url});
+		job->setAutoDelete(true);
 		job->start();
 	});
 
 	return action;
+}
+
+QList<QAction*>
+ServiceMenu::actionListFromServiceGroup(const KServiceGroup::Ptr &root)
+{
+	// TODO: improve this function
+	QList<QAction *> actionList;
+
+	if (!root || !root->isValid())
+		return actionList;
+
+	// Define a recursive lambda for traversing the service groups and populating the submenus
+	auto populateSubmenu = [&](this auto&& self, ServiceMenu *parent, KServiceGroup::Ptr group) -> void {
+		for (const auto &entry : group->entries(true)) {
+			if (entry->isType(KST_KService)) {
+				// If the entry is a service, it's an individual application
+				KService::Ptr service(static_cast<KService*>(entry.data()));
+
+				// Create the entry
+				QAction *action = parent->createActionFromService(service, QUrl());
+				if (!action)
+					continue;
+
+				if (parent == this) { // Don't add top-level actions to the menu, add them to our QList.
+					actionList.append(action);
+				} else
+					parent->addAction(action);
+			} else if (entry->isType(KST_KServiceGroup)) {
+				// If the entry is a service group, we need to make a submenu and recurse through this function
+				KServiceGroup::Ptr subGroup(static_cast<KServiceGroup*>(entry.data()));
+				if (subGroup->childCount() == 0)
+					continue;
+					
+				ServiceMenu *subMenu = new ServiceMenu(subGroup->caption().replace(QStringLiteral("&"), QStringLiteral("&&")), containmentInterface()->containmentPtr(), parent);
+				subMenu->initialize();
+				subMenu->setIcon(QIcon::fromTheme(subGroup->icon()));
+
+				if (parent == this) {
+					QAction *action = new QAction(subMenu->icon(), subMenu->title(), parent);
+					action->setMenu(subMenu);
+					action->setData(QVariant::fromValue(subGroup));
+				    actionList.append(action);						
+				} else {
+					QAction *action = parent->addMenu(subMenu);
+					action->setData(QVariant::fromValue(subGroup));
+				}
+
+				self(subMenu, subGroup);
+			}
+		}
+			
+	};
+
+	populateSubmenu(this, root);
+	
+	return actionList;
 }
 
 void
@@ -163,7 +214,7 @@ ServiceMenu::showContextMenu(const QPoint &pos)
 	if (!action)
 		return;
 
-	QMenu contextMenu(this);
+	ServiceMenu contextMenu(containmentInterface()->containmentPtr(), this);
 
 	if (action->data().canConvert<KService::Ptr>()) {
 		// KService means application!
@@ -218,16 +269,30 @@ ServiceMenu::showContextMenu(const QPoint &pos)
 		const KService::List services = KApplicationTrader::queryByMimeType(fileItem.mimetype());
 
 		if (!services.isEmpty()) {
-			contextMenu.addAction(new PopupMenuTitle(i18n("Open with"), &contextMenu));
+			contextMenu.addAction(new PopupMenuTitle(i18n("Open With"), &contextMenu));
 
 			for (const KService::Ptr &service : services) {
-				QAction *action = createActionFromService(service, url, &contextMenu);
+				QAction *action = contextMenu.createActionFromService(service, url);
 				if (!action)
 					continue;
 				contextMenu.addAction(action);
 			}						
-		} else
-			return;
+		}
+
+		contextMenu.addSeparator();
+		QAction *propertiesAction = contextMenu.addAction(QIcon::fromTheme(QStringLiteral("document-properties")), i18n("Properties"));
+		connect(propertiesAction, &QAction::triggered, &contextMenu, [url]() {
+			auto *dlg = new KPropertiesDialog(url, QApplication::activeWindow());
+			dlg->setAttribute(Qt::WA_DeleteOnClose);
+			dlg->show();
+		});
+		
+		QAction *fileExplorerAction = contextMenu.createFileExplorerActionFromUrl(url, QIcon::fromTheme(QStringLiteral("system-file-manager")), i18n("Open in File Explorer"));
+		if (fileExplorerAction) {			
+			contextMenu.addSeparator();
+			contextMenu.addAction(fileExplorerAction);
+		}
+		
 	} else
 		return;
 

@@ -36,7 +36,8 @@ RecentDocsMenu::initialize()
 		| Agent::any()
 		| Type::files()
 		| Activity::current()
-		| Url::file();
+		| Url::file()
+		| Limit(15);
 
     m_fileList = new ResultModel(query, this);	
 
@@ -59,12 +60,12 @@ RecentDocsMenu::updateRecentDocs()
 		return;
 	
 	clear();
-	QAction *clearAction = addAction(QIcon::fromTheme(QStringLiteral("history-clear")), i18n("Clear History"));
+	QAction *clearAction = addAction(QIcon::fromTheme(QStringLiteral("edit-clear-history")), i18n("Clear History"));
 	connect(clearAction, &QAction::triggered, m_fileList, &KActivities::Stats::ResultModel::forgetAllResources);
 	addSeparator();
 
 	QList<QUrl> urlList;
-	for (int i=0; i < qMin(15, m_fileList->rowCount()); ++i) {
+	for (int i=0; i < m_fileList->rowCount(); ++i) {
 		QModelIndex index = m_fileList->index(i,0);
 		QUrl url = QUrl::fromUserInput(m_fileList->data(index, KActivities::Stats::ResultModel::ResourceRole).toString());
 		if (!url.isValid())
