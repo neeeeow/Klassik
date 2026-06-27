@@ -31,43 +31,55 @@ KMenu::KMenu(Plasma::Containment *containment, QWidget *parent)
 KMenu::~KMenu() = default;
 
 bool
-KMenu::eventFilter(QObject *object, QEvent *event)
+KMenu::event(QEvent *e)
+{
+	if (e->type() == QEvent::DevicePixelRatioChange) {
+		setMargins();
+	}
+	return ServiceMenu::event(e);
+}
+
+bool
+KMenu::eventFilter(QObject *object, QEvent *e)
 {
 	// Give the search bar focus as soon as the mouse enters it
 	if (object == m_searchLineEdit) {
-		if (event->type() == QEvent::Enter) {
+		if (e->type() == QEvent::Enter) {
 			if (QWidget *widget = qobject_cast<QWidget *>(object))
 				widget->setFocus();
-		} else if (event->type() == QEvent::Leave)
+		} else if (e->type() == QEvent::Leave)
 			setFocus();
 	}
 
-	return QMenu::eventFilter(object, event);
+	return ServiceMenu::eventFilter(object, e);
 }
 
 void
-KMenu::changeEvent(QEvent *event)
+KMenu::changeEvent(QEvent *e)
 {
-	if (event->type() == QEvent::PaletteChange && !m_sidePixmap.isNull() && !m_sideTilePixmap.isNull()) {
+	if (e->type() == QEvent::PaletteChange && !m_sidePixmap.isNull() && !m_sideTilePixmap.isNull()) {
 		loadSidePixmap();
 	}
-	QMenu::changeEvent(event);
+	ServiceMenu::changeEvent(e);
 }
 
 void
 KMenu::paintEvent(QPaintEvent *e)
 {
-	QMenu::paintEvent(e);
+	ServiceMenu::paintEvent(e);
 	if (m_sidePixmap.isNull() || m_sideTilePixmap.isNull())
 		return;
 
+	const qreal dpr = devicePixelRatio();
+
 	QPainter p(this);
+	p.scale(1/dpr, 1/dpr);
 
-	QRect r = sideImageRect();
+	QRect r = getScaledRect(sideImageRect(), dpr);
 	r.setBottom( r.bottom() - m_sidePixmap.height() );
-	p.drawTiledPixmap( r, m_sideTilePixmap );
+	p.drawTiledPixmap(r, m_sideTilePixmap );
 
-	r = sideImageRect();
+	r = getScaledRect(sideImageRect(), dpr);
 	r.setTop( r.bottom() - m_sidePixmap.height() );
 	p.drawPixmap(r, m_sidePixmap);
 }
@@ -78,11 +90,7 @@ KMenu::initialize()
 	if (initialized()) return;
 	
 	if (loadSidePixmap()) {
-		setContentsMargins(
-			layoutDirection() == Qt::LeftToRight ? m_sidePixmap.width() : 0,
-			0,
-			layoutDirection() == Qt::RightToLeft ? m_sidePixmap.width() : 0,
-			0);
+		setMargins();
 	}	
 
 	ServiceMenu::initialize();
@@ -129,6 +137,18 @@ KMenu::initialize()
 	}	
 
 	setInitialized(true);
+}
+
+void
+KMenu::setMargins()
+{
+	const qreal dpr = devicePixelRatio();	
+	setContentsMargins(
+		layoutDirection() == Qt::LeftToRight ? qCeil(m_sidePixmap.width() / dpr) : 0,
+		0,
+		layoutDirection() == Qt::RightToLeft ? qCeil(m_sidePixmap.width() / dpr): 0,
+		0);
+	adjustSize();
 }
 
 bool
@@ -187,7 +207,7 @@ KMenu::sideImageRect()
 
 	// Rectangle containing our side pixmap
 	QRect pixRect(panelWidth + hMargin, panelWidth + vMargin,
-				  m_sidePixmap.width(), height() - 2 * (panelWidth + vMargin));
+				  m_sidePixmap.width() / devicePixelRatio(), height() - 2 * (panelWidth + vMargin));
 
 	// Convert to screen coordinates based on text direction
 	return style()->visualRect(layoutDirection(), rect(), pixRect);
