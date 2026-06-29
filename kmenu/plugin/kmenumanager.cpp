@@ -3,32 +3,44 @@
 
 #include <QPoint>
 #include <QRect>
+#include <QQuickWindow>
 
 KMenuManager::KMenuManager(QObject *parent)
 	: QObject(parent)
 {
 }
 
-KMenuManager::~KMenuManager() = default;
+KMenuManager::~KMenuManager()
+{
+	if (m_menu)
+		m_menu->deleteLater();
+}
 
 void
 KMenuManager::initialize(QObject *containmentObject)
 {
 	m_containment = qobject_cast<Plasma::Containment*>(containmentObject);
 	if (!m_containment)
-		qWarning() << "KMenuManager: failed to obtain plasmoid containment!";
-	m_menu = new KMenu(m_containment);
+		qWarning("KMenuManager: failed to obtain plasmoid containment!");
+	if (!m_menu)
+		m_menu = new KMenu(m_containment);
 }
 
 void
-KMenuManager::showMenu(QQuickItem *button, QQuickItem *root, int location)
-{	
+KMenuManager::showMenu(QQuickItem *button, QQuickItem *root, panelLocation location)
+{
+	if (!m_menu) {
+		qWarning("KMenuManager: KMenu not initialized!");
+		return;
+	}
 	m_menu->popup(adjustedMenuPosition(button, root, location));
 }
 
 QPoint
-KMenuManager::adjustedMenuPosition(QQuickItem *button, QQuickItem *root, int location)
-{	
+KMenuManager::adjustedMenuPosition(QQuickItem *button, QQuickItem *root, panelLocation location)
+{
+	if (!m_menu)
+		return QPoint(0,0); // should never be the case, but as a safeguard
 	QSize menuSize = m_menu->sizeHint();
 
 	// Get button coordinates relative to the screen
@@ -41,20 +53,39 @@ KMenuManager::adjustedMenuPosition(QQuickItem *button, QQuickItem *root, int loc
 	QRect rootRect = root->boundingRect().translated(rootGlobalPos).toRect();
 
 	switch (location) {
-	case 3: // Top edge
+	case TopEdge:
 		y = rootRect.bottom();
 		break;
-	case 4: // Bottom edge
+	case BottomEdge:
 		y = rootRect.top() - menuSize.height();
 		break;
-	case 5: // Left edge
+	case LeftEdge:
 		x = rootRect.right();
 		break;
-	case 6: // Right edge
+	case RightEdge:
 		x = rootRect.left() - menuSize.width();
 		break;
 	default:
-		y -= menuSize.height();
+		// Here, first try to place the menu above the panel, then below the panel, then to the right,
+		// and finally to the left.
+		if (!root->window())
+			break;
+
+		QScreen  *screen = root->window()->screen();
+		if (!screen)
+			break;
+		
+		QRect screenRect = screen->geometry();
+
+		if ((rootRect.top() - screenRect.top()) >= menuSize.height()) // space above panel
+			y = rootRect.top() - menuSize.height();
+		else if ((screenRect.bottom()  - rootRect.bottom()) >= menuSize.height()) // space  below panel
+			y = rootRect.bottom();
+		else if ((screenRect.right() - rootRect.right()) >= menuSize.width()) // space to the right
+			x = rootRect.right();
+		else if ((rootRect.left() - screenRect.left()) >= menuSize.width()) // space to the bottom
+			x = rootRect.left() - menuSize.width();
+		
 		break;
 	}
 	
