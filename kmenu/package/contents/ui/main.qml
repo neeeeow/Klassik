@@ -22,6 +22,9 @@ PlasmoidItem{
     fullRepresentation: ToolButton { // We can build the menu button in qml, since Qt Quick hands off buttons to Qt.
         id: menuButton
 
+        checkable: true
+        checked: kmenu.menuActive
+
         // Fill the height of the container
         Layout.fillHeight: true
         Layout.fillWidth: false
@@ -34,8 +37,13 @@ PlasmoidItem{
             source: Plasmoid.icon
         }
 
-        onClicked: {
-            kmenu.showMenu(menuButton, root, Plasmoid.location)
+        onClicked: kmenu.toggleMenu(menuButton, root, Plasmoid.location)
+
+        Connections {
+            target: Plasmoid
+            function onActivated() {
+                kmenu.toggleMenu(menuButton, root, Plasmoid.location)
+            }
         }
     }
 }

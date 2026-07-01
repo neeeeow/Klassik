@@ -5,14 +5,16 @@
                 "Name": "neeeeow"
             }
         ],
-        "Category": "Application menu",
+        "Category": "Application Launchers",
         "Description": "Classic KDE 3 style application menu",
+	"Icon": "start-here-kde",
+	"License": "GPL-3.0+",
         "Id": "com.github.neeeeow.klassik.kmenu",
         "Name": "Klassik K Menu",
-        "Version": "1",
-        "Website": "https://example.com/user/plasmoid-helloworldplugin"
+        "Website": "https://github.com/neeeeow/Klassik"
     },
     "X-Plasma-API-Minimum-Version": "6.0",
-    "KPackageStructure": "Plasma/Applet",
-	"KPackageVersion": 2
+    "X-Plasma-Provides": [
+        "org.kde.plasma.launchermenu"
+    ]
 }

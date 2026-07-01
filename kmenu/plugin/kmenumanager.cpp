@@ -22,8 +22,20 @@ KMenuManager::initialize(QObject *containmentObject)
 	m_containment = qobject_cast<Plasma::Containment*>(containmentObject);
 	if (!m_containment)
 		qWarning("KMenuManager: failed to obtain plasmoid containment!");
-	if (!m_menu)
+	
+	if (!m_menu) {
 		m_menu = new KMenu(m_containment);
+
+	    connect(m_menu, &QMenu::aboutToShow, this, [this]() {
+			m_menuActive = true;
+			Q_EMIT menuActiveChanged();
+		});
+
+		connect(m_menu, &QMenu::aboutToHide, this, [this]() {
+			m_menuActive = false;
+			Q_EMIT menuActiveChanged();
+		});
+	}
 }
 
 void
@@ -33,6 +45,14 @@ KMenuManager::showMenu(QQuickItem *button, QQuickItem *root, panelLocation locat
 		qWarning("KMenuManager: KMenu not initialized!");
 		return;
 	}
+
+	if (QQuickWindow *plasmoidWindow = button->window()) {
+		m_menu->createWinId();
+		if (QWindow *menuWindow = m_menu->windowHandle()) {
+            menuWindow->setTransientParent(plasmoidWindow);
+        }
+	} 
+	
 	m_menu->popup(adjustedMenuPosition(button, root, location));
 }
 
