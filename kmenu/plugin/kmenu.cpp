@@ -1,5 +1,6 @@
 #include "kmenu.h"
 #include "popupmenutitle.h"
+#include "popupmenusearch.h"
 #include "recentdocsmenu.h"
 #include "settingsmenu.h"
 
@@ -8,9 +9,7 @@
 #include <QAction>
 #include <QLineEdit>
 #include <QRect>
-#include <QHBoxLayout>
 #include <QToolButton>
-#include <QShortcut>
 #include <QPaintEvent>
 
 #include <KColorScheme>
@@ -22,13 +21,12 @@
 #include <Plasma/Plasma>
 #include <PlasmaActivities/Stats/Query>
 
-KMenu::KMenu(Plasma::Containment *containment, QWidget *parent)
-	: ServiceMenu(containment, parent), m_session(this)
+KMenu::KMenu(KMenuApplet *applet, QWidget *parent)
+	: ServiceMenu(applet, parent),
+	  m_session(this)
 {
 	initialize(); // Populate menu items
 }
-
-KMenu::~KMenu() = default;
 
 bool
 KMenu::event(QEvent *e)
@@ -37,21 +35,6 @@ KMenu::event(QEvent *e)
 		setMargins();
 	}
 	return ServiceMenu::event(e);
-}
-
-bool
-KMenu::eventFilter(QObject *object, QEvent *e)
-{
-	// Give the search bar focus as soon as the mouse enters it
-	if (object == m_searchLineEdit) {
-		if (e->type() == QEvent::Enter) {
-			if (QWidget *widget = qobject_cast<QWidget *>(object))
-				widget->setFocus();
-		} else if (e->type() == QEvent::Leave)
-			setFocus();
-	}
-
-	return ServiceMenu::eventFilter(object, e);
 }
 
 void
@@ -67,7 +50,7 @@ void
 KMenu::paintEvent(QPaintEvent *e)
 {
 	ServiceMenu::paintEvent(e);
-	if (m_sidePixmap.isNull() || m_sideTilePixmap.isNull())
+	if (m_sidePixmap.isNull() || m_sideTilePixmap.isNull() || !applet()->getConfigValue<bool>(QStringLiteral("drawSideImage")))
 		return;
 
 	const qreal dpr = devicePixelRatio();
@@ -89,35 +72,49 @@ KMenu::initialize()
 {
 	if (initialized()) return;
 	
-	if (loadSidePixmap()) {
-		setMargins();
-	}	
-
+	loadSidePixmap();
+	setMargins();
+		
 	ServiceMenu::initialize();
 	
 	// Add the section headers
-	m_allAppsHeader = new PopupMenuTitle(i18n("All Applications"), this);
-	m_actionsHeader = new PopupMenuTitle(i18n("Actions"), this);
-	addAction(m_allAppsHeader);
-	addAction(m_actionsHeader);
+
+	if (applet()->getConfigValue<bool>(QStringLiteral("showTitles"))) {
+		addAction(new PopupMenuTitle(i18n("All Applications"), this));	
+		m_applicationsAnchor = new PopupMenuTitle(i18n("Actions"), this);
+		addAction(m_applicationsAnchor);
+	} else {
+		if (applet()->getConfigValue<bool>(QStringLiteral("showRecentApps")))
+			addSeparator();
+		m_applicationsAnchor = addSeparator();
+	}
 
 	// Add recent menu items and applications list
-	createRecentMenuItems();	
+	if (applet()->getConfigValue<bool>(QStringLiteral("showRecentApps")))
+		createRecentMenuItems();	
 	createApplicationsItems();
 
 	// Add actions section
-	// Settings submenu
-	SettingsMenu *settingsMenu = new SettingsMenu(i18n("Settings"), containmentInterface()->containmentPtr(), this);
-	settingsMenu->setIcon(QIcon::fromTheme(QStringLiteral("preferences-desktop")));
-	addMenu(settingsMenu);
-	
-	// Recent documents submenu
-	RecentDocsMenu *documentsMenu = new RecentDocsMenu(i18n("Recent Documents"), containmentInterface()->containmentPtr(), this);
-    documentsMenu->setIcon(QIcon::fromTheme(QStringLiteral("document-open-recent")));
-	addMenu(documentsMenu);
+
+	if (applet()->getConfigValue<bool>(QStringLiteral("showSettings"))) {
+		// Settings submenu
+		SettingsMenu *settingsMenu = new SettingsMenu(i18n("Settings"), applet(), this);
+		settingsMenu->setIcon(QIcon::fromTheme(QStringLiteral("preferences-desktop")));
+		addMenu(settingsMenu);
+	}
+
+	if (applet()->getConfigValue<bool>(QStringLiteral("showRecentDocs"))) {
+		// Recent documents submenu
+		RecentDocsMenu *documentsMenu = new RecentDocsMenu(i18n("Recent Documents"), applet(), this);
+		documentsMenu->setIcon(QIcon::fromTheme(QStringLiteral("document-open-recent")));
+		addMenu(documentsMenu);
+	}
+
+	if (applet()->getConfigValue<bool>(QStringLiteral("showSettings")) ||
+		applet()->getConfigValue<bool>(QStringLiteral("showRecentDocs")))
+		addSeparator();
 
 	// Add the run command option
-	addSeparator();
 	QAction *action = addAction(QIcon::fromTheme(QStringLiteral("system-run")), i18n("Run Command..."));
 	connect(action, &QAction::triggered, this, [](){invokeKRunner();});
 	
@@ -140,24 +137,56 @@ KMenu::initialize()
 }
 
 void
+KMenu::reinitialize()
+{
+	setInitialized(false);
+
+	// Clear out the menu
+	QList<QAction *> allActions = actions();
+	cleanupActionList(allActions);
+	clear();
+
+	// Clear action lists
+	m_recentActions.clear();
+	m_applicationActions.clear();
+
+	m_applicationsAnchor = nullptr; // avoid dangling pointer
+
+	// Reset the pixmaps, to save memory	
+	m_sidePixmap = QPixmap();
+	m_sideTilePixmap = QPixmap();
+
+	// Finally, call initialize() again
+	initialize();
+}
+
+void
 KMenu::setMargins()
 {
-	const qreal dpr = devicePixelRatio();	
-	setContentsMargins(
-		layoutDirection() == Qt::LeftToRight ? qCeil(m_sidePixmap.width() / dpr) : 0,
-		0,
-		layoutDirection() == Qt::RightToLeft ? qCeil(m_sidePixmap.width() / dpr): 0,
-		0);
+	if (applet()->getConfigValue<bool>(QStringLiteral("drawSideImage"))) {
+		const qreal dpr = devicePixelRatio();	
+		setContentsMargins(
+			layoutDirection() == Qt::LeftToRight ? qCeil(m_sidePixmap.width() / dpr) : 0,
+			0,
+			layoutDirection() == Qt::RightToLeft ? qCeil(m_sidePixmap.width() / dpr): 0,
+			0);
+	} else {
+		setContentsMargins(0, 0, 0, 0);
+	}
+
 	adjustSize();
 }
 
-bool
+void
 KMenu::loadSidePixmap()
 {
+	if (!applet()->getConfigValue<bool>(QStringLiteral("drawSideImage")))
+		return;
+	
 	QImage image;
 	image.load(QStringLiteral(":/com/github/neeeeow/klassik/kmenu/plugin/img/kside.png"));
 	if (image.isNull())
-		return false;
+		return;
 	colorize(image);
 	m_sidePixmap = QPixmap::fromImage(image);
 
@@ -181,7 +210,7 @@ KMenu::loadSidePixmap()
 
 	image.load(QStringLiteral(":/com/github/neeeeow/klassik/kmenu/plugin/img/kside_tile.png"));
 	if (image.isNull())
-		return false;
+		return;
 	colorize(image);
 	m_sideTilePixmap = QPixmap::fromImage(image);
 
@@ -195,7 +224,7 @@ KMenu::loadSidePixmap()
 		m_sideTilePixmap = preTiledPixmap;
     }
 	
-	return true;
+	return;
 }
 
 QRect
@@ -251,6 +280,11 @@ KMenu::colorize(QImage &image)
 	}
 	color.setRgb(r, g, b);
 
+	// convert the image, just in case
+	if (image.format() != QImage::Format_ARGB32_Premultiplied) {
+		image = image.convertToFormat(QImage::Format_ARGB32_Premultiplied);
+	}
+	
 	int pixels = image.width() * image.height();
 	QRgb *data = reinterpret_cast<QRgb*>(image.bits());
 
@@ -282,10 +316,7 @@ KMenu::colorize(QImage &image)
 
 void
 KMenu::createRecentMenuItems()
-{
-	if (m_recentApps)
-		delete m_recentApps;
-	
+{	
 	using namespace KActivities::Stats;
 	using namespace KActivities::Stats::Terms;
 	
@@ -296,8 +327,12 @@ KMenu::createRecentMenuItems()
 		| Type::any()
 		| Url::startsWith(QStringLiteral("applications:"))
 		| Activity::current()
-		| Limit(3);
+		| Limit(applet()->getConfigValue<int>(QStringLiteral("numRecentApps")));
 
+	if (m_recentApps) {
+		m_recentApps->deleteLater();
+		m_recentApps = nullptr;
+	}
 	m_recentApps = new ResultModel(query, this);
 
 	// Whenever an application is launched, update the recent apps list
@@ -314,17 +349,22 @@ KMenu::createRecentMenuItems()
 void
 KMenu::updateRecent()
 {
-	/* Updates the most used applications name. It probably *shouldn't* be called updateRecent,
+	/* Updates the most used applications section. It probably *shouldn't* be called updateRecent,
 	   but we follow the convention used by the original KDE 3 KMenu, even if it doesn't
 	   make sense */
 	
 	cleanupActionList(m_recentActions);
 
-	if (!m_recentApps || m_recentApps->rowCount() == 0)
+	if (!m_recentApps)
 		return;
 
-	QList<QAction *> actionList;
+	// Add the section header here so we can clear it if necessary
+	if (applet()->getConfigValue<bool>(QStringLiteral("showTitles"))) {
+		PopupMenuTitle *recentHeader = new PopupMenuTitle(i18n("Most Used Applications"), this);
+		m_recentActions.append(recentHeader);
+	}
 
+	QList<QAction *> actionList;
 	for (int i=0; i < m_recentApps->rowCount(); ++i) {
 		QModelIndex index = m_recentApps->index(i,0);
 		
@@ -338,64 +378,36 @@ KMenu::updateRecent()
 			actionList.append(action);
 	}
 
-	if (actionList.isEmpty())
-		return;
-
-	// Add the section header here so we can clear it if necessary
-	PopupMenuTitle *recentHeader = new PopupMenuTitle(i18n("Most Used Applications"), this);
-	m_recentActions.append(recentHeader);
-	for (QAction *action : actionList) {
-		m_recentActions.append(action);		
+	if (actionList.isEmpty()) {
+		QAction *emptyAction = new QAction(i18n("No Entries"), this);
+		emptyAction->setEnabled(false);
+		m_recentActions.append(emptyAction);	
+	} else {	
+		for (QAction *action : actionList) {
+			m_recentActions.append(action);		
+		}
 	}
 
-	insertActions(actions().first(), m_recentActions);
+	if (QAction *anchor = actions().first())
+		insertActions(anchor, m_recentActions);
+	else
+		addActions(m_recentActions);
 }
 
 void
 KMenu::createApplicationsItems()
-{
+{	
 	// Create the search bar container
-	QWidget *searchBar = new QWidget(this);
-	int iconSize = style()->pixelMetric(QStyle::PM_SmallIconSize); // The size of menu item icons (by default)
-	QStyleOptionMenuItem opt; // Call sizeFromContents to get the height of a menu item in the current QStyle,
-	opt.initFrom(this);       // ensuring the search bar is the same height as a menu item, giving a more consistent look
-	int menuHeight = style()->sizeFromContents(QStyle::CT_MenuItem, &opt, QSize(0, qMax(opt.fontMetrics.height(), iconSize))).height();
-	searchBar->setFixedHeight(menuHeight);
+	if (applet()->getConfigValue<bool>(QStringLiteral("showSearch"))) {
+		PopupMenuSearch *search = new PopupMenuSearch(i18n("Press '/' to search..."), Qt::Key_Slash, this);
+		insertAction(m_applicationsAnchor, search);				
+		if (QLineEdit *lineEdit = search->lineEdit()) {
+			connect(this, &QMenu::aboutToHide, lineEdit, &QLineEdit::clear, Qt::UniqueConnection);
+			connect(lineEdit, &QLineEdit::textChanged, this, &KMenu::updateSearchResults);
+		}
+	}
 	
-	QHBoxLayout *layout = new QHBoxLayout(searchBar); // layout to hold the button and lineedit
-	layout->setContentsMargins(0, 0, 0, 0);
-	layout->setSpacing(0);
-	
-	QToolButton *clearBtn = new QToolButton(searchBar);
-	clearBtn->setFixedSize(menuHeight, menuHeight); // ensure the button is square	
-	clearBtn->setIconSize(QSize(iconSize, iconSize));
-	clearBtn->setIcon(QIcon::fromTheme(QStringLiteral("edit-clear")));
-	clearBtn->setAutoRaise(true);
-	clearBtn->setFocusPolicy(Qt::StrongFocus);
-	
-    m_searchLineEdit = new QLineEdit(searchBar);
-	m_searchLineEdit->setPlaceholderText(i18n("Press '/' to search..."));
-	m_searchLineEdit->setFocusPolicy(Qt::StrongFocus);
-	m_searchLineEdit->installEventFilter(this);
-
-	layout->addWidget(clearBtn);
-	layout->addWidget(m_searchLineEdit);
-
-	// Create the action which contains our search bar
-	QWidgetAction* searchAction = new QWidgetAction(this);
-	searchAction->setDefaultWidget(searchBar);
-
-	insertAction(m_actionsHeader, searchAction);
-
-	// Create the '/' shortcut
-	QShortcut *searchShortcut = new QShortcut(Qt::Key_Slash, this);
-
-	// Connect the necessary signals to their respective slots
-	connect(searchShortcut, &QShortcut::activated, m_searchLineEdit, qOverload<>(&QLineEdit::setFocus));
-	connect(this, &QMenu::aboutToShow, m_searchLineEdit, &QLineEdit::clear);
-	connect(clearBtn, &QToolButton::clicked, m_searchLineEdit, &QLineEdit::clear);
-	connect(m_searchLineEdit, &QLineEdit::textChanged, this, &KMenu::updateSearchResults);	
-	connect(KSycoca::self(), &KSycoca::databaseChanged, this, &KMenu::updateApplications);
+	connect(KSycoca::self(), &KSycoca::databaseChanged, this, &KMenu::updateApplications, Qt::UniqueConnection);
 	updateApplications(); // Call the function to populate the menu itself
 }
 
@@ -454,7 +466,7 @@ KMenu::updateApplications()
 			m_applicationActions.append(action);		
 	}
 
-	insertActions(m_actionsHeader, m_applicationActions);
+	insertActions(m_applicationsAnchor, m_applicationActions);
 	
 }
 
@@ -465,11 +477,13 @@ KMenu::updateApplications()
 QMouseEvent*
 KMenu::translateMouseEvent( QMouseEvent* e )
 {
+	if (!applet()->getConfigValue<bool>(QStringLiteral("drawSideImage")))
+		return e->clone();
+	
     QRect side = sideImageRect();
 
-	if (!side.contains(e->position().toPoint())) {
+	if (!side.contains(e->position().toPoint()))
 		return e->clone();
-	}
 
 	QPointF newpos( e->position() );
 	layoutDirection() == Qt::RightToLeft ?
@@ -486,20 +500,21 @@ KMenu::translateMouseEvent( QMouseEvent* e )
 void
 KMenu::mousePressEvent(QMouseEvent * e)
 {
-    QMouseEvent *newEvent = translateMouseEvent(e);
-    ServiceMenu::mousePressEvent( newEvent );
+	// use smart pointers here to avoid memory leaks
+	std::unique_ptr<QMouseEvent> newEvent(translateMouseEvent(e));
+    ServiceMenu::mousePressEvent( newEvent.get() );
 }
 
 void
 KMenu::mouseReleaseEvent(QMouseEvent *e)
 {
-    QMouseEvent *newEvent = translateMouseEvent(e);
-    ServiceMenu::mouseReleaseEvent( newEvent );
+    std::unique_ptr<QMouseEvent> newEvent(translateMouseEvent(e));
+    ServiceMenu::mouseReleaseEvent( newEvent.get() );
 }
 
 void
 KMenu::mouseMoveEvent(QMouseEvent *e)
 {
-    QMouseEvent *newEvent = translateMouseEvent(e);
-    ServiceMenu::mouseMoveEvent( newEvent );
+    std::unique_ptr<QMouseEvent> newEvent(translateMouseEvent(e));
+    ServiceMenu::mouseMoveEvent( newEvent.get() );
 }

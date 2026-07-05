@@ -1,5 +1,6 @@
 #include "servicemenu.h"
 #include "popupmenutitle.h"
+#include "containmentinterface.h"
 
 #include <QList>
 #include <QMimeData>
@@ -23,27 +24,43 @@
 
 #include <PlasmaActivities/ResourceInstance>
 
-ServiceMenu::ServiceMenu(Plasma::Containment *containment, QWidget *parent)
-: QMenu(parent), m_initialized(false)
+#include <Plasma/Applet>
+
+ServiceMenu::ServiceMenu(KMenuApplet *applet, QWidget *parent)
+: QMenu(parent),
+  m_initialized(false),
+  m_applet(applet)
 {
-	m_containment = new ContainmentInterface(containment, this);
 }
 
-ServiceMenu::ServiceMenu(const QString &title, Plasma::Containment *containment, QWidget *parent)
-	: QMenu(title, parent), m_initialized(false)
+ServiceMenu::ServiceMenu(const QString &title, KMenuApplet *applet, QWidget *parent)
+	: QMenu(title, parent),
+	  m_initialized(false),
+	  m_applet(applet)
 {
-	m_containment = new ContainmentInterface(containment, this);
 }
-
-ServiceMenu::~ServiceMenu() = default;
 
 void
 ServiceMenu::initialize()
 {
-	if (initialized()) return;
+	if (initialized()) return;	
 	this->setContextMenuPolicy(Qt::CustomContextMenu);
-	connect(this, &QMenu::customContextMenuRequested, this, &ServiceMenu::showContextMenu);
+	connect(this, &QMenu::customContextMenuRequested, this, &ServiceMenu::showContextMenu, Qt::UniqueConnection);	
 	setInitialized(true);
+}
+
+void
+ServiceMenu::reinitialize()
+{
+	setInitialized(false);
+
+	// Clear out the menu
+	QList<QAction *> allActions = actions();
+	cleanupActionList(allActions);
+	clear();
+
+	// Finally, call initialize() again
+	initialize();
 }
 
 bool
@@ -64,22 +81,20 @@ ServiceMenu::cleanupActionList(QList<QAction *> &actionList)
 	// Cleans up all member actions of our QList from the menu
 	for (QAction *action : actionList) {
 		removeAction(action);
+		if (action) {
+			if (QMenu *menu = action->menu())
+				menu->deleteLater(); // submenus must be cleared here too
+			action->deleteLater();			
+		}
 	}
 
 	// Clear out the list itself
-	qDeleteAll(actionList);
 	actionList.clear();
 }
 
 QAction*
 ServiceMenu::createActionFromService(const KService::Ptr &service, const QUrl &url)
 {
-	/*
-	  Creates a QAction which launches a service, parented to the menu.
-	  parameters:
-	       service: the KService to launch
-		   url: the QUrl of any files the service should open
-	*/
 	if (!service || !service->isValid())
 		return nullptr;
 	
@@ -182,7 +197,7 @@ ServiceMenu::actionListFromServiceGroup(const KServiceGroup::Ptr &root)
 				if (subGroup->childCount() == 0)
 					continue;
 					
-				ServiceMenu *subMenu = new ServiceMenu(subGroup->caption().replace(QStringLiteral("&"), QStringLiteral("&&")), containmentInterface()->containmentPtr(), parent);
+				ServiceMenu *subMenu = new ServiceMenu(subGroup->caption().replace(QStringLiteral("&"), QStringLiteral("&&")), applet(), parent);
 				subMenu->initialize();
 				subMenu->setIcon(QIcon::fromTheme(subGroup->icon()));
 
@@ -210,36 +225,40 @@ ServiceMenu::actionListFromServiceGroup(const KServiceGroup::Ptr &root)
 void
 ServiceMenu::showContextMenu(const QPoint &pos)
 {
+	ContainmentInterface *containmentInterface = applet()->containmentInterface();
+	if (!containmentInterface)
+		return; // should never happen, but just in case
+	
 	QAction *action = actionAt(pos);
 	if (!action)
 		return;
 
-	ServiceMenu contextMenu(containmentInterface()->containmentPtr(), this);
+	ServiceMenu contextMenu(applet(), this);
 
 	if (action->data().canConvert<KService::Ptr>()) {
 		// KService means application!
 		KService::Ptr service = action->data().value<KService::Ptr>();
 		
-		if (m_containment->mayAddLauncher(ContainmentInterface::Desktop)) {
+		if (containmentInterface->mayAddLauncher(ContainmentInterface::Desktop)) {
 			QAction *desktopAction = contextMenu.addAction(QIcon::fromTheme(QStringLiteral("list-add")), i18n("Add to Desktop"));
-			connect(desktopAction, &QAction::triggered, m_containment, [this, service]() {
-				m_containment->addLauncher(ContainmentInterface::Desktop, service);
+			connect(desktopAction, &QAction::triggered, containmentInterface, [containmentInterface, service]() {
+				containmentInterface->addLauncher(ContainmentInterface::Desktop, service);
 			});
 		}
 
-		if (m_containment->mayAddLauncher(ContainmentInterface::TaskManager)) {
-			if (!m_containment->hasLauncher(ContainmentInterface::TaskManager, service)) {
+		if (containmentInterface->mayAddLauncher(ContainmentInterface::TaskManager)) {
+			if (!containmentInterface->hasLauncher(ContainmentInterface::TaskManager, service)) {
 				QAction *taskManagerAction = contextMenu.addAction(QIcon::fromTheme(QStringLiteral("pin")), i18n("Pin to Task Manager"));
-				connect(taskManagerAction, &QAction::triggered, m_containment, [this, service]() {
-					m_containment->addLauncher(ContainmentInterface::TaskManager, service);
+				connect(taskManagerAction, &QAction::triggered, containmentInterface, [containmentInterface, service]() {
+					containmentInterface->addLauncher(ContainmentInterface::TaskManager, service);
 				});
 			}
 		}
 
-		if (m_containment->mayAddLauncher(ContainmentInterface::Panel)) {
+		if (containmentInterface->mayAddLauncher(ContainmentInterface::Panel)) {
 			QAction *panelAction = contextMenu.addAction(QIcon::fromTheme(QStringLiteral("list-add")), i18n("Add to Panel"));
-			connect(panelAction, &QAction::triggered, m_containment, [this, service]() {
-				m_containment->addLauncher(ContainmentInterface::Panel, service);
+			connect(panelAction, &QAction::triggered, containmentInterface, [containmentInterface, service]() {
+				containmentInterface->addLauncher(ContainmentInterface::Panel, service);
 			});
 		}
 
@@ -269,7 +288,8 @@ ServiceMenu::showContextMenu(const QPoint &pos)
 		const KService::List services = KApplicationTrader::queryByMimeType(fileItem.mimetype());
 
 		if (!services.isEmpty()) {
-			contextMenu.addAction(new PopupMenuTitle(i18n("Open With"), &contextMenu));
+			if (applet()->getConfigValue<bool>(QStringLiteral("showTitles")))
+				contextMenu.addAction(new PopupMenuTitle(i18n("Open With"), &contextMenu));
 
 			for (const KService::Ptr &service : services) {
 				QAction *action = contextMenu.createActionFromService(service, url);

@@ -11,13 +11,13 @@ class RecentDocsMenu : public ServiceMenu
 	Q_OBJECT;
 	
 public:
-	explicit RecentDocsMenu(Plasma::Containment *containment, QWidget *parent = nullptr);
-	explicit RecentDocsMenu(const QString &title, Plasma::Containment *containment, QWidget *parent = nullptr);
-	~RecentDocsMenu() override;
+	explicit RecentDocsMenu(KMenuApplet *applet, QWidget *parent = nullptr);
+	explicit RecentDocsMenu(const QString &title, KMenuApplet *applet, QWidget *parent = nullptr);
+	~RecentDocsMenu() override = default;
 
 private:
-	void initialize();
+	void initialize() override;
 	void updateRecentDocs();
 
-	KActivities::Stats::ResultModel *m_fileList;
+	KActivities::Stats::ResultModel *m_fileList = nullptr;
 };

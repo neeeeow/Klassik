@@ -4,7 +4,6 @@
 #include "popupmenutitle.h"
 
 #include <QObject>
-#include <QMenu>
 
 #include <PlasmaActivities/Stats/ResultModel>
 
@@ -15,12 +14,14 @@ class KMenu : public ServiceMenu
 	Q_OBJECT;
 	
 public:
-	explicit KMenu(Plasma::Containment *containment, QWidget *parent = nullptr);
-	~KMenu() override;
+	explicit KMenu(KMenuApplet *applet, QWidget *parent = nullptr);
+	~KMenu() override = default;
+
+	// Resets the menu
+	void reinitialize() override;
 
 protected:
 	bool event(QEvent *e) override;
-	bool eventFilter(QObject *object, QEvent *event) override;
 	void changeEvent(QEvent *event) override;
 	void paintEvent(QPaintEvent *e) override;
 
@@ -36,9 +37,8 @@ private:
 	QPixmap m_sidePixmap;
 	QPixmap m_sideTilePixmap;
 	
-	// Separator actions
-	PopupMenuTitle *m_allAppsHeader = nullptr;
-	PopupMenuTitle *m_actionsHeader = nullptr;
+	// Action to which we anchor the applications 
+	QAction *m_applicationsAnchor = nullptr;
 
 	// ResultModels for recent apps
     KActivities::Stats::ResultModel *m_recentApps = nullptr;
@@ -48,17 +48,18 @@ private:
 	QList<QAction *> m_recentDocumentsActions; // List of actions linking to recent documents
 	QList<QAction *> m_applicationActions; // List of actions in the root of the applications list
 
-	// Other
-	QLineEdit *m_searchLineEdit;
-	
-	void initialize();
+	// Initializes the menu (automatically done during construction)
+	void initialize() override;
 
+	// Sets the margin dependant on the side pixmap setting
 	void setMargins();
-	
-	bool loadSidePixmap();
+
+	// Side pixmap related functions
+	void loadSidePixmap();
 	QRect sideImageRect();
 	void colorize(QImage &image);
-	
+
+	// Functions for populating the menu
 	void createRecentMenuItems();
 	void updateRecent();
 	void createApplicationsItems();

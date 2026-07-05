@@ -1,5 +1,6 @@
 import QtQuick
 import QtQuick.Controls
+import QtQuick.Layouts
 
 import org.kde.iconthemes as KIconThemes
 import org.kde.kcmutils as KCMUtils
@@ -13,6 +14,28 @@ KCMUtils.SimpleKCM {
 
     property string cfg_icon: Plasmoid.configuration.icon
     readonly property string cfg_iconDefault: Plasmoid.configuration.iconDefaultValue
+
+    property alias cfg_drawSideImage: drawSideImage.checked
+    readonly property bool cfg_drawSideImageDefault: Plasmoid.configuration.drawSideImageDefaultValue // Matches main.xml default
+
+    property alias cfg_showTitles: showTitles.checked
+    readonly property bool cfg_showTitlesDefault: Plasmoid.configuration.showTitlesDefaultValue
+
+    property alias cfg_showRecentApps: showRecentApps.checked
+    readonly property bool cfg_showRecentAppsDefault: Plasmoid.configuration.showRecentAppsDefaultValue
+    property alias cfg_numRecentApps: numRecentApps.value
+    readonly property int cfg_numRecentAppsDefault: Plasmoid.configuration.numRecentAppsDefaultValue
+
+    property alias cfg_showSearch: showSearch.checked
+    readonly property bool cfg_showSearchDefault: Plasmoid.configuration.showSearchDefaultValue
+
+    property alias cfg_showSettings: showSettings.checked
+    readonly property bool cfg_showSettingsDefault: Plasmoid.configuration.showSettingsDefaultValue
+
+    property alias cfg_showRecentDocs: showRecentDocs.checked
+    readonly property bool cfg_showRecentDocsDefault: Plasmoid.configuration.showRecentDocsDefaultValue
+    property alias cfg_numRecentDocs: numRecentDocs.value
+    readonly property int cfg_numRecentDocsDefault: Plasmoid.configuration.numRecentDocsDefaultValue
 
     Kirigami.FormLayout {
         anchors.left: parent.left
@@ -73,6 +96,79 @@ KCMUtils.SimpleKCM {
                     icon.name: "edit-clear"
                     onClicked: configGeneral.cfg_icon = configGeneral.cfg_iconDefault
                 }
+            }
+        }
+
+        Item {
+            Kirigami.FormData.label: i18n("General:")
+            Kirigami.FormData.isSection: true
+        }
+
+        CheckBox {
+            id: drawSideImage
+            text: i18n("Display side image")
+        }
+        CheckBox {
+            id: showTitles
+            text: i18n("Display section titles")
+        }
+
+        Item {
+            Kirigami.FormData.isSection: true
+        }
+
+        CheckBox {
+            id: showRecentApps
+            text: i18n("Display most used applications")
+        }
+        RowLayout {
+            enabled: showRecentApps.checked
+            spacing: Kirigami.Units.smallSpacing
+
+            Label {
+                text: i18n("Number of applications:")
+            }
+
+            SpinBox {
+                id: numRecentApps
+                from: 1
+                to: 20
+            }
+        }
+
+        Item {
+            Kirigami.FormData.isSection: true
+        }
+
+        CheckBox {
+            id: showSearch
+            text: i18n("Display application search bar")
+        }
+        CheckBox {
+            id: showSettings
+            text: i18n("Display settings submenu")
+        }
+
+        Item {
+            Kirigami.FormData.isSection: true
+        }
+
+        CheckBox {
+            id: showRecentDocs
+            text: i18n("Display recent documents")
+        }
+        RowLayout {
+            enabled: showRecentDocs.checked
+            spacing: Kirigami.Units.smallSpacing
+
+            Label {
+                text: i18n("Number of documents:")
+            }
+
+            SpinBox {
+                id: numRecentDocs
+                from: 1
+                to: 20
             }
         }
     }

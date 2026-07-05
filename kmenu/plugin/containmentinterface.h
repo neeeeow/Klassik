@@ -19,10 +19,8 @@ public:
 
 	Q_ENUM(Target)
 	
-	explicit ContainmentInterface(Plasma::Containment *containment, QObject *parent = nullptr);
-	~ContainmentInterface() override;
-
-	Plasma::Containment* containmentPtr() const { return m_containment; }
+	explicit ContainmentInterface(Plasma::Applet *applet);
+	~ContainmentInterface() override = default;
 
 	bool mayAddLauncher(ContainmentInterface::Target target);
 	bool hasLauncher(ContainmentInterface::Target target, const KService::Ptr &service);
@@ -35,7 +33,7 @@ private:
 			QLatin1String("org.kde.plasma.expandingiconstaskmanager"),
 			};
 	
-	Plasma::Containment *m_containment;
+	Plasma::Applet *m_applet = nullptr;
 
 	Plasma::Applet *findTaskManagerApplet();
 };

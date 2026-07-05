@@ -8,41 +8,21 @@
 #include <QFontMetrics>
 #include <QStyleOptionMenuItem>
 
-class PopupMenuTitle : public QWidgetAction
-{
-
-public:
-	PopupMenuTitle(const QString &title, QWidget *parent = nullptr)
-		: QWidgetAction(parent), m_text(title)
-
-	{
-		setEnabled(false); // by default, make it disabled
-	}
-
-protected:
-	QWidget* createWidget(QWidget *parent) override
-	{
-		return new TitleWidget(m_text, parent); // Create our header inside of the title
-	}
-
-private:
-	QString m_text; // The text itself
-
-	// The header widget that we'll draw within the QWidgetAction
+// The header widget that we'll draw within the QWidgetAction
+namespace menuWidgets {
 	class TitleWidget : public QWidget
 	{
+		Q_OBJECT
 	public:
 		TitleWidget(const QString &text, QWidget *parent)
-			: QWidget(parent), m_text(text)
-		{
+			: QWidget(parent), m_text(text) {
 			m_font = font();
 			m_font.setBold(true);
 			setEnabled(false);
 		}
 
 	protected:
-		void paintEvent(QPaintEvent *) override
-		{
+		void paintEvent(QPaintEvent *) override {
 			// This is a straight port from KDE 3's K Menu
 			QPainter p(this);
 			QRect r = rect();
@@ -61,8 +41,7 @@ private:
 			}
 		}
 		
-		QSize sizeHint() const override
-		{
+		QSize sizeHint() const override {
 			QFontMetrics fm(m_font);
 			QSize size = fm.size(Qt::TextSingleLine, m_text);
 			size.setHeight(fm.height() + (style()->pixelMetric(QStyle::PM_DefaultFrameWidth) * 2) + 2);
@@ -73,5 +52,26 @@ private:
 		QString m_text;
 		QFont m_font;
 	};
+}
+	
+class PopupMenuTitle : public QWidgetAction
+{
+	Q_OBJECT
+public:
+	PopupMenuTitle(const QString &title, QWidget *parent = nullptr)
+		: QWidgetAction(parent), m_text(title)
+
+	{
+		setEnabled(false); // by default, make it disabled
+	}
+
+protected:
+	QWidget* createWidget(QWidget *parent) override
+	{
+		return new menuWidgets::TitleWidget(m_text, parent); // Create our header inside of the title
+	}
+
+private:
+	QString m_text; // The text itself
 };
 

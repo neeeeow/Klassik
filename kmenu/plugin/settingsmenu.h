@@ -11,12 +11,12 @@ class SettingsMenu : public ServiceMenu
 	Q_OBJECT;
 	
 public:
-	explicit SettingsMenu(Plasma::Containment *containment, QWidget *parent = nullptr);
-	explicit SettingsMenu(const QString &title, Plasma::Containment *containment, QWidget *parent = nullptr);
-	~SettingsMenu() override;
+	explicit SettingsMenu(KMenuApplet *applet, QWidget *parent = nullptr);
+	explicit SettingsMenu(const QString &title, KMenuApplet *applet, QWidget *parent = nullptr);
+	~SettingsMenu() override = default;
 
 private:
-	void initialize();
+	void initialize() override;
 	void updateSettingsMenu();
 
 	KActivities::Stats::ResultModel *m_settingsList = nullptr;

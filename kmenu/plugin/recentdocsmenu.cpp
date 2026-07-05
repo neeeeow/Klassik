@@ -4,19 +4,17 @@
 
 #include <PlasmaActivities/Stats/Query>
 
-RecentDocsMenu::RecentDocsMenu(Plasma::Containment *containment, QWidget *parent)
-	: ServiceMenu(containment, parent)
+RecentDocsMenu::RecentDocsMenu(KMenuApplet *applet, QWidget *parent)
+	: ServiceMenu(applet, parent)
 {
 	initialize();
 }
 
-RecentDocsMenu::RecentDocsMenu(const QString &title, Plasma::Containment *containment, QWidget *parent)
-	: ServiceMenu(title, containment, parent)
+RecentDocsMenu::RecentDocsMenu(const QString &title, KMenuApplet *applet, QWidget *parent)
+	: ServiceMenu(title, applet, parent)
 {
 	initialize();
 }
-
-RecentDocsMenu::~RecentDocsMenu() = default;
 
 void
 RecentDocsMenu::initialize()
@@ -37,8 +35,12 @@ RecentDocsMenu::initialize()
 		| Type::files()
 		| Activity::current()
 		| Url::file()
-		| Limit(15);
+		| Limit(applet()->getConfigValue<int>(QStringLiteral("numRecentDocs")));
 
+	if (m_fileList) {
+		m_fileList->deleteLater();
+		m_fileList = nullptr;
+	}
     m_fileList = new ResultModel(query, this);	
 
 	// Whenever an application is launched, update the recent apps list
@@ -64,25 +66,21 @@ RecentDocsMenu::updateRecentDocs()
 	connect(clearAction, &QAction::triggered, m_fileList, &KActivities::Stats::ResultModel::forgetAllResources);
 	addSeparator();
 
-	QList<QUrl> urlList;
+	QList<QAction *> actionList;
 	for (int i=0; i < m_fileList->rowCount(); ++i) {
 		QModelIndex index = m_fileList->index(i,0);
 		QUrl url = QUrl::fromUserInput(m_fileList->data(index, KActivities::Stats::ResultModel::ResourceRole).toString());
-		if (!url.isValid())
-			continue;
-		urlList.append(url);
-	}
-
-	if (urlList.isEmpty()) {
-		QAction *emptyAction = addAction(i18n("No Entries"));
-		emptyAction->setEnabled(false);
-		return;
-	}
-
-	for (QUrl url : urlList) {
 		QAction *action = createActionFromUrl(url);
 		if (!action)
 			continue;
-		addAction(action);
+		actionList.append(action);
 	}
+
+	if (actionList.isEmpty()) {
+		QAction *emptyAction = addAction(i18n("No Entries"));
+		emptyAction->setEnabled(false);
+	} else {
+		addActions(actionList);
+	}
+
 }

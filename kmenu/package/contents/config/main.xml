@@ -7,6 +7,44 @@
             <label>The name of the icon to use for the K Menu button.</label>
             <default>start-here-kde</default>
         </entry>
+
+        <entry name="drawSideImage" type="Bool">
+            <label>Draw the KDE side image</label>
+            <default>true</default>
+        </entry>
+
+        <entry name="showTitles" type="Bool">
+            <label>Display section titles</label>
+            <default>true</default>
+        </entry>
+
+        <entry name="showRecentApps" type="Bool">
+            <label>Display the Most Used Applications section</label>
+            <default>true</default>
+        </entry>
+        <entry name="numRecentApps" type="Int">
+            <label>Number of applications to display in the Most Used Applications section</label>
+            <default>3</default>
+        </entry>
+
+        <entry name="showSearch" type="Bool">
+            <label>Display the applications search bar</label>
+            <default>true</default>
+        </entry>
+
+        <entry name="showSettings" type="Bool">
+            <label>Display the Settings menu</label>
+            <default>true</default>
+        </entry>
+
+        <entry name="showRecentDocs" type="Bool">
+            <label>Display the Recent Documents menu</label>
+            <default>true</default>
+        </entry>
+        <entry name="numRecentDocs" type="Int">
+            <label>Number of recent documents to display</label>
+            <default>15</default>
+        </entry>
     </group>
 
 </kcfg>

@@ -1,48 +1,47 @@
-#include "kmenumanager.h"
+#include "containmentinterface.h"
+#include "kmenuapplet.h"
 #include "kmenu.h"
 
 #include <QPoint>
 #include <QRect>
 #include <QQuickWindow>
+#include <KPluginFactory>
+#include <KConfigPropertyMap>
 
-KMenuManager::KMenuManager(QObject *parent)
-	: QObject(parent)
+K_PLUGIN_CLASS_WITH_JSON(KMenuApplet, "../package/metadata.json")
+
+KMenuApplet::KMenuApplet(QObject *parentObject, const KPluginMetaData &data, const QVariantList &args)
+	: Plasma::Applet(parentObject, data, args),
+	  m_containmentInterface(new ContainmentInterface(this)),
+	  m_menu(new KMenu(this)) // this is fine since the applet is only used for pulling configs
 {
+	connect(m_menu, &QMenu::aboutToShow, this, [this]() {
+		m_menuActive = true;
+		Q_EMIT menuActiveChanged();
+	});
+
+	connect(m_menu, &QMenu::aboutToHide, this, [this]() {
+		m_menuActive = false;
+		Q_EMIT menuActiveChanged();
+	});
+
+	// Reinitialize menu on config changes
+	connect(configuration(), &KConfigPropertyMap::valueChanged, this, [this]() {
+		if (m_menu)
+			m_menu->reinitialize();
+	});
 }
 
-KMenuManager::~KMenuManager()
+KMenuApplet::~KMenuApplet()
 {
-	if (m_menu)
-		m_menu->deleteLater();
+	delete m_menu;
 }
 
 void
-KMenuManager::initialize(QObject *containmentObject)
-{
-	m_containment = qobject_cast<Plasma::Containment*>(containmentObject);
-	if (!m_containment)
-		qWarning("KMenuManager: failed to obtain plasmoid containment!");
-	
-	if (!m_menu) {
-		m_menu = new KMenu(m_containment);
-
-	    connect(m_menu, &QMenu::aboutToShow, this, [this]() {
-			m_menuActive = true;
-			Q_EMIT menuActiveChanged();
-		});
-
-		connect(m_menu, &QMenu::aboutToHide, this, [this]() {
-			m_menuActive = false;
-			Q_EMIT menuActiveChanged();
-		});
-	}
-}
-
-void
-KMenuManager::showMenu(QQuickItem *button, QQuickItem *root, panelLocation location)
+KMenuApplet::showMenu(QQuickItem *button, QQuickItem *root, Plasma::Types::Location location)
 {
 	if (!m_menu) {
-		qWarning("KMenuManager: KMenu not initialized!");
+		qWarning("KMenuApplet: KMenu not initialized!");
 		return;
 	}
 
@@ -56,8 +55,14 @@ KMenuManager::showMenu(QQuickItem *button, QQuickItem *root, panelLocation locat
 	m_menu->popup(adjustedMenuPosition(button, root, location));
 }
 
+void
+KMenuApplet::hideMenu()
+{
+	if (m_menu) m_menu->close(); 
+}
+
 QPoint
-KMenuManager::adjustedMenuPosition(QQuickItem *button, QQuickItem *root, panelLocation location)
+KMenuApplet::adjustedMenuPosition(QQuickItem *button, QQuickItem *root, Plasma::Types::Location location)
 {
 	if (!m_menu)
 		return QPoint(0,0); // should never be the case, but as a safeguard
@@ -73,16 +78,16 @@ KMenuManager::adjustedMenuPosition(QQuickItem *button, QQuickItem *root, panelLo
 	QRect rootRect = root->boundingRect().translated(rootGlobalPos).toRect();
 
 	switch (location) {
-	case TopEdge:
+	case Plasma::Types::TopEdge:
 		y = rootRect.bottom();
 		break;
-	case BottomEdge:
+	case Plasma::Types::BottomEdge:
 		y = rootRect.top() - menuSize.height();
 		break;
-	case LeftEdge:
+	case Plasma::Types::LeftEdge:
 		x = rootRect.right();
 		break;
-	case RightEdge:
+	case Plasma::Types::RightEdge:
 		x = rootRect.left() - menuSize.width();
 		break;
 	default:
@@ -111,3 +116,5 @@ KMenuManager::adjustedMenuPosition(QQuickItem *button, QQuickItem *root, panelLo
 	
 	return QPoint(x,y);
 }
+
+#include "kmenuapplet.moc"

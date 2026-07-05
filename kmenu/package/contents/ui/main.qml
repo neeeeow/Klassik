@@ -5,8 +5,6 @@ import QtQuick.Controls
 import org.kde.plasma.plasmoid
 import org.kde.kirigami as Kirigami
 
-import com.github.neeeeow.klassik.kmenu as KMenu
-
 PlasmoidItem{
     id: root
 
@@ -14,16 +12,11 @@ PlasmoidItem{
 
     Plasmoid.icon: Plasmoid.configuration.icon
 
-    KMenu.KMenuManager {
-        id: kmenu // Create and initialize our KMenu plugin
-        Component.onCompleted: kmenu.initialize(Plasmoid.containment)
-    }
-
     fullRepresentation: ToolButton { // We can build the menu button in qml, since Qt Quick hands off buttons to Qt.
         id: menuButton
 
         checkable: true
-        checked: kmenu.menuActive
+        checked: Plasmoid.menuActive
 
         // Fill the height of the container
         Layout.fillHeight: true
@@ -37,12 +30,12 @@ PlasmoidItem{
             source: Plasmoid.icon
         }
 
-        onClicked: kmenu.toggleMenu(menuButton, root, Plasmoid.location)
+        onClicked: Plasmoid.toggleMenu(menuButton, root, Plasmoid.location)
 
         Connections {
             target: Plasmoid
             function onActivated() {
-                kmenu.toggleMenu(menuButton, root, Plasmoid.location)
+                Plasmoid.toggleMenu(menuButton, root, Plasmoid.location)
             }
         }
     }

@@ -5,19 +5,17 @@
 
 #include <PlasmaActivities/Stats/Query>
 
-SettingsMenu::SettingsMenu(Plasma::Containment *containment, QWidget *parent)
-	: ServiceMenu(containment, parent)
+SettingsMenu::SettingsMenu(KMenuApplet *applet, QWidget *parent)
+	: ServiceMenu(applet, parent)
 {
 	initialize();
 }
 
-SettingsMenu::SettingsMenu(const QString &title, Plasma::Containment *containment, QWidget *parent)
-	: ServiceMenu(title, containment, parent)
+SettingsMenu::SettingsMenu(const QString &title, KMenuApplet *applet, QWidget *parent)
+	: ServiceMenu(title, applet, parent)
 {
 	initialize();
 }
-
-SettingsMenu::~SettingsMenu() = default;
 
 void
 SettingsMenu::initialize()
@@ -30,8 +28,10 @@ SettingsMenu::initialize()
 
 	auto query = AllResources | Agent(QStringLiteral("org.kde.systemsettings")) | HighScoredFirst | Limit(5);
 
-	if (m_settingsList)
-		delete m_settingsList;
+	if (m_settingsList) {
+	    m_settingsList->deleteLater();
+		m_settingsList = nullptr;
+	}
     m_settingsList = new ResultModel(query, this);	
 
 	connect(m_settingsList, &ResultModel::dataChanged, this, &SettingsMenu::updateSettingsMenu);

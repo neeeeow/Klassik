@@ -13,6 +13,8 @@ include(KDEInstallDirs)
 include(KDECMakeSettings)
 include(KDECompilerSettings NO_POLICY_SCOPE)
 
+# Find required packages
+
 find_package(Qt6 REQUIRED COMPONENTS
   Core
   Widgets
@@ -26,6 +28,8 @@ find_package(KF6 REQUIRED COMPONENTS
   KIO
   ColorScheme
   JobWidgets
+  Config
+  CoreAddons
 )
 
 find_package(Plasma REQUIRED) # Required for plasma_install_package
@@ -34,23 +38,29 @@ find_package(PlasmaActivities REQUIRED)
 find_package(PlasmaQuick REQUIRED)
 find_package(LibKWorkspace REQUIRED)
 
+# Install QML plasmoid
 plasma_install_package(package com.github.neeeeow.klassik.kmenu)
 
 add_definitions(-DTRANSLATION_DOMAIN=\"plasma_applet_com.github.neeeeow.klassik.kmenu\")
 
-set(kmenuplugin_SRCS
+# Compile and install C++ plugin
+set(kmenu_SRCS
   plugin/containmentinterface.cpp
   plugin/servicemenu.cpp
   plugin/kmenu.cpp
-  plugin/kmenumanager.cpp
-  plugin/kmenuplugin.cpp
+  plugin/kmenuapplet.cpp
   plugin/recentdocsmenu.cpp
   plugin/settingsmenu.cpp
+  plugin/popupmenutitle.h
+  plugin/popupmenusearch.h
 )
 
-add_library(kmenuplugin SHARED ${kmenuplugin_SRCS})
+kcoreaddons_add_plugin(com.github.neeeeow.klassik.kmenu
+  SOURCES ${kmenu_SRCS}
+  INSTALL_NAMESPACE "plasma/applets"
+)
 
-target_link_libraries(kmenuplugin
+target_link_libraries(com.github.neeeeow.klassik.kmenu
   Qt::Core
   Qt::Widgets
   Qt::Qml
@@ -61,6 +71,8 @@ target_link_libraries(kmenuplugin
   KF6::ColorScheme
   KF6::JobWidgets
   KF6::KIOWidgets
+  KF6::ConfigGui
+  KF6::ConfigQml
   Plasma::Plasma
   Plasma::ActivitiesStats
   Plasma::Activities
@@ -68,12 +80,9 @@ target_link_libraries(kmenuplugin
   PW::KWorkspace
 )
 
-qt_add_resources(kmenuplugin "img"
+qt_add_resources(com.github.neeeeow.klassik.kmenu "img"
   PREFIX "/com/github/neeeeow/klassik/kmenu"
   FILES
   "plugin/img/kside.png"
   "plugin/img/kside_tile.png"
   )
-
-install(TARGETS kmenuplugin DESTINATION ${QT6_INSTALL_QML}/com/github/neeeeow/klassik/kmenu)
-install(FILES plugin/qmldir DESTINATION ${QT6_INSTALL_QML}/com/github/neeeeow/klassik/kmenu)

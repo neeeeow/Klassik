@@ -1,6 +1,6 @@
 #pragma once
 
-#include "containmentinterface.h"
+#include "kmenuapplet.h"
 
 #include <QObject>
 #include <QMenu>
@@ -14,27 +14,39 @@ class ServiceMenu : public QMenu
 	Q_OBJECT;
 	
 public:
-	explicit ServiceMenu(Plasma::Containment *containment, QWidget *parent = nullptr);
-	explicit ServiceMenu(const QString &title, Plasma::Containment *containment, QWidget *parent = nullptr);
-	~ServiceMenu() override;
-	void initialize();
+	explicit ServiceMenu(KMenuApplet *applet, QWidget *parent = nullptr);
+	explicit ServiceMenu(const QString &title, KMenuApplet *applet, QWidget *parent = nullptr);
+	virtual ~ServiceMenu() = default;
+
+	// Initializes the menu
+	virtual void initialize();
 
 	void cleanupActionList(QList<QAction *> &);
+
+	// Functions for creating QActions, from either a service, a url, or an action which launches a
+	// url in the file explorer. All QActions are parented to the menu
 	QAction* createActionFromService(const KService::Ptr &, const QUrl &url = QUrl());
 	QAction* createActionFromUrl(const QUrl &);
 	QAction* createFileExplorerActionFromUrl(const QUrl &url, const QIcon &icon, const QString &title);
 
 protected:
+	// Reinitializes the menu (usually after a config change)
+	virtual void reinitialize();
+	
 	// Return the initialized flag
 	bool initialized();
 
 	// Set the initialized flag
 	void setInitialized(bool);
-	
-	ContainmentInterface* containmentInterface() const { return m_containment; }
 
+	// Returns a pointer to the Plasma applet attached to our menu
+    KMenuApplet* applet() const { return m_applet; }
+
+	// Creates a list of QAction pointers (with nested submenus) from a given
+	// KServiceGroup, parented to the menu
 	QList<QAction*> actionListFromServiceGroup(const KServiceGroup::Ptr &root);
 
+	// Launches the menu editor and KRunner
 	static void runMenuEditor(QString arg = QString());
 	static void invokeKRunner(QString arg = QString());
 	
@@ -43,8 +55,9 @@ protected:
 
 private:
 	bool m_initialized; // Initialization state
+
+    KMenuApplet *m_applet = nullptr; // pointer to plasma applet
 	
-	ContainmentInterface *m_containment;
 	QPointF m_startPos;
 
 	void showContextMenu(const QPoint &pos);
