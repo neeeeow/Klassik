@@ -52,6 +52,9 @@ ServiceMenu::initialize()
 void
 ServiceMenu::reinitialize()
 {
+	if (!initialized())
+		return;
+		
 	setInitialized(false);
 
 	// Clear out the menu

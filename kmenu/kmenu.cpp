@@ -139,6 +139,9 @@ KMenu::initialize()
 void
 KMenu::reinitialize()
 {
+	if (!initialized())
+		return;
+	
 	setInitialized(false);
 
 	// Clear out the menu
@@ -184,7 +187,7 @@ KMenu::loadSidePixmap()
 		return;
 	
 	QImage image;
-	image.load(QStringLiteral(":/com/github/neeeeow/klassik/kmenu/plugin/img/kside.png"));
+	image.load(QStringLiteral(":/qt/qml/plasma/applet/com/github/neeeeow/klassik/kmenu/kside.png"));
 	if (image.isNull())
 		return;
 	colorize(image);
@@ -208,7 +211,7 @@ KMenu::loadSidePixmap()
 	sidePainter.setPen(Qt::white);
 	sidePainter.drawText(textRect, Qt::AlignVCenter | Qt::AlignLeft, sideText);
 
-	image.load(QStringLiteral(":/com/github/neeeeow/klassik/kmenu/plugin/img/kside_tile.png"));
+	image.load(QStringLiteral(":/qt/qml/plasma/applet/com/github/neeeeow/klassik/kmenu/kside_tile.png"));
 	if (image.isNull())
 		return;
 	colorize(image);

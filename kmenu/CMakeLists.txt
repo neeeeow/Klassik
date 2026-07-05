@@ -38,29 +38,29 @@ find_package(PlasmaActivities REQUIRED)
 find_package(PlasmaQuick REQUIRED)
 find_package(LibKWorkspace REQUIRED)
 
-# Install QML plasmoid
-plasma_install_package(package com.github.neeeeow.klassik.kmenu)
-
 add_definitions(-DTRANSLATION_DOMAIN=\"plasma_applet_com.github.neeeeow.klassik.kmenu\")
 
-# Compile and install C++ plugin
-set(kmenu_SRCS
-  plugin/containmentinterface.cpp
-  plugin/servicemenu.cpp
-  plugin/kmenu.cpp
-  plugin/kmenuapplet.cpp
-  plugin/recentdocsmenu.cpp
-  plugin/settingsmenu.cpp
-  plugin/popupmenutitle.h
-  plugin/popupmenusearch.h
-)
+plasma_add_applet(com.github.neeeeow.klassik.kmenu
+  QML_SOURCES
+    qml/ConfigGeneral.qml
+    qml/config.qml
+    qml/main.qml
+  CPP_SOURCES
+    containmentinterface.cpp
+    servicemenu.cpp
+    kmenu.cpp
+    kmenuapplet.cpp
+    recentdocsmenu.cpp
+    settingsmenu.cpp
+    popupmenutitle.h
+    popupmenusearch.h
+  RESOURCES
+    main.xml
+    img/kside.png
+    img/kside_tile.png
+)  
 
-kcoreaddons_add_plugin(com.github.neeeeow.klassik.kmenu
-  SOURCES ${kmenu_SRCS}
-  INSTALL_NAMESPACE "plasma/applets"
-)
-
-target_link_libraries(com.github.neeeeow.klassik.kmenu
+target_link_libraries(com.github.neeeeow.klassik.kmenu PRIVATE
   Qt::Core
   Qt::Widgets
   Qt::Qml
@@ -80,9 +80,3 @@ target_link_libraries(com.github.neeeeow.klassik.kmenu
   PW::KWorkspace
 )
 
-qt_add_resources(com.github.neeeeow.klassik.kmenu "img"
-  PREFIX "/com/github/neeeeow/klassik/kmenu"
-  FILES
-  "plugin/img/kside.png"
-  "plugin/img/kside_tile.png"
-  )

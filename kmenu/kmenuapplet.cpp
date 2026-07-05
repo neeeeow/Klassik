@@ -8,7 +8,7 @@
 #include <KPluginFactory>
 #include <KConfigPropertyMap>
 
-K_PLUGIN_CLASS_WITH_JSON(KMenuApplet, "../package/metadata.json")
+K_PLUGIN_CLASS_WITH_JSON(KMenuApplet, "metadata.json")
 
 KMenuApplet::KMenuApplet(QObject *parentObject, const KPluginMetaData &data, const QVariantList &args)
 	: Plasma::Applet(parentObject, data, args),
