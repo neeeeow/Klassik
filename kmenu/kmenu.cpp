@@ -406,6 +406,7 @@ KMenu::createApplicationsItems()
 		insertAction(m_applicationsAnchor, search);				
 		if (QLineEdit *lineEdit = search->lineEdit()) {
 			connect(this, &QMenu::aboutToHide, lineEdit, &QLineEdit::clear, Qt::UniqueConnection);
+			connect(this, &QMenu::aboutToHide, lineEdit, &QLineEdit::clearFocus, Qt::UniqueConnection);
 			connect(lineEdit, &QLineEdit::textChanged, this, &KMenu::updateSearchResults);
 		}
 	}

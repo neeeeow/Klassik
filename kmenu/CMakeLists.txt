@@ -14,7 +14,6 @@ include(KDECMakeSettings)
 include(KDECompilerSettings NO_POLICY_SCOPE)
 
 # Find required packages
-
 find_package(Qt6 REQUIRED COMPONENTS
   Core
   Widgets
@@ -32,7 +31,6 @@ find_package(KF6 REQUIRED COMPONENTS
   CoreAddons
 )
 
-find_package(Plasma REQUIRED) # Required for plasma_install_package
 find_package(PlasmaActivitiesStats REQUIRED)
 find_package(PlasmaActivities REQUIRED)
 find_package(PlasmaQuick REQUIRED)
