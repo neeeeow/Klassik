@@ -1,0 +1,23 @@
+{
+    "KPlugin": {
+        "Authors": [
+	    {
+		"Name": "neeeeow"
+	    },
+            {
+                "Name": "Eike Hein (KDE task manager)"
+            }
+        ],
+        "Category": "Windows and Tasks",
+        "Description": "Classic style task manager",
+        "EnabledByDefault": true,
+        "Icon": "preferences-system-windows",
+        "License": "GPL-3.0+",
+        "Name": "Klassik Task Manager",
+        "Website": "https://github.com/neeeeow/klassik"
+    },
+    "X-Plasma-API-Minimum-Version": "6.0",
+    "X-Plasma-Provides": [
+        "org.kde.plasma.multitasking"
+    ]
+}
