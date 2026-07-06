@@ -9,6 +9,7 @@ pragma ComponentBehavior: Bound
 
 import QtQuick
 import QtQuick.Layouts
+import QtQuick.Controls
 
 import org.kde.plasma.core as PlasmaCore
 import org.kde.ksvg as KSvg
@@ -412,19 +413,6 @@ PlasmaCore.ToolTipArea {
     }
 
     TapHandler {
-        id: leftTapHandler
-        acceptedButtons: Qt.LeftButton
-        onTapped: (eventPoint, button) => leftClick()
-
-        function leftClick(): void {
-            if (task.active) {
-                task.hideToolTip();
-            }
-            TaskManagerApplet.TaskTools.activateTask(modelIndex(), model, point.modifiers, task, Plasmoid, tasksRoot, effectWatcher.registered);
-        }
-    }
-
-    TapHandler {
         acceptedButtons: Qt.MiddleButton | Qt.BackButton | Qt.ForwardButton
         onTapped: (eventPoint, button) => {
             if (button === Qt.MiddleButton) {
@@ -458,7 +446,7 @@ PlasmaCore.ToolTipArea {
         }
     }
 
-    KSvg.FrameSvgItem {
+    Button {
         id: frame
 
         anchors {
@@ -470,10 +458,23 @@ PlasmaCore.ToolTipArea {
             rightMargin: ((task.inPopup || task.tasksRoot.vertical) && taskList.columns > 1) ? TaskManagerApplet.LayoutMetrics.iconMargin : 0
         }
 
-        imagePath: "widgets/tasks"
         property bool isHovered: task.highlighted && Plasmoid.configuration.taskHoverEffect
-        property string basePrefix: "normal"
-        prefix: isHovered ? TaskManagerApplet.TaskTools.taskPrefixHovered(basePrefix, Plasmoid.location) : TaskManagerApplet.TaskTools.taskPrefix(basePrefix, Plasmoid.location)
+        //property string basePrefix: "normal"
+
+        focusPolicy: Qt.NoFocus
+        hoverEnabled: true
+        checkable: true
+
+        flat: model.IsLauncher
+        checked: model.IsActive
+        opacity: model.IsMinimized ? 0.8 : 1.0
+
+        onClicked: { // logic from leftTapHandler
+            if (task.active) {
+                task.hideToolTip();
+            }
+            TaskManagerApplet.TaskTools.activateTask(modelIndex(), model, Qt.NoModifier, task, Plasmoid, tasksRoot, effectWatcher.registered);
+        }
 
         // Avoid repositioning delegate item after dragFinished
         DragHandler {
@@ -505,8 +506,8 @@ PlasmaCore.ToolTipArea {
                         dragHelper.Drag.imageSource = result.url;
                         dragHelper.Drag.mimeData = {
                             "text/x-orgkdeplasmataskmanager_taskurl": backend.tryDecodeApplicationsUrl(model.LauncherUrlWithoutIcon).toString(),
-                            [model.MimeType]: model.MimeData,
-                            "application/x-orgkdeplasmataskmanager_taskbuttonitem": model.MimeData,
+                                     [model.MimeType]: model.MimeData,
+                                     "application/x-orgkdeplasmataskmanager_taskbuttonitem": model.MimeData,
                         };
                         dragHelper.Drag.active = dragHandler.active;
                     });
@@ -567,7 +568,7 @@ PlasmaCore.ToolTipArea {
 
             anchors.fill: parent
 
-            active: task.highlighted
+            //active: task.highlighted
             enabled: true
 
             source: task.model.decoration
@@ -623,6 +624,9 @@ PlasmaCore.ToolTipArea {
         textFormat: Text.PlainText
         verticalAlignment: Text.AlignVCenter
         maximumLineCount: Plasmoid.configuration.maxTextLines || undefined
+        font.bold: task.model.IsDemandingAttention || (task.smartLauncherItem && task.smartLauncherItem.urgent) // attention
+        font.italic: task.model.IsMinimized
+        opacity: task.model.IsMinimized ? 0.8 : 1.0
 
         // The accessible item of this element is only used for debugging
         // purposes, and it will never gain focus (thus it won't interfere
@@ -640,41 +644,6 @@ PlasmaCore.ToolTipArea {
             }
         }
     }
-
-    states: [
-        State {
-            name: "launcher"
-            when: task.model.IsLauncher
-
-            PropertyChanges {
-                frame.basePrefix: ""
-            }
-        },
-        State {
-            name: "attention"
-            when: task.model.IsDemandingAttention || (task.smartLauncherItem && task.smartLauncherItem.urgent)
-
-            PropertyChanges {
-                frame.basePrefix: "attention"
-            }
-        },
-        State {
-            name: "minimized"
-            when: task.model.IsMinimized
-
-            PropertyChanges {
-                frame.basePrefix: "minimized"
-            }
-        },
-        State {
-            name: "active"
-            when: task.model.IsActive
-
-            PropertyChanges {
-                frame.basePrefix: "focus"
-            }
-        }
-    ]
 
     Component.onCompleted: {
         if (!inPopup && model.IsWindow) {
