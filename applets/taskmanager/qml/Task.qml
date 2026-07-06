@@ -184,7 +184,7 @@ PlasmaCore.ToolTipArea {
         return `${i18nc("@info:usagetip %1 task name", "Activate %1", model.display)}; ${smartLauncherDescription}`;
     }
     Accessible.role: Accessible.Button
-    Accessible.onPressAction: leftTapHandler.leftClick()
+    //Accessible.onPressAction: leftTapHandler.leftClick()
 
     onToolTipVisibleChanged: toolTipVisible => {
         task.toolTipOpen = toolTipVisible;
@@ -294,7 +294,7 @@ PlasmaCore.ToolTipArea {
 
     function showContextMenu(args: var): void {
         task.hideImmediately();
-        contextMenu = tasksRoot.createContextMenu(task, modelIndex(), args) as ContextMenu;
+        contextMenu = tasksRoot.createContextMenu(task, modelIndex(), args) as TaskManagerApplet.ContextMenu;
         contextMenu.show();
     }
 
@@ -568,7 +568,7 @@ PlasmaCore.ToolTipArea {
 
             anchors.fill: parent
 
-            //active: task.highlighted
+            active: task.highlighted && model.IsLauncher
             enabled: true
 
             source: task.model.decoration
