@@ -12,8 +12,8 @@ pragma ComponentBehavior: Bound
 
 import QtQuick
 import QtQuick.Layouts
+import QtQuick.Controls
 
-import org.kde.plasma.components as PlasmaComponents3
 import org.kde.plasma.extras as PlasmaExtras
 import org.kde.kirigami as Kirigami
 import org.kde.plasma.private.mpris as Mpris
@@ -37,7 +37,7 @@ RowLayout {
             Layout.preferredHeight: songText.height
             implicitWidth: songText.implicitWidth
 
-            textItem: PlasmaComponents3.Label {
+            textItem: Label {
                 id: songText
                 maximumLineCount: artistText.visible ? 1 : 2
                 wrapMode: Text.NoWrap
@@ -66,13 +66,13 @@ RowLayout {
         }
     }
 
-    PlasmaComponents3.ToolButton {
+    ToolButton {
         enabled: toolTipDelegate.playerData?.canGoPrevious ?? false
         icon.name: mirrored ? "media-skip-forward" : "media-skip-backward"
         onClicked: toolTipDelegate.playerData.Previous()
     }
 
-    PlasmaComponents3.ToolButton {
+    ToolButton {
         enabled: (root.isPlaying ? toolTipDelegate.playerData?.canPause : toolTipDelegate.playerData?.canPlay) ?? false
         icon.name: root.isPlaying ? "media-playback-pause" : "media-playback-start"
         onClicked: {
@@ -84,7 +84,7 @@ RowLayout {
         }
     }
 
-    PlasmaComponents3.ToolButton {
+    ToolButton {
         enabled: toolTipDelegate.playerData?.canGoNext ?? false
         icon.name: mirrored ? "media-skip-backward" : "media-skip-forward"
         onClicked: toolTipDelegate.playerData.Next()
