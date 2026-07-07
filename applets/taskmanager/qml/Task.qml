@@ -519,129 +519,128 @@ PlasmaCore.ToolTipArea {
                 }
             }
         }
-    }
 
-    Loader {
-        id: taskProgressOverlayLoader
+        Loader {
+            id: taskProgressOverlayLoader
 
-        anchors.fill: frame
-        asynchronous: true
-        active: task.smartLauncherItem && task.smartLauncherItem.progressVisible
+            anchors.fill: frame
+            asynchronous: true
+            active: task.smartLauncherItem && task.smartLauncherItem.progressVisible
 
-        source: "TaskProgressOverlay.qml"
-    }
-
-    Loader {
-        id: iconBox
-
-        anchors {
-            left: parent.left
-            leftMargin: adjustMargin(true, parent.width, taskFrame.margins.left)
-            top: parent.top
-            topMargin: adjustMargin(false, parent.height, taskFrame.margins.top)
+            source: "TaskProgressOverlay.qml"
         }
 
-        width: task.inPopup ? Math.max(Kirigami.Units.iconSizes.sizeForLabels, Kirigami.Units.iconSizes.medium) : Math.min(task.parent?.minimumWidth ?? 0, task.height)
-        height: task.inPopup ? width : (parent.height - adjustMargin(false, parent.height, taskFrame.margins.top)
-                 - adjustMargin(false, parent.height, taskFrame.margins.bottom))
+        Loader {
+            id: iconBox
 
-        asynchronous: true
-        active: height >= Kirigami.Units.iconSizes.small
-                && task.smartLauncherItem && task.smartLauncherItem.countVisible
-        source: "TaskBadgeOverlay.qml"
+            anchors {
+                left: parent.left
+                leftMargin: adjustMargin(true, parent.width, taskFrame.margins.left)
+                top: parent.top
+                topMargin: adjustMargin(false, parent.height, taskFrame.margins.top)
+            }
 
-        function adjustMargin(isVertical: bool, size: real, margin: real): real {
-            if (!size) {
+            width: task.inPopup ? Math.max(Kirigami.Units.iconSizes.sizeForLabels, Kirigami.Units.iconSizes.medium) : Math.min(task.parent?.minimumWidth ?? 0, task.height)
+            height: task.inPopup ? width : (parent.height - adjustMargin(false, parent.height, taskFrame.margins.top)
+            - adjustMargin(false, parent.height, taskFrame.margins.bottom))
+
+            asynchronous: true
+            active: height >= Kirigami.Units.iconSizes.small
+            && task.smartLauncherItem && task.smartLauncherItem.countVisible
+            source: "TaskBadgeOverlay.qml"
+
+            function adjustMargin(isVertical: bool, size: real, margin: real): real {
+                if (!size) {
+                    return margin;
+                }
+
+                var margins = isVertical ? TaskManagerApplet.LayoutMetrics.horizontalMargins() : TaskManagerApplet.LayoutMetrics.verticalMargins();
+
+                if ((size - margins) < Kirigami.Units.iconSizes.small) {
+                    return Math.ceil((margin * (Kirigami.Units.iconSizes.small / size)) / 2);
+                }
+
                 return margin;
             }
 
-            var margins = isVertical ? TaskManagerApplet.LayoutMetrics.horizontalMargins() : TaskManagerApplet.LayoutMetrics.verticalMargins();
+            Kirigami.Icon {
+                id: icon
 
-            if ((size - margins) < Kirigami.Units.iconSizes.small) {
-                return Math.ceil((margin * (Kirigami.Units.iconSizes.small / size)) / 2);
+                anchors.fill: parent
+
+                active: task.highlighted && model.IsLauncher
+                enabled: true
+
+                source: task.model.decoration
             }
 
-            return margin;
-        }
+            states: [
+                // Using a state transition avoids a binding loop between label.visible and
+                // the text label margin, which derives from the icon width.
+                State {
+                    name: "standalone"
+                    when: !label.visible && task.parent
 
-        Kirigami.Icon {
-            id: icon
+                    AnchorChanges {
+                        target: iconBox
+                        anchors.left: undefined
+                        anchors.horizontalCenter: parent.horizontalCenter
+                    }
 
-            anchors.fill: parent
-
-            active: task.highlighted && model.IsLauncher
-            enabled: true
-
-            source: task.model.decoration
-        }
-
-        states: [
-            // Using a state transition avoids a binding loop between label.visible and
-            // the text label margin, which derives from the icon width.
-            State {
-                name: "standalone"
-                when: !label.visible && task.parent
-
-                AnchorChanges {
-                    target: iconBox
-                    anchors.left: undefined
-                    anchors.horizontalCenter: parent.horizontalCenter
-                }
-
-                PropertyChanges {
-                    iconBox.anchors.leftMargin: 0
-                    iconBox.width: Math.min(task.parent.minimumWidth, tasksRoot.height)
+                    PropertyChanges {
+                        iconBox.anchors.leftMargin: 0
+                        iconBox.width: Math.min(task.parent.minimumWidth, tasksRoot.height)
                         - iconBox.adjustMargin(true, task.width, taskFrame.margins.left)
                         - iconBox.adjustMargin(true, task.width, taskFrame.margins.right)
+                    }
                 }
+            ]
+
+            Loader {
+                anchors.centerIn: parent
+                width: Math.min(parent.width, parent.height)
+                height: width
+                active: task.model.IsStartup
+                sourceComponent: busyIndicator
             }
-        ]
-
-        Loader {
-            anchors.centerIn: parent
-            width: Math.min(parent.width, parent.height)
-            height: width
-            active: task.model.IsStartup
-            sourceComponent: busyIndicator
         }
-    }
 
-    PlasmaComponents3.Label {
-        id: label
+        PlasmaComponents3.Label {
+            id: label
 
-        visible: (task.inPopup || !task.tasksRoot.iconsOnly && !task.model.IsLauncher
+            visible: (task.inPopup || !task.tasksRoot.iconsOnly && !task.model.IsLauncher
             && (parent.width - iconBox.height - Kirigami.Units.smallSpacing) >= TaskManagerApplet.LayoutMetrics.spaceRequiredToShowText())
 
-        anchors {
-            fill: parent
-            leftMargin: taskFrame.margins.left + iconBox.width + TaskManagerApplet.LayoutMetrics.labelMargin
-            topMargin: taskFrame.margins.top
-            rightMargin: taskFrame.margins.right + (task.audioStreamIcon !== null && task.audioStreamIcon.visible ? (task.audioStreamIcon.width + TaskManagerApplet.LayoutMetrics.labelMargin) : 0)
-            bottomMargin: taskFrame.margins.bottom
-        }
+            anchors {
+                fill: parent
+                leftMargin: taskFrame.margins.left + iconBox.width + TaskManagerApplet.LayoutMetrics.labelMargin
+                topMargin: taskFrame.margins.top
+                rightMargin: taskFrame.margins.right + (task.audioStreamIcon !== null && task.audioStreamIcon.visible ? (task.audioStreamIcon.width + TaskManagerApplet.LayoutMetrics.labelMargin) : 0)
+                bottomMargin: taskFrame.margins.bottom
+            }
 
-        wrapMode: (maximumLineCount === 1) ? Text.NoWrap : Text.Wrap
-        elide: Text.ElideRight
-        textFormat: Text.PlainText
-        verticalAlignment: Text.AlignVCenter
-        maximumLineCount: Plasmoid.configuration.maxTextLines || undefined
-        font.bold: task.model.IsDemandingAttention || (task.smartLauncherItem && task.smartLauncherItem.urgent) // attention
-        font.italic: task.model.IsMinimized
-        opacity: task.model.IsMinimized ? 0.8 : 1.0
+            wrapMode: (maximumLineCount === 1) ? Text.NoWrap : Text.Wrap
+            elide: Text.ElideRight
+            textFormat: Text.PlainText
+            verticalAlignment: Text.AlignVCenter
+            maximumLineCount: Plasmoid.configuration.maxTextLines || undefined
+            font.bold: task.model.IsDemandingAttention || (task.smartLauncherItem && task.smartLauncherItem.urgent) // attention
+            font.italic: task.model.IsMinimized
 
-        // The accessible item of this element is only used for debugging
-        // purposes, and it will never gain focus (thus it won't interfere
-        // with screenreaders).
-        Accessible.ignored: !visible
-        Accessible.name: parent.Accessible.name + "-labelhint"
+            // The accessible item of this element is only used for debugging
+            // purposes, and it will never gain focus (thus it won't interfere
+            // with screenreaders).
+            Accessible.ignored: !visible
+            Accessible.name: parent.Accessible.name + "-labelhint"
 
-        // use State to avoid unnecessary re-evaluation when the label is invisible
-        states: State {
-            name: "labelVisible"
-            when: label.visible
+            // use State to avoid unnecessary re-evaluation when the label is invisible
+            states: State {
+                name: "labelVisible"
+                when: label.visible
 
-            PropertyChanges {
-                label.text: task.model.display
+                PropertyChanges {
+                    label.text: task.model.display
+                }
             }
         }
     }
