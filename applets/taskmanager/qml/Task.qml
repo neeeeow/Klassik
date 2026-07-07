@@ -15,7 +15,6 @@ import QtQuick.Controls
 import org.kde.plasma.core as PlasmaCore
 import org.kde.ksvg as KSvg
 import org.kde.plasma.extras as PlasmaExtras
-import org.kde.plasma.components as PlasmaComponents3
 import org.kde.kirigami as Kirigami
 import plasma.applet.com.github.neeeeow.klassik.taskmanager as TaskManagerApplet
 import org.kde.plasma.plasmoid
@@ -606,7 +605,7 @@ PlasmaCore.ToolTipArea {
             }
         }
 
-        PlasmaComponents3.Label {
+        Label {
             id: label
 
             visible: (task.inPopup || !task.tasksRoot.iconsOnly && !task.model.IsLauncher

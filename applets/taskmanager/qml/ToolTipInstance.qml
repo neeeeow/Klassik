@@ -4,6 +4,7 @@
     SPDX-FileCopyrightText: 2016 Kai Uwe Broulik <kde@privat.broulik.de>
     SPDX-FileCopyrightText: 2017 Roman Gilg <subdiff@gmail.com>
     SPDX-FileCopyrightText: 2020-2024 Nate Graham <nate@kde.org>
+    SPDX-FileCopyrightText: 2026 neeeeow
 
     SPDX-License-Identifier: LGPL-2.0-or-later
 */
@@ -12,11 +13,11 @@ pragma ComponentBehavior: Bound
 
 import QtQuick
 import QtQuick.Layouts
+import QtQuick.Controls
 import Qt5Compat.GraphicalEffects as GE
 
 import org.kde.plasma.plasmoid
 import org.kde.plasma.core as PlasmaCore
-import org.kde.plasma.components as PlasmaComponents3
 import org.kde.plasma.extras as PlasmaExtras
 import org.kde.kirigami as Kirigami
 import org.kde.kwindowsystem
@@ -125,7 +126,7 @@ ColumnLayout {
                     textFormat: Text.PlainText
                 }
                 // window title
-                PlasmaComponents3.Label {
+                Label {
                     id: winTitle
                     Layout.fillWidth: true
                     // For horizontal grouped tasks, leave room for two lines so thumbnails align
@@ -148,7 +149,7 @@ ColumnLayout {
                     textFormat: Text.PlainText
                 }
                 // subtext
-                PlasmaComponents3.Label {
+                Label {
                     id: subtext
                     Layout.fillWidth: true
                     // For horizontal grouped tasks, leave room for two lines so thumbnails align
@@ -186,8 +187,7 @@ ColumnLayout {
                 visible: toolTipDelegate.isWin && !closeButtonFlippedItemProxy.visible
             }
 
-            // close button
-            PlasmaComponents3.ToolButton {
+            ToolButton {
                 id: closeButton
                 Layout.alignment: Qt.AlignTop
                 Layout.rightMargin: closeButtonFlippedItemProxy.visible ? headerItem.Layout.margins : -headerItem.Layout.margins
@@ -198,9 +198,9 @@ ColumnLayout {
                     tasks.cancelHighlightWindows();
                     tasksModel.requestClose(root.submodelIndex);
                 }
-                PlasmaComponents3.ToolTip.text: i18nc("@info:tooltip Close this window", "Close window")
-                PlasmaComponents3.ToolTip.visible: root.visible && hovered
-                PlasmaComponents3.ToolTip.delay: Kirigami.Units.toolTipDelay
+                ToolTip.text: i18nc("@info:tooltip Close this window", "Close window")
+                ToolTip.visible: root.visible && hovered
+                ToolTip.delay: Kirigami.Units.toolTipDelay
             }
         }
 
@@ -219,7 +219,6 @@ ColumnLayout {
             }
         }
 
-        // There's no PlasmaComponents3 version
         PlasmaExtras.Highlight {
             id: headerHoverHighlight
             anchors.fill: headerHoverHandler
@@ -243,7 +242,6 @@ ColumnLayout {
         readonly property /*undefined|WId where WId = int|string*/ var winId:
             toolTipDelegate.isWin ? toolTipDelegate.windows[root.index] : undefined
 
-        // There's no PlasmaComponents3 version
         PlasmaExtras.Highlight {
             anchors.fill: hoverHandler
             visible: (hoverHandler.item as MouseArea)?.containsMouse ?? false
@@ -383,7 +381,7 @@ ColumnLayout {
         Layout.leftMargin: headerItem.Layout.margins
         Layout.rightMargin: headerItem.Layout.margins
         sourceComponent: RowLayout {
-            PlasmaComponents3.ToolButton { // Mute button
+            ToolButton { // Mute button
                 id: muteButton
                 icon.width: Kirigami.Units.iconSizes.small
                 icon.height: Kirigami.Units.iconSizes.small
@@ -409,19 +407,19 @@ ColumnLayout {
                 onClicked: toolTipDelegate.parentTask.toggleMuted()
                 checked: toolTipDelegate.parentTask.muted
 
-                PlasmaComponents3.ToolTip {
+                ToolTip {
                     text: muteButton.checked
                         ? i18nc("button to unmute app", "Unmute %1", toolTipDelegate.parentTask.appName)
                         : i18nc("button to mute app", "Mute %1", toolTipDelegate.parentTask.appName)
                 }
             }
 
-            PlasmaComponents3.Slider {
+            Slider {
                 id: slider
 
                 readonly property int displayValue: Math.round(value / to * 100)
                 readonly property int loudestVolume: toolTipDelegate.parentTask.audioStreams
-                    .reduce((loudestVolume, stream) => Math.max(loudestVolume, stream.volume), 0)
+                .reduce((loudestVolume, stream) => Math.max(loudestVolume, stream.volume), 0)
 
                 Layout.fillWidth: true
                 from: pulseAudio.item.minimalVolume
@@ -442,7 +440,7 @@ ColumnLayout {
                     stream.model.Muted = v === 0
                 })
             }
-            PlasmaComponents3.Label { // percent label
+            Label { // percent label
                 Layout.alignment: Qt.AlignHCenter
                 Layout.minimumWidth: percentMetrics.advanceWidth
                 horizontalAlignment: Qt.AlignRight
