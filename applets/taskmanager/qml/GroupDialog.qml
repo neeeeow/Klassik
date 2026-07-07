@@ -1,16 +1,17 @@
 /*
     SPDX-FileCopyrightText: 2012-2013 Eike Hein <hein@kde.org>
     SPDX-FileCopyrightText: 2021 Fushan Wen <qydwhotmail@gmail.com>
+    SPDX-FileCopyrightText: 2026 neeeeow
 
     SPDX-License-Identifier: GPL-2.0-or-later
 */
 pragma ComponentBehavior: Bound
 
 import QtQuick
+import QtQuick.Controls
 import QtQml.Models
 
 import org.kde.plasma.core as PlasmaCore
-import org.kde.plasma.components as PlasmaComponents3
 import org.kde.kirigami as Kirigami
 import org.kde.plasma.plasmoid
 import plasma.applet.com.github.neeeeow.klassik.taskmanager as TaskManagerApplet
@@ -102,7 +103,7 @@ PlasmaCore.PopupPlasmaWindow {
             groupListView.currentIndex = insertAt;
         }
 
-        PlasmaComponents3.ScrollView {
+        ScrollView {
             id: scrollView
 
             // To achieve a bottom-to-top layout on vertical panels, the task manager

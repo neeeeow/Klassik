@@ -4,6 +4,7 @@
     SPDX-FileCopyrightText: 2016 Kai Uwe Broulik <kde@privat.broulik.de>
     SPDX-FileCopyrightText: 2017 Roman Gilg <subdiff@gmail.com>
     SPDX-FileCopyrightText: 2024 Nate Graham <nate@kde.org>
+    SPDX-FileCopyrightText: 2026 neeeeow
 
     SPDX-License-Identifier: LGPL-2.0-or-later
 */
@@ -12,9 +13,9 @@ pragma ComponentBehavior: Bound
 
 import QtQml.Models
 import QtQuick
+import QtQuick.Controls
 
 import org.kde.plasma.core as PlasmaCore
-import org.kde.plasma.components as PlasmaComponents3
 import org.kde.plasma.private.mpris as Mpris
 import org.kde.kirigami as Kirigami
 
@@ -84,7 +85,7 @@ Loader {
     Component {
         id: groupToolTip
 
-        PlasmaComponents3.ScrollView {
+        ScrollView {
             // 2 * Kirigami.Units.smallSpacing is for the margin of tooltipDialog
             readonly property real maximumWidth: Screen.desktopAvailableWidth - 2 * Kirigami.Units.smallSpacing
             readonly property real maximumHeight: Screen.desktopAvailableWidth - 2 * Kirigami.Units.smallSpacing
@@ -104,7 +105,7 @@ Loader {
                 // this causes binding loops when turning it off - manually computing the width
                 // avoids this.
                 let scrollBarRequired = groupToolTipListView.contentWidth > maximumWidth
-                let scrollBarHeight = scrollBarRequired ? PlasmaComponents3.ScrollBar.horizontal.height : 0
+                let scrollBarHeight = scrollBarRequired ? ScrollBar.horizontal.height : 0
                 // currentItem is never unloaded, so we use it for sizing. Default to the same value
                 // that estimatedHeight while it's not available
                 let listContentHeight = groupToolTipListView.orientation == ListView.Vertical

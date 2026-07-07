@@ -8,9 +8,9 @@ pragma ComponentBehavior: Bound
 
 import QtQuick
 import QtQuick.Layouts
+import QtQuick.Controls
 
 import org.kde.plasma.plasmoid
-import org.kde.plasma.components as PlasmaComponents3
 import org.kde.plasma.core as PlasmaCore
 import org.kde.ksvg as KSvg
 import org.kde.plasma.private.mpris as Mpris
@@ -337,7 +337,7 @@ PlasmoidItem {
 
         Component {
             id: busyIndicator
-            PlasmaComponents3.BusyIndicator {}
+            BusyIndicator {}
         }
 
         // Save drag data
