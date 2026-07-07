@@ -521,7 +521,7 @@ PlasmaCore.ToolTipArea {
                     dragHelper.Drag.active = false;
                     dragHelper.Drag.imageSource = "";
                     if (dragTriggered) {
-                        frame.checked = model.IsActive;
+                        frame.checked = Qt.binding(() => model.IsActive);
                         dragTriggered = false;
                     }
                 }
