@@ -1,8 +1,9 @@
 /*
     SPDX-FileCopyrightText: 2012-2013 Eike Hein <hein@kde.org>
     SPDX-FileCopyrightText: 2024 Nate Graham <nate@kde.org>
+    SPDX-FileCopyrightText: 2026 neeeeow
 
-    SPDX-License-Identifier: GPL-2.0-or-later
+    SPDX-License-Identifier: GPL-3.0-or-later
 */
 
 pragma ComponentBehavior: Bound
@@ -452,14 +453,13 @@ PlasmaCore.ToolTipArea {
         anchors {
             fill: parent
 
-            topMargin: (!task.tasksRoot.vertical && taskList.rows > 1) ? TaskManagerApplet.LayoutMetrics.iconMargin : 0
-            bottomMargin: (!task.tasksRoot.vertical && taskList.rows > 1) ? TaskManagerApplet.LayoutMetrics.iconMargin : 0
-            leftMargin: ((task.inPopup || task.tasksRoot.vertical) && taskList.columns > 1) ? TaskManagerApplet.LayoutMetrics.iconMargin : 0
-            rightMargin: ((task.inPopup || task.tasksRoot.vertical) && taskList.columns > 1) ? TaskManagerApplet.LayoutMetrics.iconMargin : 0
+            topMargin: 0
+            bottomMargin: 0
+            leftMargin: 0
+            rightMargin: 0
         }
 
         property bool isHovered: task.highlighted && Plasmoid.configuration.taskHoverEffect
-        //property string basePrefix: "normal"
 
         focusPolicy: Qt.NoFocus
         hoverEnabled: true
@@ -479,7 +479,8 @@ PlasmaCore.ToolTipArea {
         // Avoid repositioning delegate item after dragFinished
         DragHandler {
             id: dragHandler
-            grabPermissions: PointerHandler.CanTakeOverFromHandlersOfDifferentType
+            //grabPermissions: PointerHandler.CanTakeOverFromHandlersOfDifferentType
+            grabPermissions: PointerHandler.CanTakeOverFromItems | PointerHandler.CanTakeOverFromHandlersOfDifferentType
 
             function setRequestedInhibitDnd(value: bool): void {
                 // This is modifying the value in the panel containment that

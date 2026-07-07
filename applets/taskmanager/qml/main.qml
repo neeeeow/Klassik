@@ -1,7 +1,8 @@
 /*
     SPDX-FileCopyrightText: 2012-2016 Eike Hein <hein@kde.org>
+    SPDX-FileCopyrightText: 2026 neeeeow
 
-    SPDX-License-Identifier: GPL-2.0-or-later
+    SPDX-License-Identifier: GPL-3.0-or-later
 */
 pragma ComponentBehavior: Bound
 
@@ -43,8 +44,6 @@ PlasmoidItem {
     property alias taskList: taskList
 
     preferredRepresentation: fullRepresentation
-
-    Plasmoid.constraintHints: Plasmoid.CanFillArea
 
     Plasmoid.onUserConfiguringChanged: {
         if (Plasmoid.userConfiguring && groupDialog !== null) {
