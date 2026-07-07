@@ -470,6 +470,8 @@ PlasmaCore.ToolTipArea {
         opacity: model.IsMinimized ? 0.8 : 1.0
 
         onClicked: { // logic from leftTapHandler
+            if (dragHandler.dragTriggered)
+                return;
             if (task.active) {
                 task.hideToolTip();
             }
@@ -481,6 +483,7 @@ PlasmaCore.ToolTipArea {
             id: dragHandler
             //grabPermissions: PointerHandler.CanTakeOverFromHandlersOfDifferentType
             grabPermissions: PointerHandler.CanTakeOverFromItems | PointerHandler.CanTakeOverFromHandlersOfDifferentType
+            property bool dragTriggered: false
 
             function setRequestedInhibitDnd(value: bool): void {
                 // This is modifying the value in the panel containment that
@@ -497,6 +500,7 @@ PlasmaCore.ToolTipArea {
 
             onActiveChanged: {
                 if (active) {
+                    dragTriggered = true
                     icon.grabToImage(result => {
                         if (!dragHandler.active) {
                             // BUG 466675 grabToImage is async, so avoid updating dragSource when active is false
@@ -516,6 +520,10 @@ PlasmaCore.ToolTipArea {
                     setRequestedInhibitDnd(false);
                     dragHelper.Drag.active = false;
                     dragHelper.Drag.imageSource = "";
+                    if (dragTriggered) {
+                        frame.checked = model.IsActive;
+                        dragTriggered = false;
+                    }
                 }
             }
         }
