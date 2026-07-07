@@ -449,6 +449,7 @@ PlasmaCore.ToolTipArea {
 
     Button {
         id: frame
+        padding: 2
 
         anchors {
             fill: parent
@@ -535,14 +536,14 @@ PlasmaCore.ToolTipArea {
 
             anchors {
                 left: parent.left
-                leftMargin: adjustMargin(true, parent.width, taskFrame.margins.left)
+                leftMargin: adjustMargin(true, parent.width, frame.leftPadding)
                 top: parent.top
-                topMargin: adjustMargin(false, parent.height, taskFrame.margins.top)
+                topMargin: adjustMargin(false, parent.height, frame.topPadding)
             }
 
             width: task.inPopup ? Math.max(Kirigami.Units.iconSizes.sizeForLabels, Kirigami.Units.iconSizes.medium) : Math.min(task.parent?.minimumWidth ?? 0, task.height)
-            height: task.inPopup ? width : (parent.height - adjustMargin(false, parent.height, taskFrame.margins.top)
-            - adjustMargin(false, parent.height, taskFrame.margins.bottom))
+            height: task.inPopup ? width : (parent.height - adjustMargin(false, parent.height, frame.topPadding)
+            - adjustMargin(false, parent.height, frame.bottomPadding))
 
             asynchronous: true
             active: height >= Kirigami.Units.iconSizes.small
@@ -590,8 +591,8 @@ PlasmaCore.ToolTipArea {
                     PropertyChanges {
                         iconBox.anchors.leftMargin: 0
                         iconBox.width: Math.min(task.parent.minimumWidth, tasksRoot.height)
-                        - iconBox.adjustMargin(true, task.width, taskFrame.margins.left)
-                        - iconBox.adjustMargin(true, task.width, taskFrame.margins.right)
+                        - iconBox.adjustMargin(true, task.width, frame.leftPadding)
+                        - iconBox.adjustMargin(true, task.width, frame.rightPadding)
                     }
                 }
             ]
@@ -613,10 +614,10 @@ PlasmaCore.ToolTipArea {
 
             anchors {
                 fill: parent
-                leftMargin: taskFrame.margins.left + iconBox.width + TaskManagerApplet.LayoutMetrics.labelMargin
-                topMargin: taskFrame.margins.top
-                rightMargin: taskFrame.margins.right + (task.audioStreamIcon !== null && task.audioStreamIcon.visible ? (task.audioStreamIcon.width + TaskManagerApplet.LayoutMetrics.labelMargin) : 0)
-                bottomMargin: taskFrame.margins.bottom
+                leftMargin: frame.leftPadding + iconBox.width + TaskManagerApplet.LayoutMetrics.labelMargin
+                topMargin: frame.topPadding
+                rightMargin: frame.rightPadding + (task.audioStreamIcon !== null && task.audioStreamIcon.visible ? (task.audioStreamIcon.width + TaskManagerApplet.LayoutMetrics.labelMargin) : 0)
+                bottomMargin: frame.bottomPadding
             }
 
             wrapMode: (maximumLineCount === 1) ? Text.NoWrap : Text.Wrap
