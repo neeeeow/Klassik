@@ -647,9 +647,6 @@ PlasmaCore.ToolTipArea {
 
     Component.onCompleted: {
         if (!inPopup && model.IsWindow) {
-            const component = Qt.createComponent("GroupExpanderOverlay.qml");
-            component.createObject(task);
-            component.destroy();
             updateAudioStreams({delay: false});
         }
 
