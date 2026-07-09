@@ -5,16 +5,17 @@
                 "Name": "neeeeow"
             }
         ],
-        "Category": "Application Launchers",
-        "Description": "Classic KDE 3 style application menu",
-        "Icon": "start-here-kde",
+        "Category": "Date and Time",
+        "Description": "Classic KDE 3 style clock",
+        "Icon": "preferences-system-time",
         "License": "GPL-3.0+",
-        "Id": "com.github.neeeeow.klassik.kmenu",
-        "Name": "Klassik K Menu",
+        "Id": "com.github.neeeeow.klassik.clock",
+        "Name": "Klassik Clock",
         "Website": "https://github.com/neeeeow/Klassik"
     },
     "X-Plasma-API-Minimum-Version": "6.0",
     "X-Plasma-Provides": [
-        "org.kde.plasma.launchermenu"
+        "org.kde.plasma.time",
+        "org.kde.plasma.date"
     ]
 }
