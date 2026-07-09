@@ -12,6 +12,7 @@ PlasmoidItem {
     height: 200
 
     property string timeString: ""
+    property string dateString: ""
     Timer { // Internal timer used for keeping track of our clock
         id: clockTimer
         interval: 500
@@ -32,17 +33,31 @@ PlasmoidItem {
             var timeString = hourString + separator + minuteString + separator + secondString
 
             root.timeString = timeString
+            root.dateString = Qt.formatDate(time, "dd/MM/yyyy")
         }
     }
 
     preferredRepresentation: fullRepresentation
-    fullRepresentation: Item {
+    fullRepresentation: ColumnLayout {
+        anchors.fill: parent
+        anchors.centerIn: parent
+        spacing: 2
+
         DigitalClock {
             id: clock
-            anchors.fill: parent
-            anchors.centerIn: parent
-
+            Layout.fillWidth: true
+            Layout.fillHeight: true
             text: root.timeString
+        }
+
+        Label {
+            id: date
+            Layout.fillWidth: true
+            Layout.alignment: Qt.AlignCenter
+            horizontalAlignment: Text.AlignHCenter
+            verticalAlignment: Text.AlignVCenter
+            font.pointSize: 8
+            text: dateString
         }
     }
 }
