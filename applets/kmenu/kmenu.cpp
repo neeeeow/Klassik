@@ -56,13 +56,17 @@ KMenu::paintEvent(QPaintEvent *e)
 	const qreal dpr = devicePixelRatio();
 
 	QPainter p(this);
-	p.scale(1/dpr, 1/dpr);
+	bool isScaled = false;
+	if (!qFuzzyCompare(dpr, qreal(1))) {
+		p.scale(qreal(1)/dpr, qreal(1)/dpr);
+		isScaled = true;
+	}
 
-	QRect r = getScaledRect(sideImageRect(), dpr);
+	QRect r = isScaled ? getScaledRect(sideImageRect(), dpr) : sideImageRect();
 	r.setBottom( r.bottom() - m_sidePixmap.height() );
 	p.drawTiledPixmap(r, m_sideTilePixmap );
 
-	r = getScaledRect(sideImageRect(), dpr);
+	r = isScaled ? getScaledRect(sideImageRect(), dpr) : sideImageRect();
 	r.setTop( r.bottom() - m_sidePixmap.height() );
 	p.drawPixmap(r, m_sidePixmap);
 }
