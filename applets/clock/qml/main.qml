@@ -35,8 +35,12 @@ PlasmoidItem {
                 timeString = hourString + separator + minuteString;
             }
 
-            root.timeString = timeString;
-            root.dateString = Qt.formatDate(time, "dd/MM/yyyy");
+            if (root.timeString !== timeString)
+                root.timeString = timeString;
+
+            var dateString = Qt.formatDate(time, "dd/MM/yyyy");
+            if (root.dateString !== dateString)
+                root.dateString = dateString;
         }
     }
 
@@ -53,15 +57,17 @@ PlasmoidItem {
         Layout.fillHeight: isHorizontal ? true : false
 
         Layout.preferredWidth: {
+            var _showSeconds = Plasmoid.configuration.showSeconds; // forces geometry to be recomputed if we change second config
             if (isHorizontal) {
-                return Math.max(clock.preferredWidthForHeight(clock.height), date.width);
+                return Math.max(clock.preferredWidthForHeight(clock.height), date.visible ? date.implicitWidth : 0);
             } else
                 return parent.width;
         }
 
         Layout.preferredHeight: {
+            var _showSeconds = Plasmoid.configuration.showSeconds;
             if (isVertical) {
-                return clock.preferredHeightForWidth(clock.width) + (date.visible ? date.height : 0);
+                return clock.preferredHeightForWidth(clock.width) + (date.visible ? date.implicitHeight : 0);
             } else
                 return parent.height;
         }

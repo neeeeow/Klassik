@@ -11,7 +11,7 @@ class DigitalClock : public QQuickPaintedItem
 	Q_PROPERTY(QString text READ text WRITE setText);
 	Q_PROPERTY(KConfigPropertyMap* config READ config WRITE setConfig);
 	QML_ELEMENT
-public:
+	public:
 	DigitalClock(QQuickItem *parent = nullptr);
 	~DigitalClock() override = default;
 

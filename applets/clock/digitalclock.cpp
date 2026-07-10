@@ -49,7 +49,7 @@ DigitalClock::preferredHeightForWidth(int w) const
 
 void
 DigitalClock::paint(QPainter *p)
-{
+{	
 	bool showFrame = false;
 	if (m_config) {
 		showFrame = m_config->property("showFrame").toBool();
