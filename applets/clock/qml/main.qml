@@ -20,17 +20,23 @@ PlasmoidItem {
         property bool showDots: true
 
         onTriggered: {
-            var time = new Date()
+            var time = new Date();
 
-            clockTimer.showDots = !clockTimer.showDots
-            var hourString = Qt.formatTime(time, "hh")
-            var minuteString = Qt.formatTime(time, "mm")
-            var secondString = Qt.formatTime(time, "ss")
-            var separator = clockTimer.showDots ? ":" : " "
-            var timeString = hourString + separator + minuteString
+            clockTimer.showDots = !clockTimer.showDots;
+            var hourString = Qt.formatTime(time, "hh");
+            var minuteString = Qt.formatTime(time, "mm");
+            var secondString = Qt.formatTime(time, "ss");
+            var separator = Plasmoid.configuration.blinkingDots ? (clockTimer.showDots ? ":" : " ") : ":";
 
-            root.timeString = timeString
-            root.dateString = Qt.formatDate(time, "dd/MM/yyyy")
+            var timeString;
+            if (Plasmoid.configuration.showSeconds) {
+                timeString = hourString + separator + minuteString + separator + secondString;
+            } else {
+                timeString = hourString + separator + minuteString;
+            }
+
+            root.timeString = timeString;
+            root.dateString = Qt.formatDate(time, "dd/MM/yyyy");
         }
     }
 
@@ -60,6 +66,15 @@ PlasmoidItem {
                 return parent.height;
         }
 
+        Connections {
+            target: Plasmoid.configuration
+
+            function onValueChanged() {
+                clockTimer.triggered();
+                clock.update();
+            }
+        }
+
         DigitalClock {
             id: clock
             Layout.alignment: Qt.AlignCenter
@@ -67,6 +82,7 @@ PlasmoidItem {
             Layout.fillHeight: true
 
             text: root.timeString
+            config: Plasmoid.configuration
         }
 
         Label {
@@ -76,6 +92,7 @@ PlasmoidItem {
             horizontalAlignment: Text.AlignHCenter
             verticalAlignment: Text.AlignVCenter
             font.pointSize: 8
+            visible: Plasmoid.configuration.showDate
             text: dateString
         }
     }

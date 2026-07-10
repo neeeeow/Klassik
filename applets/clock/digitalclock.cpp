@@ -13,6 +13,25 @@ DigitalClock::DigitalClock(QQuickItem *parent)
 {
 }
 
+
+void
+DigitalClock::setText(const QString &newText)
+{
+	if (m_timeString != newText) {
+		m_timeString = newText;
+		update();
+	}
+}
+
+void
+DigitalClock::setConfig(KConfigPropertyMap *config)
+{
+	if (m_config != config) {
+		m_config = config;
+		update();
+	}
+}
+
 int
 DigitalClock::preferredWidthForHeight(int h) const
 {
@@ -31,6 +50,11 @@ DigitalClock::preferredHeightForWidth(int w) const
 void
 DigitalClock::paint(QPainter *p)
 {
+	bool showFrame = false;
+	if (m_config) {
+		showFrame = m_config->property("showFrame").toBool();
+	}
+	
 	p->setRenderHint(QPainter::Antialiasing, false);
 	QPalette pal = QApplication::palette();
 
@@ -51,26 +75,18 @@ DigitalClock::paint(QPainter *p)
 	}
 
 	// frame
-	QStyleOptionFrame opt;
-	opt.rect = boundingRect().toRect();
-	opt.palette = pal;
-	opt.state = QStyle::State_Sunken | QStyle::State_Enabled;
-	opt.features = QStyleOptionFrame::None;
-	opt.frameShape = QFrame::Panel;
-	opt.lineWidth = 1;
-	opt.midLineWidth = 0;
-	QStyle *style = QApplication::style();
-	if (style)
-		style->drawControl(QStyle::CE_ShapedFrame, &opt, p, nullptr);
-}
-
-void
-DigitalClock::setText(const QString &newText)
-{
-	if (m_timeString != newText) {
-		m_timeString = newText;
-		Q_EMIT textChanged();
-		update();
+	if (showFrame) {
+		QStyleOptionFrame opt;
+		opt.rect = boundingRect().toRect();
+		opt.palette = pal;
+		opt.state = QStyle::State_Sunken | QStyle::State_Enabled;
+		opt.features = QStyleOptionFrame::None;
+		opt.frameShape = QFrame::Panel;
+		opt.lineWidth = 1;
+		opt.midLineWidth = 0;
+		QStyle *style = QApplication::style();
+		if (style)
+			style->drawControl(QStyle::CE_ShapedFrame, &opt, p, nullptr);
 	}
 }
 
