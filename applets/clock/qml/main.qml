@@ -8,10 +8,7 @@ import org.kde.plasma.plasmoid
 PlasmoidItem {
     id: root
 
-    width: 200
-    height: 200
-
-    property string timeString: ""
+    property string timeString: "12:34" // use a default value just in case
     property string dateString: ""
     Timer { // Internal timer used for keeping track of our clock
         id: clockTimer
@@ -30,7 +27,7 @@ PlasmoidItem {
             var minuteString = Qt.formatTime(time, "mm")
             var secondString = Qt.formatTime(time, "ss")
             var separator = clockTimer.showDots ? ":" : " "
-            var timeString = hourString + separator + minuteString + separator + secondString
+            var timeString = hourString + separator + minuteString
 
             root.timeString = timeString
             root.dateString = Qt.formatDate(time, "dd/MM/yyyy")
@@ -39,14 +36,36 @@ PlasmoidItem {
 
     preferredRepresentation: fullRepresentation
     fullRepresentation: ColumnLayout {
-        anchors.fill: parent
-        anchors.centerIn: parent
+        id: mainLayout
+
         spacing: 2
+
+        readonly property bool isHorizontal: Plasmoid.formFactor === PlasmaCore.Types.Horizontal
+        readonly property bool isVertical: Plasmoid.formFactor === PlasmaCore.Types.Vertical
+
+        Layout.fillWidth: isVertical ? true : false
+        Layout.fillHeight: isHorizontal ? true : false
+
+        Layout.preferredWidth: {
+            if (isHorizontal) {
+                return Math.max(clock.preferredWidthForHeight(clock.height), date.width);
+            } else
+                return parent.width;
+        }
+
+        Layout.preferredHeight: {
+            if (isVertical) {
+                return clock.preferredHeightForWidth(clock.width) + (date.visible ? date.height : 0);
+            } else
+                return parent.height;
+        }
 
         DigitalClock {
             id: clock
+            Layout.alignment: Qt.AlignCenter
             Layout.fillWidth: true
             Layout.fillHeight: true
+
             text: root.timeString
         }
 

@@ -13,6 +13,21 @@ DigitalClock::DigitalClock(QQuickItem *parent)
 {
 }
 
+int
+DigitalClock::preferredWidthForHeight(int h) const
+{
+	if (h > 29) h = 29;
+	if (h < 0) h = 0;
+	return (m_timeString.length()*h*5/11)+2;
+}
+
+int
+DigitalClock::preferredHeightForWidth(int w) const
+{
+	if (w < 0) w = 0;
+	return((w / m_timeString.length() * 2) + 6);
+}
+
 void
 DigitalClock::paint(QPainter *p)
 {

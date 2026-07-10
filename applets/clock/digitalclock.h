@@ -17,6 +17,9 @@ public:
 	QString text() const { return m_timeString; }
 	void setText(const QString &newText);
 
+	Q_INVOKABLE int preferredWidthForHeight(int h) const;
+	Q_INVOKABLE int preferredHeightForWidth(int w) const;
+
 Q_SIGNALS:
 	void textChanged();
 	
