@@ -90,7 +90,7 @@ DigitalClock::preferredHeightForWidth(int w) const
 
 void
 DigitalClock::drawContents(QPainter *p)
-{		
+{	
 	if (!m_timeString.isEmpty()) {
 		QColor fgColor;
 		QColor shadowColor;
@@ -108,12 +108,10 @@ DigitalClock::drawContents(QPainter *p)
 		}
 		
 		QRect drawRect = boundingRect().toRect();
-		p->save();
 		p->translate(1, 1);
 		drawString(m_timeString, drawRect, shadowColor, *p);
 		p->translate(-2, -2);
 		drawString(m_timeString, drawRect, fgColor, *p);
-		p->restore();
 	}
 }
 
@@ -376,7 +374,10 @@ DigitalClock::drawSegment(const QPoint &pos, const QColor &color, char segmentNo
 		qWarning("DigitalClock::drawSegment: illegal segment!"); 
 	}
 	// End exact copy
-	p.setPen(color);
+
+	QPen pen(color);
+	pen.setCosmetic(true);
+	p.setPen(pen);	
 	p.setBrush(color);
 	p.drawPolygon(a);
 	p.setBrush(Qt::NoBrush);
@@ -410,6 +411,8 @@ void
 AnalogClock::drawContents(QPainter *p)
 {
 	QTime time = QDateTime::currentDateTime().time();
+
+	p->setRenderHint(QPainter::Antialiasing, getConfigValue<bool>("antialiasing"));
 
 	QColor fgColor;
 	QColor shadowColor;

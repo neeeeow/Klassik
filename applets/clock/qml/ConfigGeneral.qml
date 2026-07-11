@@ -22,6 +22,8 @@ KCMUtils.SimpleKCM {
     readonly property bool cfg_showFrameDefault: Plasmoid.configuration.showFrameDefaultValue
     property alias cfg_blinkingDots: blinkingDots.checked
     readonly property bool cfg_blinkingDotsDefault: Plasmoid.configuration.blinkingDotsDefaultValue
+    property alias cfg_antialiasing: antialiasing.checked
+    readonly property bool cfg_antialiasingDefault: Plasmoid.configuration.antialiasingDefaultValue
 
     property alias cfg_useSystemColors: useSystemColors.checked
     readonly property bool cfg_useSystemColorsDefault: Plasmoid.configuration.useSystemColorsDefaultValue
@@ -71,6 +73,11 @@ KCMUtils.SimpleKCM {
                     visible: useDigitalClock.checked
                     id: blinkingDots
                     text: i18n("Blinking dots")
+                }
+                CheckBox {
+                    visible: !useDigitalClock.checked
+                    id: antialiasing
+                    text: i18n("Antialiasing")
                 }
             }
         }
