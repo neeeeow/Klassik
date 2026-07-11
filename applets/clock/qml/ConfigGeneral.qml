@@ -11,6 +11,9 @@ import org.kde.kquickcontrols
 KCMUtils.SimpleKCM {
     id: configGeneral
 
+    property alias cfg_useDigitalClock: useDigitalClock.checked
+    readonly property bool cfg_useDigitalClockDefault: Plasmoid.configuration.useDigitalClockDefaultValue
+
     property alias cfg_showDate: showDate.checked
     readonly property bool cfg_showDateDefault: Plasmoid.configuration.showDateDefaultValue
     property alias cfg_showSeconds: showSeconds.checked
@@ -38,6 +41,17 @@ KCMUtils.SimpleKCM {
         anchors.left: parent.left
         anchors.right: parent.right
 
+        RowLayout {
+            RadioButton {
+                id: useDigitalClock
+                text: i18n("Digital clock")
+            }
+            RadioButton {
+                checked: !useDigitalClock.checked
+                text: i18n("Analog clock")
+            }
+        }
+
         GroupBox {
             title: i18n("Display")
             RowLayout {
@@ -54,6 +68,7 @@ KCMUtils.SimpleKCM {
                     text: i18n("Frame")
                 }
                 CheckBox {
+                    visible: useDigitalClock.checked
                     id: blinkingDots
                     text: i18n("Blinking dots")
                 }

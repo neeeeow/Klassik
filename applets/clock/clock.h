@@ -80,3 +80,18 @@ private:
 	void drawSegment(const QPoint &pos, const QColor &color, char segmentNo, QPainter &p,
 					 int segLen);
 };
+
+class AnalogClock : public Clock
+{
+	Q_OBJECT
+	QML_ELEMENT
+public:
+	AnalogClock(QQuickItem *parent = nullptr);
+	~AnalogClock() override = default;
+
+private:
+	Q_INVOKABLE int preferredWidthForHeight(int h) const override;
+	Q_INVOKABLE int preferredHeightForWidth(int w) const override;
+	
+	void drawContents(QPainter *p) override;
+};

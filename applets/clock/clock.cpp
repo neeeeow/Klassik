@@ -6,6 +6,8 @@
 #include <QStyle>
 #include <QStyleOptionFrame>
 #include <QApplication>
+#include <QDateTime>
+#include <QPolygon>
 
 Clock::Clock(QQuickItem *parent)
 	: QQuickPaintedItem(parent),
@@ -35,7 +37,9 @@ Clock::paint(QPainter *p)
 		p->fillRect(boundingRect(), bgColor);
 	}
 
+	p->save();
 	drawContents(p);
+	p->restore();
 
 	// frame
 	if (getConfigValue<bool>("showFrame")) {
@@ -382,4 +386,104 @@ DigitalClock::drawSegment(const QPoint &pos, const QColor &color, char segmentNo
 #undef LINETO
 #undef LIGHT
 #undef DARK	
+}
+
+AnalogClock::AnalogClock(QQuickItem *parent)
+	: Clock(parent)	  
+{
+	
+}
+
+int
+AnalogClock::preferredWidthForHeight(int h) const
+{
+	return h;
+}
+
+int
+AnalogClock::preferredHeightForWidth(int w) const
+{
+	return w;
+}
+
+void
+AnalogClock::drawContents(QPainter *p)
+{
+	QTime time = QDateTime::currentDateTime().time();
+
+	QColor fgColor;
+	QColor shadowColor;
+	if (getConfigValue<bool>("lcdLook")) {
+		fgColor = Qt::black;
+		shadowColor = QColor(128, 128, 128);
+	} else if (getConfigValue<bool>("useCustomColors")) {
+		fgColor = getConfigValue<QColor>("fgColor");
+		shadowColor = getConfigValue<QColor>("shadowColor");
+	} else {
+		QPalette pal = QGuiApplication::palette();
+		fgColor = pal.color(QPalette::WindowText);
+		shadowColor = pal.color(QPalette::Mid);
+	}
+
+	int spWidth = boundingRect().toRect().width();
+	int spHeight = boundingRect().toRect().height();
+	QPolygon pts;
+    QPoint cp(spWidth / 2, spHeight / 2);
+	int d = qMin(spWidth,spHeight) - 10;
+
+	QPen shadowPen(shadowColor);
+	shadowPen.setCosmetic(true);
+	p->setPen(shadowPen);
+	p->setBrush(shadowColor);
+
+	p->setViewport(2, 2, spWidth, spHeight);
+
+	for ( int c=0 ; c < 2 ; c++ ) {
+		QTransform matrix; // keep the variable name matrix for convenience
+        matrix.translate( cp.x(), cp.y());
+        matrix.scale( d/1000.0F, d/1000.0F );
+
+		// hour
+        float h_angle = 30*(time.hour()%12-3) + time.minute()/2;
+        matrix.rotate( h_angle );
+        p->setTransform( matrix );
+        pts.setPoints( 4, -20,0,  0,-20, 300,0, 0,20 );
+        p->drawPolygon( pts );
+        matrix.rotate( -h_angle );
+
+		// minute
+        float m_angle = (time.minute()-15)*6;
+        matrix.rotate( m_angle );
+        p->setTransform( matrix );
+        pts.setPoints( 4, -10,0, 0,-10, 400,0, 0,10 );
+        p->drawPolygon( pts );
+        matrix.rotate( -m_angle );
+
+		if (getConfigValue<bool>("showSeconds")) {   // second
+            float s_angle = (time.second()-15)*6;
+            matrix.rotate( s_angle );
+            p->setTransform( matrix );
+            pts.setPoints(4,0,0,0,0,400,0,0,0);
+            p->drawPolygon( pts );
+            matrix.rotate( -s_angle );
+        }
+
+		QTransform matrix2;
+        matrix2.translate( cp.x(), cp.y());
+        matrix2.scale( d/1000.0F, d/1000.0F );
+
+        // quadrante
+        for ( int i=0 ; i < 12 ; i++ ) {
+            p->setTransform( matrix2 );
+            p->drawLine( 460,0, 500,0 ); // draw hour lines
+            matrix2.rotate( 30 );
+        }
+
+		QPen fgPen(fgColor);
+		fgPen.setCosmetic(true);
+		p->setPen(fgPen);
+		p->setBrush(fgColor);
+
+		p->setViewport(0,0,spWidth,spHeight);
+	}	
 }

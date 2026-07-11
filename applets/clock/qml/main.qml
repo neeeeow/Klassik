@@ -8,7 +8,7 @@ import org.kde.plasma.plasmoid
 PlasmoidItem {
     id: root
 
-    property string timeString: "12:34" // use a default value just in case
+    property string timeString: "99:99" // use a default value just in case
     property string dateString: ""
     Timer { // Internal timer used for keeping track of our clock
         id: clockTimer
@@ -59,7 +59,7 @@ PlasmoidItem {
         Layout.preferredWidth: {
             var _showSeconds = Plasmoid.configuration.showSeconds; // forces geometry to be recomputed if we change second config
             if (isHorizontal) {
-                return Math.max(clock.preferredWidthForHeight(clock.height), date.visible ? date.implicitWidth : 0);
+                return Math.max(clockLoader.item ? clockLoader.item.preferredWidthForHeight(clockLoader.item.height) : 0, date.visible ? date.implicitWidth : 0);
             } else
                 return parent.width;
         }
@@ -67,28 +67,59 @@ PlasmoidItem {
         Layout.preferredHeight: {
             var _showSeconds = Plasmoid.configuration.showSeconds;
             if (isVertical) {
-                return clock.preferredHeightForWidth(clock.width) + (date.visible ? date.implicitHeight : 0);
+                return (clockLoader.item ? clockLoader.item.preferredHeightForWidth(clockLoader.item.width) : 0) + (date.visible ? date.implicitHeight : 0);
             } else
                 return parent.height;
         }
 
         Connections {
             target: Plasmoid.configuration
-
             function onValueChanged() {
                 clockTimer.triggered();
-                clock.update();
+
+                if (clockLoader.item)
+                    clockLoader.item.update();
             }
         }
 
-        DigitalClock {
-            id: clock
+        Loader {
+            id: clockLoader
             Layout.alignment: Qt.AlignCenter
             Layout.fillWidth: true
             Layout.fillHeight: true
 
-            text: root.timeString
-            config: Plasmoid.configuration
+            sourceComponent: Plasmoid.configuration.useDigitalClock ? digitalComponent : analogComponent
+
+            Binding {
+                target: clockLoader.item
+                property: "config"
+                value: Plasmoid.configuration
+                when: clockLoader.item
+            }
+
+            Component {
+                id: digitalComponent
+                DigitalClock {
+                    text: root.timeString
+                }
+            }
+
+            Component {
+                id: analogComponent
+                AnalogClock {
+                    id: analogClock
+                    Connections {
+                        target: root
+                        function onTimeStringChanged() {
+                            // the clock has absolutely 0 dependance on timeString, however, it's
+                            // very useful for determining when we need to do a redraw, instead of
+                            // blindly doing on every tick. since timeString already lives within root
+                            // it's been loaded in to memory, and there are no penalties there
+                            analogClock.update()
+                        }
+                    }
+                }
+            }
         }
 
         Label {

@@ -3,6 +3,10 @@
     <kcfgfile name=""/>
 
     <group name="General">
+        <entry name="useDigitalClock" type="Bool">
+            <default>true</default>
+        </entry>
+
         <entry name="showDate" type="Bool">
             <default>false</default>
         </entry>
