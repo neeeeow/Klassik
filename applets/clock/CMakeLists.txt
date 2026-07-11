@@ -4,7 +4,7 @@ plasma_add_applet(com.github.neeeeow.klassik.clock
     qml/config.qml
     qml/ConfigGeneral.qml
   CPP_SOURCES
-    digitalclock.cpp
+    clock.cpp
   RESOURCES
     main.xml
     lcd.png

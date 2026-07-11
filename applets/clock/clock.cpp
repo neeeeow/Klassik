@@ -1,4 +1,4 @@
-#include "digitalclock.h"
+#include "clock.h"
 
 #include <QPalette>
 #include <QColor>
@@ -7,9 +7,55 @@
 #include <QStyleOptionFrame>
 #include <QApplication>
 
-DigitalClock::DigitalClock(QQuickItem *parent)
+Clock::Clock(QQuickItem *parent)
 	: QQuickPaintedItem(parent),
 	  m_lcdPixmap(QStringLiteral(":/qt/qml/plasma/applet/com/github/neeeeow/klassik/clock/lcd.png"))
+{
+}
+
+void
+Clock::setConfig(KConfigPropertyMap *config)
+{
+	if (m_config != config) {
+		m_config = config;
+		update();
+	}
+}
+
+void
+Clock::paint(QPainter *p)
+{
+	p->setRenderHint(QPainter::Antialiasing, false);
+
+	// background
+	if (getConfigValue<bool>("lcdLook") && !m_lcdPixmap.isNull()) {
+		p->drawTiledPixmap(boundingRect(), m_lcdPixmap);
+	} else if (getConfigValue<bool>("useCustomColors")) {
+		QColor bgColor = getConfigValue<QColor>("bgColor");
+		p->fillRect(boundingRect(), bgColor);
+	}
+
+	drawContents(p);
+
+	// frame
+	if (getConfigValue<bool>("showFrame")) {
+		QStyleOptionFrame opt;
+		opt.rect = boundingRect().toRect();
+		opt.palette = QGuiApplication::palette();
+		opt.state = QStyle::State_Sunken | QStyle::State_Enabled;
+		opt.features = QStyleOptionFrame::None;
+		opt.frameShape = QFrame::Panel;
+		opt.lineWidth = 1;
+		opt.midLineWidth = 0;
+		QStyle *style = QApplication::style();
+		if (style)
+			style->drawControl(QStyle::CE_ShapedFrame, &opt, p, nullptr);
+	}
+}
+
+
+DigitalClock::DigitalClock(QQuickItem *parent)
+	: Clock(parent)	  
 {
 }
 
@@ -19,15 +65,6 @@ DigitalClock::setText(const QString &newText)
 {
 	if (m_timeString != newText) {
 		m_timeString = newText;
-		update();
-	}
-}
-
-void
-DigitalClock::setConfig(KConfigPropertyMap *config)
-{
-	if (m_config != config) {
-		m_config = config;
 		update();
 	}
 }
@@ -48,19 +85,8 @@ DigitalClock::preferredHeightForWidth(int w) const
 }
 
 void
-DigitalClock::paint(QPainter *p)
+DigitalClock::drawContents(QPainter *p)
 {		
-	p->setRenderHint(QPainter::Antialiasing, false);
-
-	// background
-	if (getConfigValue<bool>("lcdLook") && !m_lcdPixmap.isNull()) {
-		p->drawTiledPixmap(boundingRect(), m_lcdPixmap);
-	} else if (getConfigValue<bool>("useCustomColors")) {
-		QColor bgColor = getConfigValue<QColor>("bgColor");
-		p->fillRect(boundingRect(), bgColor);
-	}
-
-	// digits
 	if (!m_timeString.isEmpty()) {
 		QColor fgColor;
 		QColor shadowColor;
@@ -84,21 +110,6 @@ DigitalClock::paint(QPainter *p)
 		p->translate(-2, -2);
 		drawString(m_timeString, drawRect, fgColor, *p);
 		p->restore();
-	}
-
-	// frame
-	if (getConfigValue<bool>("showFrame")) {
-		QStyleOptionFrame opt;
-		opt.rect = boundingRect().toRect();
-		opt.palette = QGuiApplication::palette();
-		opt.state = QStyle::State_Sunken | QStyle::State_Enabled;
-		opt.features = QStyleOptionFrame::None;
-		opt.frameShape = QFrame::Panel;
-		opt.lineWidth = 1;
-		opt.midLineWidth = 0;
-		QStyle *style = QApplication::style();
-		if (style)
-			style->drawControl(QStyle::CE_ShapedFrame, &opt, p, nullptr);
 	}
 }
 
