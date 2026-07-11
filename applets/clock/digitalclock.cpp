@@ -49,36 +49,48 @@ DigitalClock::preferredHeightForWidth(int w) const
 
 void
 DigitalClock::paint(QPainter *p)
-{	
-	bool showFrame = false;
-	if (m_config) {
-		showFrame = m_config->property("showFrame").toBool();
-	}
-	
+{		
 	p->setRenderHint(QPainter::Antialiasing, false);
-	QPalette pal = QApplication::palette();
 
 	// background
-	if (!m_lcdPixmap.isNull()) {
+	if (getConfigValue<bool>("lcdLook") && !m_lcdPixmap.isNull()) {
 		p->drawTiledPixmap(boundingRect(), m_lcdPixmap);
+	} else if (getConfigValue<bool>("useCustomColors")) {
+		QColor bgColor = getConfigValue<QColor>("bgColor");
+		p->fillRect(boundingRect(), bgColor);
 	}
 
 	// digits
 	if (!m_timeString.isEmpty()) {
+		QColor fgColor;
+		QColor shadowColor;
+
+		if (getConfigValue<bool>("lcdLook")) {
+			fgColor = Qt::black;
+			shadowColor = QColor(128, 128, 128);
+		} else if (getConfigValue<bool>("useCustomColors")) {
+			fgColor = getConfigValue<QColor>("fgColor");
+			shadowColor = getConfigValue<QColor>("shadowColor");
+		} else {
+			QPalette pal = QGuiApplication::palette();
+			fgColor = pal.color(QPalette::WindowText);
+			shadowColor = pal.color(QPalette::Mid);
+		}
+		
 		QRect drawRect = boundingRect().toRect();
 		p->save();
 		p->translate(1, 1);
-		drawString(m_timeString, drawRect, QColor(128,128,128), *p);
+		drawString(m_timeString, drawRect, shadowColor, *p);
 		p->translate(-2, -2);
-		drawString(m_timeString, drawRect, Qt::black, *p);
+		drawString(m_timeString, drawRect, fgColor, *p);
 		p->restore();
 	}
 
 	// frame
-	if (showFrame) {
+	if (getConfigValue<bool>("showFrame")) {
 		QStyleOptionFrame opt;
 		opt.rect = boundingRect().toRect();
-		opt.palette = pal;
+		opt.palette = QGuiApplication::palette();
 		opt.state = QStyle::State_Sunken | QStyle::State_Enabled;
 		opt.features = QStyleOptionFrame::None;
 		opt.frameShape = QFrame::Panel;

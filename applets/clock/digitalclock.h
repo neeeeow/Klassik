@@ -37,4 +37,23 @@ private:
 				   char ch);
 	void drawSegment(const QPoint &pos, const QColor &color, char segmentNo, QPainter &p,
 					 int segLen);
+
+	// Config getter
+	template <typename T>
+	T getConfigValue(const char *key) {
+		if (!m_config)
+			return T();	
+
+		QVariant value = m_config->property(key);
+		if (value.isNull() || !value.isValid()) {
+			qWarning("AppletConfig: Key not found!");
+			return T();
+		}
+		if (!value.canConvert<T>()) {
+			qWarning("AppletConfig: Key type mismatch!");
+			return T();
+		}
+
+		return value.value<T>();				
+	}
 };

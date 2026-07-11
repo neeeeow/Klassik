@@ -4,21 +4,38 @@
 
     <group name="General">
         <entry name="showDate" type="Bool">
-            <label>Display the date below the clock</label>
             <default>false</default>
         </entry>
         <entry name="showSeconds" type="Bool">
-            <label>Display the seconds on the clock</label>
             <default>false</default>
         </entry>
         <entry name="showFrame" type="Bool">
-            <label>Draw a frame around the clock</label>
             <default>false</default>
         </entry>
         <entry name="blinkingDots" type="Bool">
-            <label>Display blinking dots on the digital clock</label>
             <default>false</default>
         </entry>
+
+        <entry name="useSystemColors" type="Bool">
+            <default>true</default>
+        </entry>
+        <entry name="lcdLook" type="Bool">
+            <default>false</default>
+        </entry>
+        <entry name="useCustomColors" type="Bool">
+            <default>false</default>
+        </entry>
+
+        <entry name="fgColor" type="Color">
+            <default>#000000</default>
+        </entry>
+        <entry name="shadowColor" type="Color">
+            <default>#808080</default>
+        </entry>
+        <entry name="bgColor" type="Color">
+            <default>#ffffff</default>
+        </entry>
+
     </group>
 
 </kcfg>
