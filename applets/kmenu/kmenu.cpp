@@ -28,15 +28,6 @@ KMenu::KMenu(KMenuApplet *applet, QWidget *parent)
 	initialize(); // Populate menu items
 }
 
-bool
-KMenu::event(QEvent *e)
-{
-	if (e->type() == QEvent::DevicePixelRatioChange) {
-		setMargins();
-	}
-	return ServiceMenu::event(e);
-}
-
 void
 KMenu::changeEvent(QEvent *e)
 {
@@ -53,20 +44,14 @@ KMenu::paintEvent(QPaintEvent *e)
 	if (m_sidePixmap.isNull() || m_sideTilePixmap.isNull() || !applet()->getConfigValue<bool>(QStringLiteral("drawSideImage")))
 		return;
 
-	const qreal dpr = devicePixelRatio();
-
 	QPainter p(this);
-	bool isScaled = false;
-	if (!qFuzzyCompare(dpr, qreal(1))) {
-		p.scale(qreal(1)/dpr, qreal(1)/dpr);
-		isScaled = true;
-	}
+	p.setRenderHint(QPainter::Antialiasing, true);
 
-	QRect r = isScaled ? getScaledRect(sideImageRect(), dpr) : sideImageRect();
+	QRect r = sideImageRect();
 	r.setBottom( r.bottom() - m_sidePixmap.height() );
 	p.drawTiledPixmap(r, m_sideTilePixmap );
 
-	r = isScaled ? getScaledRect(sideImageRect(), dpr) : sideImageRect();
+	r = sideImageRect();
 	r.setTop( r.bottom() - m_sidePixmap.height() );
 	p.drawPixmap(r, m_sidePixmap);
 }
@@ -171,17 +156,14 @@ void
 KMenu::setMargins()
 {
 	if (applet()->getConfigValue<bool>(QStringLiteral("drawSideImage"))) {
-		const qreal dpr = devicePixelRatio();	
 		setContentsMargins(
-			layoutDirection() == Qt::LeftToRight ? qCeil(m_sidePixmap.width() / dpr) : 0,
+			layoutDirection() == Qt::LeftToRight ? m_sidePixmap.width() : 0,
 			0,
-			layoutDirection() == Qt::RightToLeft ? qCeil(m_sidePixmap.width() / dpr): 0,
+			layoutDirection() == Qt::RightToLeft ? m_sidePixmap.width() : 0,
 			0);
 	} else {
 		setContentsMargins(0, 0, 0, 0);
 	}
-
-	adjustSize();
 }
 
 void
@@ -243,7 +225,7 @@ KMenu::sideImageRect()
 
 	// Rectangle containing our side pixmap
 	QRect pixRect(panelWidth + hMargin, panelWidth + vMargin,
-				  m_sidePixmap.width() / devicePixelRatio(), height() - 2 * (panelWidth + vMargin));
+				  m_sidePixmap.width(), height() - 2 * (panelWidth + vMargin));
 
 	// Convert to screen coordinates based on text direction
 	return style()->visualRect(layoutDirection(), rect(), pixRect);

@@ -21,7 +21,6 @@ public:
 	void reinitialize() override;
 
 protected:
-	bool event(QEvent *e) override;
 	void changeEvent(QEvent *event) override;
 	void paintEvent(QPaintEvent *e) override;
 
@@ -67,8 +66,4 @@ private:
 	void updateApplications();
 
 	QMouseEvent* translateMouseEvent( QMouseEvent* e );
-
-	static inline QRect getScaledRect(const QRect &rect, const qreal dpr) {
-		return QRect(qRound(rect.x() * dpr), qRound(rect.y() * dpr), rect.width() * dpr, rect.height() * dpr);
-	}
 };
