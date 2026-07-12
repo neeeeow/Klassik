@@ -2,7 +2,6 @@
 
 #include <QPalette>
 #include <QColor>
-#include <QQuickWindow>
 #include <QStyle>
 #include <QStyleOptionFrame>
 #include <QApplication>
@@ -107,11 +106,11 @@ DigitalClock::drawContents(QPainter *p)
 			shadowColor = pal.color(QPalette::Mid);
 		}
 		
-		QRect drawRect = boundingRect().toRect();
+		QRect clockRect = boundingRect().toRect();
 		p->translate(1, 1);
-		drawString(m_timeString, drawRect, shadowColor, *p);
+		drawString(m_timeString, clockRect, shadowColor, *p);
 		p->translate(-2, -2);
-		drawString(m_timeString, drawRect, fgColor, *p);
+		drawString(m_timeString, clockRect, fgColor, *p);
 	}
 }
 
@@ -409,7 +408,7 @@ AnalogClock::preferredHeightForWidth(int w) const
 
 void
 AnalogClock::drawContents(QPainter *p)
-{
+{	
 	QTime time = QDateTime::currentDateTime().time();
 
 	p->setRenderHint(QPainter::Antialiasing, getConfigValue<bool>("antialiasing"));
@@ -428,8 +427,10 @@ AnalogClock::drawContents(QPainter *p)
 		shadowColor = pal.color(QPalette::Mid);
 	}
 
-	int spWidth = boundingRect().toRect().width();
-	int spHeight = boundingRect().toRect().height();
+	const qreal dpr = getDpr();
+	int spWidth = boundingRect().toRect().width() * dpr;
+	int spHeight = boundingRect().toRect().height() * dpr;	   
+
 	QPolygon pts;
     QPoint cp(spWidth / 2, spHeight / 2);
 	int d = qMin(spWidth,spHeight) - 10;
@@ -438,12 +439,11 @@ AnalogClock::drawContents(QPainter *p)
 	shadowPen.setCosmetic(true);
 	p->setPen(shadowPen);
 	p->setBrush(shadowColor);
-
-	p->setViewport(2, 2, spWidth, spHeight);
-
+    int offset = 2;
+	
 	for ( int c=0 ; c < 2 ; c++ ) {
 		QTransform matrix; // keep the variable name matrix for convenience
-        matrix.translate( cp.x(), cp.y());
+        matrix.translate(cp.x() + offset, cp.y() + offset);
         matrix.scale( d/1000.0F, d/1000.0F );
 
 		// hour
@@ -472,7 +472,7 @@ AnalogClock::drawContents(QPainter *p)
         }
 
 		QTransform matrix2;
-        matrix2.translate( cp.x(), cp.y());
+        matrix2.translate(cp.x() + offset, cp.y() + offset);
         matrix2.scale( d/1000.0F, d/1000.0F );
 
         // quadrante
@@ -487,6 +487,6 @@ AnalogClock::drawContents(QPainter *p)
 		p->setPen(fgPen);
 		p->setBrush(fgColor);
 
-		p->setViewport(0,0,spWidth,spHeight);
+		offset = 0;
 	}	
 }

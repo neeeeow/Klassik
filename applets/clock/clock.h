@@ -1,6 +1,7 @@
 #pragma once
 
 #include <QQuickPaintedItem>
+#include <QQuickWindow>
 #include <QPainter>
 
 #include <KConfigPropertyMap>
@@ -28,6 +29,16 @@ protected:
 	// by this base class, and do not need to be implemented in the
 	// below function.
 	virtual void drawContents(QPainter *p) = 0;
+
+	// Quickly fetch the device pixel ratio for a given QPainter
+	inline qreal getDpr() {
+		return window() ? window()->devicePixelRatio() : 1.0;
+	}
+	
+	// Scale a QRect for HiDPI displays
+	static inline QRect getScaledRect(const QRect &rect, const qreal dpr) {
+		return QRect(qRound(rect.x() * dpr), qRound(rect.y() * dpr), rect.width() * dpr, rect.height() * dpr);
+	}
 	
 	// Config getter
 	template <typename T>

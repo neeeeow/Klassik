@@ -26,7 +26,7 @@ PlasmoidItem {
             var hourString = Qt.formatTime(time, "hh");
             var minuteString = Qt.formatTime(time, "mm");
             var secondString = Qt.formatTime(time, "ss");
-            var separator = Plasmoid.configuration.blinkingDots ? (clockTimer.showDots ? ":" : " ") : ":";
+            var separator = (Plasmoid.configuration.blinkingDots && Plasmoid.configuration.useDigitalClock) ? (clockTimer.showDots ? ":" : " ") : ":";
 
             var timeString;
             if (Plasmoid.configuration.showSeconds) {
