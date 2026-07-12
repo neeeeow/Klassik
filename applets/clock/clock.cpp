@@ -105,8 +105,17 @@ DigitalClock::drawContents(QPainter *p)
 			fgColor = pal.color(QPalette::WindowText);
 			shadowColor = pal.color(QPalette::Mid);
 		}
+
+		const qreal dpr = getDpr();
+
+		QRect clockRect;
+		if (!qFuzzyCompare(dpr, qreal(1))) {
+			const qreal inverseScale = qreal(1) / dpr;
+			p->scale(inverseScale, inverseScale);
+			clockRect = getScaledRect(boundingRect().toRect(), dpr);
+		} else 
+			clockRect = boundingRect().toRect();
 		
-		QRect clockRect = boundingRect().toRect();
 		p->translate(1, 1);
 		drawString(m_timeString, clockRect, shadowColor, *p);
 		p->translate(-2, -2);
