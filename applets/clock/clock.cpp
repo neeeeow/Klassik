@@ -30,7 +30,21 @@ Clock::paint(QPainter *p)
 
 	// background
 	if (getConfigValue<bool>("lcdLook") && !m_lcdPixmap.isNull()) {
-		p->drawTiledPixmap(boundingRect(), m_lcdPixmap);
+		p->save();
+		
+		const qreal dpr = getDpr();
+		QRect bgRect;
+		if (!qFuzzyCompare(dpr, qreal(1))) {
+			const qreal inverseScale = qreal(1) / dpr;
+			p->scale(inverseScale, inverseScale);
+			p->translate(0.5, 0.5);
+			bgRect = getScaledRect(boundingRect().toRect(), dpr);
+		} else {
+			bgRect = boundingRect().toRect();
+		}
+		
+		p->drawTiledPixmap(bgRect, m_lcdPixmap);
+		p->restore();
 	} else if (getConfigValue<bool>("useCustomColors")) {
 		QColor bgColor = getConfigValue<QColor>("bgColor");
 		p->fillRect(boundingRect(), bgColor);
