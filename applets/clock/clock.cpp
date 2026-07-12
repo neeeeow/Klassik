@@ -2,9 +2,6 @@
 
 #include <QPalette>
 #include <QColor>
-//#include <QStyle>
-//#include <QStyleOptionFrame>
-//#include <QApplication>
 #include <QDateTime>
 #include <QPolygon>
 
