@@ -2,11 +2,13 @@
 
 #include <QPalette>
 #include <QColor>
-#include <QStyle>
-#include <QStyleOptionFrame>
-#include <QApplication>
+//#include <QStyle>
+//#include <QStyleOptionFrame>
+//#include <QApplication>
 #include <QDateTime>
 #include <QPolygon>
+
+#include <qdrawutil.h>
 
 Clock::Clock(QQuickItem *parent)
 	: QQuickPaintedItem(parent),
@@ -27,6 +29,7 @@ void
 Clock::paint(QPainter *p)
 {
 	p->setRenderHint(QPainter::Antialiasing, false);
+	p->setRenderHint(QPainter::NonCosmeticBrushPatterns);
 
 	// background
 	if (getConfigValue<bool>("lcdLook") && !m_lcdPixmap.isNull()) {
@@ -55,19 +58,8 @@ Clock::paint(QPainter *p)
 	p->restore();
 
 	// frame
-	if (getConfigValue<bool>("showFrame")) {
-		QStyleOptionFrame opt;
-		opt.rect = boundingRect().toRect();
-		opt.palette = QGuiApplication::palette();
-		opt.state = QStyle::State_Sunken | QStyle::State_Enabled;
-		opt.features = QStyleOptionFrame::None;
-		opt.frameShape = QFrame::Panel;
-		opt.lineWidth = 1;
-		opt.midLineWidth = 0;
-		QStyle *style = QApplication::style();
-		if (style)
-			style->drawControl(QStyle::CE_ShapedFrame, &opt, p, nullptr);
-	}
+	if (getConfigValue<bool>("showFrame"))
+		qDrawShadePanel(p, boundingRect().toRect(), QGuiApplication::palette(), true);
 }
 
 
