@@ -14,11 +14,17 @@ plasma_add_applet(com.github.neeeeow.klassik.kmenu
     settingsmenu.cpp
     popupmenutitle.h
     popupmenusearch.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/../common/panelbuttonbackground.h
   RESOURCES
     main.xml
     img/kside.png
     img/kside_tile.png
 )  
+
+target_include_directories(com.github.neeeeow.klassik.kmenu PRIVATE 
+    ${CMAKE_CURRENT_SOURCE_DIR}/../common/
+)
+
 
 target_link_libraries(com.github.neeeeow.klassik.kmenu PRIVATE
   Qt::Core
