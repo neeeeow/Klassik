@@ -27,33 +27,39 @@ plasma_add_applet(com.github.neeeeow.klassik.taskmanager
         backend.cpp
         smartlauncherbackend.cpp
         smartlauncheritem.cpp
+	${CMAKE_CURRENT_SOURCE_DIR}/../sunkenappletframe.h
     RESOURCES
         main.xml
     GENERATE_APPLET_CLASS
 )
+
+target_include_directories(com.github.neeeeow.klassik.taskmanager PRIVATE 
+    ${CMAKE_CURRENT_SOURCE_DIR}/..
+) # ensure that CMake sees our frame
 
 kconfig_add_kcfg_files(com.github.neeeeow.klassik.taskmanager ${CMAKE_SOURCE_DIR}/applets/taskmanager/kactivitymanagerd_plugins_settings.kcfgc)
 
 ecm_qt_declare_logging_category(com.github.neeeeow.klassik.taskmanager
     HEADER log_settings.h
     IDENTIFIER TASKMANAGER_DEBUG
-    CATEGORY_NAME com.github.neeeeow.klassik.taskmanager)
+    CATEGORY_NAME com.github.neeeeow.klassik.taskmanager
+)
 
 # FIXME Cleanup no longer used libs.
 target_link_libraries(com.github.neeeeow.klassik.taskmanager PRIVATE
-                      Qt::Core
-                      Qt::Qml
-                      Qt::Quick
-                      Plasma::Activities
-                      Plasma::ActivitiesStats
-                      KF6::ConfigGui
-                      KF6::I18n
-                      KF6::KIOCore
-                      KF6::KIOGui
-                      KF6::KIOFileWidgets # KFilePlacesModel
-                      KF6::Notifications # KNotificationJobUiDelegate
-                      Plasma::Plasma
-                      KSysGuard::ProcessCore
-                      KF6::Service
-                      KF6::WindowSystem
-                      PW::LibNotificationManager)
+  Qt::Core
+  Qt::Qml
+  Qt::Quick
+  Plasma::Activities
+  Plasma::ActivitiesStats
+  KF6::ConfigGui
+  KF6::I18n
+  KF6::KIOCore
+  KF6::KIOGui
+  KF6::KIOFileWidgets # KFilePlacesModel
+  KF6::Notifications # KNotificationJobUiDelegate
+  Plasma::Plasma
+  KSysGuard::ProcessCore
+  KF6::Service
+  KF6::WindowSystem
+  PW::LibNotificationManager)

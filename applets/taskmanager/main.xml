@@ -154,6 +154,10 @@
       <label> Spacing between icons in task manager. Margin is multiplied by this value.</label>
       <default>1</default>
     </entry>
+    <entry name="drawFrame" type="Bool">
+      <label>Draw a frame around the task manager.</label>
+      <default>false</default>
+    </entry>
   </group>
 
 </kcfg>

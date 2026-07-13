@@ -287,6 +287,11 @@ PlasmoidItem {
     Item {
         anchors.fill: parent
 
+        TaskManagerApplet.SunkenAppletFrame {
+            anchors.fill: parent
+            visible: Plasmoid.configuration.drawFrame
+        }
+
         TaskManager.VirtualDesktopInfo {
             id: virtualDesktopInfo
         }

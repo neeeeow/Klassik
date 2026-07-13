@@ -30,6 +30,8 @@ KCMUtils.SimpleKCM {
     property alias cfg_taskMaxWidth: taskMaxWidth.currentIndex
     property int cfg_iconSpacing: 0
 
+    property alias cfg_drawFrame: drawFrame.checked
+
     Component.onCompleted: {
         /* Don't rely on bindings for checking the radiobuttons
            When checking forceStripes, the condition for the checked value for the allow stripes button
@@ -84,6 +86,11 @@ KCMUtils.SimpleKCM {
         QQC2.CheckBox {
             id: fill
             text: i18nc("@option:check section General", "Fill free space on panel")
+        }
+
+        QQC2.CheckBox {
+            id: drawFrame
+            text: i18n("Draw a frame around the task manager")
         }
 
         Item {
