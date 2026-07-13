@@ -10,7 +10,8 @@
 Clock::Clock(QQuickItem *parent)
 	: QQuickPaintedItem(parent),
 	  m_lcdPixmap(QStringLiteral(":/qt/qml/plasma/applet/com/github/neeeeow/klassik/clock/lcd.png"))
-{	
+{
+	setSmooth(false);
 }
 
 void
@@ -24,9 +25,7 @@ Clock::setConfig(KConfigPropertyMap *config)
 
 void
 Clock::paint(QPainter *p)
-{
-	p->setRenderHint(QPainter::Antialiasing, false);
-
+{	
 	// background
 	if (getConfigValue<bool>("lcdLook") && !m_lcdPixmap.isNull()) {
 		p->save();
