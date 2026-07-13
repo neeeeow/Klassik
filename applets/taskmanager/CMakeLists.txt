@@ -27,14 +27,14 @@ plasma_add_applet(com.github.neeeeow.klassik.taskmanager
         backend.cpp
         smartlauncherbackend.cpp
         smartlauncheritem.cpp
-	${CMAKE_CURRENT_SOURCE_DIR}/../sunkenappletframe.h
+	${CMAKE_CURRENT_SOURCE_DIR}/../common/sunkenappletframe.h
     RESOURCES
         main.xml
     GENERATE_APPLET_CLASS
 )
 
 target_include_directories(com.github.neeeeow.klassik.taskmanager PRIVATE 
-    ${CMAKE_CURRENT_SOURCE_DIR}/..
+    ${CMAKE_CURRENT_SOURCE_DIR}/../common/
 ) # ensure that CMake sees our frame
 
 kconfig_add_kcfg_files(com.github.neeeeow.klassik.taskmanager ${CMAKE_SOURCE_DIR}/applets/taskmanager/kactivitymanagerd_plugins_settings.kcfgc)
