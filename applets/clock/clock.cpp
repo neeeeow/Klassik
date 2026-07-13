@@ -10,7 +10,7 @@
 Clock::Clock(QQuickItem *parent)
 	: QQuickPaintedItem(parent),
 	  m_lcdPixmap(QStringLiteral(":/qt/qml/plasma/applet/com/github/neeeeow/klassik/clock/lcd.png"))
-{
+{	
 }
 
 void
@@ -26,7 +26,6 @@ void
 Clock::paint(QPainter *p)
 {
 	p->setRenderHint(QPainter::Antialiasing, false);
-	p->setRenderHint(QPainter::NonCosmeticBrushPatterns);
 
 	// background
 	if (getConfigValue<bool>("lcdLook") && !m_lcdPixmap.isNull()) {
@@ -59,6 +58,14 @@ Clock::paint(QPainter *p)
 		qDrawShadePanel(p, boundingRect().toRect(), QGuiApplication::palette(), true);
 }
 
+bool
+Clock::event(QEvent *ev)
+{
+	if (ev->type() == QEvent::ApplicationPaletteChange || ev->type() == QEvent::PaletteChange)
+		update();
+	
+	return QQuickPaintedItem::event(ev);
+}
 
 DigitalClock::DigitalClock(QQuickItem *parent)
 	: Clock(parent)	  

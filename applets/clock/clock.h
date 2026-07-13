@@ -17,13 +17,13 @@ public:
 	KConfigPropertyMap* config() const { return m_config; }
 	void setConfig(KConfigPropertyMap* config);
 
-	void paint(QPainter *p) override;
-
 	// Functions for calculating the preferred clock geometry.
 	Q_INVOKABLE virtual int preferredWidthForHeight(int h) const = 0;
 	Q_INVOKABLE virtual int preferredHeightForWidth(int w) const = 0;
 
 protected:
+	bool event(QEvent *ev) override;
+	
 	// Function which draws the actual clock contents itself, and must
 	// be overriden. The drawing of the background/frame are handled
 	// by this base class, and do not need to be implemented in the
@@ -62,6 +62,8 @@ protected:
 private:
 	QPixmap m_lcdPixmap; // Pixmap for the LCD background
 	KConfigPropertyMap *m_config = nullptr; // Applet config map
+
+	void paint(QPainter *p) override; // declare paint private since it should never be overriden
 };
 
 class DigitalClock : public Clock
