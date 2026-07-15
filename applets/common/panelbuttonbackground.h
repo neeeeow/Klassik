@@ -1,13 +1,11 @@
 #pragma once
 
-#include <QQuickPaintedItem>
-#include <QQuickItem>
+#include "panelqstyleitem.h"
+
 #include <QPalette>
-#include <QApplication>
-#include <QStyle>
 #include <QStyleOptionFrame>
 
-class PanelButtonBackground : public QQuickPaintedItem
+class PanelButtonBackground : public PanelQStyleItem
 {
 	/*
 	   This class draws a sunken KDE 3 style panel button background.
@@ -18,10 +16,9 @@ class PanelButtonBackground : public QQuickPaintedItem
 	Q_OBJECT
 	QML_ELEMENT
 public:
-	PanelButtonBackground(QQuickItem *parent = nullptr) : QQuickPaintedItem(parent) {}
+	PanelButtonBackground(QQuickItem *parent = nullptr) : PanelQStyleItem(parent) {}
 	~PanelButtonBackground() override = default;
-
-private:
+	
 	void paint(QPainter *p) override {		
 		QStyle *style = QApplication::style();
 		if (!style)
@@ -29,19 +26,12 @@ private:
 
 		QStyleOptionFrame opt;
 		opt.palette = QGuiApplication::palette();
-		opt.rect = boundingRect().toRect();
+		opt.rect = QRect(0,0,width(),height());
 		opt.state = QStyle::State_Enabled | QStyle::State_Sunken;
 		opt.features = QStyleOptionFrame::None;
 		opt.frameShape = QFrame::Panel;
 		opt.lineWidth = 1;
 
 		style->drawPrimitive(QStyle::PE_Frame, &opt, p);
-	}
-
-	bool event(QEvent *ev) override {
-		if (ev->type() == QEvent::ApplicationPaletteChange || ev->type() == QEvent::PaletteChange)
-			update();
-	
-		return QQuickPaintedItem::event(ev);
 	}
 };

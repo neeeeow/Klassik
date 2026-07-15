@@ -14,7 +14,9 @@ plasma_add_applet(com.github.neeeeow.klassik.kmenu
     settingsmenu.cpp
     popupmenutitle.h
     popupmenusearch.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/../common/panelqstyleitem.h
     ${CMAKE_CURRENT_SOURCE_DIR}/../common/panelbuttonbackground.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/../common/panelbuttonarrow.h
   RESOURCES
     main.xml
     img/kside.png

@@ -21,7 +21,7 @@ public:
 
 private:
 	void paint(QPainter *p) override {
-		qDrawShadePanel(p, boundingRect().toRect(), QGuiApplication::palette(), true);
+		qDrawShadePanel(p, QRect(0,0,width(),height()), QGuiApplication::palette(), true);
 	}
 
 	bool event(QEvent *ev) override {

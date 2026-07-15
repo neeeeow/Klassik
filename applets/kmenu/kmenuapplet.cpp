@@ -37,8 +37,56 @@ KMenuApplet::~KMenuApplet()
 	delete m_menu;
 }
 
+KMenuApplet::MenuLocation
+KMenuApplet::preferredMenuLocation(QQuickItem *root, Plasma::Types::Location panelLocation)
+{
+	if (!m_menu)
+		return Above;   
+
+	switch (panelLocation) {
+	case Plasma::Types::TopEdge:
+	    return Below;
+	case Plasma::Types::BottomEdge:
+	    return Above;
+	case Plasma::Types::LeftEdge:
+	    return Right;
+	case Plasma::Types::RightEdge:
+		return Left;
+	default:
+		// Here, first try to place the menu above the panel, then below the panel, then to the right,
+		// and finally to the left.
+		if (!root->window())
+			break;
+
+		QScreen  *screen = root->window()->screen();
+		if (!screen)
+			break;
+
+		QSize menuSize = m_menu->sizeHint();
+
+		// Get the panel coordinates relative to the screen
+		QPoint rootGlobalPos = root->mapToGlobal(QPointF(0, 0)).toPoint();
+		QRect rootRect = root->boundingRect().translated(rootGlobalPos).toRect();
+		
+		QRect screenRect = screen->geometry();
+
+		if ((rootRect.top() - screenRect.top()) >= menuSize.height()) // space above panel
+		    return Above;
+		else if ((screenRect.bottom()  - rootRect.bottom()) >= menuSize.height()) // space  below panel
+		    return Below;
+		else if ((screenRect.right() - rootRect.right()) >= menuSize.width()) // space to the right
+		    return Right;
+		else if ((rootRect.left() - screenRect.left()) >= menuSize.width()) // space to the bottom
+		    return Left;
+		
+		break;
+	}
+
+	return Above;
+}
+
 void
-KMenuApplet::showMenu(QQuickItem *button, QQuickItem *root, Plasma::Types::Location location)
+KMenuApplet::showMenu(QQuickItem *button, QQuickItem *root, Plasma::Types::Location panelLocation)
 {
 	if (!m_menu) {
 		qWarning("KMenuApplet: KMenu not initialized!");
@@ -52,7 +100,7 @@ KMenuApplet::showMenu(QQuickItem *button, QQuickItem *root, Plasma::Types::Locat
         }
 	} 
 	
-	m_menu->popup(adjustedMenuPosition(button, root, location));
+	m_menu->popup(adjustedMenuPosition(button, root, panelLocation));
 }
 
 void
@@ -62,12 +110,11 @@ KMenuApplet::hideMenu()
 }
 
 QPoint
-KMenuApplet::adjustedMenuPosition(QQuickItem *button, QQuickItem *root, Plasma::Types::Location location)
+KMenuApplet::adjustedMenuPosition(QQuickItem *button, QQuickItem *root, Plasma::Types::Location panelLocation)
 {
-	if (!m_menu)
-		return QPoint(0,0); // should never be the case, but as a safeguard
+	MenuLocation location = preferredMenuLocation(root, panelLocation);
 	QSize menuSize = m_menu->sizeHint();
-
+	
 	// Get button coordinates relative to the screen
     QPoint btnGlobalPos = button->mapToGlobal(QPointF(0, 0)).toPoint(); // boundingRect()->topLeft() has x=0, y=0, so QPointF(0,0) is fine here
 	int x = btnGlobalPos.x();
@@ -78,43 +125,21 @@ KMenuApplet::adjustedMenuPosition(QQuickItem *button, QQuickItem *root, Plasma::
 	QRect rootRect = root->boundingRect().translated(rootGlobalPos).toRect();
 
 	switch (location) {
-	case Plasma::Types::TopEdge:
-		y = rootRect.bottom();
-		break;
-	case Plasma::Types::BottomEdge:
+	case Above:
 		y = rootRect.top() - menuSize.height();
 		break;
-	case Plasma::Types::LeftEdge:
+	case Below:
+		y = rootRect.bottom();
+		break;
+	case Right:
 		x = rootRect.right();
 		break;
-	case Plasma::Types::RightEdge:
+	case Left:
 		x = rootRect.left() - menuSize.width();
 		break;
-	default:
-		// Here, first try to place the menu above the panel, then below the panel, then to the right,
-		// and finally to the left.
-		if (!root->window())
-			break;
-
-		QScreen  *screen = root->window()->screen();
-		if (!screen)
-			break;
-		
-		QRect screenRect = screen->geometry();
-
-		if ((rootRect.top() - screenRect.top()) >= menuSize.height()) // space above panel
-			y = rootRect.top() - menuSize.height();
-		else if ((screenRect.bottom()  - rootRect.bottom()) >= menuSize.height()) // space  below panel
-			y = rootRect.bottom();
-		else if ((screenRect.right() - rootRect.right()) >= menuSize.width()) // space to the right
-			x = rootRect.right();
-		else if ((rootRect.left() - screenRect.left()) >= menuSize.width()) // space to the bottom
-			x = rootRect.left() - menuSize.width();
-		
-		break;
 	}
-	
-	return QPoint(x,y);
+
+	return QPoint(x, y);
 }
 
 #include "kmenuapplet.moc"

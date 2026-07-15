@@ -22,6 +22,15 @@ public:
 	inline bool isMenuActive() const { return m_menuActive; }
 	inline ContainmentInterface* containmentInterface() const { return m_containmentInterface; }
 
+	enum MenuLocation {
+		Above,
+		Below,
+		Right,
+		Left
+	};
+
+	Q_INVOKABLE MenuLocation preferredMenuLocation(QQuickItem *root, Plasma::Types::Location panelLocation);
+
 	Q_INVOKABLE void toggleMenu(QQuickItem *button, QQuickItem *root, Plasma::Types::Location panelLocation) {
 		if (m_menuActive)
 			hideMenu();

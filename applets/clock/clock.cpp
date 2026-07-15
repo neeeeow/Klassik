@@ -11,7 +11,6 @@ Clock::Clock(QQuickItem *parent)
 	: QQuickPaintedItem(parent),
 	  m_lcdPixmap(QStringLiteral(":/qt/qml/plasma/applet/com/github/neeeeow/klassik/clock/lcd.png"))
 {
-	setSmooth(false);
 }
 
 void
@@ -25,36 +24,24 @@ Clock::setConfig(KConfigPropertyMap *config)
 
 void
 Clock::paint(QPainter *p)
-{	
+{
+	QRect r(0,0,width(),height());
+	
 	// background
-	if (getConfigValue<bool>("lcdLook") && !m_lcdPixmap.isNull()) {
-		p->save();
-		
-		const qreal dpr = getDpr();
-		QRect bgRect;
-		if (!qFuzzyCompare(dpr, qreal(1))) {
-			const qreal inverseScale = qreal(1) / dpr;
-			p->scale(inverseScale, inverseScale);
-			p->translate(0.5, 0.5);
-			bgRect = getScaledRect(boundingRect().toRect(), dpr);
-		} else {
-			bgRect = boundingRect().toRect();
-		}
-		
-		p->drawTiledPixmap(bgRect, m_lcdPixmap);
-		p->restore();
+	if (getConfigValue<bool>("lcdLook") && !m_lcdPixmap.isNull()) {		
+		p->drawTiledPixmap(r, m_lcdPixmap);
 	} else if (getConfigValue<bool>("useCustomColors")) {
 		QColor bgColor = getConfigValue<QColor>("bgColor");
-		p->fillRect(boundingRect(), bgColor);
+		p->fillRect(r, bgColor);
 	}
-
+	
 	p->save();
 	drawContents(p);
 	p->restore();
 
 	// frame
 	if (getConfigValue<bool>("showFrame"))
-		qDrawShadePanel(p, boundingRect().toRect(), QGuiApplication::palette(), true);
+		qDrawShadePanel(p, r, QGuiApplication::palette(), true);
 }
 
 bool
@@ -114,21 +101,11 @@ DigitalClock::drawContents(QPainter *p)
 			fgColor = pal.color(QPalette::WindowText);
 			shadowColor = pal.color(QPalette::Mid);
 		}
-
-		const qreal dpr = getDpr();
-
-		QRect clockRect;
-		if (!qFuzzyCompare(dpr, qreal(1))) {
-			const qreal inverseScale = qreal(1) / dpr;
-			p->scale(inverseScale, inverseScale);
-			clockRect = getScaledRect(boundingRect().toRect(), dpr);
-		} else 
-			clockRect = boundingRect().toRect();
 		
 		p->translate(1, 1);
-		drawString(m_timeString, clockRect, shadowColor, *p);
+		drawString(m_timeString, shadowColor, *p);
 		p->translate(-2, -2);
-		drawString(m_timeString, clockRect, fgColor, *p);
+		drawString(m_timeString, fgColor, *p);
 	}
 }
 
@@ -220,19 +197,19 @@ static const char
 }
 
 void
-DigitalClock::drawString(const QString &s, const QRect &rect, const QColor &color, QPainter &p)
+DigitalClock::drawString(const QString &s, const QColor &color, QPainter &p)
 {
 	if (s.isEmpty())
 		return;
 
 	int ndigits = s.length();
 	int digitSpace = 1; // we make smallPoint *always* false in our case
-	int xSegLen    = rect.width()*5/(ndigits*(5 + digitSpace) + digitSpace);
-	int ySegLen    = rect.height()*5/12;
+	int xSegLen    = width()*5/(ndigits*(5 + digitSpace) + digitSpace);
+	int ySegLen    = height()*5/12;
 	int segLen     = ySegLen > xSegLen ? xSegLen : ySegLen;
 	int xAdvance   = segLen*(5 + digitSpace)/5;
-	int xOffset    = (rect.width() - ndigits*xAdvance + segLen/5)/2;
-	int yOffset    = (rect.height() - segLen*2)/2;
+	int xOffset    = (width() - ndigits*xAdvance + segLen/5)/2;
+	int yOffset    = (height() - segLen*2)/2;
 
 	for (int i=0; i<ndigits; i++) {
 		QPoint pos(xOffset + xAdvance*i, yOffset);
@@ -445,9 +422,9 @@ AnalogClock::drawContents(QPainter *p)
 		shadowColor = pal.color(QPalette::Mid);
 	}
 
-	const qreal dpr = getDpr();
-	int spWidth = boundingRect().toRect().width() * dpr;
-	int spHeight = boundingRect().toRect().height() * dpr;	   
+	const qreal dpr = window() ? window()->devicePixelRatio() : 1.0;
+	int spWidth = width() * dpr;
+	int spHeight = height() * dpr;	   
 
 	QPolygon pts;
     QPoint cp(spWidth / 2, spHeight / 2);

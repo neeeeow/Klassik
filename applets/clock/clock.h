@@ -21,25 +21,10 @@ public:
 	Q_INVOKABLE virtual int preferredWidthForHeight(int h) const = 0;
 	Q_INVOKABLE virtual int preferredHeightForWidth(int w) const = 0;
 
-protected:
+	void paint(QPainter *p) override;
 	bool event(QEvent *ev) override;
-	
-	// Function which draws the actual clock contents itself, and must
-	// be overriden. The drawing of the background/frame are handled
-	// by this base class, and do not need to be implemented in the
-	// below function.
-	virtual void drawContents(QPainter *p) = 0;
 
-	// Quickly fetch the device pixel ratio for a given QPainter
-	inline qreal getDpr() {
-		return window() ? window()->devicePixelRatio() : 1.0;
-	}
-	
-	// Scale a QRect for HiDPI displays
-	static inline QRect getScaledRect(const QRect &rect, const qreal dpr) {
-		return QRect(qRound(rect.x() * dpr), qRound(rect.y() * dpr), rect.width() * dpr, rect.height() * dpr);
-	}
-	
+protected:		
 	// Config getter
 	template <typename T>
 	T getConfigValue(const char *key) {
@@ -63,7 +48,12 @@ private:
 	QPixmap m_lcdPixmap; // Pixmap for the LCD background
 	KConfigPropertyMap *m_config = nullptr; // Applet config map
 
-	void paint(QPainter *p) override; // declare paint private since it should never be overriden
+	// Function which draws the actual clock contents itself, and must
+	// be overriden. The drawing of the background/frame are handled
+	// by this base class, and do not need to be implemented in the
+	// below function. This function should *never* be called directly
+	// in any subclass
+	virtual void drawContents(QPainter *p) = 0;
 };
 
 class DigitalClock : public Clock
@@ -82,12 +72,11 @@ private:
 	QString m_timeString; // Contains the time we paint
 
 	Q_INVOKABLE int preferredWidthForHeight(int h) const override;
-	Q_INVOKABLE int preferredHeightForWidth(int w) const override;
-	
-	void drawContents(QPainter *p) override;
+	Q_INVOKABLE int preferredHeightForWidth(int w) const override;   	
 	
 	// Drawing logic of QLCDNumber.cpp
-	void drawString(const QString &s, const QRect &r, const QColor &color, QPainter &p);
+	void drawContents(QPainter *p) override;
+	void drawString(const QString &s, const QColor &color, QPainter &p);
 	void drawDigit(const QPoint &pos, const QColor &color, QPainter &p, int segLen,
 				   char ch);
 	void drawSegment(const QPoint &pos, const QColor &color, char segmentNo, QPainter &p,
