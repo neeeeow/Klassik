@@ -22,20 +22,11 @@ public:
 	inline bool isMenuActive() const { return m_menuActive; }
 	inline ContainmentInterface* containmentInterface() const { return m_containmentInterface; }
 
-	enum MenuLocation {
-		Above,
-		Below,
-		Right,
-		Left
-	};
-
-	Q_INVOKABLE MenuLocation preferredMenuLocation(QQuickItem *root, Plasma::Types::Location panelLocation);
-
-	Q_INVOKABLE void toggleMenu(QQuickItem *button, QQuickItem *root, Plasma::Types::Location panelLocation) {
+	Q_INVOKABLE void toggleMenu(QQuickItem *button, Plasma::Types::Location panelLocation) {
 		if (m_menuActive)
 			hideMenu();
 		else
-			showMenu(button, root, panelLocation);
+			showMenu(button, panelLocation);
 	}
 
 	template <typename T>
@@ -65,7 +56,8 @@ private:
 	QPointer<KMenu> m_menu = nullptr; // m_menu should never be a dangling pointer, but just in case	
 	bool m_menuActive = false;
 
-	void showMenu(QQuickItem *button, QQuickItem *root, Plasma::Types::Location panelLocation);
+	void showMenu(QQuickItem *button, Plasma::Types::Location panelLocation);
 	void hideMenu();
 	QPoint adjustedMenuPosition(QQuickItem *button, QQuickItem *root, Plasma::Types::Location panelLocation);
+	QPoint popupPosition(QQuickItem *item, Plasma::Types::Location panelLocation);
 };

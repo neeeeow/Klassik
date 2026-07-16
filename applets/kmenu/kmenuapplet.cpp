@@ -37,56 +37,8 @@ KMenuApplet::~KMenuApplet()
 	delete m_menu;
 }
 
-KMenuApplet::MenuLocation
-KMenuApplet::preferredMenuLocation(QQuickItem *root, Plasma::Types::Location panelLocation)
-{
-	if (!m_menu)
-		return Above;   
-
-	switch (panelLocation) {
-	case Plasma::Types::TopEdge:
-	    return Below;
-	case Plasma::Types::BottomEdge:
-	    return Above;
-	case Plasma::Types::LeftEdge:
-	    return Right;
-	case Plasma::Types::RightEdge:
-		return Left;
-	default:
-		// Here, first try to place the menu above the panel, then below the panel, then to the right,
-		// and finally to the left.
-		if (!root->window())
-			break;
-
-		QScreen  *screen = root->window()->screen();
-		if (!screen)
-			break;
-
-		QSize menuSize = m_menu->sizeHint();
-
-		// Get the panel coordinates relative to the screen
-		QPoint rootGlobalPos = root->mapToGlobal(QPointF(0, 0)).toPoint();
-		QRect rootRect = root->boundingRect().translated(rootGlobalPos).toRect();
-		
-		QRect screenRect = screen->geometry();
-
-		if ((rootRect.top() - screenRect.top()) >= menuSize.height()) // space above panel
-		    return Above;
-		else if ((screenRect.bottom()  - rootRect.bottom()) >= menuSize.height()) // space  below panel
-		    return Below;
-		else if ((screenRect.right() - rootRect.right()) >= menuSize.width()) // space to the right
-		    return Right;
-		else if ((rootRect.left() - screenRect.left()) >= menuSize.width()) // space to the bottom
-		    return Left;
-		
-		break;
-	}
-
-	return Above;
-}
-
 void
-KMenuApplet::showMenu(QQuickItem *button, QQuickItem *root, Plasma::Types::Location panelLocation)
+KMenuApplet::showMenu(QQuickItem *button, Plasma::Types::Location panelLocation)
 {
 	if (!m_menu) {
 		qWarning("KMenuApplet: KMenu not initialized!");
@@ -98,9 +50,9 @@ KMenuApplet::showMenu(QQuickItem *button, QQuickItem *root, Plasma::Types::Locat
 		if (QWindow *menuWindow = m_menu->windowHandle()) {
             menuWindow->setTransientParent(plasmoidWindow);
         }
-	} 
-	
-	m_menu->popup(adjustedMenuPosition(button, root, panelLocation));
+	}
+
+	m_menu->popup(popupPosition(button, panelLocation));
 }
 
 void
@@ -110,36 +62,86 @@ KMenuApplet::hideMenu()
 }
 
 QPoint
-KMenuApplet::adjustedMenuPosition(QQuickItem *button, QQuickItem *root, Plasma::Types::Location panelLocation)
+KMenuApplet::popupPosition(QQuickItem *item, Plasma::Types::Location panelLocation)
 {
-	MenuLocation location = preferredMenuLocation(root, panelLocation);
-	QSize menuSize = m_menu->sizeHint();
-	
-	// Get button coordinates relative to the screen
-    QPoint btnGlobalPos = button->mapToGlobal(QPointF(0, 0)).toPoint(); // boundingRect()->topLeft() has x=0, y=0, so QPointF(0,0) is fine here
-	int x = btnGlobalPos.x();
-	int y = btnGlobalPos.y();
+	if (!m_menu || !item || !item->window()) {
+		return QPoint();
+	}
 
-	// Get the panel coordinates relative to the screen
-    QPoint rootGlobalPos = root->mapToGlobal(QPointF(0, 0)).toPoint();
-	QRect rootRect = root->boundingRect().translated(rootGlobalPos).toRect();
+	const QSize size = m_menu->sizeHint();
+	QPoint pos = item->mapToGlobal(QPointF(0, 0)).toPoint();
+	QRect parentGeometryBounds(pos, QSize(item->width(), item->height()));
 
-	switch (location) {
-	case Above:
-		y = rootRect.top() - menuSize.height();
+	const QPoint topPoint(pos.x(), parentGeometryBounds.top() - size.height());
+    const QPoint bottomPoint(pos.x(), parentGeometryBounds.bottom());
+    const QPoint leftPoint(parentGeometryBounds.left() - size.width(), pos.y());
+    const QPoint rightPoint(parentGeometryBounds.right(), pos.y());
+
+	QPoint dialogPos;
+	switch (panelLocation) {
+	case Plasma::Types::TopEdge:
+	    dialogPos = bottomPoint;
 		break;
-	case Below:
-		y = rootRect.bottom();
+	case Plasma::Types::LeftEdge:
+	    dialogPos = rightPoint;
 		break;
-	case Right:
-		x = rootRect.right();
+	case Plasma::Types::RightEdge:
+	    dialogPos = leftPoint;
 		break;
-	case Left:
-		x = rootRect.left() - menuSize.width();
+	default:
+	    dialogPos = topPoint;
 		break;
 	}
 
-	return QPoint(x, y);
+	QRect avail = item->window()->screen()->availableGeometry();
+
+    // If popup goes out of bounds...
+    // ...at the left edge
+    if (dialogPos.x() < avail.left()) {
+        if (panelLocation != Plasma::Types::LeftEdge) {
+            // move it in bounds
+            // Note: floating popup goes here.
+            dialogPos.setX(avail.left());
+        } else {
+            // flip it around
+            dialogPos.setX(rightPoint.x());
+        }
+    }
+    // ...at the right edge
+    if (dialogPos.x() + size.width() > avail.right()) {
+        if (panelLocation != Plasma::Types::RightEdge) {
+            // move it in bounds
+            // Note: floating popup goes here.
+            dialogPos.setX(qMax(avail.left(), (avail.right() - size.width() + 1)));
+        } else {
+            // flip it around
+            dialogPos.setX(leftPoint.x());
+        }
+    }
+    // ...at the top edge
+    if (dialogPos.y() < avail.top()) {
+        if (panelLocation == Plasma::Types::LeftEdge || panelLocation == Plasma::Types::RightEdge) {
+            // move it in bounds
+            dialogPos.setY(avail.top());
+        } else {
+            // flip it around
+            // Note: floating popup goes here.
+            dialogPos.setY(bottomPoint.y());
+        }
+    }
+    // ...at the bottom edge
+    if (dialogPos.y() + size.height() > avail.bottom()) {
+        if (panelLocation == Plasma::Types::LeftEdge || panelLocation == Plasma::Types::RightEdge) {
+            // move it in bounds
+            dialogPos.setY(qMax(avail.top(), (avail.bottom() - size.height() + 1)));
+        } else {
+            // flip it around
+            // Note: floating popup goes here.
+            dialogPos.setY(topPoint.y());
+        }
+    }
+	
+	return dialogPos;
 }
 
 #include "kmenuapplet.moc"

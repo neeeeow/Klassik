@@ -16,6 +16,7 @@ class PanelButtonArrow : public PanelQStyleItem
 	Q_OBJECT
 	QML_ELEMENT
 	Q_PROPERTY(bool active READ active WRITE setActive);
+	Q_PROPERTY(MenuLocation location READ location WRITE setLocation)
 public:
 	PanelButtonArrow(QQuickItem *parent = nullptr) : PanelQStyleItem(parent) {}
 	~PanelButtonArrow() override = default;
@@ -26,11 +27,20 @@ public:
 		Right,
 		Left
 	};
+	Q_ENUM(MenuLocation)
 
 	bool active() const { return m_active; }
 	void setActive(bool state) {
 		if (m_active != state) {
 			m_active = state;
+			update();
+		}
+	}
+
+	MenuLocation location() const { return m_location; }
+	void setLocation(MenuLocation location) {
+		if (m_location != location) {
+			m_location = location;
 			update();
 		}
 	}

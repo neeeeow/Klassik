@@ -53,14 +53,26 @@ PlasmoidItem{
             PanelButtonArrow {
                 anchors.fill: parent
                 active: menuButton.down || menuButton.checked
+                location: {
+                    switch (Plasmoid.location) {
+                        case PlasmaCore.Types.TopEdge:
+                            return PanelButtonArrow.Below;
+                        case PlasmaCore.Types.LeftEdge:
+                            return PanelButtonArrow.Right;
+                        case PlasmaCore.Types.RightEdge:
+                            return PanelButtonArrow.Left;
+                        default:
+                            return PanelButtonArrow.Above;
+                    }
+                }
             }
         }
 
-        onClicked: Plasmoid.toggleMenu(menuButton, root, Plasmoid.location)
+        onClicked: Plasmoid.toggleMenu(menuButton, Plasmoid.location)
         Connections {
             target: Plasmoid
             function onActivated() {
-                Plasmoid.toggleMenu(menuButton, root, Plasmoid.location)
+                Plasmoid.toggleMenu(menuButton, Plasmoid.location)
             }
         }
     }
