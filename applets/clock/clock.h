@@ -1,12 +1,14 @@
 #pragma once
 
+#include <../common/klassikpainteditem.h>
+
 #include <QQuickPaintedItem>
 #include <QQuickWindow>
 #include <QPainter>
 
 #include <KConfigPropertyMap>
 
-class Clock : public QQuickPaintedItem
+class Clock : public KlassikPaintedItem
 {
 	Q_OBJECT
 	Q_PROPERTY(KConfigPropertyMap* config READ config WRITE setConfig);
@@ -19,15 +21,14 @@ public:
 
 	// Functions for calculating the preferred clock geometry.
 	Q_INVOKABLE virtual int preferredWidthForHeight(int h) const = 0;
-	Q_INVOKABLE virtual int preferredHeightForWidth(int w) const = 0;
+	Q_INVOKABLE virtual int preferredHeightForWidth(int w) const = 0;	
 
-	void paint(QPainter *p) override;
-	bool event(QEvent *ev) override;
-
-protected:		
+protected:
+	void paint(QPainter *p) const override;
+	
 	// Config getter
 	template <typename T>
-	T getConfigValue(const char *key) {
+	T getConfigValue(const char *key) const {
 		if (!m_config)
 			return T();	
 
@@ -43,6 +44,16 @@ protected:
 
 		return value.value<T>();				
 	}
+
+	inline QRect getRect() const { return QRect(0,0,width(),height()); }
+	
+	static inline qreal getDpr(const QPainter *p) {
+		return p->device() ? p->device()->devicePixelRatio() : 1.0;
+	}
+
+    static inline QRect getScaledRect(const QRect &rect, const qreal dpr) {
+		return QRect(qRound(rect.x() * dpr), qRound(rect.y() * dpr), rect.width() * dpr, rect.height() * dpr);
+	}
 	
 private:
 	QPixmap m_lcdPixmap; // Pixmap for the LCD background
@@ -53,7 +64,7 @@ private:
 	// by this base class, and do not need to be implemented in the
 	// below function. This function should *never* be called directly
 	// in any subclass
-	virtual void drawContents(QPainter *p) = 0;
+	virtual void drawContents(QPainter *p) const = 0;
 };
 
 class DigitalClock : public Clock
@@ -75,12 +86,12 @@ private:
 	Q_INVOKABLE int preferredHeightForWidth(int w) const override;   	
 	
 	// Drawing logic of QLCDNumber.cpp
-	void drawContents(QPainter *p) override;
-	void drawString(const QString &s, const QColor &color, QPainter &p);
+	void drawContents(QPainter *p) const override;
+	void drawString(const QString &s, const QRect &rect, const QColor &color, QPainter &p) const;
 	void drawDigit(const QPoint &pos, const QColor &color, QPainter &p, int segLen,
-				   char ch);
+				   char ch) const;
 	void drawSegment(const QPoint &pos, const QColor &color, char segmentNo, QPainter &p,
-					 int segLen);
+					 int segLen) const;
 };
 
 class AnalogClock : public Clock
@@ -95,5 +106,5 @@ private:
 	Q_INVOKABLE int preferredWidthForHeight(int h) const override;
 	Q_INVOKABLE int preferredHeightForWidth(int w) const override;
 	
-	void drawContents(QPainter *p) override;
+	void drawContents(QPainter *p) const override;
 };

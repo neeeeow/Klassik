@@ -5,6 +5,7 @@ plasma_add_applet(com.github.neeeeow.klassik.clock
     qml/ConfigGeneral.qml
   CPP_SOURCES
     clock.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/../common/klassikpainteditem.cpp
   RESOURCES
     main.xml
     lcd.png

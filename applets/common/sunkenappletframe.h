@@ -1,12 +1,12 @@
 #pragma once
 
-#include <QQuickPaintedItem>
-#include <QQuickItem>
+#include "klassikpainteditem.h"
+
 #include <QPalette>
 
 #include <qdrawutil.h>
 
-class SunkenAppletFrame : public QQuickPaintedItem
+class SunkenAppletFrame : public KlassikPaintedItem
 {
 	/*
 	   This class draws a sunken frame, using qDrawShadePanel. Typically used
@@ -16,18 +16,11 @@ class SunkenAppletFrame : public QQuickPaintedItem
 	Q_OBJECT
 	QML_ELEMENT
 public:
-	SunkenAppletFrame(QQuickItem *parent = nullptr) : QQuickPaintedItem(parent) {}
+	SunkenAppletFrame(QQuickItem *parent = nullptr) : KlassikPaintedItem(parent) {}
 	~SunkenAppletFrame() override = default;
 
 private:
-	void paint(QPainter *p) override {
+	void paint(QPainter *p) const override {
 		qDrawShadePanel(p, QRect(0,0,width(),height()), QGuiApplication::palette(), true);
-	}
-
-	bool event(QEvent *ev) override {
-		if (ev->type() == QEvent::ApplicationPaletteChange || ev->type() == QEvent::PaletteChange)
-			update();
-	
-		return QQuickPaintedItem::event(ev);
 	}
 };

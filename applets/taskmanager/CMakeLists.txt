@@ -27,6 +27,7 @@ plasma_add_applet(com.github.neeeeow.klassik.taskmanager
         backend.cpp
         smartlauncherbackend.cpp
         smartlauncheritem.cpp
+	${CMAKE_CURRENT_SOURCE_DIR}/../common/klassikpainteditem.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/../common/sunkenappletframe.h
     RESOURCES
         main.xml

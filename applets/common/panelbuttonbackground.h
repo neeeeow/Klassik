@@ -1,27 +1,27 @@
 #pragma once
 
-#include "panelqstyleitem.h"
+#include "klassikqstyleprimitiveitem.h"
 
 #include <QPalette>
 #include <QStyleOptionFrame>
 
-class PanelButtonBackground : public PanelQStyleItem
+class PanelButtonBackground : public KlassikQStylePrimitiveItem
 {
 	/*
-	   This class draws a sunken KDE 3 style panel button background.
-	   NOTE: the background here is always drawn as sunken, use the visible
-	   QML property to set whether or not the background is sunken
+	  This class draws a sunken KDE 3 style panel button background.
+	  NOTE: the background here is always drawn as sunken, use the visible
+	  QML property to set whether or not the background is sunken
 	*/
 	  
 	Q_OBJECT
 	QML_ELEMENT
 public:
-	PanelButtonBackground(QQuickItem *parent = nullptr) : PanelQStyleItem(parent) {}
+	PanelButtonBackground(QQuickItem *parent = nullptr) : KlassikQStylePrimitiveItem(parent) {}
 	~PanelButtonBackground() override = default;
-	
-	void paint(QPainter *p) override {		
-		QStyle *style = QApplication::style();
-		if (!style)
+
+protected:	
+	void paint(QPainter *p) const override {		
+		if (!m_style)
 			return;
 
 		QStyleOptionFrame opt;
@@ -32,6 +32,6 @@ public:
 		opt.frameShape = QFrame::Panel;
 		opt.lineWidth = 1;
 
-		style->drawPrimitive(QStyle::PE_Frame, &opt, p);
+		m_style->drawPrimitive(QStyle::PE_Frame, &opt, p);
 	}
 };

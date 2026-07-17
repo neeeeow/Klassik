@@ -1,0 +1,38 @@
+#pragma once
+
+#include "klassikpainteditem.h"
+
+#include <QStyle>
+#include <QStyleOption>
+#include <QApplication>
+
+class KlassikQStylePrimitiveItem : public KlassikPaintedItem
+{
+	/* Template class for painting on to QML items with a QPainter. */
+
+	Q_OBJECT
+public:
+	KlassikQStylePrimitiveItem(QQuickItem *parent = nullptr) : KlassikPaintedItem(parent) {
+		m_style = qApp->style();
+		if (m_style)
+			connect(m_style, &QObject::destroyed, this, &KlassikQStylePrimitiveItem::styleChanged, Qt::UniqueConnection);
+	}
+	virtual ~KlassikQStylePrimitiveItem() = default;
+
+protected:
+	QStyle *m_style;
+	
+	virtual void paint(QPainter *painter) const override = 0;
+
+private:
+	void styleChanged() {
+		// we cannot simply connect to QEvent::StyleChange
+		if (QCoreApplication::closingDown())
+			return;
+		m_style = qApp->style();
+		if (m_style) {
+		    connect(m_style, &QObject::destroyed, this, &KlassikQStylePrimitiveItem::styleChanged, Qt::UniqueConnection);
+			polish();
+		}
+	}
+};

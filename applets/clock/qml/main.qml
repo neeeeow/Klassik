@@ -78,7 +78,7 @@ PlasmoidItem {
                 clockTimer.triggered();
 
                 if (clockLoader.item)
-                    clockLoader.item.update();
+                    clockLoader.item.updateImage();
             }
         }
 
@@ -115,7 +115,7 @@ PlasmoidItem {
                             // very useful for determining when we need to do a redraw, instead of
                             // blindly doing on every tick. since timeString already lives within root
                             // it's been loaded in to memory, and there are no penalties there
-                            analogClock.update()
+                            analogClock.updateImage()
                         }
                     }
                 }

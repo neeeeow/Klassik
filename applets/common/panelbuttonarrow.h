@@ -1,16 +1,13 @@
 #pragma once
 
-#include "panelqstyleitem.h"
+#include "klassikqstyleprimitiveitem.h"
 
 #include <QPalette>
-#include <QStyleOption>
 
-class PanelButtonArrow : public PanelQStyleItem
+class PanelButtonArrow : public KlassikQStylePrimitiveItem
 {
 	/*
-	   This class draws a sunken KDE 3 style panel button background.
-	   NOTE: the background here is always drawn as sunken, use the visible
-	   QML property to set whether or not the background is sunken
+	   This class draws a sunken KDE 3 style popup menu arrow for buttons
 	*/
 	  
 	Q_OBJECT
@@ -18,7 +15,7 @@ class PanelButtonArrow : public PanelQStyleItem
 	Q_PROPERTY(bool active READ active WRITE setActive);
 	Q_PROPERTY(MenuLocation location READ location WRITE setLocation)
 public:
-	PanelButtonArrow(QQuickItem *parent = nullptr) : PanelQStyleItem(parent) {}
+	PanelButtonArrow(QQuickItem *parent = nullptr) : KlassikQStylePrimitiveItem(parent) {}
 	~PanelButtonArrow() override = default;
 
 	enum MenuLocation {
@@ -33,7 +30,7 @@ public:
 	void setActive(bool state) {
 		if (m_active != state) {
 			m_active = state;
-			update();
+			polish();
 		}
 	}
 
@@ -41,19 +38,19 @@ public:
 	void setLocation(MenuLocation location) {
 		if (m_location != location) {
 			m_location = location;
-			update();
+			polish();
 		}
 	}
 
-	void paint(QPainter *p) override {		
-		QStyle *style = QApplication::style();
-		if (!style)
+protected:
+	void paint(QPainter *p) const override {		
+		if (!m_style)
 			return;  
 		
 		// Here we use the slightly older KDE 3 panel button arrow logic, it
 		// looks better than the new style adopted later in 3.5's life.
 		QStyle::PrimitiveElement e = QStyle::PE_IndicatorArrowUp;
-		int arrowSize = style->pixelMetric(QStyle::PM_MenuButtonIndicator);
+		int arrowSize = m_style->pixelMetric(QStyle::PM_MenuButtonIndicator);
 		QRect r(0, 0, arrowSize, arrowSize);
 		switch (m_location) {
 		case Above:
@@ -78,7 +75,7 @@ public:
 		opt.state = QStyle::State_Enabled;
 		if (m_active)
 			opt.state |= QStyle::State_Sunken; // most QStyle's don't have a separate sunken state, but just in case
-		style->drawPrimitive(e, &opt, p);
+		m_style->drawPrimitive(e, &opt, p);
 	}
 
 private:
