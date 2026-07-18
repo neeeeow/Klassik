@@ -14,10 +14,10 @@ plasma_add_applet(com.github.neeeeow.klassik.kmenu
     settingsmenu.cpp
     popupmenutitle.h
     popupmenusearch.h
-    ${CMAKE_CURRENT_SOURCE_DIR}/../common/klassikpainteditem.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/../common/klassikqstyleprimitiveitem.h
-    ${CMAKE_CURRENT_SOURCE_DIR}/../common/panelbuttonbackground.h
-    ${CMAKE_CURRENT_SOURCE_DIR}/../common/panelbuttonarrow.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/../../common/klassikpainteditem.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/../../common/klassikqstyleprimitiveitem.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/../../common/panelbuttonbackground.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/../../common/panelbuttonarrow.h
   RESOURCES
     main.xml
     img/kside.png
@@ -25,7 +25,7 @@ plasma_add_applet(com.github.neeeeow.klassik.kmenu
 )  
 
 target_include_directories(com.github.neeeeow.klassik.kmenu PRIVATE 
-    ${CMAKE_CURRENT_SOURCE_DIR}/../common/
+    ${CMAKE_CURRENT_SOURCE_DIR}/../../common/
 )
 
 

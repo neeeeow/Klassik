@@ -6,7 +6,7 @@
 
 #pragma once
 
-#include <../common/klassikpainteditem.h>
+#include <../../common/klassikpainteditem.h>
 
 #include <QQuickPaintedItem>
 #include <QQuickWindow>
