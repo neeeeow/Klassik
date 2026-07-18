@@ -1,0 +1,22 @@
+{
+    "KPlugin": {
+        "Authors": [
+            {
+                "Name": "neeeeow"
+            },
+            {
+                "Name": "David Rosca"
+            }
+        ],
+        "Category": "Application Launchers",
+        "Description": "KDE 3 style quicklaunch",
+        "FormFactors": [
+            "desktop"
+        ],
+        "Icon": "fork",
+        "License": "GPL-3.0+",
+        "Name": "Klassik Quicklaunch",
+        "Website": "https://github.com/neeeeow/Klassik"
+    },
+    "X-Plasma-API-Minimum-Version": "6.0"
+}
