@@ -46,3 +46,4 @@ find_package(KSysGuard REQUIRED)
 find_package(LibNotificationManager REQUIRED)
 
 add_subdirectory(applets)
+add_subdirectory(panel)

@@ -1,0 +1,21 @@
+{
+    "KPackageStructure": "Plasma/LayoutTemplate",
+    "KPlugin": {
+        "Authors": [
+            {
+                "Name": "neeeeow"
+            }
+        ],
+        "Category": "",
+        "Description": "Klassik panel",
+        "EnabledByDefault": true,
+        "Id": "com.github.neeeeow.klassik.panel.default",
+        "License": "GPLv3+",
+        "Name": "Klassik Panel",
+        "Website": "https://github.com/neeeeow/Klassik"
+    },
+    "X-Plasma-ContainmentCategories": [
+        "panel"
+    ],
+    "X-Plasma-Shell": "plasmashell"
+}

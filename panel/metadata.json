@@ -1,0 +1,20 @@
+{
+    "KPlugin": {
+        "Authors": [
+            {
+                "Name": "neeeeow"
+            },
+            {
+                "Name": "Marco Martin"
+            }
+        ],
+        "Category": "",
+        "License": "GPL-3.0+",
+        "Name": "Klassik Panel",
+        "Website": "https://github.com/neeeeow/Klassik"
+    },
+    "Keywords": "",
+    "NoDisplay": true,
+    "X-Plasma-API-Minimum-Version": "6.0",
+    "X-Plasma-ContainmentType": "Panel"
+}
