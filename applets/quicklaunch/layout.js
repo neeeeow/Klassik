@@ -7,7 +7,7 @@
 .import org.kde.plasma.core as PlasmaCore
 .import org.kde.kirigami as Kirigami
 
-function itemPadding() { return Kirigami.Units.smallSpacing / 2; }
+function itemPadding() { return 0; }
 
 function rows()
 {

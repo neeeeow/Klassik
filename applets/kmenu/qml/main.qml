@@ -30,40 +30,27 @@ PlasmoidItem{
             visible: menuButton.down || menuButton.checked
         }
 
-        contentItem: Item {
-            id: container
-            readonly property int maxIconSize: Math.min(
-                menuButton.height - menuButton.topPadding - menuButton.bottomPadding,
-                menuButton.width - menuButton.leftPadding - menuButton.rightPadding
-            )
-            height: maxIconSize
-            width: maxIconSize
-            anchors.centerIn: parent
+        contentItem: Kirigami.Icon {
+            source: Plasmoid.icon
+            active: menuButton.hovered
 
-            Kirigami.Icon {
-                anchors.fill: parent
-                source: Plasmoid.icon
-                active: menuButton.hovered
+            scale: (menuButton.down || menuButton.checked) ? (width - 2) / width : 1.0
+            transformOrigin: Item.Center
+        }
 
-                scale: (menuButton.down || menuButton.checked)
-                ? (container.maxIconSize - 2) / container.maxIconSize : 1.0
-                transformOrigin: Item.Center
-            }
-
-            PanelButtonArrow {
-                anchors.fill: parent
-                active: menuButton.down || menuButton.checked
-                location: {
-                    switch (Plasmoid.location) {
-                        case PlasmaCore.Types.TopEdge:
-                            return PanelButtonArrow.Below;
-                        case PlasmaCore.Types.LeftEdge:
-                            return PanelButtonArrow.Right;
-                        case PlasmaCore.Types.RightEdge:
-                            return PanelButtonArrow.Left;
-                        default:
-                            return PanelButtonArrow.Above;
-                    }
+        PanelButtonArrow {
+            anchors.fill: parent
+            active: menuButton.down || menuButton.checked
+            location: {
+                switch (Plasmoid.location) {
+                    case PlasmaCore.Types.TopEdge:
+                        return PanelButtonArrow.Below;
+                    case PlasmaCore.Types.LeftEdge:
+                        return PanelButtonArrow.Right;
+                    case PlasmaCore.Types.RightEdge:
+                        return PanelButtonArrow.Left;
+                    default:
+                        return PanelButtonArrow.Above;
                 }
             }
         }

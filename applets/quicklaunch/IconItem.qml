@@ -7,8 +7,6 @@
 import QtQuick
 import org.kde.plasma.core as PlasmaCore
 import org.kde.kirigami as Kirigami
-import org.kde.ksvg as KSvg
-import org.kde.plasma.components as PlasmaComponents3
 import org.kde.plasma.plasmoid
 import org.kde.draganddrop as DragAndDrop
 import org.kde.plasma.extras as PlasmaExtras
@@ -32,92 +30,8 @@ Item {
     readonly property var launcher : logic.launcherData(url)
     readonly property string iconName : launcher.iconName || "fork"
 
-    width: isPopupItem ? LayoutManager.popupItemWidth() : grid.cellWidth
-    height: isPopupItem ? LayoutManager.popupItemHeight() : grid.cellHeight
-
-    Keys.onPressed: event => {
-        switch (event.key) {
-        case Qt.Key_Space:
-        case Qt.Key_Enter:
-        case Qt.Key_Return:
-        case Qt.Key_Select:
-            logic.openUrl(url);
-            break;
-        case Qt.Key_Menu:
-            contextMenu.refreshActions();
-            contextMenu.open(0,0);
-            event.accepted = true;
-            break;
-        case Qt.Key_Backspace:
-        case Qt.Key_Delete:
-            removeLauncher();
-            event.accepted = true;
-            break;
-        }
-
-        // BEGIN Arrow keys
-        if (!(event.modifiers & Qt.ControlModifier) || !(event.modifiers & Qt.ShiftModifier)) {
-            return;
-        }
-
-        switch (event.key) {
-        case Qt.Key_Up: {
-            if (iconItem.isPopupItem && iconItem.itemIndex === 0 && Plasmoid.location === PlasmaCore.Types.TopEdge) {
-                iconItem.ListView.view.moveItemToGrid(iconItem, url);
-                break;
-            } else if (!iconItem.isPopupItem && Plasmoid.location === PlasmaCore.Types.BottomEdge) {
-                iconItem.GridView.view.moveItemToPopup(iconItem, url);
-                break;
-            }
-
-            decreaseIndex();
-            break;
-        }
-
-        case Qt.Key_Down: {
-            if (iconItem.isPopupItem && iconItem.itemIndex === iconItem.ListView.view.count - 1 && Plasmoid.location === PlasmaCore.Types.BottomEdge) {
-                iconItem.ListView.view.moveItemToGrid(iconItem, url);
-                break;
-            } else if (!iconItem.isPopupItem && Plasmoid.location === PlasmaCore.Types.TopEdge) {
-                iconItem.GridView.view.moveItemToPopup(iconItem, url);
-                break;
-            }
-
-            increaseIndex();
-            break;
-        }
-
-        case Qt.Key_Left: {
-            if (iconItem.isPopupItem && Plasmoid.location === PlasmaCore.Types.LeftEdge) {
-                iconItem.ListView.view.moveItemToGrid(iconItem, url);
-                break;
-            } else if (!iconItem.isPopupItem && Plasmoid.location === PlasmaCore.Types.RightEdge) {
-                iconItem.GridView.view.moveItemToPopup(iconItem, url);
-                break;
-            }
-
-            decreaseIndex();
-            break;
-        }
-        case Qt.Key_Right: {
-            if (iconItem.isPopupItem && Plasmoid.location === PlasmaCore.Types.RightEdge) {
-                iconItem.ListView.view.moveItemToGrid(iconItem, url);
-                break;
-            } else if (!iconItem.isPopupItem && Plasmoid.location === PlasmaCore.Types.LeftEdge) {
-                iconItem.GridView.view.moveItemToPopup(iconItem, url);
-                break;
-            }
-
-            increaseIndex();
-            break;
-        }
-        default:
-            return;
-        }
-
-        event.accepted = true;
-        // END Arrow keys
-    }
+    width: grid.cellWidth
+    height: grid.cellHeight
 
     function decreaseIndex() {
         const newIndex = iconItem.itemIndex - 1;
@@ -135,16 +49,11 @@ Item {
 
     function increaseIndex() {
         const newIndex = iconItem.itemIndex + 1;
-        if (newIndex === (iconItem.isPopupItem ? iconItem.ListView.view.count : iconItem.GridView.view.count)) {
+        if (newIndex === (iconItem.GridView.view.count)) {
             return;
         }
-        if (iconItem.isPopupItem) {
-            popupModel.moveUrl(iconItem.itemIndex, newIndex);
-            iconItem.ListView.view.currentIndex = newIndex;
-        } else {
-            launcherModel.moveUrl(iconItem.itemIndex, newIndex);
-            iconItem.GridView.view.currentIndex = newIndex;
-        }
+        launcherModel.moveUrl(iconItem.itemIndex, newIndex);
+        iconItem.GridView.view.currentIndex = newIndex;
     }
 
     DragAndDrop.DragArea {
@@ -176,22 +85,12 @@ Item {
             hoverEnabled: true
             acceptedButtons: Qt.LeftButton | Qt.RightButton
 
+            readonly property bool isDown: pressed && containsMouse
+
             activeFocusOnTab: true
             Accessible.name: iconItem.launcher.applicationName
             Accessible.description: i18n("Launch %1", iconItem.launcher.genericName || iconItem.launcher.applicationName)
             Accessible.role: Accessible.Button
-
-            onActiveFocusChanged: {
-                if (activeFocus) {
-                    entered();
-                }
-            }
-
-            onEntered: {
-                if (iconItem.ListView.view) {
-                    iconItem.ListView.view.currentIndex = iconItem.itemIndex;
-                }
-            }
 
             onPressed: mouse => {
                 if (mouse.button == Qt.RightButton) {
@@ -206,39 +105,20 @@ Item {
                 }
             }
 
+            PanelButtonBackground {
+                anchors.fill: parent
+                visible: mouseArea.isDown
+            }
+
             Kirigami.Icon {
                 id: icon
+                anchors.fill: parent
 
-                anchors {
-                    top: parent.top
-                    left: parent.left
-                }
-
-                width: Kirigami.Units.iconSizes.medium
-                height: width
                 source: iconItem.url == "quicklaunch:drop" ? "" : iconItem.iconName
                 active: mouseArea.containsMouse
-            }
 
-            PlasmaComponents3.Label {
-                id: label
-
-                anchors {
-                    bottom : parent.bottom
-                    right : parent.right
-                }
-
-                text: iconItem.launcher.applicationName
-                textFormat: Text.PlainText
-                maximumLineCount: 1
-                wrapMode: Text.Wrap
-            }
-
-            KSvg.FrameSvgItem {
-                anchors.fill: parent
-                imagePath: "widgets/viewitem"
-                prefix: "hover"
-                visible: iconItem.dragging || iconItem.url == "quicklaunch:drop"
+                scale: mouseArea.isDown ? (width - 2) / width : 1.0
+                transformOrigin: Item.Center
             }
 
             PlasmaCore.ToolTipArea {
@@ -322,73 +202,6 @@ Item {
         }
     }
 
-    states: [
-        State {
-            name: "popup"
-            when: iconItem.isPopupItem
-
-            AnchorChanges {
-                target: dragArea
-                anchors.left: dragArea.parent.left
-                anchors.right: dragArea.parent.right
-                anchors.top: dragArea.parent.top
-                anchors.bottom: dragArea.parent.bottom
-            }
-
-            AnchorChanges {
-                target: icon
-                anchors.right: undefined
-                anchors.bottom: undefined
-            }
-
-            AnchorChanges {
-                target: label
-                anchors.top: label.parent.top
-                anchors.left: icon.right
-            }
-
-            PropertyChanges {
-                target: label
-                horizontalAlignment: Text.AlignHLeft
-                verticalAlignment: Text.AlignVCenter
-                visible: true
-                elide: Text.ElideRight
-                anchors.leftMargin: Kirigami.Units.smallSpacing
-                anchors.rightMargin: Kirigami.Units.smallSpacing
-            }
-        },
-
-        State {
-            name: "grid"
-            when: !iconItem.isPopupItem
-
-            AnchorChanges {
-                target: dragArea
-                anchors.verticalCenter: dragArea.parent.verticalCenter
-                anchors.horizontalCenter: dragArea.parent.horizontalCenter
-            }
-
-            AnchorChanges {
-                target: icon
-                anchors.right: icon.parent.right
-                anchors.bottom: label.visible ? label.top : icon.parent.bottom
-            }
-
-            AnchorChanges {
-                target: label
-                anchors.top: undefined
-                anchors.left: label.parent.left
-            }
-
-            PropertyChanges {
-                target: label
-                horizontalAlignment: Text.AlignHCenter
-                visible: showLauncherNames
-                elide: Text.ElideNone
-            }
-        }
-    ]
-
     function addLauncher()
     {
         logic.addLauncher(isPopupItem);
@@ -401,7 +214,7 @@ Item {
 
     function removeLauncher()
     {
-        var m = isPopupItem ? popupModel : launcherModel;
+        var m = launcherModel;
         m.removeUrl(itemIndex);
     }
 }
