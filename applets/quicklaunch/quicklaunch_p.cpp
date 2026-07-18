@@ -1,4 +1,6 @@
 /*
+ *  SPDX-FileCopyrightText: 2026 neeeeow <https://github.com/neeeeow>
+ *
  *  SPDX-FileCopyrightText: 2008-2009 Lukas Appelhans <l.appelhans@gmx.de>
  *  SPDX-FileCopyrightText: 2010-2011 Ingomar Wesp <ingomar@wesp.name>
  *  SPDX-FileCopyrightText: 2013 Bhushan Shah <bhush94@gmail.com>
@@ -113,7 +115,7 @@ void QuicklaunchPrivate::openExec(const QString &exec)
     job->start();
 }
 
-void QuicklaunchPrivate::addLauncher(bool isPopup)
+void QuicklaunchPrivate::addLauncher()
 {
     KOpenWithDialog *dialog = new KOpenWithDialog();
     dialog->setModal(false);
@@ -122,13 +124,13 @@ void QuicklaunchPrivate::addLauncher(bool isPopup)
     dialog->setSaveNewApplications(true);
     dialog->show();
 
-    connect(dialog, &KOpenWithDialog::accepted, this, [this, dialog, isPopup]() {
+    connect(dialog, &KOpenWithDialog::accepted, this, [this, dialog]() {
         if (!dialog->service()) {
             return;
         }
         const QUrl &url = QUrl::fromLocalFile(dialog->service()->entryPath());
         if (url.isValid()) {
-            Q_EMIT launcherAdded(url.toString(), isPopup);
+            Q_EMIT launcherAdded(url.toString());
         }
     });
 }
@@ -163,7 +165,7 @@ static QString determineNewDesktopFilePath(const QString &baseName)
     return desktopFilePath;
 }
 
-void QuicklaunchPrivate::editLauncher(QUrl url, int index, bool isPopup)
+void QuicklaunchPrivate::editLauncher(QUrl url, int index)
 {
     // If the launcher does not point to a desktop file, create one,
     // so that user can change url, icon, text and description.
@@ -193,7 +195,7 @@ void QuicklaunchPrivate::editLauncher(QUrl url, int index, bool isPopup)
     dialog->setAttribute(Qt::WA_DeleteOnClose);
     dialog->show();
 
-    connect(dialog, &KPropertiesDialog::accepted, this, [this, dialog, index, isPopup]() {
+    connect(dialog, &KPropertiesDialog::accepted, this, [this, dialog, index]() {
         QUrl url = dialog->url();
         QString path = url.toLocalFile();
 
@@ -204,7 +206,7 @@ void QuicklaunchPrivate::editLauncher(QUrl url, int index, bool isPopup)
             path += QLatin1String(".desktop");
             url = QUrl::fromLocalFile(path);
         }
-        Q_EMIT launcherEdited(url.toString(), index, isPopup);
+        Q_EMIT launcherEdited(url.toString(), index);
     });
 
     connect(dialog, &KPropertiesDialog::rejected, this, [url, desktopFileCreated]() {

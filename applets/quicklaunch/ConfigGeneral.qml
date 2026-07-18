@@ -1,4 +1,6 @@
 /*
+ *  SPDX-FileCopyrightText: 2026 neeeeow <https://github.com/neeeeow>
+ *
  *  SPDX-FileCopyrightText: 2015 David Rosca <nowrep@gmail.com>
  *
  *  SPDX-License-Identifier: GPL-2.0-only OR GPL-3.0-only OR LicenseRef-KDE-Accepted-GPL
@@ -19,8 +21,6 @@ KCM.SimpleKCM {
     readonly property bool vertical: Plasmoid.formFactor == PlasmaCore.Types.Vertical || (Plasmoid.formFactor == PlasmaCore.Types.Planar && Plasmoid.height > Plasmoid.width)
 
     property alias cfg_maxSectionCount: maxSectionCount.value
-    property alias cfg_showLauncherNames: showLauncherNames.checked
-    property alias cfg_enablePopup: enablePopup.checked
     property alias cfg_title: title.text
 
     Kirigami.FormLayout {
@@ -35,20 +35,6 @@ KCM.SimpleKCM {
         Item {
             Kirigami.FormData.isSection: true
         }
-
-        QQC2.CheckBox {
-            id: showLauncherNames
-
-            Kirigami.FormData.label: i18nc("@title:group", "Appearance:")
-
-            text: i18nc("@option:check", "Show launcher names")
-        }
-
-        QQC2.CheckBox {
-            id: enablePopup
-            text: i18nc("@option:check", "Enable popup")
-        }
-
 
         Item {
             Kirigami.FormData.isSection: true

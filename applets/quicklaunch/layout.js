@@ -1,4 +1,6 @@
 /*
+ *  SPDX-FileCopyrightText: 2026 neeeeow <https://github.com/neeeeow>
+ *
  *  SPDX-FileCopyrightText: 2015 David Rosca <nowrep@gmail.com>
  *
  *  SPDX-License-Identifier: GPL-2.0-only OR GPL-3.0-only OR LicenseRef-KDE-Accepted-GPL
@@ -27,19 +29,12 @@ function cols()
 
 function minimumWidth()
 {
-    var w = cols() * minimumCellWidth();
-    if (!vertical && popupArrow.visible) {
-        w += popupArrow.width;
-    }
-    return w;
+    return cols() * minimumCellWidth();
 }
 
 function minimumHeight()
 {
     var h = rows() * minimumCellHeight();
-    if (vertical && popupArrow.visible) {
-        h += popupArrow.height;
-    }
     if (title.length) {
         h += titleLabel.height;
     }
@@ -55,9 +50,6 @@ function preferredWidth()
     if (horizontal && !vertical) {
         w = (preferredHeight() / rows()) * cols();
     }
-    if (!vertical && popupArrow.visible) {
-        w += popupArrow.width;
-    }
     return w;
 }
 
@@ -66,9 +58,6 @@ function preferredHeight()
     var h = rows() * preferredCellHeight();
     if (vertical && !horizontal) {
         h = (preferredWidth() / cols()) * rows();
-        if (popupArrow.visible) {
-            h += popupArrow.height;
-        }
     }
     if (title.length) {
         h += titleLabel.height;
@@ -98,14 +87,4 @@ function preferredCellWidth()
 function preferredCellHeight()
 {
     return Math.floor(grid.height / rows());
-}
-
-function popupItemWidth()
-{
-  return Math.max(root.width, Kirigami.Units.iconSizes.medium + 20 * Kirigami.Units.gridUnit);
-}
-
-function popupItemHeight()
-{
-  return Kirigami.Units.iconSizes.medium + 2 * itemPadding();
 }

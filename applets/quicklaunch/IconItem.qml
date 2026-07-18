@@ -1,4 +1,6 @@
 /*
+ *  SPDX-FileCopyrightText: 2026 neeeeow <https://github.com/neeeeow>
+ *
  *  SPDX-FileCopyrightText: 2015 David Rosca <nowrep@gmail.com>
  *
  *  SPDX-License-Identifier: GPL-2.0-only OR GPL-3.0-only OR LicenseRef-KDE-Accepted-GPL
@@ -21,12 +23,10 @@ Item {
     required property int index
     required property Logic logic
     required property GridView grid
-    required property UrlModel popupModel
     required property UrlModel launcherModel
 
     readonly property int itemIndex : index
     property bool dragging : false
-    property bool isPopupItem : false
     readonly property var launcher : logic.launcherData(url)
     readonly property string iconName : launcher.iconName || "fork"
 
@@ -38,13 +38,8 @@ Item {
         if (newIndex < 0) {
             return;
         }
-        if (iconItem.isPopupItem) {
-            popupModel.moveUrl(iconItem.itemIndex, newIndex);
-            iconItem.ListView.view.currentIndex = newIndex;
-        } else {
-            launcherModel.moveUrl(iconItem.itemIndex, newIndex);
-            iconItem.GridView.view.currentIndex = newIndex;
-        }
+        launcherModel.moveUrl(iconItem.itemIndex, newIndex);
+        iconItem.GridView.view.currentIndex = newIndex;
     }
 
     function increaseIndex() {
@@ -204,12 +199,12 @@ Item {
 
     function addLauncher()
     {
-        logic.addLauncher(isPopupItem);
+        logic.addLauncher();
     }
 
     function editLauncher()
     {
-        logic.editLauncher(url, itemIndex, isPopupItem);
+        logic.editLauncher(url, itemIndex);
     }
 
     function removeLauncher()

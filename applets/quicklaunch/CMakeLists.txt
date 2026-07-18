@@ -4,7 +4,6 @@ plasma_add_applet(com.github.neeeeow.klassik.quicklaunch
         config.qml
         IconItem.qml
         main.qml
-        Popup.qml
         UrlModel.qml
         layout.js
     CPP_SOURCES

@@ -1,4 +1,6 @@
 /*
+ *  SPDX-FileCopyrightText: 2026 neeeeow <https://github.com/neeeeow>
+ *
  *  SPDX-FileCopyrightText: 2015 David Rosca <nowrep@gmail.com>
  *
  *  SPDX-License-Identifier: GPL-2.0-only OR GPL-3.0-only OR LicenseRef-KDE-Accepted-GPL
@@ -21,7 +23,6 @@ PlasmoidItem {
 
     readonly property int maxSectionCount: Plasmoid.configuration.maxSectionCount
     readonly property bool showLauncherNames : Plasmoid.configuration.showLauncherNames
-    readonly property bool enablePopup : Plasmoid.configuration.enablePopup
     readonly property string title : Plasmoid.formFactor == PlasmaCore.Types.Planar ? Plasmoid.configuration.title : ""
     readonly property bool vertical : Plasmoid.formFactor == PlasmaCore.Types.Vertical || (Plasmoid.formFactor == PlasmaCore.Types.Planar && height > width)
     readonly property bool horizontal : Plasmoid.formFactor == PlasmaCore.Types.Horizontal
@@ -63,8 +64,8 @@ PlasmoidItem {
             anchors {
                 top: root.title.length ? titleLabel.bottom : parent.top
                 left: parent.left
-                right: !root.vertical && popupArrow.visible ? popupArrow.left : parent.right
-                bottom: root.vertical && popupArrow.visible ? popupArrow.top : parent.bottom
+                right: parent.right
+                bottom: parent.bottom
             }
 
             GridView {
@@ -83,19 +84,7 @@ PlasmoidItem {
                 delegate: IconItem {
                     logic: logic
                     grid: grid
-                    popupModel: null
                     launcherModel: launcherModel
-                }
-
-                function moveItemToPopup(iconItem, url) {
-                    if (!popupArrow.visible) {
-                        return;
-                    }
-
-                    popup.visible = true;
-                    popup.mainItem.popupModel.insertUrl(popup.mainItem.popupModel.count, url);
-                    popup.mainItem.listView.currentIndex = popup.mainItem.popupModel.count - 1;
-                    iconItem.removeLauncher();
                 }
             }
 
@@ -110,84 +99,6 @@ PlasmoidItem {
                     mainText: i18n("Quicklaunch")
                     subText: i18nc("@info", "Add launchers by Drag and Drop or by using the context menu.")
                     location: Plasmoid.location
-                }
-            }
-        }
-
-        PlasmaCore.Dialog {
-            id: popup
-            type: PlasmaCore.Dialog.PopupMenu
-            flags: Qt.WindowStaysOnTopHint
-            hideOnWindowDeactivate: true
-            location: Plasmoid.location
-            visualParent: root.vertical ? popupArrow : root
-
-            mainItem: Popup {
-                Keys.onEscapePressed: popup.visible = false
-                launcherModel: launcherModel
-                logic: logic
-            }
-        }
-
-        PlasmaCore.ToolTipArea {
-            id: popupArrow
-            visible: root.enablePopup
-            location: Plasmoid.location
-
-            anchors {
-                top: root.vertical ? undefined : parent.top
-                right: parent.right
-                bottom: parent.bottom
-            }
-
-            subText: popup.visible ? i18n("Hide icons") : i18n("Show hidden icons")
-
-            MouseArea {
-                id: arrowMouseArea
-                anchors.fill: parent
-
-                activeFocusOnTab: parent.visible
-
-                Keys.onPressed: event => {
-                    switch (event.key) {
-                    case Qt.Key_Space:
-                    case Qt.Key_Enter:
-                    case Qt.Key_Return:
-                    case Qt.Key_Select:
-                        arrowMouseArea.clicked(null);
-                        break;
-                    }
-                }
-                Accessible.name: parent.subText
-                Accessible.role: Accessible.Button
-
-                onClicked: {
-                    popup.visible = !popup.visible
-                }
-
-                Kirigami.Icon {
-                    anchors.fill: parent
-
-                    rotation: popup.visible ? 180 : 0
-                    Behavior on rotation {
-                        RotationAnimation {
-                            duration: Kirigami.Units.shortDuration * 3
-                        }
-                    }
-
-                    source: {
-                        if (Plasmoid.location == PlasmaCore.Types.TopEdge) {
-                            return "arrow-down";
-                        } else if (Plasmoid.location == PlasmaCore.Types.LeftEdge) {
-                            return "arrow-right";
-                        } else if (Plasmoid.location == PlasmaCore.Types.RightEdge) {
-                            return "arrow-left";
-                        } else if (root.vertical) {
-                            return "arrow-right";
-                        } else {
-                            return "arrow-up";
-                        }
-                    }
                 }
             }
         }
@@ -237,8 +148,6 @@ PlasmoidItem {
                 } else {
                     launcherModel.showDropMarker(index);
                 }
-
-                popup.visible = root.childAt(event.x, event.y) == popupArrow;
             }
 
             onDragLeave: {
@@ -278,41 +187,14 @@ PlasmoidItem {
     Logic {
         id: logic
 
-        onLauncherAdded: (url, isPopup) => {
-            var m = isPopup ? popup.mainItem.popupModel : launcherModel;
-            m.appendUrl(url);
+        onLauncherAdded: (url) => {
+            launcherModel.appendUrl(url);
         }
 
-        onLauncherEdited: (url, index, isPopup) => {
-            var m = isPopup ? popup.mainItem.popupModel : launcherModel;
-            m.changeUrl(index, url);
+        onLauncherEdited: (url, index) => {
+            launcherModel.changeUrl(index, url);
         }
     }
-
-    // States to fix binding loop with enabled popup
-    states: [
-        State {
-            name: "normal"
-            when: !root.vertical
-
-            PropertyChanges {
-                target: popupArrow
-                width: Kirigami.Units.iconSizes.smallMedium
-                height: root.height
-            }
-        },
-
-        State {
-            name: "vertical"
-            when: root.vertical
-
-            PropertyChanges {
-                target: popupArrow
-                width: root.width
-                height: Kirigami.Units.iconSizes.smallMedium
-            }
-        }
-    ]
 
     Connections {
         target: Plasmoid.configuration
