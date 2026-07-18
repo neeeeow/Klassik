@@ -1,10 +1,11 @@
 /*
+    SPDX-FileCopyrightText: 2026 neeeeow <https://github.com/neeeeow>
+
     SPDX-FileCopyrightText: 2013 Sebastian Kügler <sebas@kde.org>
     SPDX-FileCopyrightText: 2014 Martin Gräßlin <mgraesslin@kde.org>
     SPDX-FileCopyrightText: 2016 Kai Uwe Broulik <kde@privat.broulik.de>
     SPDX-FileCopyrightText: 2017 Roman Gilg <subdiff@gmail.com>
     SPDX-FileCopyrightText: 2024 Nate Graham <nate@kde.org>
-    SPDX-FileCopyrightText: 2026 neeeeow
 
     SPDX-License-Identifier: LGPL-2.0-or-later
 */

@@ -1,3 +1,9 @@
+/*
+  SPDX-FileCopyrightText: 2026 neeeeow <https://github.com/neeeeow>
+
+  SPDX-License-Identifier: GPL-3.0-or-later
+*/
+
 #include "servicemenu.h"
 #include "popupmenutitle.h"
 #include "containmentinterface.h"

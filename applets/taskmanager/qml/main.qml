@@ -1,6 +1,7 @@
 /*
+    SPDX-FileCopyrightText: 2026 neeeeow <https://github.com/neeeeow>
+
     SPDX-FileCopyrightText: 2012-2016 Eike Hein <hein@kde.org>
-    SPDX-FileCopyrightText: 2026 neeeeow
 
     SPDX-License-Identifier: GPL-3.0-or-later
 */
