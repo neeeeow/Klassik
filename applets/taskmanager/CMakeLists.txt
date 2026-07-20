@@ -23,8 +23,10 @@ plasma_add_applet(com.github.neeeeow.klassik.taskmanager
         qml/code/TaskTools.js
     CPP_SOURCES
         backend.cpp
-	${CMAKE_CURRENT_SOURCE_DIR}/../../common/klassikpainteditem.cpp
-	${CMAKE_CURRENT_SOURCE_DIR}/../../common/sunkenappletframe.h
+        taskbackground.h
+        ${CMAKE_CURRENT_SOURCE_DIR}/../../common/klassikpainteditem.cpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/../../common/klassikqstyleitem.h
+        ${CMAKE_CURRENT_SOURCE_DIR}/../../common/sunkenappletframe.h
     RESOURCES
         main.xml
     GENERATE_APPLET_CLASS

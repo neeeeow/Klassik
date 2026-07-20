@@ -10,12 +10,12 @@ const iconMargin = Math.round(Kirigami.Units.smallSpacing / 4);
 const labelMargin = Kirigami.Units.smallSpacing;
 
 function horizontalMargins() {
-    const spacingAdjustment = (tasks.plasmoid.pluginName === "org.kde.plasma.icontasks") ? tasks.plasmoid.configuration.iconSpacing : 1
+    const spacingAdjustment = 1
     return (taskFrame.margins.left + taskFrame.margins.right) * (tasks.vertical ? 1 : spacingAdjustment);
 }
 
 function verticalMargins() {
-    const spacingAdjustment = (tasks.plasmoid.pluginName === "org.kde.plasma.icontasks") ? tasks.plasmoid.configuration.iconSpacing : 1
+    const spacingAdjustment = 1
     return (taskFrame.margins.top + taskFrame.margins.bottom) * (tasks.vertical ? spacingAdjustment : 1);
 }
 
@@ -51,7 +51,7 @@ function optimumCapacity(width, height) {
 function preferredMinWidth() {
     let width = preferredMinLauncherWidth();
 
-    if (!tasks.vertical && !tasks.iconsOnly) {
+    if (!tasks.vertical) {
       width +=
           (Kirigami.Units.smallSpacing * 2) +
           (Kirigami.Units.gridUnit * 8);
@@ -61,20 +61,6 @@ function preferredMinWidth() {
 }
 
 function preferredMaxWidth() {
-    if (tasks.iconsOnly) {
-        if (tasks.vertical) {
-            if (tasks.width === 0) {
-                return 0
-            }
-            return tasks.width + verticalMargins();
-        } else {
-            if (tasks.height === 0) {
-                return 0
-            }
-            return tasks.height + horizontalMargins();
-        }
-    }
-
     // Avoid doing a bunch of unnecessary work below in vertical mode
     if (tasks.vertical) {
         return preferredMinWidth();
@@ -119,12 +105,8 @@ function preferredMinHeight() {
 function preferredMaxHeight() {
     if (tasks.vertical) {
         let taskPreferredSize = 0;
-        if (tasks.iconsOnly) {
-            taskPreferredSize = tasks.width / maxStripes();
-        } else {
-            taskPreferredSize = Math.max(Kirigami.Units.iconSizes.sizeForLabels,
-                                         Kirigami.Units.iconSizes.medium);
-        }
+        taskPreferredSize = Math.max(Kirigami.Units.iconSizes.sizeForLabels,
+                                    Kirigami.Units.iconSizes.medium);
         return verticalMargins() +
             Math.min(
                 // Do not allow the preferred icon size to exceed the width of

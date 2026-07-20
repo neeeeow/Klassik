@@ -34,7 +34,6 @@ PlasmoidItem {
 
     readonly property bool shouldShrinkToZero: tasksModel.count === 0
     readonly property bool vertical: Plasmoid.formFactor === PlasmaCore.Types.Vertical
-    readonly property bool iconsOnly: Plasmoid.pluginName === "org.kde.plasma.icontasks"
 
     property Task toolTipOpenedByClick
     property Task toolTipAreaItem
@@ -137,11 +136,11 @@ PlasmoidItem {
         filterNotMinimized: Plasmoid.configuration.showOnlyMinimized
 
         sortMode: sortModeEnumValue(Plasmoid.configuration.sortingStrategy)
-        launchInPlace: tasks.iconsOnly && Plasmoid.configuration.sortingStrategy === 1
+        launchInPlace: Plasmoid.configuration.sortingStrategy === 1
 
         groupMode: groupModeEnumValue(Plasmoid.configuration.groupingStrategy)
-        groupInline: !Plasmoid.configuration.groupPopups && !tasks.iconsOnly
-        groupingWindowTasksThreshold: (Plasmoid.configuration.onlyGroupWhenFull && !tasks.iconsOnly
+        groupInline: !Plasmoid.configuration.groupPopups
+        groupingWindowTasksThreshold: (Plasmoid.configuration.onlyGroupWhenFull
             ? TaskManagerApplet.LayoutMetrics.optimumCapacity(tasks.width, tasks.height) + 1 : -1)
 
         onGroupingAppIdBlacklistChanged: {

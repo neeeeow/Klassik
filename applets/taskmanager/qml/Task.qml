@@ -54,7 +54,6 @@ PlasmaCore.ToolTipArea {
     readonly property int pid: model.AppPid
     readonly property string appName: model.AppName
     readonly property string appId: model.AppId.replace(/\.desktop/, '')
-    readonly property bool isIcon: tasksRoot.iconsOnly
     property bool toolTipOpen: false
     property bool inPopup: false
     property bool isWindow: model.IsWindow
@@ -441,6 +440,10 @@ PlasmaCore.ToolTipArea {
             TaskManagerApplet.TaskTools.activateTask(modelIndex(), model, Qt.NoModifier, task, Plasmoid, tasksRoot, effectWatcher.registered);
         }
 
+        background: TaskBackground {
+            sunken: frame.down || frame.checked
+        }
+
         // Avoid repositioning delegate item after dragFinished
         DragHandler {
             id: dragHandler
@@ -563,8 +566,7 @@ PlasmaCore.ToolTipArea {
         Label {
             id: label
 
-            visible: (task.inPopup || !task.tasksRoot.iconsOnly
-            && (parent.width - iconBox.height - Kirigami.Units.smallSpacing) >= TaskManagerApplet.LayoutMetrics.spaceRequiredToShowText())
+            visible: (task.inPopup || (parent.width - iconBox.height - Kirigami.Units.smallSpacing) >= TaskManagerApplet.LayoutMetrics.spaceRequiredToShowText())
 
             anchors {
                 fill: parent

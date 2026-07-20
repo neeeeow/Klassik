@@ -36,7 +36,7 @@ public:
 	void setActive(bool state) {
 		if (m_active != state) {
 			m_active = state;
-			polish();
+			updateImage();
 		}
 	}
 
@@ -44,7 +44,7 @@ public:
 	void setLocation(MenuLocation location) {
 		if (m_location != location) {
 			m_location = location;
-			polish();
+			updateImage();
 		}
 	}
 

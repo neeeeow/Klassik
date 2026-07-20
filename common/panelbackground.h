@@ -15,9 +15,7 @@
 class PanelBackground : public KlassikQStyleItem
 {
 	/*
-	  This class draws a sunken KDE 3 style panel button background.
-	  NOTE: the background here is always drawn as sunken, use the visible
-	  QML property to set whether or not the background is sunken
+	  This class draws a sunken KDE 3 style panel background
 	*/
 	  
 	Q_OBJECT

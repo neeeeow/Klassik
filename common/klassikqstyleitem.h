@@ -38,7 +38,7 @@ private:
 		m_style = qApp->style();
 		if (m_style) {
 		    connect(m_style, &QObject::destroyed, this, &KlassikQStyleItem::styleChanged, Qt::UniqueConnection);
-			polish();
+			updateImage();
 		}
 	}
 };
