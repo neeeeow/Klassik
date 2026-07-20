@@ -44,9 +44,7 @@ PlasmaCore.ToolTipArea {
 
     Layout.fillWidth: true
     Layout.fillHeight: !inPopup
-    Layout.maximumWidth: tasksRoot.vertical
-        ? -1
-        : ((model.IsLauncher && !tasksRoot.iconsOnly) ? tasksRoot.height / taskList.rows : TaskManagerApplet.LayoutMetrics.preferredMaxWidth())
+    Layout.maximumWidth: tasksRoot.vertical ? -1 : TaskManagerApplet.LayoutMetrics.preferredMaxWidth()
     Layout.maximumHeight: tasksRoot.vertical ? TaskManagerApplet.LayoutMetrics.preferredMaxHeight() : -1
 
     required property var model
@@ -56,7 +54,7 @@ PlasmaCore.ToolTipArea {
     readonly property int pid: model.AppPid
     readonly property string appName: model.AppName
     readonly property string appId: model.AppId.replace(/\.desktop/, '')
-    readonly property bool isIcon: tasksRoot.iconsOnly || model.IsLauncher
+    readonly property bool isIcon: tasksRoot.iconsOnly
     property bool toolTipOpen: false
     property bool inPopup: false
     property bool isWindow: model.IsWindow
@@ -64,8 +62,6 @@ PlasmaCore.ToolTipArea {
     property int previousChildCount: 0
     property alias labelText: label.text
     property QtObject contextMenu: null
-    readonly property bool smartLauncherEnabled: !inPopup
-    property QtObject smartLauncherItem: null
 
     property Item audioStreamIcon: null
     property var audioStreams: []
@@ -84,7 +80,7 @@ PlasmaCore.ToolTipArea {
     active: !inPopup && !tasksRoot.groupDialog && task.contextMenu?.status !== PlasmaExtras.Menu.Open
     interactive: model.IsWindow || mainItem.playerData
     location: Plasmoid.location
-    mainItem: !Plasmoid.configuration.showToolTips || !model.IsWindow ? pinnedAppToolTipDelegate : openWindowToolTipDelegate
+    mainItem: openWindowToolTipDelegate
 
     onXChanged: {
         if (!completed) {
@@ -155,34 +151,25 @@ PlasmaCore.ToolTipArea {
             return "";
         }
 
-        if (model.IsLauncher) {
-            return i18nc("@info:usagetip %1 application name", "Launch %1", model.display)
-        }
-
-        let smartLauncherDescription = "";
-        if (iconBox.active) {
-            smartLauncherDescription += i18ncp("@info:tooltip", "There is %1 new message.", "There are %1 new messages.", task.smartLauncherItem.count);
-        }
-
         if (model.IsGroupParent) {
             switch (Plasmoid.configuration.groupedTaskVisualization) {
-            case 0:
-                break; // Use the default description
-            case 1: {
-                return `${i18nc("@info:usagetip %1 task name", "Show Task tooltip for %1", model.display)}; ${smartLauncherDescription}`;
-            }
-            case 2: {
-                if (effectWatcher.registered) {
-                    return `${i18nc("@info:usagetip %1 task name", "Show windows side by side for %1", model.display)}; ${smartLauncherDescription}`;
+                case 0:
+                    break; // Use the default description
+                case 1: {
+                    return i18nc("@info:usagetip %1 task name", "Show Task tooltip for %1", model.display);
                 }
-                // fallthrough
-            }
-            default:
-                return `${i18nc("@info:usagetip %1 task name", "Open textual list of windows for %1", model.display)}; ${smartLauncherDescription}`;
+                case 2: {
+                    if (effectWatcher.registered) {
+                        return i18nc("@info:usagetip %1 task name", "Show windows side by side for %1", model.display);
+                    }
+                    // fallthrough
+                }
+                default:
+                    return i18nc("@info:usagetip %1 task name", "Open textual list of windows for %1", model.display);
             }
         }
 
-        return `${i18nc("@info:usagetip %1 task name", "Activate %1", model.display)}; ${smartLauncherDescription}`;
+        return i18nc("@info:usagetip %1 task name", "Activate %1", model.display);
     }
     Accessible.role: Accessible.Button
     //Accessible.onPressAction: leftTapHandler.leftClick()
@@ -231,21 +218,8 @@ PlasmaCore.ToolTipArea {
     onIndexChanged: {
         hideToolTip();
 
-        if (!inPopup && !tasksRoot.vertical
-                && !Plasmoid.configuration.separateLaunchers) {
+        if (!inPopup && !tasksRoot.vertical) {
             tasksRoot.requestLayout();
-        }
-    }
-
-    onSmartLauncherEnabledChanged: {
-        if (smartLauncherEnabled && !smartLauncherItem) {
-            const component = Qt.createComponent("plasma.applet.com.github.neeeeow.klassik.taskmanager", "SmartLauncherItem");
-            const smartLauncher = component.createObject(task);
-            component.destroy();
-
-            smartLauncher.launcherUrl = Qt.binding(() => model.LauncherUrlWithoutIcon);
-
-            smartLauncherItem = smartLauncher;
         }
     }
 
@@ -360,17 +334,12 @@ PlasmaCore.ToolTipArea {
         mainItem.windows = Qt.binding(() => model.WinIdList);
         mainItem.isGroup = Qt.binding(() => model.IsGroupParent);
         mainItem.icon = Qt.binding(() => model.decoration);
-        mainItem.launcherUrl = Qt.binding(() => model.LauncherUrlWithoutIcon);
-        mainItem.isLauncher = Qt.binding(() => model.IsLauncher);
         mainItem.isMinimized = Qt.binding(() => model.IsMinimized);
         mainItem.display = Qt.binding(() => model.display);
         mainItem.genericName = Qt.binding(() => model.GenericName);
         mainItem.virtualDesktops = Qt.binding(() => model.VirtualDesktops);
         mainItem.isOnAllVirtualDesktops = Qt.binding(() => model.IsOnAllVirtualDesktops);
         mainItem.activities = Qt.binding(() => model.Activities);
-
-        mainItem.smartLauncherCountVisible = Qt.binding(() => smartLauncherItem?.countVisible ?? false);
-        mainItem.smartLauncherCount = Qt.binding(() => mainItem.smartLauncherCountVisible ? (smartLauncherItem?.count ?? 0) : 0);
 
         mainItem.blockingUpdates = false;
         tasksRoot.toolTipAreaItem = this;
@@ -390,13 +359,7 @@ PlasmaCore.ToolTipArea {
         acceptedDevices: PointerDevice.TouchScreen | PointerDevice.Stylus
         gesturePolicy: TapHandler.ReleaseWithinBounds
         onLongPressed: {
-            // When we're a launcher, there's no window controls, so we can show all
-            // places without the menu getting super huge.
-            if (task.model.IsLauncher) {
-                task.showContextMenu({showAllPlaces: true})
-            } else {
                 task.showContextMenu();
-            }
         }
     }
 
@@ -466,7 +429,6 @@ PlasmaCore.ToolTipArea {
         hoverEnabled: true
         checkable: true
 
-        flat: model.IsLauncher
         checked: model.IsActive
         opacity: model.IsMinimized ? 0.8 : 1.0
 
@@ -529,17 +491,7 @@ PlasmaCore.ToolTipArea {
             }
         }
 
-        Loader {
-            id: taskProgressOverlayLoader
-
-            anchors.fill: frame
-            asynchronous: true
-            active: task.smartLauncherItem && task.smartLauncherItem.progressVisible
-
-            source: "TaskProgressOverlay.qml"
-        }
-
-        Loader {
+        Item {
             id: iconBox
 
             anchors {
@@ -552,11 +504,6 @@ PlasmaCore.ToolTipArea {
             width: task.inPopup ? Math.max(Kirigami.Units.iconSizes.sizeForLabels, Kirigami.Units.iconSizes.medium) : Math.min(task.parent?.minimumWidth ?? 0, task.height)
             height: task.inPopup ? width : (parent.height - adjustMargin(false, parent.height, frame.topPadding)
             - adjustMargin(false, parent.height, frame.bottomPadding))
-
-            asynchronous: true
-            active: height >= Kirigami.Units.iconSizes.small
-            && task.smartLauncherItem && task.smartLauncherItem.countVisible
-            source: "TaskBadgeOverlay.qml"
 
             function adjustMargin(isVertical: bool, size: real, margin: real): real {
                 if (!size) {
@@ -577,7 +524,6 @@ PlasmaCore.ToolTipArea {
 
                 anchors.fill: parent
 
-                active: task.highlighted && model.IsLauncher
                 enabled: true
 
                 source: task.model.decoration
@@ -617,7 +563,7 @@ PlasmaCore.ToolTipArea {
         Label {
             id: label
 
-            visible: (task.inPopup || !task.tasksRoot.iconsOnly && !task.model.IsLauncher
+            visible: (task.inPopup || !task.tasksRoot.iconsOnly
             && (parent.width - iconBox.height - Kirigami.Units.smallSpacing) >= TaskManagerApplet.LayoutMetrics.spaceRequiredToShowText())
 
             anchors {
@@ -633,7 +579,7 @@ PlasmaCore.ToolTipArea {
             textFormat: Text.PlainText
             verticalAlignment: Text.AlignVCenter
             maximumLineCount: Plasmoid.configuration.maxTextLines || undefined
-            font.bold: task.model.IsDemandingAttention || (task.smartLauncherItem && task.smartLauncherItem.urgent) // attention
+            font.bold: task.model.IsDemandingAttention // attention
             font.italic: task.model.IsMinimized
 
             // The accessible item of this element is only used for debugging

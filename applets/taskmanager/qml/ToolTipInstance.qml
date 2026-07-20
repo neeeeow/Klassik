@@ -169,20 +169,6 @@ ColumnLayout {
                 }
             }
 
-            // Count badge.
-            // The badge itself is inside an item to better center the text in the bubble
-            Item {
-                Layout.alignment: !Plasmoid.configuration.showToolTips && !playerController.active && !volumeControls.active ? Qt.AlignVCenter : Qt.AlignTop
-                Layout.preferredHeight: closeButton.height
-                Layout.preferredWidth: closeButton.width
-                visible: root.index === 0 && toolTipDelegate.smartLauncherCountVisible
-
-                Kirigami.Badge {
-                    anchors.centerIn: parent
-                    text: toolTipDelegate.smartLauncherCount
-                }
-            }
-
             LayoutItemProxy {
                 target: closeButton
                 visible: toolTipDelegate.isWin && !closeButtonFlippedItemProxy.visible
@@ -258,7 +244,6 @@ ColumnLayout {
             anchors.margins: Kirigami.Units.smallSpacing * 2
 
             active: Plasmoid.configuration.showToolTips
-                && !toolTipDelegate.isLauncher
                 && !albumArtImage.visible
                 && root.index !== -1
             asynchronous: true
@@ -316,8 +301,11 @@ ColumnLayout {
             // if this is a group tooltip, we check if window title and track match, to allow distinguishing the different windows
             // if this app is a browser, we also check the title, so album art is not shown when the user is on some other tab
             // in all other cases we can safely show the album art without checking the title
+            /*readonly property bool available: (status === Image.Ready || status === Image.Loading)
+                && (!(toolTipDelegate.isGroup) || root.titleIncludesTrack)*/
+
             readonly property bool available: (status === Image.Ready || status === Image.Loading)
-                && (!(toolTipDelegate.isGroup || backend.applicationCategories(launcherUrl).includes("WebBrowser")) || root.titleIncludesTrack)
+                && (!(toolTipDelegate.isGroup) || root.titleIncludesTrack)
 
             anchors.fill: hoverHandler
             // Indent by one pixel to make sure we never cover up the entire highlight

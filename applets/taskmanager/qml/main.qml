@@ -92,12 +92,6 @@ PlasmoidItem {
 
     signal requestLayout
 
-    onDragSourceChanged: {
-        if (dragSource === null) {
-            tasksModel.syncLaunchers();
-        }
-    }
-
     function windowsHovered(winIds: var, hovered: bool): DBus.DBusPendingReply {
         if (!Plasmoid.configuration.highlightWindows) {
             return;
@@ -124,7 +118,7 @@ PlasmoidItem {
         for (let i = 0; i < taskItems.length - 1; ++i) {
             const task = taskItems[i];
 
-            if (!task.model.IsLauncher && !task.model.IsStartup) {
+            if (!task.model.IsStartup) {
                 tasksModel.requestPublishDelegateGeometry(tasksModel.makeModelIndex(task.index),
                     backend.globalRect(task), task);
             }
@@ -134,26 +128,6 @@ PlasmoidItem {
     readonly property TaskManager.TasksModel tasksModel: TaskManager.TasksModel {
         id: tasksModel
 
-        readonly property int logicalLauncherCount: {
-            if (Plasmoid.configuration.separateLaunchers) {
-                return launcherCount;
-            }
-
-            let startupsWithLaunchers = 0;
-
-            for (let i = 0; i < taskRepeater.count; ++i) {
-                const item = taskRepeater.itemAt(i) as Task;
-
-                // During destruction required properties such as item.model can go null for a while,
-                // so in paths that can trigger on those moments, they need to be guarded
-                if (item?.model?.IsStartup && item.model.HasLauncher) {
-                    ++startupsWithLaunchers;
-                }
-            }
-
-            return launcherCount + startupsWithLaunchers;
-        }
-
         screenGeometry: Plasmoid.containment.screenGeometry
         activity: activityInfo.currentActivity
 
@@ -162,33 +136,16 @@ PlasmoidItem {
         filterByActivity: Plasmoid.configuration.showOnlyCurrentActivity
         filterNotMinimized: Plasmoid.configuration.showOnlyMinimized
 
-        hideActivatedLaunchers: tasks.iconsOnly || Plasmoid.configuration.hideLauncherOnStart
         sortMode: sortModeEnumValue(Plasmoid.configuration.sortingStrategy)
         launchInPlace: tasks.iconsOnly && Plasmoid.configuration.sortingStrategy === 1
-        separateLaunchers: {
-            if (!tasks.iconsOnly && !Plasmoid.configuration.separateLaunchers
-                && Plasmoid.configuration.sortingStrategy === 1) {
-                return false;
-            }
-
-            return true;
-        }
 
         groupMode: groupModeEnumValue(Plasmoid.configuration.groupingStrategy)
         groupInline: !Plasmoid.configuration.groupPopups && !tasks.iconsOnly
         groupingWindowTasksThreshold: (Plasmoid.configuration.onlyGroupWhenFull && !tasks.iconsOnly
             ? TaskManagerApplet.LayoutMetrics.optimumCapacity(tasks.width, tasks.height) + 1 : -1)
 
-        onLauncherListChanged: {
-            Plasmoid.configuration.launchers = launcherList;
-        }
-
         onGroupingAppIdBlacklistChanged: {
             Plasmoid.configuration.groupingAppIdBlacklist = groupingAppIdBlacklist;
-        }
-
-        onGroupingLauncherUrlBlacklistChanged: {
-            Plasmoid.configuration.groupingLauncherUrlBlacklist = groupingLauncherUrlBlacklist;
         }
 
         function sortModeEnumValue(index: int): /*TaskManager.TasksModel.SortMode*/ int {
@@ -221,9 +178,7 @@ PlasmoidItem {
         }
 
         Component.onCompleted: {
-            launcherList = Plasmoid.configuration.launchers;
             groupingAppIdBlacklist = Plasmoid.configuration.groupingAppIdBlacklist;
-            groupingLauncherUrlBlacklist = Plasmoid.configuration.groupingLauncherUrlBlacklist;
 
             // Only hook up view only after the above churn is done.
             taskRepeater.model = tasksModel;
@@ -232,10 +187,6 @@ PlasmoidItem {
 
     readonly property TaskManagerApplet.Backend backend: TaskManagerApplet.Backend {
         id: backend
-
-        onAddLauncher: url => {
-            tasks.addLauncher(url);
-        }
     }
 
     DBus.DBusServiceWatcher {
@@ -330,14 +281,8 @@ PlasmoidItem {
         Connections {
             target: Plasmoid.configuration
 
-            function onLaunchersChanged(): void {
-                tasksModel.launcherList = Plasmoid.configuration.launchers
-            }
             function onGroupingAppIdBlacklistChanged(): void {
                 tasksModel.groupingAppIdBlacklist = Plasmoid.configuration.groupingAppIdBlacklist;
-            }
-            function onGroupingLauncherUrlBlacklistChanged(): void {
-                tasksModel.groupingLauncherUrlBlacklist = Plasmoid.configuration.groupingLauncherUrlBlacklist;
             }
         }
 
@@ -374,14 +319,6 @@ PlasmoidItem {
             target: taskList
 
             onUrlsDropped: urls => {
-                // If all dropped URLs point to application desktop files, we'll add a launcher for each of them.
-                const createLaunchers = urls.every(item => tasks.backend.isApplication(item));
-
-                if (createLaunchers) {
-                    urls.forEach(item => addLauncher(item));
-                    return;
-                }
-
                 if (!hoveredItem) {
                     return;
                 }
@@ -394,11 +331,6 @@ PlasmoidItem {
 
         ToolTipDelegate {
             id: openWindowToolTipDelegate
-            visible: false
-        }
-
-        ToolTipDelegate {
-            id: pinnedAppToolTipDelegate
             visible: false
         }
 
@@ -511,24 +443,6 @@ PlasmoidItem {
 
     readonly property Component groupDialogComponent: Qt.createComponent("GroupDialog.qml")
     property GroupDialog groupDialog
-
-    readonly property bool supportsLaunchers: true
-
-    function hasLauncher(url: url): bool {
-        return tasksModel.launcherPosition(url) !== -1;
-    }
-
-    function addLauncher(url: url): void {
-        if (Plasmoid.immutability !== PlasmaCore.Types.SystemImmutable) {
-            tasksModel.requestAddLauncher(url);
-        }
-    }
-
-    function removeLauncher(url: url): void {
-        if (Plasmoid.immutability !== PlasmaCore.Types.SystemImmutable) {
-            tasksModel.requestRemoveLauncher(url);
-        }
-    }
 
     // This is called by plasmashell in response to a Meta+number shortcut.
     // TODO: Change type to int

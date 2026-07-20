@@ -46,7 +46,7 @@ function activateNextPrevTask(anchor, next, wheelSkipMinimized, wheelEnabled, ta
         const task = tasks.taskList.children[i];
         const modelIndex = task.modelIndex(i);
 
-        if (!task.model.IsLauncher && !task.model.IsStartup) {
+        if (!task.model.IsStartup) {
             if (task.model.IsGroupParent) {
                 if (wheelEnabled === 2 && task === anchor) { // If TaskOnly mode and the anchor is a group parent, collect only windows within the group.
                     taskIndexList = [];
@@ -239,7 +239,7 @@ function taskPrefix(prefix, location) {
 
 function taskPrefixHovered(prefix, location) {
     return [
-        ...taskPrefix((prefix || "launcher") + "-hover", location),
+        ...taskPrefix(prefix + "-hover", location),
         ...prefix ? taskPrefix("hover", location) : [],
         ...taskPrefix(prefix, location),
     ];

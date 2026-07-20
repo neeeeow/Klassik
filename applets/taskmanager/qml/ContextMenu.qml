@@ -233,21 +233,6 @@ PlasmaExtras.Menu {
                 });
                 menu.addMenuItem(menuItem);
             }
-
-            // If we don't have a window associated with the player but we can raise
-            // it through MPRIS we'll offer a "Restore" option
-            if (get(TaskManager.AbstractTasksModel.IsLauncher) && !startNewInstanceItem.visible && playerData.canRaise) {
-                menuItem = menu.newMenuItem(menu);
-                menuItem.text = i18nc("Open or bring to the front window of media player app", "Restore");
-                menuItem.icon = playerData.iconName;
-                menuItem.visible = Qt.binding(() => {
-                    return !startNewInstanceItem.visible;
-                });
-                menuItem.clicked.connect(() => {
-                    playerData.Raise();
-                });
-                menu.addMenuItem(menuItem, startNewInstanceItem);
-            }
         }
 
         // We allow mute/unmute whenever an application has a stream, regardless of whether it
@@ -284,7 +269,7 @@ PlasmaExtras.Menu {
         id: virtualDesktopsMenuItem
 
         visible: virtualDesktopInfo.numberOfDesktops > 1
-            && (menu.visualParent && !menu.get(TaskManager.AbstractTasksModel.IsLauncher)
+            && (menu.visualParent
             && !menu.get(TaskManager.AbstractTasksModel.IsStartup)
             && menu.get(TaskManager.AbstractTasksModel.IsVirtualDesktopsChangeable))
 
@@ -385,8 +370,7 @@ PlasmaExtras.Menu {
         id: activitiesDesktopsMenuItem
 
         visible: activityInfo.numberOfRunningActivities > 1
-            && (menu.visualParent && !menu.get(TaskManager.AbstractTasksModel.IsLauncher)
-            && !menu.get(TaskManager.AbstractTasksModel.IsStartup))
+            && (menu.visualParent && !menu.get(TaskManager.AbstractTasksModel.IsStartup))
 
         enabled: visible
 
@@ -495,127 +479,9 @@ PlasmaExtras.Menu {
     }
 
     PlasmaExtras.MenuItem {
-        id: launcherToggleAction
-
-        visible: menu.visualParent
-            && !menu.get(TaskManager.AbstractTasksModel.IsLauncher)
-            && !menu.get(TaskManager.AbstractTasksModel.IsStartup)
-            && Plasmoid.immutability !== PlasmaCore.Types.SystemImmutable
-            && (activityInfo.numberOfRunningActivities < 2)
-            && !doesBelongToCurrentActivity()
-
-        enabled: menu.visualParent && menu.get(TaskManager.AbstractTasksModel.LauncherUrlWithoutIcon).toString() !== ""
-
-        text: i18nc("action:inmenu", "&Pin to Task Manager")
-        icon: "window-pin"
-
-        function doesBelongToCurrentActivity(): bool {
-            return tasksModel.launcherActivities(menu.get(TaskManager.AbstractTasksModel.LauncherUrlWithoutIcon))
-                .some(activity => activity === activityInfo.currentActivity || activity === activityInfo.nullUuid);
-        }
-
-        onClicked: {
-            tasksModel.requestAddLauncher(menu.get(TaskManager.AbstractTasksModel.LauncherUrl));
-        }
-    }
-
-    PlasmaExtras.MenuItem {
-        id: showLauncherInActivitiesItem
-
-        text: i18nc("action:inmenu", "&Pin to Task Manager")
-        icon: "window-pin"
-
-        visible: menu.visualParent
-            && !menu.get(TaskManager.AbstractTasksModel.IsStartup)
-            && Plasmoid.immutability !== PlasmaCore.Types.SystemImmutable
-            && (activityInfo.numberOfRunningActivities >= 2)
-
-        readonly property Connections activitiesLaunchersMenuConnections: Connections {
-            target: activityInfo
-
-            function onNumberOfRunningActivitiesChanged(): void {
-                activitiesDesktopsMenu.refresh()
-            }
-        }
-
-        readonly property PlasmaExtras.Menu _activitiesLaunchersMenu: PlasmaExtras.Menu {
-            id: activitiesLaunchersMenu
-            visualParent: showLauncherInActivitiesItem.action
-
-            function refresh(): void {
-                clearMenuItems();
-
-                if (menu.visualParent === null) return;
-
-                const createNewItem = (id, title, iconName, url, activities) => {
-                    var result = menu.newMenuItem(activitiesLaunchersMenu);
-                    result.text = title;
-                    result.icon = iconName;
-
-                    result.visible = true;
-                    result.checkable = true;
-
-                    result.checked = activities.some(activity => activity === id);
-
-                    result.clicked.connect(() => {
-                        if (result.checked) {
-                            tasksModel.requestAddLauncherToActivity(url, id);
-                        } else {
-                            tasksModel.requestRemoveLauncherFromActivity(url, id);
-                        }
-                    });
-
-                    return result;
-                };
-
-                if (menu.visualParent === null) return;
-
-                const url = menu.get(TaskManager.AbstractTasksModel.LauncherUrlWithoutIcon);
-
-                const activities = tasksModel.launcherActivities(url);
-
-                createNewItem(activityInfo.nullUuid, i18nc("action:inmenu", "On All Activities"), "", url, activities);
-
-                if (activityInfo.numberOfRunningActivities <= 1) {
-                    return;
-                }
-
-                createNewItem(activityInfo.currentActivity, i18nc("action:inmenu", "On The Current Activity"), activityInfo.activityIcon(activityInfo.currentActivity), url, activities);
-
-                menu.newSeparator(activitiesLaunchersMenu);
-
-                activityInfo.runningActivities()
-                    .forEach(id => {
-                        createNewItem(id, activityInfo.activityName(id), activityInfo.activityIcon(id), url, activities);
-                    });
-            }
-
-            Component.onCompleted: {
-                menu.visualParentChanged.connect(refresh);
-                refresh();
-            }
-        }
-    }
-
-    PlasmaExtras.MenuItem {
-        visible: (menu.visualParent
-                && menu.get(TaskManager.AbstractTasksModel.IsStartup) !== true
-                && Plasmoid.immutability !== PlasmaCore.Types.SystemImmutable
-                && !launcherToggleAction.visible
-                && activityInfo.numberOfRunningActivities < 2)
-
-        text: i18nc("action:inmenu", "Unpin from Task Manager")
-        icon: "window-unpin"
-
-        onClicked: {
-            tasksModel.requestRemoveLauncher(menu.get(TaskManager.AbstractTasksModel.LauncherUrlWithoutIcon));
-        }
-    }
-
-    PlasmaExtras.MenuItem {
         id: moreActionsMenuItem
 
-        visible: (menu.visualParent && !menu.get(TaskManager.AbstractTasksModel.IsLauncher) && !menu.get(TaskManager.AbstractTasksModel.IsStartup))
+        visible: (menu.visualParent && !menu.get(TaskManager.AbstractTasksModel.IsStartup))
 
         enabled: visible
 
@@ -644,7 +510,7 @@ PlasmaExtras.Menu {
             }
 
             PlasmaExtras.MenuItem {
-                visible: (menu.visualParent && !menu.get(TaskManager.AbstractTasksModel.IsLauncher) && !menu.get(TaskManager.AbstractTasksModel.IsStartup))
+                visible: (menu.visualParent && !menu.get(TaskManager.AbstractTasksModel.IsStartup))
 
                 enabled: menu.visualParent && menu.get(TaskManager.AbstractTasksModel.IsMaximizable)
 
@@ -658,7 +524,7 @@ PlasmaExtras.Menu {
             }
 
             PlasmaExtras.MenuItem {
-                visible: (menu.visualParent && !menu.get(TaskManager.AbstractTasksModel.IsLauncher) && !menu.get(TaskManager.AbstractTasksModel.IsStartup))
+                visible: (menu.visualParent && !menu.get(TaskManager.AbstractTasksModel.IsStartup))
 
                 enabled: menu.visualParent && menu.get(TaskManager.AbstractTasksModel.IsMinimizable)
 
@@ -780,7 +646,7 @@ PlasmaExtras.Menu {
 
     PlasmaExtras.MenuItem {
         id: closeWindowItem
-        visible: (menu.visualParent && !menu.get(TaskManager.AbstractTasksModel.IsLauncher) && !menu.get(TaskManager.AbstractTasksModel.IsStartup))
+        visible: (menu.visualParent && !menu.get(TaskManager.AbstractTasksModel.IsStartup))
 
         enabled: menu.visualParent && menu.get(TaskManager.AbstractTasksModel.IsClosable)
 

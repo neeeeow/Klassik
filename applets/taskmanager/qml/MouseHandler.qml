@@ -51,25 +51,6 @@ DropArea {
             return;
         }
 
-        // If we're mixing launcher tasks with other tasks and are moving
-        // a (small) launcher task across a non-launcher task, don't allow
-        // the latter to be the move target twice in a row for a while, as
-        // it will naturally be moved underneath the cursor as result of the
-        // initial move, due to being far larger than the launcher delegate.
-        // TODO: This restriction (minus the timer, which improves things)
-        // has been proven out in the EITM fork, but could be improved later
-        // by tracking the cursor movement vector and allowing the drag if
-        // the movement direction has reversed, establishing user intent to
-        // move back.
-        if (!Plasmoid.configuration.separateLaunchers
-                && tasks.dragSource?.model.IsLauncher
-                && !above.model.IsLauncher
-                && above === ignoredItem) {
-            return;
-        } else {
-            ignoredItem = null;
-        }
-
         if (tasksModel.sortMode === TaskManager.TasksModel.SortManual && tasks.dragSource) {
             // Reject drags between different TaskList instances.
             if (tasks.dragSource.parent !== above.parent) {
@@ -150,7 +131,7 @@ DropArea {
         onTriggered: {
             if (parent.hoveredItem.model.IsGroupParent) {
                 TaskManagerApplet.TaskTools.createGroupDialog(parent.hoveredItem, tasks);
-            } else if (!parent.hoveredItem.model.IsLauncher) {
+            } else {
                 tasksModel.requestActivate(parent.hoveredItem.modelIndex());
             }
         }

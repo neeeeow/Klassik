@@ -36,8 +36,6 @@ Loader {
     readonly property bool isWin: windows.length > 0
 
     property /*QIcon*/ var icon
-    property url launcherUrl
-    property bool isLauncher
     property bool isMinimized
 
     // Needed for generateSubtext()
@@ -47,9 +45,6 @@ Loader {
     property bool isOnAllVirtualDesktops
     property list<string> activities: []
 
-    property bool smartLauncherCountVisible
-    property int smartLauncherCount
-
     property bool blockingUpdates: false
 
     readonly property bool isVerticalPanel: Plasmoid.formFactor === PlasmaCore.Types.Vertical
@@ -57,7 +52,7 @@ Loader {
     readonly property int tooltipInstanceMaximumWidth: Kirigami.Units.gridUnit * 16
 
     // These properties are required to make tooltip interactive when there is a player but no window is present.
-    readonly property Mpris.PlayerContainer playerData: mpris2Source.playerForLauncherUrl(launcherUrl, pidParent)
+    readonly property Mpris.PlayerContainer playerData: mpris2Source.playerForLauncherUrl(parentTask.model.LauncherUrlWithoutIcon, pidParent)
 
     LayoutMirroring.enabled: Application.layoutDirection === Qt.RightToLeft
     LayoutMirroring.childrenInherit: true

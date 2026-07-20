@@ -14,9 +14,7 @@ plasma_add_applet(com.github.neeeeow.klassik.taskmanager
         qml/PlayerController.qml
         qml/PulseAudio.qml
         qml/ScrollableTextWrapper.qml
-        qml/TaskBadgeOverlay.qml
         qml/TaskList.qml
-        qml/TaskProgressOverlay.qml
         qml/Task.qml
         qml/ToolTipDelegate.qml
         qml/ToolTipInstance.qml
@@ -25,8 +23,6 @@ plasma_add_applet(com.github.neeeeow.klassik.taskmanager
         qml/code/TaskTools.js
     CPP_SOURCES
         backend.cpp
-        smartlauncherbackend.cpp
-        smartlauncheritem.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/../../common/klassikpainteditem.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/../../common/sunkenappletframe.h
     RESOURCES
