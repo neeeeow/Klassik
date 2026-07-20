@@ -24,8 +24,6 @@ KCMUtils.SimpleKCM {
     property alias cfg_groupPopups: groupPopups.checked
     property alias cfg_onlyGroupWhenFull: onlyGroupWhenFull.checked
     property int cfg_sortingStrategy
-    property alias cfg_separateLaunchers: separateLaunchers.checked
-    property alias cfg_hideLauncherOnStart: hideLauncherOnStart.checked
     property alias cfg_middleClickAction: middleClickAction.currentIndex
     property alias cfg_wheelEnabled: wheelEnabled.currentIndex
     property alias cfg_wheelSkipMinimized: wheelSkipMinimized.checked
@@ -157,19 +155,6 @@ KCMUtils.SimpleKCM {
             ]
             onActivated: root.cfg_sortingStrategy = currentValue
             Component.onCompleted: currentIndex = indexOfValue(root.cfg_sortingStrategy)
-        }
-
-        QQC2.CheckBox {
-            id: separateLaunchers
-            visible: (Plasmoid.pluginName !== "org.kde.plasma.icontasks")
-            text: i18nc("@option:check configure task sorting", "Keep launchers separate")
-            enabled: sortingStrategy.currentValue === TaskManager.TasksModel.SortManual
-        }
-
-        QQC2.CheckBox {
-            id: hideLauncherOnStart
-            visible: (Plasmoid.pluginName !== "org.kde.plasma.icontasks")
-            text: i18nc("@option:check for icons-and-text task manager", "Hide launchers after application startup")
         }
 
         Item {
