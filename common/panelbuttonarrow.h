@@ -6,11 +6,11 @@
 
 #pragma once
 
-#include "klassikqstyleprimitiveitem.h"
+#include "klassikqstyleitem.h"
 
 #include <QPalette>
 
-class PanelButtonArrow : public KlassikQStylePrimitiveItem
+class PanelButtonArrow : public KlassikQStyleItem
 {
 	/*
 	   This class draws a sunken KDE 3 style popup menu arrow for buttons
@@ -21,7 +21,7 @@ class PanelButtonArrow : public KlassikQStylePrimitiveItem
 	Q_PROPERTY(bool active READ active WRITE setActive);
 	Q_PROPERTY(MenuLocation location READ location WRITE setLocation)
 public:
-	PanelButtonArrow(QQuickItem *parent = nullptr) : KlassikQStylePrimitiveItem(parent) {}
+	PanelButtonArrow(QQuickItem *parent = nullptr) : KlassikQStyleItem(parent) {}
 	~PanelButtonArrow() override = default;
 
 	enum MenuLocation {

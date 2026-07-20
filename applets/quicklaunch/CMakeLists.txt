@@ -9,7 +9,7 @@ plasma_add_applet(com.github.neeeeow.klassik.quicklaunch
     CPP_SOURCES
         quicklaunch_p.cpp
         ${CMAKE_CURRENT_SOURCE_DIR}/../../common/klassikpainteditem.cpp
-        ${CMAKE_CURRENT_SOURCE_DIR}/../../common/klassikqstyleprimitiveitem.h
+        ${CMAKE_CURRENT_SOURCE_DIR}/../../common/klassikqstyleitem.h
         ${CMAKE_CURRENT_SOURCE_DIR}/../../common/panelbuttonbackground.h
     RESOURCES
         main.xml

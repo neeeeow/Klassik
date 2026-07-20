@@ -10,8 +10,9 @@
 
 #include <QPalette>
 #include <QStyleOptionFrame>
+#include <QPainter>
 
-class PanelButtonBackground : public KlassikQStyleItem
+class PanelBackground : public KlassikQStyleItem
 {
 	/*
 	  This class draws a sunken KDE 3 style panel button background.
@@ -22,22 +23,27 @@ class PanelButtonBackground : public KlassikQStyleItem
 	Q_OBJECT
 	QML_ELEMENT
 public:
-	PanelButtonBackground(QQuickItem *parent = nullptr) : KlassikQStyleItem(parent) {}
-	~PanelButtonBackground() override = default;
+	PanelBackground(QQuickItem *parent = nullptr) : KlassikQStyleItem(parent) {}
+	~PanelBackground() override = default;
 
 protected:	
 	void paint(QPainter *p) const override {		
+		QRect r = QRect(0,0,width(),height());
+		QPalette pal = QGuiApplication::palette();
+
+		p->fillRect(r, pal.window());
+
 		if (!m_style)
 			return;
-
+		
 		QStyleOptionFrame opt;
-		opt.palette = QGuiApplication::palette();
-		opt.rect = QRect(0,0,width(),height());
-		opt.state = QStyle::State_Enabled | QStyle::State_Sunken;
+		opt.palette = pal;
+		opt.rect = r;
+		opt.state = QStyle::State_Enabled | QStyle::State_Raised;
 		opt.features = QStyleOptionFrame::None;
 		opt.frameShape = QFrame::StyledPanel;
-		opt.lineWidth = 1;
+		opt.lineWidth = 2;
 
-	    m_style->drawControl(QStyle::CE_ShapedFrame, &opt, p);
+		m_style->drawControl(QStyle::CE_ShapedFrame, &opt, p);
 	}
 };

@@ -8,7 +8,6 @@
 var layout;
 var root;
 var plasmoid;
-var marginHighlights;
 var appletsModel;
 
 function addApplet(applet, x, y) {

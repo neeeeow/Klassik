@@ -12,18 +12,18 @@
 #include <QStyleOption>
 #include <QApplication>
 
-class KlassikQStylePrimitiveItem : public KlassikPaintedItem
+class KlassikQStyleItem : public KlassikPaintedItem
 {
 	/* Template class for painting on to QML items with a QPainter. */
 
 	Q_OBJECT
 public:
-	KlassikQStylePrimitiveItem(QQuickItem *parent = nullptr) : KlassikPaintedItem(parent) {
+	KlassikQStyleItem(QQuickItem *parent = nullptr) : KlassikPaintedItem(parent) {
 		m_style = qApp->style();
 		if (m_style)
-			connect(m_style, &QObject::destroyed, this, &KlassikQStylePrimitiveItem::styleChanged, Qt::UniqueConnection);
+			connect(m_style, &QObject::destroyed, this, &KlassikQStyleItem::styleChanged, Qt::UniqueConnection);
 	}
-	virtual ~KlassikQStylePrimitiveItem() = default;
+	virtual ~KlassikQStyleItem() = default;
 
 protected:
 	QStyle *m_style;
@@ -37,7 +37,7 @@ private:
 			return;
 		m_style = qApp->style();
 		if (m_style) {
-		    connect(m_style, &QObject::destroyed, this, &KlassikQStylePrimitiveItem::styleChanged, Qt::UniqueConnection);
+		    connect(m_style, &QObject::destroyed, this, &KlassikQStyleItem::styleChanged, Qt::UniqueConnection);
 			polish();
 		}
 	}

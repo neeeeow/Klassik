@@ -11,7 +11,6 @@ import QtQuick.Layouts
 import org.kde.plasma.plasmoid
 
 import org.kde.plasma.core as PlasmaCore
-import org.kde.ksvg as KSvg
 import org.kde.plasma.components as PC3
 import org.kde.draganddrop as DragDrop
 import org.kde.kirigami as Kirigami
@@ -45,6 +44,8 @@ ContainmentItem {
     // True when e.g. the task manager is drag and dropping tasks.
     property bool appletRequestsInhibitDnD: false
     property bool reverse: Application.layoutDirection === Qt.RightToLeft
+
+    readonly property int panelMargin: 2
 
 //END properties
 
@@ -142,6 +143,14 @@ ContainmentItem {
     }
 //END connections
 
+//BEGIN background
+
+    PanelBackground {
+        anchors.fill: parent
+    }
+
+//END background
+
     TapHandler {
         acceptedButtons: Qt.LeftButton
         acceptedDevices: PointerDevice.TouchScreen | PointerDevice.Stylus
@@ -152,32 +161,10 @@ ContainmentItem {
         id: dropArea
         anchors.fill: parent
 
-        // These are invisible and only used to read panel margins
-        // Both will fallback to "standard" panel margins if the theme does not
-        // define a normal or a thick margin.
-        KSvg.FrameSvgItem {
-            id: panelSvg
-            visible: false
-            imagePath: "widgets/panel-background"
-            prefix: [root.plasmoidLocationString(), ""]
-        }
-        KSvg.FrameSvgItem {
-            id: thickPanelSvg
-            visible: false
-            prefix: ['thick'].concat(panelSvg.prefix)
-            imagePath: "widgets/panel-background"
-        }
-        property bool marginAreasEnabled: panelSvg.margins != thickPanelSvg.margins
-        property var marginHighlightSvg: KSvg.Svg{imagePath: "widgets/margins-highlight"}
-        //Margins are either the size of the margins in the SVG, unless that prevents the panel from being at least half a smallMedium icon) tall at which point we set the margin to whatever allows it to be that...or if it still won't fit, 1.
-        //the size a margin should be to force a panel to be the required size above
-        readonly property real spacingAtMinSize: Math.floor(Math.max(1, (root.isHorizontal ? root.height : root.width) - Kirigami.Units.iconSizes.smallMedium)/2)
-
         Component.onCompleted: {
             LayoutManager.plasmoid = root.Plasmoid;
             LayoutManager.root = root;
             LayoutManager.layout = currentLayout;
-            LayoutManager.marginHighlights = [];
             LayoutManager.appletsModel = appletsModel;
             LayoutManager.restore();
 
@@ -238,14 +225,12 @@ ContainmentItem {
                     if (!applet || !applet.Plasmoid) {
                         return 0;
                     }
-                    //Margins are either the size of the margins in the SVG, unless that prevents the panel from being at least half a smallMedium icon + smallSpace) tall at which point we set the margin to whatever allows it to be that...or if it still won't fit, 1.
                     let fillArea = overrideFillArea === null ? applet && (applet.Plasmoid.constraintHints & Plasmoid.CanFillArea) : overrideFillArea
-                    let inThickArea = overrideThickArea === null ? container.inThickArea : overrideThickArea
                     var layout = {
                         top: root.isHorizontal, bottom: root.isHorizontal,
                         right: !root.isHorizontal, left: !root.isHorizontal
                     };
-                    return ((layout[side] || returnAllMargins) && !fillArea) ? Math.round(Math.min(dropArea.spacingAtMinSize, (inThickArea ? thickPanelSvg.fixedMargins[side] : panelSvg.fixedMargins[side]))) : 0;
+                    return ((layout[side] || returnAllMargins) && !fillArea) ? root.panelMargin : 0;
                 }
 
                 Layout.topMargin: getMargins('top')
@@ -276,64 +261,6 @@ ContainmentItem {
                 Layout.maximumWidth: root.isHorizontal ? (wantsToFillWidth ? findPositive(applet?.Layout.maximumWidth, root.width) : Math.min(applet?.Layout.maximumWidth, Layout.preferredWidth)) : availWidth
                 Layout.maximumHeight: !root.isHorizontal ? (wantsToFillHeight ? findPositive(applet?.Layout.maximumHeight, root.height) : Math.min(applet?.Layout.maximumHeight, Layout.preferredHeight)) : availHeight
     // END BUG 454095
-
-                Item {
-                    id: marginHighlightElements
-                    anchors.fill: parent
-                    // index -1 is for floating applets, which do not need a margin highlight
-                    opacity: Plasmoid.containment.corona.editMode && dropArea.marginAreasEnabled && !(root.configOverlay?.dragAndDropping ?? false) && container.index != -1 ? 1 : 0
-                    Behavior on opacity {
-                        NumberAnimation {
-                            duration: Kirigami.Units.longDuration
-                            easing.type: Easing.InOutQuad
-                        }
-                    }
-
-                    component SideMargin: KSvg.SvgItem {
-                        property string side; property bool fill: true
-                        property int inset; property int padding
-                        property var west: ({'left': 'top', 'top': 'left', 'right': 'top', 'bottom': 'left'})
-                        property var mirror: ({'left': 'right', 'top': 'bottom', 'right': 'left', 'bottom': 'top'})
-                        property var onComponentCompleted: {
-                            let left = west[side]
-                            let right = mirror[left]
-                            let up = mirror[side]
-                            anchors[up] = undefined
-                            if (root.isHorizontal) {
-                                height = padding;
-                            } else {
-                                width = padding;
-                            }
-                            anchors[left+'Margin'] = - currentLayout.rowSpacing/2 - (container.appletIndex == 0 ? dropArea.anchors[left + 'Margin'] + currentLayout.x : 0)
-                            anchors[right+'Margin'] = - currentLayout.rowSpacing/2 - (container.appletIndex == appletsModel.count-1 ? dropArea.anchors[right + 'Margin'] + currentLayout.toolBoxSize : 0)
-                            anchors[side+'Margin'] = - inset
-                        }
-                        elementId: fill ? 'fill' : (root.isHorizontal ? side + (container.inThickArea ? 'left' : 'right') : (container.inThickArea ? 'top' : 'bottom') + side)
-                        svg: dropArea.marginHighlightSvg
-                        anchors {top: parent?.top; left: parent?.left; right: parent?.right; bottom: parent?.bottom}
-                    }
-                    Repeater {
-                        model: ['top', 'bottom', 'right', 'left']
-                        SideMargin {
-                            required property string modelData
-                            side: modelData
-                            inset: container.getMargins(side)
-                            visible: (modelData === 'top' || modelData === 'bottom') === root.isHorizontal
-                            padding: container.getMargins(side, false, false, container.isMarginSeparator ? false : container.inThickArea)
-                        }
-                    }
-                    Repeater {
-                        model: ['top', 'bottom', 'right', 'left']
-                        SideMargin {
-                            required property string modelData
-                            side: modelData
-                            inset: -container.getMargins(side, false, false, false)
-                            padding: container.getMargins(side, false, false, true) + inset
-                            visible: container.isMarginSeparator && (modelData === 'top' || modelData === 'bottom') === root.isHorizontal
-                            fill: false
-                        }
-                    }
-                }
 
                 onAppletChanged: {
                     if (applet) {
@@ -375,10 +302,10 @@ ContainmentItem {
 //BEGIN UI elements
 
         anchors {
-            leftMargin: root.isHorizontal ? Math.min(dropArea.spacingAtMinSize, panelSvg.fixedMargins.left + currentLayout.rowSpacing) : 0
-            rightMargin: root.isHorizontal ? Math.min(dropArea.spacingAtMinSize, panelSvg.fixedMargins.right + currentLayout.rowSpacing) : 0
-            topMargin: root.isHorizontal ? 0 : Math.min(dropArea.spacingAtMinSize, panelSvg.fixedMargins.top + currentLayout.rowSpacing)
-            bottomMargin: root.isHorizontal ? 0 : Math.min(dropArea.spacingAtMinSize, panelSvg.fixedMargins.bottom + currentLayout.rowSpacing)
+            leftMargin: root.isHorizontal ? root.panelMargin : 0
+            rightMargin: root.isHorizontal ? root.panelMargin : 0
+            topMargin: root.isHorizontal ? 0 : root.panelMargin
+            bottomMargin: root.isHorizontal ? 0 : root.panelMargin
         }
 
         Item {

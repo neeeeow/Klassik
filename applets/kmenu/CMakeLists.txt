@@ -15,7 +15,7 @@ plasma_add_applet(com.github.neeeeow.klassik.kmenu
     popupmenutitle.h
     popupmenusearch.h
     ${CMAKE_CURRENT_SOURCE_DIR}/../../common/klassikpainteditem.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/../../common/klassikqstyleprimitiveitem.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/../../common/klassikqstyleitem.h
     ${CMAKE_CURRENT_SOURCE_DIR}/../../common/panelbuttonbackground.h
     ${CMAKE_CURRENT_SOURCE_DIR}/../../common/panelbuttonarrow.h
   RESOURCES
