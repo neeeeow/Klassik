@@ -10,13 +10,11 @@ const iconMargin = Math.round(Kirigami.Units.smallSpacing / 4);
 const labelMargin = Kirigami.Units.smallSpacing;
 
 function horizontalMargins() {
-    const spacingAdjustment = 1
-    return (taskFrame.margins.left + taskFrame.margins.right) * (tasks.vertical ? 1 : spacingAdjustment);
+    return 0;
 }
 
 function verticalMargins() {
-    const spacingAdjustment = 1
-    return (taskFrame.margins.top + taskFrame.margins.bottom) * (tasks.vertical ? spacingAdjustment : 1);
+    return 0;
 }
 
 function adjustMargin(height, margin) {
@@ -137,7 +135,7 @@ function preferredMinLauncherWidth() {
     const baseWidth = tasks.vertical ? preferredMinHeight() : Math.min(tasks.height, Kirigami.Units.iconSizes.small * 3);
 
     return (baseWidth + horizontalMargins())
-        - (adjustMargin(baseWidth, taskFrame.margins.top) + adjustMargin(baseWidth, taskFrame.margins.bottom));
+        - (adjustMargin(baseWidth, 0) + adjustMargin(baseWidth, 0));
 }
 
 function maximumContextMenuTextWidth() {

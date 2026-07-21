@@ -13,7 +13,6 @@ import QtQuick.Controls
 
 import org.kde.plasma.plasmoid
 import org.kde.plasma.core as PlasmaCore
-import org.kde.ksvg as KSvg
 import org.kde.plasma.private.mpris as Mpris
 import org.kde.kirigami as Kirigami
 
@@ -299,15 +298,6 @@ PlasmoidItem {
             Drag.onDragFinished: dropAction => {
                 tasks.dragSource = null;
             }
-        }
-
-        KSvg.FrameSvgItem {
-            id: taskFrame
-
-            visible: false
-
-            imagePath: "widgets/tasks"
-            prefix: TaskManagerApplet.TaskTools.taskPrefix("normal", Plasmoid.location)
         }
 
         MouseHandler {

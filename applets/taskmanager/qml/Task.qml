@@ -14,7 +14,6 @@ import QtQuick.Layouts
 import QtQuick.Controls
 
 import org.kde.plasma.core as PlasmaCore
-import org.kde.ksvg as KSvg
 import org.kde.plasma.extras as PlasmaExtras
 import org.kde.kirigami as Kirigami
 import plasma.applet.com.github.neeeeow.klassik.taskmanager as TaskManagerApplet
@@ -411,7 +410,10 @@ PlasmaCore.ToolTipArea {
 
     Button {
         id: frame
-        padding: 2
+        leftPadding: 4
+        rightPadding: 4
+        topPadding: 2
+        bottomPadding: 2
 
         anchors {
             fill: parent
@@ -429,7 +431,7 @@ PlasmaCore.ToolTipArea {
         checkable: true
 
         checked: model.IsActive
-        opacity: model.IsMinimized ? 0.8 : 1.0
+        //opacity: model.IsMinimized ? 0.8 : 1.0
 
         onClicked: { // logic from leftTapHandler
             if (dragHandler.dragTriggered)
@@ -494,111 +496,51 @@ PlasmaCore.ToolTipArea {
             }
         }
 
-        Item {
-            id: iconBox
+        contentItem: RowLayout {
+            spacing: Kirigami.Units.smallSpacing
 
-            anchors {
-                left: parent.left
-                leftMargin: adjustMargin(true, parent.width, frame.leftPadding)
-                top: parent.top
-                topMargin: adjustMargin(false, parent.height, frame.topPadding)
-            }
-
-            width: task.inPopup ? Math.max(Kirigami.Units.iconSizes.sizeForLabels, Kirigami.Units.iconSizes.medium) : Math.min(task.parent?.minimumWidth ?? 0, task.height)
-            height: task.inPopup ? width : (parent.height - adjustMargin(false, parent.height, frame.topPadding)
-            - adjustMargin(false, parent.height, frame.bottomPadding))
-
-            function adjustMargin(isVertical: bool, size: real, margin: real): real {
-                if (!size) {
-                    return margin;
-                }
-
-                var margins = isVertical ? TaskManagerApplet.LayoutMetrics.horizontalMargins() : TaskManagerApplet.LayoutMetrics.verticalMargins();
-
-                if ((size - margins) < Kirigami.Units.iconSizes.small) {
-                    return Math.ceil((margin * (Kirigami.Units.iconSizes.small / size)) / 2);
-                }
-
-                return margin;
-            }
-
-            Kirigami.Icon {
-                id: icon
-
-                anchors.fill: parent
-
-                enabled: true
-
-                source: task.model.decoration
-            }
-
-            states: [
-                // Using a state transition avoids a binding loop between label.visible and
-                // the text label margin, which derives from the icon width.
-                State {
-                    name: "standalone"
-                    when: !label.visible && task.parent
-
-                    AnchorChanges {
-                        target: iconBox
-                        anchors.left: undefined
-                        anchors.horizontalCenter: parent.horizontalCenter
-                    }
-
-                    PropertyChanges {
-                        iconBox.anchors.leftMargin: 0
-                        iconBox.width: Math.min(task.parent.minimumWidth, tasksRoot.height)
-                        - iconBox.adjustMargin(true, task.width, frame.leftPadding)
-                        - iconBox.adjustMargin(true, task.width, frame.rightPadding)
-                    }
-                }
-            ]
-
-            Loader {
-                anchors.centerIn: parent
-                width: Math.min(parent.width, parent.height)
+            Item {
+                id: iconBox
+                width: Math.max(parent.height, Kirigami.Units.iconSizes.small)
                 height: width
-                active: task.model.IsStartup
-                sourceComponent: busyIndicator
-            }
-        }
 
-        Label {
-            id: label
+                Kirigami.Icon {
+                    id: icon
+                    anchors.fill: parent
+                    source: task.model.decoration
+                    opacity: model.IsMinimized ? 0.5 : 1.0
+                }
 
-            visible: (task.inPopup || (parent.width - iconBox.height - Kirigami.Units.smallSpacing) >= TaskManagerApplet.LayoutMetrics.spaceRequiredToShowText())
-
-            anchors {
-                fill: parent
-                leftMargin: frame.leftPadding + iconBox.width + TaskManagerApplet.LayoutMetrics.labelMargin
-                topMargin: frame.topPadding
-                rightMargin: frame.rightPadding + (task.audioStreamIcon !== null && task.audioStreamIcon.visible ? (task.audioStreamIcon.width + TaskManagerApplet.LayoutMetrics.labelMargin) : 0)
-                bottomMargin: frame.bottomPadding
-            }
-
-            wrapMode: (maximumLineCount === 1) ? Text.NoWrap : Text.Wrap
-            elide: Text.ElideRight
-            textFormat: Text.PlainText
-            verticalAlignment: Text.AlignVCenter
-            maximumLineCount: Plasmoid.configuration.maxTextLines || undefined
-            font.bold: task.model.IsDemandingAttention // attention
-            font.italic: task.model.IsMinimized
-
-            // The accessible item of this element is only used for debugging
-            // purposes, and it will never gain focus (thus it won't interfere
-            // with screenreaders).
-            Accessible.ignored: !visible
-            Accessible.name: parent.Accessible.name + "-labelhint"
-
-            // use State to avoid unnecessary re-evaluation when the label is invisible
-            states: State {
-                name: "labelVisible"
-                when: label.visible
-
-                PropertyChanges {
-                    label.text: task.model.display
+                Loader {
+                    anchors.centerIn: parent
+                    width: parent.width
+                    height: parent.height
+                    active: task.model.IsStartup
+                    sourceComponent: busyIndicator
                 }
             }
+
+            Label {
+                id: label
+
+                Layout.fillWidth: true
+                Layout.alignment: Qt.AlignVCenter
+
+                text: task.model.display
+                elide: Text.ElideRight
+                textFormat: Text.PlainText
+                verticalAlignment: Text.AlignVCenter
+                maximumLineCount: 1
+                font.bold: task.model.IsActive
+                opacity: model.IsMinimized ? 0.5 : 1.0
+
+                // The accessible item of this element is only used for debugging
+                // purposes, and it will never gain focus (thus it won't interfere
+                // with screenreaders).
+                Accessible.ignored: !visible
+                Accessible.name: parent.Accessible.name + "-labelhint"
+            }
+
         }
     }
 
