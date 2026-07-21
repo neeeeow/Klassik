@@ -2,7 +2,6 @@ add_definitions(-DTRANSLATION_DOMAIN=\"plasma_applet_com.github.neeeeow.klassik.
 
 plasma_add_applet(com.github.neeeeow.klassik.taskmanager
     QML_SOURCES
-        qml/AudioStream.qml
         qml/ConfigAppearance.qml
         qml/ConfigBehavior.qml
         qml/config.qml

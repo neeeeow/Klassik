@@ -61,7 +61,6 @@ PlasmaCore.ToolTipArea {
     property alias labelText: label.text
     property QtObject contextMenu: null
 
-    property Item audioStreamIcon: null
     property var audioStreams: []
     property bool delayAudioStreamIndicator: false
     property bool completed: false
@@ -220,23 +219,6 @@ PlasmaCore.ToolTipArea {
             tasksRoot.requestLayout();
         }
     }
-
-    onHasAudioStreamChanged: {
-        const audioStreamIconActive = hasAudioStream && audioIndicatorsEnabled;
-        if (!audioStreamIconActive) {
-            if (audioStreamIcon !== null) {
-                audioStreamIcon.destroy();
-                audioStreamIcon = null;
-            }
-            return;
-        }
-        // Create item on demand instead of using Loader to reduce memory consumption,
-        // because only a few applications have audio streams.
-        const component = Qt.createComponent("AudioStream.qml");
-        audioStreamIcon = component.createObject(task);
-        component.destroy();
-    }
-    onAudioIndicatorsEnabledChanged: task.hasAudioStreamChanged()
 
     Keys.onMenuPressed: event => contextMenuTimer.start()
     Keys.onReturnPressed: event => TaskManagerApplet.TaskTools.activateTask(modelIndex(), model, event.modifiers, task, Plasmoid, tasksRoot, effectWatcher.registered)
@@ -431,7 +413,6 @@ PlasmaCore.ToolTipArea {
         checkable: true
 
         checked: model.IsActive
-        //opacity: model.IsMinimized ? 0.8 : 1.0
 
         onClicked: { // logic from leftTapHandler
             if (dragHandler.dragTriggered)
@@ -502,8 +483,8 @@ PlasmaCore.ToolTipArea {
 
             Item {
                 id: iconBox
-                width: Math.max(parent.height, Kirigami.Units.iconSizes.small)
-                height: width
+                Layout.preferredHeight: Kirigami.Units.iconSizes.small
+                Layout.preferredWidth: Layout.preferredHeight
 
                 Kirigami.Icon {
                     id: icon
@@ -542,6 +523,22 @@ PlasmaCore.ToolTipArea {
                 // with screenreaders).
                 Accessible.ignored: !visible
                 Accessible.name: parent.Accessible.name + "-labelhint"
+            }
+
+            ToolButton {
+                id: audioButton
+                Layout.preferredHeight: Math.min(parent.height, Kirigami.Units.iconSizes.small + 4)
+                Layout.preferredWidth: height
+                Layout.alignment: Qt.AlignVCenter
+                padding: 2
+                focusPolicy: Qt.NoFocus
+
+                visible: task.hasAudioStream && task.audioIndicatorsEnabled
+                onClicked: task.toggleMuted()
+
+                contentItem: Kirigami.Icon {
+                    source: task.muted ? "audio-volume-muted" : "audio-volume-high"
+                }
             }
         }
     }
