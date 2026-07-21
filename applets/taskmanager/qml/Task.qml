@@ -526,6 +526,8 @@ PlasmaCore.ToolTipArea {
                 Layout.fillWidth: true
                 Layout.alignment: Qt.AlignVCenter
 
+                visible: task.inPopup || (frame.width - iconBox.width - Kirigami.Units.smallSpacing) >= TaskManagerApplet.LayoutMetrics.spaceRequiredToShowText()
+
                 text: task.model.display
                 elide: Text.ElideRight
                 textFormat: Text.PlainText
@@ -540,7 +542,6 @@ PlasmaCore.ToolTipArea {
                 Accessible.ignored: !visible
                 Accessible.name: parent.Accessible.name + "-labelhint"
             }
-
         }
     }
 
