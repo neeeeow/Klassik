@@ -333,63 +333,6 @@ PlasmaCore.ToolTipArea {
         }
     }
 
-    TapHandler {
-        id: menuTapHandler
-        acceptedButtons: Qt.LeftButton
-        acceptedDevices: PointerDevice.TouchScreen | PointerDevice.Stylus
-        gesturePolicy: TapHandler.ReleaseWithinBounds
-        onLongPressed: {
-                task.showContextMenu();
-        }
-    }
-
-    TapHandler {
-        acceptedButtons: Qt.RightButton
-        acceptedDevices: PointerDevice.Mouse | PointerDevice.TouchPad | PointerDevice.Stylus
-        gesturePolicy: TapHandler.WithinBounds // Release grab when menu appears
-        onPressedChanged: if (pressed) contextMenuTimer.start()
-    }
-
-    Timer {
-        id: contextMenuTimer
-        interval: 0
-        onTriggered: menuTapHandler.longPressed()
-    }
-
-    TapHandler {
-        acceptedButtons: Qt.MiddleButton | Qt.BackButton | Qt.ForwardButton
-        onTapped: (eventPoint, button) => {
-            if (button === Qt.MiddleButton) {
-                if (Plasmoid.configuration.middleClickAction === TaskManagerApplet.Backend.NewInstance) {
-                    tasksModel.requestNewInstance(modelIndex());
-                } else if (Plasmoid.configuration.middleClickAction === TaskManagerApplet.Backend.Close) {
-                    tasksModel.requestClose(modelIndex());
-                } else if (Plasmoid.configuration.middleClickAction === TaskManagerApplet.Backend.ToggleMinimized) {
-                    tasksModel.requestToggleMinimized(modelIndex());
-                } else if (Plasmoid.configuration.middleClickAction === TaskManagerApplet.Backend.ToggleGrouping) {
-                    tasksModel.requestToggleGrouping(modelIndex());
-                } else if (Plasmoid.configuration.middleClickAction === TaskManagerApplet.Backend.BringToCurrentDesktop) {
-                    TaskManagerApplet.TaskTools.foreachChildTask((childIndex) => {
-                        tasksModel.requestVirtualDesktops(childIndex, [virtualDesktopInfo.currentDesktopByScreenGeometry(tasksModel.data(childIndex, TaskManager.AbstractTasksModel.ScreenGeometry))]);
-                    }, modelIndex(), tasksModel);
-                }
-            } else if (button === Qt.BackButton || button === Qt.ForwardButton) {
-                const playerData = mpris2Source.playerForLauncherUrl(task.model.LauncherUrlWithoutIcon, task.model.AppPid);
-                if (playerData) {
-                    if (button === Qt.BackButton) {
-                        playerData.Previous();
-                    } else {
-                        playerData.Next();
-                    }
-                } else {
-                    eventPoint.accepted = false;
-                }
-            }
-
-            task.tasksRoot.cancelHighlightWindows();
-        }
-    }
-
     Button {
         id: frame
         leftPadding: 4
@@ -421,6 +364,54 @@ PlasmaCore.ToolTipArea {
                 task.hideToolTip();
             }
             TaskManagerApplet.TaskTools.activateTask(modelIndex(), model, Qt.NoModifier, task, Plasmoid, tasksRoot, effectWatcher.registered);
+        }
+
+        TapHandler { // KDE 3 never had touchscreen support, but we include it anyways!
+            acceptedButtons: Qt.LeftButton
+            acceptedDevices: PointerDevice.TouchScreen | PointerDevice.Stylus
+            gesturePolicy: TapHandler.ReleaseWithinBounds
+            onLongPressed: {
+                task.showContextMenu();
+            }
+        }
+
+        MouseArea {
+            anchors.fill: parent
+            acceptedButtons: Qt.RightButton | Qt.MiddleButton | Qt.BackButton | Qt.ForwardButton
+            propagateComposedEvents: true
+
+            onClicked: (mouse) => {
+                if (mouse.button === Qt.RightButton) {
+                    task.showContextMenu();
+                } else if (mouse.button === Qt.MiddleButton) {
+                    if (Plasmoid.configuration.middleClickAction === TaskManagerApplet.Backend.NewInstance) {
+                        tasksModel.requestNewInstance(modelIndex());
+                    } else if (Plasmoid.configuration.middleClickAction === TaskManagerApplet.Backend.Close) {
+                        tasksModel.requestClose(modelIndex());
+                    } else if (Plasmoid.configuration.middleClickAction === TaskManagerApplet.Backend.ToggleMinimized) {
+                        tasksModel.requestToggleMinimized(modelIndex());
+                    } else if (Plasmoid.configuration.middleClickAction === TaskManagerApplet.Backend.ToggleGrouping) {
+                        tasksModel.requestToggleGrouping(modelIndex());
+                    } else if (Plasmoid.configuration.middleClickAction === TaskManagerApplet.Backend.BringToCurrentDesktop) {
+                        TaskManagerApplet.TaskTools.foreachChildTask((childIndex) => {
+                            tasksModel.requestVirtualDesktops(childIndex, [virtualDesktopInfo.currentDesktopByScreenGeometry(tasksModel.data(childIndex, TaskManager.AbstractTasksModel.ScreenGeometry))]);
+                        }, modelIndex(), tasksModel);
+                    }
+                } else if (mouse.button === Qt.BackButton || mouse.button === Qt.ForwardButton) {
+                    const playerData = mpris2Source.playerForLauncherUrl(task.model.LauncherUrlWithoutIcon, task.model.AppPid);
+                    if (playerData) {
+                        if (button === Qt.BackButton) {
+                            playerData.Previous();
+                        } else {
+                            playerData.Next();
+                        }
+                    } else {
+                        eventPoint.accepted = false;
+                    }
+                }
+
+                task.tasksRoot.cancelHighlightWindows();
+            }
         }
 
         background: TaskBackground {
