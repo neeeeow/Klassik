@@ -443,6 +443,7 @@ PlasmaCore.ToolTipArea {
         }
 
         background: TaskBackground {
+            visible: (Plasmoid.configuration.taskAppearance === 1) || frame.hovered
             sunken: frame.down || frame.checked
         }
 

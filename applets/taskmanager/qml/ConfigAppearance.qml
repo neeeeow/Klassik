@@ -17,7 +17,6 @@ KCMUtils.SimpleKCM {
 
     readonly property bool plasmaPaAvailable: Qt.createComponent("PulseAudio.qml").status === Component.Ready
     readonly property bool plasmoidVertical: Plasmoid.formFactor === PlasmaCore.Types.Vertical
-    readonly property bool iconOnly: Plasmoid.pluginName === "org.kde.plasma.icontasks"
 
     property alias cfg_showToolTips: showToolTips.checked
     property alias cfg_highlightWindows: highlightWindows.checked
@@ -28,9 +27,9 @@ KCMUtils.SimpleKCM {
     property alias cfg_maxStripes: maxStripes.value
     property alias cfg_forceStripes: forceStripes.checked
     property alias cfg_taskMaxWidth: taskMaxWidth.currentIndex
-    property int cfg_iconSpacing: 0
 
     property alias cfg_drawFrame: drawFrame.checked
+    property alias cfg_taskAppearance: taskAppearance.currentIndex
 
     Component.onCompleted: {
         /* Don't rely on bindings for checking the radiobuttons
@@ -95,12 +94,22 @@ KCMUtils.SimpleKCM {
 
         Item {
             Kirigami.FormData.isSection: true
-            visible: !root.iconOnly
+        }
+
+        QQC2.ComboBox {
+            id: taskAppearance
+
+            Kirigami.FormData.label: i18n("Task appearance")
+
+            model: [
+                i18n("Elegant"),
+                i18n("Classic")
+            ]
         }
 
         QQC2.ComboBox {
             id: taskMaxWidth
-            visible: !root.iconOnly && !root.plasmoidVertical
+            visible: !root.plasmoidVertical
 
             Kirigami.FormData.label: i18nc("@label:listbox", "Maximum task width:")
 
@@ -155,41 +164,6 @@ KCMUtils.SimpleKCM {
                 ? i18nc("@label:spinbox maximum number of columns for tasks", "Maximum columns:")
                 : i18nc("@label:spinbox maximum number of rows for tasks", "Maximum rows:")
             from: 1
-        }
-
-        Item {
-            Kirigami.FormData.isSection: true
-        }
-
-        QQC2.ComboBox {
-            visible: root.iconOnly
-            Kirigami.FormData.label: i18nc("@label:listbox", "Spacing between icons:")
-
-            model: [
-                {
-                    "label": i18nc("@item:inlistbox Icon spacing", "Small"),
-                    "spacing": 0
-                },
-                {
-                    "label": i18nc("@item:inlistbox Icon spacing", "Normal"),
-                    "spacing": 1
-                },
-                {
-                    "label": i18nc("@item:inlistbox Icon spacing", "Large"),
-                    "spacing": 3
-                },
-            ]
-
-            textRole: "label"
-
-            currentIndex: switch (root.cfg_iconSpacing) {
-                case 0: return 0; // Small
-                case 1: return 1; // Normal
-                case 3: return 2; // Large
-            }
-            onActivated: index => {
-                root.cfg_iconSpacing = model[currentIndex]["spacing"];
-            }
         }
     }
 }
