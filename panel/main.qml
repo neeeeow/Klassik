@@ -159,11 +159,14 @@ ContainmentItem {
 
         function save() {
             Plasmoid.configuration.useBackground = useBackground.checked;
+            Plasmoid.configuration.colorizeBackground = colorizeBackground.checked;
         }
 
         onVisibleChanged: {
-            if (visible)
+            if (visible) {
                 useBackground.checked = Plasmoid.configuration.useBackground;
+                colorizeBackground.checked = Plasmoid.configuration.colorizeBackground;
+            }
         }
 
         Kirigami.FormLayout {
@@ -172,7 +175,11 @@ ContainmentItem {
 
             CheckBox {
                 id: useBackground
-                text: i18n("Display panel background")
+                text: i18n("Enable background image")
+            }
+            CheckBox {
+                id: colorizeBackground
+                text: i18n("Colorize to match the desktop color scheme")
             }
         }
 
@@ -215,6 +222,8 @@ ContainmentItem {
     PanelBackground {
         anchors.fill: parent
         useBackground: Plasmoid.configuration.useBackground
+        colorizeBackground: Plasmoid.configuration.colorizeBackground
+        panelLocation: Plasmoid.location
     }
 
 //END background

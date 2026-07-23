@@ -7,7 +7,7 @@ plasma_add_applet(com.github.neeeeow.klassik.panel
     CPP_SOURCES
         ${CMAKE_CURRENT_SOURCE_DIR}/../common/klassikpainteditem.cpp
         ${CMAKE_CURRENT_SOURCE_DIR}/../common/klassikqstyleitem.h
-        ${CMAKE_CURRENT_SOURCE_DIR}/../common/panelbackground.h
+        panelbackground.cpp
     RESOURCES
         main.xml
         defaultBackground.png
@@ -22,6 +22,9 @@ target_link_libraries(com.github.neeeeow.klassik.panel PRIVATE
   Qt::Core
   Qt::Widgets
   Qt::Qml
-  Qt::Quick)
+  Qt::Quick
+  KF6::ColorScheme
+  Plasma::Plasma
+)
 
 plasma_install_package(layout-template com.github.neeeeow.klassik.panel.default layout-templates layout-template)

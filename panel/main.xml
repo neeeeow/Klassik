@@ -14,6 +14,10 @@
       <label>Draw a background on the panel</label>
       <default>true</default>
     </entry>
+    <entry name="colorizeBackground" type="Bool">
+      <label>Colorize the background image</label>
+      <default>false</default>
+    </entry>
   </group>
 
 </kcfg>
