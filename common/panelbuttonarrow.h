@@ -18,7 +18,7 @@ class PanelButtonArrow : public KlassikQStyleItem
 	  
 	Q_OBJECT
 	QML_ELEMENT
-	Q_PROPERTY(bool active READ active WRITE setActive);
+	Q_PROPERTY(bool active READ active WRITE setActive)
 	Q_PROPERTY(MenuLocation location READ location WRITE setLocation)
 public:
 	PanelButtonArrow(QQuickItem *parent = nullptr) : KlassikQStyleItem(parent) {}

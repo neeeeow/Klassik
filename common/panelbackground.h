@@ -11,6 +11,7 @@
 #include <QPalette>
 #include <QStyleOptionFrame>
 #include <QPainter>
+#include <QImage>
 
 class PanelBackground : public KlassikQStyleItem
 {
@@ -20,16 +21,32 @@ class PanelBackground : public KlassikQStyleItem
 	  
 	Q_OBJECT
 	QML_ELEMENT
+	Q_PROPERTY(bool useBackground READ useBackground WRITE setUseBackground)
 public:
 	PanelBackground(QQuickItem *parent = nullptr) : KlassikQStyleItem(parent) {}
 	~PanelBackground() override = default;
 
+	bool useBackground() const { return m_useBackground; }
+	void setUseBackground(bool state) {
+		if (m_useBackground != state) {
+			m_useBackground = state;
+			updateImage();
+		}
+	}
+
 protected:	
 	void paint(QPainter *p) const override {		
-		QRect r = QRect(0,0,width(),height());
+		QRect r = QRect(0,0,width(),height());		
 		QPalette pal = QGuiApplication::palette();
 
-		p->fillRect(r, pal.window());
+		if (m_useBackground) {
+			QImage image;
+			image.load(QStringLiteral(":/qt/qml/plasma/applet/com/github/neeeeow/klassik/panel/defaultBackground.png"));
+			if (!image.isNull())
+				p->drawImage(r, image);
+		} else {
+			p->fillRect(r, pal.window());
+		}
 
 		if (!m_style)
 			return;
@@ -44,4 +61,8 @@ protected:
 
 		m_style->drawControl(QStyle::CE_ShapedFrame, &opt, p);
 	}
+
+private:
+
+	bool m_useBackground = false;
 };

@@ -10,6 +10,7 @@ plasma_add_applet(com.github.neeeeow.klassik.panel
         ${CMAKE_CURRENT_SOURCE_DIR}/../common/panelbackground.h
     RESOURCES
         main.xml
+        defaultBackground.png
     GENERATE_CONTAINMENT_CLASS
 )
 

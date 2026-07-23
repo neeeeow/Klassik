@@ -9,6 +9,11 @@
     <entry name="AppletOrder" type="String">
       <label>encoded order of items</label>
     </entry>
+
+    <entry name="useBackground" type="Bool">
+      <label>Draw a background on the panel</label>
+      <default>true</default>
+    </entry>
   </group>
 
 </kcfg>

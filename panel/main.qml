@@ -8,9 +8,11 @@ pragma ComponentBehavior: Bound
 
 import QtQuick
 import QtQuick.Layouts
+import QtQuick.Controls
 import org.kde.plasma.plasmoid
 
 import org.kde.plasma.core as PlasmaCore
+import org.kde.plasma.extras as PlasmaExtras
 import org.kde.plasma.components as PC3
 import org.kde.draganddrop as DragDrop
 import org.kde.kirigami as Kirigami
@@ -143,10 +145,76 @@ ContainmentItem {
     }
 //END connections
 
+//BEGIN preferences
+
+    Window {
+        id: configDialog
+        title: i18n("Klassik Panel Preferences")
+        width: 450
+        height: 350
+        minimumWidth: 350
+        minimumHeight: 250
+        flags: Qt.Dialog
+        color: Kirigami.Theme.backgroundColor
+
+        function save() {
+            Plasmoid.configuration.useBackground = useBackground.checked;
+        }
+
+        onVisibleChanged: {
+            if (visible)
+                useBackground.checked = Plasmoid.configuration.useBackground;
+        }
+
+        Kirigami.FormLayout {
+            anchors.left: parent.left
+            anchors.right: parent.right
+
+            CheckBox {
+                id: useBackground
+                text: i18n("Display panel background")
+            }
+        }
+
+        DialogButtonBox {
+            anchors {
+                left: parent.left
+                right: parent.right
+                bottom: parent.bottom
+            }
+            standardButtons: DialogButtonBox.Ok | DialogButtonBox.Apply | DialogButtonBox.Cancel
+
+            onAccepted: {
+                configDialog.save()
+                configDialog.close()
+            }
+            onApplied: {
+                configDialog.save()
+            }
+            onRejected: {
+                configDialog.close()
+            }
+        }
+    }
+
+    Plasmoid.contextualActions: [
+        PlasmaCore.Action {
+            text: i18n("Klassik Panel Preferences")
+            icon.name: "preferences-other"
+            onTriggered: {
+                configDialog.show()
+                configDialog.requestActivate()
+            }
+        }
+    ]
+
+//END preferences
+
 //BEGIN background
 
     PanelBackground {
         anchors.fill: parent
+        useBackground: Plasmoid.configuration.useBackground
     }
 
 //END background
