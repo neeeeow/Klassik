@@ -14,7 +14,6 @@ import org.kde.plasma.plasmoid
 
 import org.kde.plasma.core as PlasmaCore
 import org.kde.plasma.extras as PlasmaExtras
-import org.kde.plasma.components as PC3
 import org.kde.draganddrop as DragDrop
 import org.kde.kirigami as Kirigami
 
@@ -415,7 +414,7 @@ ContainmentItem {
                 }
 
                 active: applet && applet.Plasmoid.busy
-                sourceComponent: PC3.BusyIndicator {
+                sourceComponent: BusyIndicator {
                     z: 999
                 }
 
@@ -532,7 +531,7 @@ ContainmentItem {
         Accessible.description: i18ndc("plasma_shell_org.kde.plasma.desktop", "@info:whatsthis Accessible description for entering Panel edit mode click area", "Open Panel configuration ui")
         Accessible.role: Accessible.Button
     }
-    PC3.ToolButton {
+    ToolButton {
         id: addWidgetsButton
         anchors.centerIn: parent
         visible: appletsModel.count === 0

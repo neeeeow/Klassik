@@ -20,6 +20,7 @@ plasma_add_applet(com.github.neeeeow.klassik.taskmanager
         qml/ToolTipWindowMouseArea.qml
         qml/code/LayoutMetrics.js
         qml/code/TaskTools.js
+        ${CMAKE_CURRENT_SOURCE_DIR}/../../common/KlassikBusyIndicator.qml
     CPP_SOURCES
         backend.cpp
         taskbackground.h
@@ -28,6 +29,7 @@ plasma_add_applet(com.github.neeeeow.klassik.taskmanager
         ${CMAKE_CURRENT_SOURCE_DIR}/../../common/sunkenappletframe.h
     RESOURCES
         main.xml
+        ${CMAKE_CURRENT_SOURCE_DIR}/../../common/busyindicator.png
     GENERATE_APPLET_CLASS
 )
 

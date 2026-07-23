@@ -286,7 +286,7 @@ PlasmoidItem {
 
         Component {
             id: busyIndicator
-            BusyIndicator {}
+            KlassikBusyIndicator {}
         }
 
         // Save drag data
