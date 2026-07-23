@@ -8,12 +8,12 @@
 
 import QtQuick
 import QtQuick.Layouts
+import QtQuick.Controls
 import QtQuick.Window
 
 import org.kde.draganddrop as DragDrop
 import org.kde.plasma.plasmoid
 import org.kde.plasma.core as PlasmaCore
-import org.kde.plasma.components as PlasmaComponents3
 import org.kde.plasma.extras as PlasmaExtras
 import org.kde.kirigami as Kirigami
 
@@ -357,7 +357,7 @@ MouseArea {
                     }
                 }
 
-                PlasmaComponents3.ToolButton {
+                ToolButton {
                     id: removeButton
                     Layout.fillWidth: true
                     // we want destructive actions to be far from the initial
@@ -371,7 +371,7 @@ MouseArea {
                         configurationArea.currentApplet = null;
                     }
                 }
-                PlasmaComponents3.ToolButton {
+                ToolButton {
                     id: configureButton
                     Layout.fillWidth: true
                     icon.name: "configure"
@@ -382,7 +382,7 @@ MouseArea {
                         configurationArea.currentApplet = null;
                     }
                 }
-                PlasmaComponents3.ToolButton {
+                ToolButton {
                     id: alternativesButton
                     Layout.fillWidth: true
                     icon.name: "widget-alternatives"
@@ -411,7 +411,7 @@ MouseArea {
                     horizontalAlignment: Text.AlignHCenter
                 }
 
-                PlasmaComponents3.SpinBox {
+                SpinBox {
                     id: panelSpacerWidth
                     editable: true
                     Layout.fillWidth: true
@@ -427,7 +427,7 @@ MouseArea {
                     }
                 }
 
-                PlasmaComponents3.Switch {
+                Switch {
                     text: i18nc("@option:check Whether to allow a spacer widget to fill available space", "Flexible size")
                     visible: configurationArea.currentApplet?.applet.Plasmoid?.pluginName === "org.kde.plasma.panelspacer"
                     checked: configurationArea.currentApplet?.applet.Plasmoid.configuration.expanding ?? false
