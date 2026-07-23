@@ -9,6 +9,7 @@ pragma ComponentBehavior: Bound
 import QtQuick
 import QtQuick.Layouts
 import QtQuick.Controls
+import QtQuick.Dialogs
 import org.kde.plasma.plasmoid
 
 import org.kde.plasma.core as PlasmaCore
@@ -150,22 +151,26 @@ ContainmentItem {
     Window {
         id: configDialog
         title: i18n("Klassik Panel Preferences")
-        width: 450
-        height: 350
-        minimumWidth: 350
-        minimumHeight: 250
         flags: Qt.Dialog
         color: Kirigami.Theme.backgroundColor
 
+        property var customBackgroundUrl
+
         function save() {
+            Plasmoid.configuration.drawFrame = drawFrame.checked;
             Plasmoid.configuration.useBackground = useBackground.checked;
             Plasmoid.configuration.colorizeBackground = colorizeBackground.checked;
+            Plasmoid.configuration.useCustomBackground = useCustomBackground.checked;
+            Plasmoid.configuration.customBackgroundUrl = configDialog.customBackgroundUrl;
         }
 
         onVisibleChanged: {
             if (visible) {
+                drawFrame.checked = Plasmoid.configuration.drawFrame;
                 useBackground.checked = Plasmoid.configuration.useBackground;
                 colorizeBackground.checked = Plasmoid.configuration.colorizeBackground;
+                useCustomBackground.checked = Plasmoid.configuration.useCustomBackground;
+                configDialog.customBackgroundUrl = Plasmoid.configuration.customBackgroundUrl;
             }
         }
 
@@ -173,13 +178,71 @@ ContainmentItem {
             anchors.left: parent.left
             anchors.right: parent.right
 
+            FileDialog {
+                id: backgroundDialog
+                title: i18n("Select panel background")
+                nameFilters: ["Image files (*.bmp *.jpg *.jpeg *.png *.pbm *.pgm *.ppm *.xbm *.xpm *.svg)"]
+                fileMode: FileDialog.OpenFile
+
+                onAccepted: {
+                    configDialog.customBackgroundUrl = backgroundDialog.selectedFile
+                }
+            }
+
+            CheckBox {
+                id: drawFrame
+                text: i18n("Draw a frame around the panel")
+            }
             CheckBox {
                 id: useBackground
                 text: i18n("Enable background image")
             }
             CheckBox {
                 id: colorizeBackground
+                enabled: useBackground.checked
                 text: i18n("Colorize to match the desktop color scheme")
+            }
+
+            ColumnLayout {
+                enabled: useBackground.checked
+                RadioButton {
+                    checked: !useCustomBackground.checked
+                    text: i18n("Use default background")
+                }
+                RadioButton {
+                    id: useCustomBackground
+                    text: i18n("Custom background...")
+                }
+            }
+
+            RowLayout {
+                enabled: useBackground.checked && useCustomBackground.checked
+                Label {
+                    text: "Set custom panel background:"
+                }
+
+                Button {
+                    id: setBackground
+                    onClicked: backgroundDialog.open()
+                    Layout.preferredWidth: 48
+                    Layout.preferredHeight: 48
+                    Layout.maximumWidth: 48
+                    Layout.maximumHeight: 48
+
+                    contentItem: Image {
+                        id: backgroundPreview
+                        source: configDialog.customBackgroundUrl
+                        fillMode: Image.PreserveAspectFit
+                    }
+                }
+
+                TextField {
+                    id: imageUrl
+                    readOnly: true
+                    Layout.fillWidth: true
+                    text: configDialog.customBackgroundUrl.toString()
+                    placeholderText: i18n("No image selected...")
+                }
             }
         }
 
@@ -221,9 +284,12 @@ ContainmentItem {
 
     PanelBackground {
         anchors.fill: parent
+        drawFrame: Plasmoid.configuration.drawFrame
         useBackground: Plasmoid.configuration.useBackground
         colorizeBackground: Plasmoid.configuration.colorizeBackground
         panelLocation: Plasmoid.location
+        useCustomBackground: Plasmoid.configuration.useCustomBackground
+        customBackgroundUrl: Plasmoid.configuration.customBackgroundUrl
     }
 
 //END background

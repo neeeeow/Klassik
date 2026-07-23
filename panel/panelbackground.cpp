@@ -78,7 +78,7 @@ PanelBackground::paint(QPainter *p) const
 		p->fillRect(r, pal.window());
 	}
 
-	if (!m_style)
+	if (!m_style || !m_drawFrame)
 		return;
 		
 	QStyleOptionFrame opt;
@@ -95,7 +95,17 @@ PanelBackground::paint(QPainter *p) const
 void
 PanelBackground::loadBackground()
 {
-	m_background.load(QStringLiteral(":/qt/qml/plasma/applet/com/github/neeeeow/klassik/panel/defaultBackground.png"));
+	m_background = QImage(); // reinitialise the QImage
+	if (!m_useBackground)
+		return;
+	
+    QString bg;
+	if (m_useCustomBackground && m_customBackgroundUrl.isValid())
+		bg = m_customBackgroundUrl.isLocalFile() ? m_customBackgroundUrl.toLocalFile() : m_customBackgroundUrl.toString();
+	else
+		bg = QStringLiteral(":/qt/qml/plasma/applet/com/github/neeeeow/klassik/panel/defaultBackground.png");
+	
+	m_background.load(bg);
 	if (m_colorizeBackground && !m_background.isNull())
 		colorize(m_background);
 }
