@@ -414,7 +414,7 @@ ContainmentItem {
                 }
 
                 active: applet && applet.Plasmoid.busy
-                sourceComponent: BusyIndicator {
+                sourceComponent: KlassikBusyIndicator {
                     z: 999
                 }
 
