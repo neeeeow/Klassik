@@ -471,8 +471,8 @@ ContainmentItem {
                 delegate: appletContainerComponent
             }
 
-            rowSpacing: Kirigami.Units.smallSpacing
-            columnSpacing: Kirigami.Units.smallSpacing
+            rowSpacing: 0
+            columnSpacing: 0
 
             x: 0
             readonly property int toolBoxSize: !root.toolBox || !Plasmoid.containment.corona.editMode ? 0 : (root.isHorizontal ? root.toolBox.width : root.toolBox.height)
