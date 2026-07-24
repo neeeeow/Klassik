@@ -14,6 +14,10 @@
       <label>Draw a frame around the panel</label>
       <default>true</default>
     </entry>
+    <entry name="showAppletHandle" type="Bool">
+      <label>Always display applet handle</label>
+      <default>false</default>
+    </entry>
     <entry name="useBackground" type="Bool">
       <label>Draw a background on the panel</label>
       <default>true</default>

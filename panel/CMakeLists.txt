@@ -9,6 +9,8 @@ plasma_add_applet(com.github.neeeeow.klassik.panel
         ${CMAKE_CURRENT_SOURCE_DIR}/../common/klassikpainteditem.cpp
         ${CMAKE_CURRENT_SOURCE_DIR}/../common/klassikqstyleitem.h
         panelbackground.cpp
+        grabhandle.h
+        handlearrow.h
     RESOURCES
         main.xml
         defaultBackground.png

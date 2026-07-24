@@ -157,6 +157,7 @@ ContainmentItem {
 
         function save() {
             Plasmoid.configuration.drawFrame = drawFrame.checked;
+            Plasmoid.configuration.showAppletHandle = showAppletHandle.checked;
             Plasmoid.configuration.useBackground = useBackground.checked;
             Plasmoid.configuration.colorizeBackground = colorizeBackground.checked;
             Plasmoid.configuration.useCustomBackground = useCustomBackground.checked;
@@ -166,6 +167,7 @@ ContainmentItem {
         onVisibleChanged: {
             if (visible) {
                 drawFrame.checked = Plasmoid.configuration.drawFrame;
+                showAppletHandle.checked = Plasmoid.configuration.showAppletHandle;
                 useBackground.checked = Plasmoid.configuration.useBackground;
                 colorizeBackground.checked = Plasmoid.configuration.colorizeBackground;
                 useCustomBackground.checked = Plasmoid.configuration.useCustomBackground;
@@ -191,6 +193,10 @@ ContainmentItem {
             CheckBox {
                 id: drawFrame
                 text: i18n("Draw a frame around the panel")
+            }
+            CheckBox {
+                id: showAppletHandle
+                text: i18n("Always display applet handle")
             }
             CheckBox {
                 id: useBackground
@@ -393,21 +399,134 @@ ContainmentItem {
                 availHeight: root.height - Layout.topMargin - Layout.bottomMargin
                 function findPositive(first, second) {return first > 0 ? first : second}
 
+                readonly property bool showHandle: applet?.Plasmoid.metaData.category !== "Application Launchers"
+                readonly property real appletHandleWidth: showHandle ? 10 : 0
+                readonly property real appletHandleHeight: showHandle ? 10 : 0
+
+
     // BEGIN BUG 454095: do not combine these expressions to a function or the bindings won't work
-                Layout.minimumWidth: root.isHorizontal ? findPositive(applet?.Layout.minimumWidth, availHeight) : availWidth
-                Layout.minimumHeight: !root.isHorizontal ? findPositive(applet?.Layout.minimumHeight, availWidth) : availHeight
+                Layout.minimumWidth: root.isHorizontal ? findPositive(applet?.Layout.minimumWidth, availHeight) + appletHandleWidth : availWidth
+                Layout.minimumHeight: !root.isHorizontal ? findPositive(applet?.Layout.minimumHeight, availWidth) + appletHandleHeight : availHeight
 
                 Layout.preferredWidth: root.isHorizontal ? findPositive(applet?.Layout.preferredWidth, Layout.minimumWidth) : availWidth
                 Layout.preferredHeight: !root.isHorizontal ? findPositive(applet?.Layout.preferredHeight, Layout.minimumHeight) : availHeight
 
-                Layout.maximumWidth: root.isHorizontal ? (wantsToFillWidth ? findPositive(applet?.Layout.maximumWidth, root.width) : Math.min(applet?.Layout.maximumWidth, Layout.preferredWidth)) : availWidth
-                Layout.maximumHeight: !root.isHorizontal ? (wantsToFillHeight ? findPositive(applet?.Layout.maximumHeight, root.height) : Math.min(applet?.Layout.maximumHeight, Layout.preferredHeight)) : availHeight
+                Layout.maximumWidth: root.isHorizontal ? (wantsToFillWidth ? findPositive(applet?.Layout.maximumWidth, root.width) : Math.min(applet?.Layout.maximumWidth, Layout.preferredWidth)) + appletHandleWidth : availWidth
+                Layout.maximumHeight: !root.isHorizontal ? (wantsToFillHeight ? findPositive(applet?.Layout.maximumHeight, root.height) : Math.min(applet?.Layout.maximumHeight, Layout.preferredHeight)) + appletHandleHeight : availHeight
     // END BUG 454095
+
+                Loader {
+                    id: handleLoader
+                    active: container.showHandle
+                    width: root.isHorizontal ? container.appletHandleWidth : parent.width
+                    height: root.isHorizontal ? parent.height : container.appletHandleHeight
+                    anchors.top: parent.top
+                    anchors.left: parent.left
+
+                    HoverHandler {
+                        id: hoverHandler
+                    }
+
+                    sourceComponent: GridLayout {
+                        id: appletHandle
+                        anchors.fill: parent
+                        flow: root.isHorizontal ? GridLayout.TopToBottom : GridLayout.LeftToRight
+                        rowSpacing: 0
+                        columnSpacing: 0
+
+                        // if the panel is on the bottom or the left, the handle goes first
+                        readonly property bool reverse: Plasmoid.location === PlasmaCore.Types.BottomEdge || Plasmoid.location === PlasmaCore.Types.RightEdge
+                        readonly property bool isMenuOpen: appletMenu.status === PlasmaExtras.Menu.Open
+
+                        visible: Plasmoid.configuration.showAppletHandle || hoverHandler.hovered || isMenuOpen
+
+                        ToolButton {
+                            Layout.preferredWidth: container.appletHandleWidth
+                            Layout.preferredHeight: container.appletHandleHeight
+                            Layout.row: root.isHorizontal ? (appletHandle.reverse ? 0 : 1) : 0
+                            Layout.column: root.isHorizontal ? 0 : (appletHandle.reverse ? 0 : 1)
+
+                            checkable: true
+                            checked: isMenuOpen
+
+                            contentItem: HandleArrow {
+                                panelLocation: Plasmoid.location
+                            }
+
+                            onClicked:appletMenu.open()
+                            PlasmaExtras.Menu {
+                                id: appletMenu
+                                PlasmaExtras.MenuItem {
+                                    icon: "edit-delete-remove"
+                                    text: i18nc("@action:inmenu removes widget", "Remove")
+                                    onClicked: {
+                                        if (!applet)
+                                            return;
+                                        applet.Plasmoid.internalAction("remove").trigger();
+                                    }
+                                }
+                                PlasmaExtras.MenuItem {
+                                    icon: "configure"
+                                    text: i18nc("@action:inmenu opens widget config dialog", "Configure…")
+                                    onClicked: {
+                                        if (!applet)
+                                            return;
+                                        applet.Plasmoid.internalAction("configure").trigger();
+                                    }
+                                }
+                                PlasmaExtras.MenuItem {
+                                    icon: "widget-alternatives"
+                                    text: i18nc("@action:inmenu opens widget alternatives explorer", "Show Alternatives…")
+                                    onClicked: {
+                                        if (!applet)
+                                            return;
+                                        applet.Plasmoid.internalAction("alternatives").trigger();
+                                    }
+                                }
+                            }
+                        }
+
+                        GrabHandle {
+                            id: grabHandle
+                            Layout.fillWidth: true
+                            Layout.fillHeight: true
+                            Layout.row: root.isHorizontal ? (appletHandle.reverse ? 1 : 0) : 0
+                            Layout.column: root.isHorizontal ? 0 : (appletHandle.reverse ? 1 : 0)
+                            horizontal: root.isHorizontal
+
+                            MouseArea {
+                                anchors.fill: parent
+                                onPressed: {
+                                    cursorOverlay.visible = true;
+                                }
+                                onPositionChanged: mouse => {
+                                    if (!pressed)
+                                        return
+                                    const globalPos = mapToItem(currentLayout, mouse.x, mouse.y);
+                                    const targetIndex = LayoutManager.indexAtCoordinates(globalPos.x, globalPos.y);
+                                    if (targetIndex !== container.index)
+                                        LayoutManager.move(container, targetIndex);
+                                }
+                                onReleased: {
+                                    cursorOverlay.visible = false;
+                                    LayoutManager.save();
+                                }
+                                onCanceled: {
+                                    cursorOverlay.visible = false;
+                                    LayoutManager.save();
+                                }
+                            }
+                        }
+                    }
+                }
 
                 onAppletChanged: {
                     if (applet) {
                         applet.parent = container
-                        applet.anchors.fill = container
+                        applet.anchors.top = Qt.binding(() => root.isHorizontal ? container.top : handleLoader.bottom)
+                        applet.anchors.bottom = Qt.binding(() => container.bottom)
+                        applet.anchors.left = Qt.binding(() => root.isHorizontal ? handleLoader.right : container.left)
+                        applet.anchors.right = Qt.binding(() => container.right)
                     } else {
                         appletsModel.remove(index)
                     }
@@ -540,4 +659,15 @@ ContainmentItem {
         onClicked: Plasmoid.internalAction("add widgets").trigger()
     }
 //END UI elements
+
+    // Simple overlay which allows Qt.SizeAllCursor to displayed all across the panel whenever an applet is being dragged
+    MouseArea {
+        id: cursorOverlay
+        anchors.fill: root
+        enabled: false
+        visible: false
+        z: 9999
+        cursorShape: Qt.SizeAllCursor
+        acceptedButtons: Qt.NoButton
+    }
 }
