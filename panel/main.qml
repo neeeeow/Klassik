@@ -38,8 +38,6 @@ ContainmentItem {
     property Item toolBox
     property var layoutManager: LayoutManager
 
-    property ConfigOverlay configOverlay
-
     property bool isHorizontal: Plasmoid.formFactor !== PlasmaCore.Types.Vertical
     property int fixedWidth: 0
     property int fixedHeight: 0
@@ -110,39 +108,9 @@ ContainmentItem {
     }
 
     Plasmoid.onUserConfiguringChanged: {
-        if (!Plasmoid.userConfiguring) {
-            if (root.configOverlay) {
-                if (root.configOverlay.dragAndDropping) {
-                    root.configOverlay.finishDragOperation()
-                }
-                root.configOverlay.destroy();
-                root.configOverlay = null;
-            }
-            return;
+        if (Plasmoid.userConfiguring) {
+            Containment.applets.forEach(applet => applet.expanded = false);
         }
-
-        if (Plasmoid.immutable) {
-            return;
-        }
-
-        Containment.applets.forEach(applet => applet.expanded = false);
-        const component = Qt.createComponent("ConfigOverlay.qml");
-        configOverlay = component.createObject(this, {
-            "anchors.fill": dropArea,
-            "anchors.rightMargin": Qt.binding(() => isHorizontal ? toolBox.height : 0),
-            "anchors.bottomMargin": Qt.binding(() => !isHorizontal ? toolBox.height : 0),
-            "layoutManager": Qt.binding(() => root.layoutManager),
-            "appletsModel": appletsModel,
-            "currentLayout": currentLayout,
-            "appletContainerComponent": appletContainerComponent,
-            "dropArea": dropArea,
-            "isHorizontal": Qt.binding(() => root.isHorizontal),
-            "rootWidth": Qt.binding(() => root.width),
-            "reverse": Qt.binding(() => root.reverse),
-            "lastSpacer": lastSpacer,
-            "addWidgetsButton": addWidgetsButton
-        });
-        component.destroy();
     }
 //END connections
 
@@ -363,6 +331,13 @@ ContainmentItem {
                                         applet.Plasmoid.internalAction("alternatives").trigger();
                                     }
                                 }
+                                PlasmaExtras.MenuItem {
+                                    text: i18nc("@action:inmenu moves widget", "Move")
+                                    icon: "transform-move"
+                                    onClicked: {
+                                        globalMove.startDrag(container);
+                                    }
+                                }
                             }
                         }
 
@@ -400,13 +375,35 @@ ContainmentItem {
                     }
                 }
 
+                PlasmaCore.Action {
+                    id: contextMenuRemoveAction
+                    text: i18nc("@action:inmenu removes widget", "Remove")
+                    icon.name: "edit-delete-remove"
+                    visible: !container.showHandle
+                    onTriggered: applet.Plasmoid.internalAction("remove").trigger()
+                }
+
+                PlasmaCore.Action {
+                    id: contextMenuMoveAction
+                    text: i18nc("@action:inmenu moves widget", "Move")
+                    icon.name: "transform-move"
+                    visible: !container.showHandle
+                    onTriggered: globalMove.startDrag(container)
+                }
+
                 onAppletChanged: {
                     if (applet) {
                         applet.parent = container
-                        applet.anchors.top = Qt.binding(() => root.isHorizontal ? container.top : handleLoader.bottom)
-                        applet.anchors.bottom = Qt.binding(() => container.bottom)
-                        applet.anchors.left = Qt.binding(() => root.isHorizontal ? handleLoader.right : container.left)
-                        applet.anchors.right = Qt.binding(() => container.right)
+                        applet.anchors.top = Qt.binding(() => root.isHorizontal ? container.top : handleLoader.bottom);
+                        applet.anchors.bottom = Qt.binding(() => container.bottom);
+                        applet.anchors.left = Qt.binding(() => root.isHorizontal ? handleLoader.right : container.left);
+                        applet.anchors.right = Qt.binding(() => container.right);
+
+                        if (!container.showHandle) {
+                            applet.Plasmoid.contextualActions.push(contextMenuRemoveAction);
+                            applet.Plasmoid.contextualActions.push(contextMenuMoveAction);
+                        }
+
                     } else {
                         appletsModel.remove(index)
                     }
@@ -540,7 +537,7 @@ ContainmentItem {
     }
 //END UI elements
 
-    // Simple overlay which allows Qt.SizeAllCursor to displayed all across the panel whenever an applet is being dragged
+    // Simple overlay which allows Qt.SizeAllCursor to displayed all across the panel whenever an applet is being dragged by the grabber
     MouseArea {
         id: cursorOverlay
         anchors.fill: root
@@ -549,5 +546,45 @@ ContainmentItem {
         z: 9999
         cursorShape: Qt.SizeAllCursor
         acceptedButtons: Qt.NoButton
+    }
+
+    // Mouse area which moves applets whenever a Move action is selected
+    MouseArea {
+        id: globalMove
+        anchors.fill: root
+        enabled: false
+        visible: false
+        z: 9998
+        hoverEnabled: true
+        cursorShape: Qt.SizeAllCursor
+        acceptedButtons: Qt.AllButtons
+
+        property Item targetContainer: null // the container which we're dragging
+
+        function startDrag(containerItem) {
+            targetContainer = containerItem;
+            enabled = true;
+            visible = true;
+        }
+        function finishDrag() {
+            enabled = false;
+            visible = false;
+            targetContainer = null;
+            LayoutManager.save();
+        }
+
+        onPositionChanged: mouse => {
+            if (!targetContainer)
+                return;
+            const targetIndex = LayoutManager.indexAtCoordinates(mouse.x, mouse.y);
+            if (targetIndex !== targetContainer.index)
+                LayoutManager.move(targetContainer, targetIndex);
+        }
+        onClicked: {
+            finishDrag();
+        }
+        onCanceled: {
+            finishDrag();
+        }
     }
 }
