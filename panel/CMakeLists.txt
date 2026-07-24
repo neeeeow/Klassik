@@ -2,6 +2,7 @@ plasma_add_applet(com.github.neeeeow.klassik.panel
     QML_SOURCES
         AppletContainer.qml
         ConfigOverlay.qml
+        ConfigDialog.qml
         main.qml
         LayoutManager.js
         ${CMAKE_CURRENT_SOURCE_DIR}/../common/KlassikBusyIndicator.qml
