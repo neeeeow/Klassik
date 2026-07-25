@@ -247,7 +247,7 @@ ContainmentItem {
                 availHeight: root.height - Layout.topMargin - Layout.bottomMargin
                 function findPositive(first, second) {return first > 0 ? first : second}
 
-                readonly property bool showHandle: applet?.Plasmoid.metaData.category !== "Application Launchers"
+                readonly property bool showHandle: applet?.Plasmoid.metaData.category !== "Application Launchers" && applet?.Plasmoid.pluginName !== "org.kde.plasma.icon"
                 readonly property real appletHandleWidth: showHandle ? 10 : 0
                 readonly property real appletHandleHeight: showHandle ? 10 : 0
 
@@ -351,6 +351,7 @@ ContainmentItem {
 
                             MouseArea {
                                 anchors.fill: parent
+                                cursorShape: pressed ? Qt.SizeAllCursor : Qt.ArrowCursor
                                 onPressed: {
                                     cursorOverlay.visible = true;
                                 }
