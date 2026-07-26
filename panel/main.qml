@@ -382,7 +382,7 @@ ContainmentItem {
                     id: contextMenuRemoveAction
                     text: i18nc("@action:inmenu removes widget", "Remove")
                     icon.name: "edit-delete-remove"
-                    visible: !container.showHandle
+                    visible: !container.showHandle && applet?.Plasmoid.pluginName !== "org.kde.plasma.icon"
                     onTriggered: applet.Plasmoid.internalAction("remove").trigger()
                 }
 
