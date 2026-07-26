@@ -316,6 +316,7 @@ ContainmentItem {
                                 PlasmaExtras.MenuItem {
                                     icon: "configure"
                                     text: i18nc("@action:inmenu opens widget config dialog", "Configure…")
+                                    visible: applet.Plasmoid.internalAction("configure")?.enabled ?? false
                                     onClicked: {
                                         if (!applet)
                                             return;
@@ -325,6 +326,7 @@ ContainmentItem {
                                 PlasmaExtras.MenuItem {
                                     icon: "widget-alternatives"
                                     text: i18nc("@action:inmenu opens widget alternatives explorer", "Show Alternatives…")
+                                    visible: applet.Plasmoid.internalAction("alternatives")?.enabled ?? false
                                     onClicked: {
                                         if (!applet)
                                             return;
