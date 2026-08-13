@@ -44,6 +44,8 @@ find_package(PlasmaQuick REQUIRED)
 find_package(LibKWorkspace REQUIRED)
 find_package(KSysGuard REQUIRED)
 find_package(LibNotificationManager REQUIRED)
+find_package(KDecoration3 REQUIRED)
 
 add_subdirectory(applets)
 add_subdirectory(panel)
+add_subdirectory(kwin)

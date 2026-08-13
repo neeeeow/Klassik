@@ -1,0 +1,9 @@
+{
+	"KPlugin": {
+		"Id": "com.github.neeeeow.klassik.kwin.kde2",
+		"Name": "KDE 2",
+		"ServiceTypes": ["org.kde.kdecoration3"]
+	},
+	"X-KDE-PluginInfo-Category": "Window Decorations",
+	"X-KWin-PluginAPI": "kdecoration"
+}
