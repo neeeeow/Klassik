@@ -19,12 +19,14 @@ public:
 
 private:
 	qreal m_titleHeight = 14;
+	int m_borderWidth = 4;
 
 	QPixmap titlePix;
 			
 	KDecoration3::DecorationButtonGroup *m_leftButtons = nullptr;
 	KDecoration3::DecorationButtonGroup *m_rightButtons = nullptr;
-	
+
+	void reconfigure();
 	void updateBorders();
 	void updateButtonsGeometry();
 	void updateTitleBar();

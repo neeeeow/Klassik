@@ -102,6 +102,44 @@ KDE2Decoration::init()
 															 this, &KDE2Button::create);
 	m_leftButtons->setSpacing(2);
 	m_rightButtons->setSpacing(2);
+
+	auto s = settings();
+
+	/* Settings changes */
+	// buttons
+    connect(s.get(), &KDecoration3::DecorationSettings::decorationButtonsLeftChanged, this, &KDE2Decoration::updateButtonsGeometryDelayed);
+	connect(s.get(), &KDecoration3::DecorationSettings::decorationButtonsRightChanged, this, &KDE2Decoration::updateButtonsGeometryDelayed);
+
+	// full reconfiguration
+	connect(s.get(), &KDecoration3::DecorationSettings::reconfigured, this, &KDE2Decoration::reconfigure);
+
+	/* Window state changes */
+	connect(window(), &KDecoration3::DecoratedWindow::paletteChanged, this, &KDE2Decoration::createPixmaps);
+	
+	// Update() signals
+	connect(window(), &KDecoration3::DecoratedWindow::activeChanged, this, [this]() { update(); });
+
+	// titleBar signals
+	connect(window(), &KDecoration3::DecoratedWindow::captionChanged, this, [this]() {
+		// update the caption area
+		update(titleBar());
+    });
+
+	// Scale change
+	connect(window(), &KDecoration3::DecoratedWindow::scaleChanged, this, &KDE2Decoration::reconfigure);
+
+	// Add / remove borders when maximized state is changed
+	connect(window(), &KDecoration3::DecoratedWindow::maximizedChanged, this, &KDE2Decoration::updateBorders);
+	connect(this, &KDecoration3::Decoration::bordersChanged, this, &KDE2Decoration::updateButtonsGeometry);
+	
+	// Button signals. as a reminder: update() and updateTitleBar() is called in updateButtonsGeometry
+	connect(window(), &KDecoration3::DecoratedWindow::sizeChanged, this, &KDE2Decoration::updateButtonsGeometry);
+	connect(window(), &KDecoration3::DecoratedWindow::widthChanged, this, &KDE2Decoration::updateButtonsGeometry);
+    connect(window(), &KDecoration3::DecoratedWindow::adjacentScreenEdgesChanged, this, &KDE2Decoration::updateButtonsGeometry);
+    connect(window(), &KDecoration3::DecoratedWindow::shadedChanged, this, &KDE2Decoration::updateButtonsGeometry);
+
+	updateButtonsGeometry();
+	update();
 	
 	return true;
 }
@@ -111,17 +149,24 @@ KDE2Decoration::paint(QPainter *p, const QRectF &repaintRegion)
 {	
 	Q_UNUSED(repaintRegion);
 
+	int offset;
+
 	// Colors
 	QPalette palette = window()->palette();
-	QColor activeTitleColor(window()->color(KDecoration3::ColorGroup::Active,
-											KDecoration3::ColorRole::TitleBar));
-	QColor inactiveTitleColor(window()->color(KDecoration3::ColorGroup::Inactive,
-											  KDecoration3::ColorRole::TitleBar));
-	QColor activeButtonColor(window()->color(QPalette::Active, QPalette::Button));
-	QColor inactiveButtonColor(window()->color(QPalette::Inactive, QPalette::Button));
+	QColor titleColor(window()->color(window()->isActive() ? KDecoration3::ColorGroup::Active :
+									  KDecoration3::ColorGroup::Inactive,
+									  KDecoration3::ColorRole::TitleBar));
+	QColor frameColor(window()->color(window()->isActive() ? KDecoration3::ColorGroup::Active :
+									  KDecoration3::ColorGroup::Inactive,
+									  KDecoration3::ColorRole::Frame));
+	QColor foregroundColor(window()->color(window()->isActive() ? KDecoration3::ColorGroup::Active :
+										   KDecoration3::ColorGroup::Inactive,
+										   KDecoration3::ColorRole::Foreground));
 
 	// Window scale
 	const qreal scale = window()->scale();
+	const int scaledTitleHeight = qRound(m_titleHeight * scale);
+	const int scaledBorderWidth = qRound(m_borderWidth * scale);
 
 	// Obtain widget bounds.
     QRect r(getScaledRect(rect(), scale));
@@ -132,9 +177,116 @@ KDE2Decoration::paint(QPainter *p, const QRectF &repaintRegion)
     int w  = r.width();
     int h  = r.height();
 
+	// Determine where to place the extended left titlebar
+	int leftFrameStart = (h > 42) ? y+scaledTitleHeight+26 : y+scaledTitleHeight;
+
+	// Determine where to make the titlebar color transition
+	r = getScaledRect(titleBar(), scale);
+	int rightOffset = r.x()+r.width()+1;
+
+	// Create a disposable pixmap buffer for the titlebar
+	// very early before drawing begins so there is no lag
+	// during painting pixels.
+    QPixmap titleBuffer( rightOffset-3, scaledTitleHeight + 1 );
+	titleBuffer.fill(Qt::transparent);
+
 	// Draw an outer black frame
 	p->setPen(Qt::black);
 	p->drawRect(x,y,w-1,h-1);
+
+	// Draw part of the frame that is the titlebar color
+	p->setPen(titleColor.lighter());
+	p->drawLine(x+1, y+1, rightOffset-1, y+1);
+	p->drawLine(x+1, y+1, x+1, leftFrameStart+scaledBorderWidth-4);
+
+	// Draw titlebar colour separator line
+	p->setPen(titleColor.darker());
+	p->drawLine(rightOffset-1, y+1, rightOffset-1, scaledTitleHeight +2);
+
+	p->fillRect(x+2, y+scaledTitleHeight+3,
+	           scaledBorderWidth-4, leftFrameStart+scaledBorderWidth-y-scaledTitleHeight-8,
+	           titleColor);
+
+	
+	// Finish drawing the titlebar extension
+	p->setPen(Qt::black);
+	p->drawLine(x+1, leftFrameStart+scaledBorderWidth-4, x+scaledBorderWidth-2, leftFrameStart-1);
+	p->setPen(titleColor.darker(150));
+	p->drawLine(x+scaledBorderWidth-2, y+scaledTitleHeight+3, x+scaledBorderWidth-2, leftFrameStart-2);
+	
+    // Fill out the border edges
+    p->setPen(frameColor.lighter());
+    p->drawLine(rightOffset, y+1, x2-1, y+1);
+    p->drawLine(x+1, leftFrameStart+scaledBorderWidth-3, x+1, y2-1);
+    p->setPen(frameColor.darker());
+    p->drawLine(x2-1, y+1, x2-1, y2-1);
+    p->drawLine(x+1, y2-1, x2-1, y2-1);
+
+	p->setPen(frameColor);
+	QPolygon a;
+	QBrush brush( frameColor, Qt::SolidPattern );
+	p->setBrush(brush);
+	a.setPoints( 4, x+2,             leftFrameStart+scaledBorderWidth-4,
+				 x+scaledBorderWidth-2, leftFrameStart,
+				 x+scaledBorderWidth-2, y2-2,
+				 x+2,             y2-2);
+	p->drawPolygon(a);
+	p->fillRect(x2-scaledBorderWidth+2, y+scaledTitleHeight+3,
+				scaledBorderWidth-3, y2-y-scaledTitleHeight-4,
+				frameColor);
+
+	// Draw the bottom handle if required
+	// TODO: add the handle, just do the handleless case for now
+	p->fillRect(x+2, y2-scaledBorderWidth+2, w-4, scaledBorderWidth-3,
+				frameColor);
+	offset = scaledBorderWidth;
+
+	// Draw a frame around the wrapped widget.
+    p->setPen( frameColor.darker() );
+    p->drawRect( x+scaledBorderWidth-1, y+scaledTitleHeight+3, w-2*scaledBorderWidth+1, h-scaledTitleHeight-offset-3 );
+	
+	// Fill with frame color behind RHS buttons
+	p->fillRect( rightOffset, y+2, x2-rightOffset-1, scaledTitleHeight+1, frameColor);
+
+	// Draw the title bar
+	QPainter p2(&titleBuffer);
+
+	// Draw the title bar background
+	p2.fillRect(0, 0, rightOffset - 3, scaledTitleHeight + 1, titleColor);
+
+	// Draw the title text on the pixmap
+	QFont fnt = settings()->font();
+	p2.setFont(fnt);
+
+	// Draw the titlebar stipple if active and available
+	if (window()->isActive() && !titlePix.isNull()) {
+		QFontMetrics fm(fnt);
+		int captionWidth = fm.horizontalAdvance(window()->caption());
+		if (window()->caption().isRightToLeft())
+			p2.drawTiledPixmap(r.x(), 0, r.width()-captionWidth-4,
+							   scaledTitleHeight+1, titlePix);
+		else
+			p2.drawTiledPixmap(r.x()+captionWidth+3, 0, r.width()-captionWidth-4,
+							   scaledTitleHeight+1, titlePix);
+	}
+
+	p2.setPen(foregroundColor);
+	p2.drawText(r.x(), 1, r.width()-1, r.height(),
+				(window()->caption().isRightToLeft() ? Qt::AlignRight : Qt::AlignLeft) | Qt::AlignVCenter,
+				window()->caption());
+	p2.end();
+
+	p->drawPixmap(rect().x()+2, rect().y()+2, titleBuffer);
+}
+
+void
+KDE2Decoration::reconfigure()
+{
+	/* This is called whenever the windows are reconfigured */
+
+	updateBorders();
+	createPixmaps();	
+	updateButtonsGeometryDelayed();
 }
 
 void
@@ -144,11 +296,9 @@ KDE2Decoration::updateBorders()
 	QFontMetrics metrics(settings()->font());
 
 	int topBorderWidth = std::max(14, metrics.height() + 3) + TITLE_EDGE_TOP + TITLE_EDGE_BOTTOM;
-	m_titleHeight = topBorderWidth - ((TITLE_EDGE_TOP + TITLE_EDGE_BOTTOM)/scale);
+	m_titleHeight = topBorderWidth - ((TITLE_EDGE_TOP + TITLE_EDGE_BOTTOM)/scale);   
 	
-	int borderWidth = 4; // TODO: read border width from config	
-	
-    setBorders(QMarginsF(borderWidth, topBorderWidth, borderWidth, borderWidth));
+    setBorders(QMarginsF(m_borderWidth, topBorderWidth, m_borderWidth, m_borderWidth));
 }
 
 void
@@ -211,6 +361,7 @@ KDE2Decoration::createPixmaps()
 		QPainter maskPainter;		
 		int i, x, y;
 		titlePix = QPixmap(132, qRound(m_titleHeight*scale)+2);
+		titlePix.fill(Qt::transparent);
 		QBitmap mask(132, qRound(m_titleHeight*scale)+2);
 		mask.fill(Qt::color0);
 
@@ -294,14 +445,22 @@ KDE2Decoration::createPixmaps()
 	// Button backgrounds	
 	QSize buttonPixSize(qRound(m_titleHeight * scale), qRound(m_titleHeight * scale));	
 	leftBtnUpPix = QPixmap(buttonPixSize);
+	leftBtnUpPix.fill(Qt::transparent);
     leftBtnDownPix = QPixmap(buttonPixSize);
+	leftBtnDownPix.fill(Qt::transparent);
     ileftBtnUpPix = QPixmap(buttonPixSize);
+	ileftBtnUpPix.fill(Qt::transparent);
     ileftBtnDownPix = QPixmap(buttonPixSize);
+	ileftBtnDownPix.fill(Qt::transparent);
 
     rightBtnUpPix = QPixmap(buttonPixSize);
+	rightBtnUpPix.fill(Qt::transparent);
     rightBtnDownPix = QPixmap(buttonPixSize);
+	rightBtnDownPix.fill(Qt::transparent);
     irightBtnUpPix = QPixmap(buttonPixSize);
+	irightBtnUpPix.fill(Qt::transparent);
     irightBtnDownPix = QPixmap(buttonPixSize);
+	irightBtnDownPix.fill(Qt::transparent);
 	
 	drawButtonBackground( leftBtnUpPix, activeTitleColor, false );
 	drawButtonBackground( leftBtnDownPix, activeTitleColor, true );
