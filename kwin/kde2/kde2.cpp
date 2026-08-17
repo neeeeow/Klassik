@@ -477,11 +477,13 @@ KDE2Decoration::createPixmaps()
 
 
 KDE2Button::KDE2Button(KDecoration3::DecorationButtonType type,
-								 KDecoration3::Decoration *decoration,
-								 QObject *parent)
+					   KDecoration3::Decoration *decoration,
+					   QObject *parent)
 	: KDecoration3::DecorationButton(type, decoration, parent)
 {	
-	setGeometry(QRectF(0,0,14,14)); // default to 14x14 as a backup	
+	setGeometry(QRectF(0,0,14,14)); // default to 14x14 as a backup
+
+	setIconBits();
 }
 
 KDE2Button
@@ -494,6 +496,61 @@ KDE2Button
 		return b;
 	} else
 		return nullptr;	
+}
+
+void
+KDE2Button::setIconBits()
+{
+	// Set decoration bitmap to be drawn
+	switch (type()) {
+	case KDecoration3::DecorationButtonType::Minimize:
+		if (decoration()->window()->isMinimizeable())
+			iconBits = QBitmap::fromData(QSize(10,10), iconify_bits);
+		else
+			iconBits = QBitmap();
+		connect(decoration()->window(), &KDecoration3::DecoratedWindow::minimizeableChanged, this, &KDE2Button::setIconBits, Qt::UniqueConnection);
+		break;
+	case KDecoration3::DecorationButtonType::Maximize:
+		if (decoration()->window()->isMaximizeable())
+			iconBits = QBitmap::fromData(QSize(10,10), decoration()->window()->isMaximized() ? minmax_bits : maximize_bits);
+		else
+			iconBits = QBitmap();
+		
+		connect(decoration()->window(), &KDecoration3::DecoratedWindow::maximizedChanged, this, &KDE2Button::setIconBits, Qt::UniqueConnection);
+		connect(decoration()->window(), &KDecoration3::DecoratedWindow::maximizeableChanged, this, &KDE2Button::setIconBits, Qt::UniqueConnection);
+		break;
+	case KDecoration3::DecorationButtonType::Close:
+		if (decoration()->window()->isCloseable())
+			iconBits = QBitmap::fromData(QSize(10,10), close_bits);
+		else
+			iconBits = QBitmap();
+		connect(decoration()->window(), &KDecoration3::DecoratedWindow::closeableChanged, this, &KDE2Button::setIconBits, Qt::UniqueConnection);
+		break;
+	case KDecoration3::DecorationButtonType::ContextHelp:
+		iconBits = QBitmap::fromData(QSize(10,10), question_bits);
+		break;
+	case KDecoration3::DecorationButtonType::Shade:
+		if (decoration()->window()->isShadeable())
+			iconBits = QBitmap::fromData(QSize(10,10), decoration()->window()->isShaded() ? shade_off_bits : shade_on_bits);
+		else
+			iconBits = QBitmap();
+
+		connect(decoration()->window(), &KDecoration3::DecoratedWindow::shadedChanged, this, &KDE2Button::setIconBits, Qt::UniqueConnection);
+		connect(decoration()->window(), &KDecoration3::DecoratedWindow::shadeableChanged, this, &KDE2Button::setIconBits, Qt::UniqueConnection);
+		break;
+
+	case KDecoration3::DecorationButtonType::KeepBelow:
+		iconBits = QBitmap::fromData(QSize(10,10), decoration()->window()->isKeepBelow() ? below_off_bits : below_on_bits);
+		connect(decoration()->window(), &KDecoration3::DecoratedWindow::keepBelowChanged, this, &KDE2Button::setIconBits, Qt::UniqueConnection);
+		break;
+	case KDecoration3::DecorationButtonType::KeepAbove:
+		iconBits = QBitmap::fromData(QSize(10,10), decoration()->window()->isKeepAbove() ? above_off_bits : above_on_bits);
+		connect(decoration()->window(), &KDecoration3::DecoratedWindow::keepAboveChanged, this, &KDE2Button::setIconBits, Qt::UniqueConnection);
+		break;
+	default:
+		iconBits = QBitmap();
+		break;
+	}
 }
 
 void

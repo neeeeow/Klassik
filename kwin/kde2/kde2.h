@@ -6,6 +6,7 @@
 
 #include <QVariant>
 #include <QPixmap>
+#include <QBitmap>
 
 class KDE2Decoration : public KDecoration3::Decoration
 {
@@ -50,4 +51,9 @@ public:
 								   QObject *parent);
 
 	void paint(QPainter *p, const QRectF &repaintRegion) override;
+
+private:
+	QBitmap iconBits;
+
+	void setIconBits();
 };
