@@ -145,141 +145,6 @@ KDE2Decoration::init()
 }
 
 void
-KDE2Decoration::paint(QPainter *p, const QRectF &repaintRegion)
-{	
-	Q_UNUSED(repaintRegion);
-
-	int offset;
-
-	// Colors
-	QPalette palette = window()->palette();
-	QColor titleColor(window()->color(window()->isActive() ? KDecoration3::ColorGroup::Active :
-									  KDecoration3::ColorGroup::Inactive,
-									  KDecoration3::ColorRole::TitleBar));
-	QColor frameColor(window()->color(window()->isActive() ? KDecoration3::ColorGroup::Active :
-									  KDecoration3::ColorGroup::Inactive,
-									  KDecoration3::ColorRole::Frame));
-	QColor foregroundColor(window()->color(window()->isActive() ? KDecoration3::ColorGroup::Active :
-										   KDecoration3::ColorGroup::Inactive,
-										   KDecoration3::ColorRole::Foreground));
-
-	// Window scale
-	const qreal scale = window()->scale();
-	const int scaledTitleHeight = qRound(m_titleHeight * scale);
-	const int scaledBorderWidth = qRound(m_borderWidth * scale);
-
-	// Obtain widget bounds.
-    QRect r(getScaledRect(rect(), scale));
-    int x = r.x();
-    int y = r.y();
-    int x2 = r.width() - 1;
-    int y2 = r.height() - 1;
-    int w  = r.width();
-    int h  = r.height();
-
-	// Determine where to place the extended left titlebar
-	int leftFrameStart = (h > 42) ? y+scaledTitleHeight+26 : y+scaledTitleHeight;
-
-	// Determine where to make the titlebar color transition
-	r = getScaledRect(titleBar(), scale);
-	int rightOffset = r.x()+r.width()+1;
-
-	// Create a disposable pixmap buffer for the titlebar
-	// very early before drawing begins so there is no lag
-	// during painting pixels.
-    QPixmap titleBuffer( rightOffset-3, scaledTitleHeight + 1 );
-	titleBuffer.fill(Qt::transparent);
-
-	// Draw an outer black frame
-	p->setPen(Qt::black);
-	p->drawRect(x,y,w-1,h-1);
-
-	// Draw part of the frame that is the titlebar color
-	p->setPen(titleColor.lighter());
-	p->drawLine(x+1, y+1, rightOffset-1, y+1);
-	p->drawLine(x+1, y+1, x+1, leftFrameStart+scaledBorderWidth-4);
-
-	// Draw titlebar colour separator line
-	p->setPen(titleColor.darker());
-	p->drawLine(rightOffset-1, y+1, rightOffset-1, scaledTitleHeight +2);
-
-	p->fillRect(x+2, y+scaledTitleHeight+3,
-	           scaledBorderWidth-4, leftFrameStart+scaledBorderWidth-y-scaledTitleHeight-8,
-	           titleColor);
-
-	
-	// Finish drawing the titlebar extension
-	p->setPen(Qt::black);
-	p->drawLine(x+1, leftFrameStart+scaledBorderWidth-4, x+scaledBorderWidth-2, leftFrameStart-1);
-	p->setPen(titleColor.darker(150));
-	p->drawLine(x+scaledBorderWidth-2, y+scaledTitleHeight+3, x+scaledBorderWidth-2, leftFrameStart-2);
-	
-    // Fill out the border edges
-    p->setPen(frameColor.lighter());
-    p->drawLine(rightOffset, y+1, x2-1, y+1);
-    p->drawLine(x+1, leftFrameStart+scaledBorderWidth-3, x+1, y2-1);
-    p->setPen(frameColor.darker());
-    p->drawLine(x2-1, y+1, x2-1, y2-1);
-    p->drawLine(x+1, y2-1, x2-1, y2-1);
-
-	p->setPen(frameColor);
-	QPolygon a;
-	QBrush brush( frameColor, Qt::SolidPattern );
-	p->setBrush(brush);
-	a.setPoints( 4, x+2,             leftFrameStart+scaledBorderWidth-4,
-				 x+scaledBorderWidth-2, leftFrameStart,
-				 x+scaledBorderWidth-2, y2-2,
-				 x+2,             y2-2);
-	p->drawPolygon(a);
-	p->fillRect(x2-scaledBorderWidth+2, y+scaledTitleHeight+3,
-				scaledBorderWidth-3, y2-y-scaledTitleHeight-4,
-				frameColor);
-
-	// Draw the bottom handle if required
-	// TODO: add the handle, just do the handleless case for now
-	p->fillRect(x+2, y2-scaledBorderWidth+2, w-4, scaledBorderWidth-3,
-				frameColor);
-	offset = scaledBorderWidth;
-
-	// Draw a frame around the wrapped widget.
-    p->setPen( frameColor.darker() );
-    p->drawRect( x+scaledBorderWidth-1, y+scaledTitleHeight+3, w-2*scaledBorderWidth+1, h-scaledTitleHeight-offset-3 );
-	
-	// Fill with frame color behind RHS buttons
-	p->fillRect( rightOffset, y+2, x2-rightOffset-1, scaledTitleHeight+1, frameColor);
-
-	// Draw the title bar
-	QPainter p2(&titleBuffer);
-
-	// Draw the title bar background
-	p2.fillRect(0, 0, rightOffset - 3, scaledTitleHeight + 1, titleColor);
-
-	// Draw the title text on the pixmap
-	QFont fnt = settings()->font();
-	p2.setFont(fnt);
-
-	// Draw the titlebar stipple if active and available
-	if (window()->isActive() && !titlePix.isNull()) {
-		QFontMetrics fm(fnt);
-		int captionWidth = fm.horizontalAdvance(window()->caption());
-		if (window()->caption().isRightToLeft())
-			p2.drawTiledPixmap(r.x(), 0, r.width()-captionWidth-4,
-							   scaledTitleHeight+1, titlePix);
-		else
-			p2.drawTiledPixmap(r.x()+captionWidth+3, 0, r.width()-captionWidth-4,
-							   scaledTitleHeight+1, titlePix);
-	}
-
-	p2.setPen(foregroundColor);
-	p2.drawText(r.x(), 1, r.width()-1, r.height(),
-				(window()->caption().isRightToLeft() ? Qt::AlignRight : Qt::AlignLeft) | Qt::AlignVCenter,
-				window()->caption());
-	p2.end();
-
-	p->drawPixmap(rect().x()+2, rect().y()+2, titleBuffer);
-}
-
-void
 KDE2Decoration::reconfigure()
 {
 	/* This is called whenever the windows are reconfigured */
@@ -475,6 +340,140 @@ KDE2Decoration::createPixmaps()
 	drawButtonBackground( irightBtnDownPix, inactiveButtonColor, true );
 }
 
+void
+KDE2Decoration::paint(QPainter *p, const QRectF &repaintRegion)
+{	
+	Q_UNUSED(repaintRegion);
+
+	int offset;
+
+	// Colors
+	QPalette palette = window()->palette();
+	QColor titleColor(window()->color(window()->isActive() ? KDecoration3::ColorGroup::Active :
+									  KDecoration3::ColorGroup::Inactive,
+									  KDecoration3::ColorRole::TitleBar));
+	QColor frameColor(window()->color(window()->isActive() ? KDecoration3::ColorGroup::Active :
+									  KDecoration3::ColorGroup::Inactive,
+									  KDecoration3::ColorRole::Frame));
+	QColor foregroundColor(window()->color(window()->isActive() ? KDecoration3::ColorGroup::Active :
+										   KDecoration3::ColorGroup::Inactive,
+										   KDecoration3::ColorRole::Foreground));
+
+	// Window scale
+	const qreal scale = window()->scale();
+	const int scaledTitleHeight = qRound(m_titleHeight * scale);
+	const int scaledBorderWidth = qRound(m_borderWidth * scale);
+
+	// Obtain widget bounds.
+    QRect r(getScaledRect(rect(), scale));
+    int x = r.x();
+    int y = r.y();
+    int x2 = r.width() - 1;
+    int y2 = r.height() - 1;
+    int w  = r.width();
+    int h  = r.height();
+
+	// Determine where to place the extended left titlebar
+	int leftFrameStart = (h > 42) ? y+scaledTitleHeight+26 : y+scaledTitleHeight;
+
+	// Determine where to make the titlebar color transition
+	r = getScaledRect(titleBar(), scale);
+	int rightOffset = r.x()+r.width()+1;
+
+	// Create a disposable pixmap buffer for the titlebar
+	// very early before drawing begins so there is no lag
+	// during painting pixels.
+    QPixmap titleBuffer( rightOffset-3, scaledTitleHeight + 1 );
+	titleBuffer.fill(Qt::transparent);
+
+	// Draw an outer black frame
+	p->setPen(Qt::black);
+	p->drawRect(x,y,w-1,h-1);
+
+	// Draw part of the frame that is the titlebar color
+	p->setPen(titleColor.lighter());
+	p->drawLine(x+1, y+1, rightOffset-1, y+1);
+	p->drawLine(x+1, y+1, x+1, leftFrameStart+scaledBorderWidth-4);
+
+	// Draw titlebar colour separator line
+	p->setPen(titleColor.darker());
+	p->drawLine(rightOffset-1, y+1, rightOffset-1, scaledTitleHeight +2);
+
+	p->fillRect(x+2, y+scaledTitleHeight+3,
+	           scaledBorderWidth-4, leftFrameStart+scaledBorderWidth-y-scaledTitleHeight-8,
+	           titleColor);
+
+	
+	// Finish drawing the titlebar extension
+	p->setPen(Qt::black);
+	p->drawLine(x+1, leftFrameStart+scaledBorderWidth-4, x+scaledBorderWidth-2, leftFrameStart-1);
+	p->setPen(titleColor.darker(150));
+	p->drawLine(x+scaledBorderWidth-2, y+scaledTitleHeight+3, x+scaledBorderWidth-2, leftFrameStart-2);
+	
+    // Fill out the border edges
+    p->setPen(frameColor.lighter());
+    p->drawLine(rightOffset, y+1, x2-1, y+1);
+    p->drawLine(x+1, leftFrameStart+scaledBorderWidth-3, x+1, y2-1);
+    p->setPen(frameColor.darker());
+    p->drawLine(x2-1, y+1, x2-1, y2-1);
+    p->drawLine(x+1, y2-1, x2-1, y2-1);
+
+	p->setPen(frameColor);
+	QPolygon a;
+	QBrush brush( frameColor, Qt::SolidPattern );
+	p->setBrush(brush);
+	a.setPoints( 4, x+2,             leftFrameStart+scaledBorderWidth-4,
+				 x+scaledBorderWidth-2, leftFrameStart,
+				 x+scaledBorderWidth-2, y2-2,
+				 x+2,             y2-2);
+	p->drawPolygon(a);
+	p->fillRect(x2-scaledBorderWidth+2, y+scaledTitleHeight+3,
+				scaledBorderWidth-3, y2-y-scaledTitleHeight-4,
+				frameColor);
+
+	// Draw the bottom handle if required
+	// TODO: add the handle, just do the handleless case for now
+	p->fillRect(x+2, y2-scaledBorderWidth+2, w-4, scaledBorderWidth-3,
+				frameColor);
+	offset = scaledBorderWidth;
+
+	// Draw a frame around the wrapped widget.
+    p->setPen( frameColor.darker() );
+    p->drawRect( x+scaledBorderWidth-1, y+scaledTitleHeight+3, w-2*scaledBorderWidth+1, h-scaledTitleHeight-offset-3 );
+	
+	// Fill with frame color behind RHS buttons
+	p->fillRect( rightOffset, y+2, x2-rightOffset-1, scaledTitleHeight+1, frameColor);
+
+	// Draw the title bar
+	QPainter p2(&titleBuffer);
+
+	// Draw the title bar background
+	p2.fillRect(0, 0, rightOffset - 3, scaledTitleHeight + 1, titleColor);
+
+	// Draw the title text on the pixmap
+	QFont fnt = settings()->font();
+	p2.setFont(fnt);
+
+	// Draw the titlebar stipple if active and available
+	if (window()->isActive() && !titlePix.isNull()) {
+		QFontMetrics fm(fnt);
+		int captionWidth = fm.horizontalAdvance(window()->caption());
+		if (window()->caption().isRightToLeft())
+			p2.drawTiledPixmap(r.x(), 0, r.width()-captionWidth-4,
+							   scaledTitleHeight+1, titlePix);
+		else
+			p2.drawTiledPixmap(r.x()+captionWidth+3, 0, r.width()-captionWidth-4,
+							   scaledTitleHeight+1, titlePix);
+	}
+
+	p2.setPen(foregroundColor);
+	p2.drawText(r.x(), 1, r.width()-1, r.height(),
+				(window()->caption().isRightToLeft() ? Qt::AlignRight : Qt::AlignLeft) | Qt::AlignVCenter,
+				window()->caption());
+	p2.end();
+
+	p->drawPixmap(rect().x()+2, rect().y()+2, titleBuffer);
+}
 
 KDE2Button::KDE2Button(KDecoration3::DecorationButtonType type,
 					   KDecoration3::Decoration *decoration,
