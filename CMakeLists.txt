@@ -35,6 +35,7 @@ find_package(KF6 REQUIRED COMPONENTS
   Config
   CoreAddons
   Notifications
+  IconThemes
 )
 
 find_package(Plasma REQUIRED)

@@ -42,18 +42,25 @@ class KDE2Button : public KDecoration3::DecorationButton
 
 public:
 	explicit KDE2Button(KDecoration3::DecorationButtonType type,
-							 KDecoration3::Decoration *decoration,
-							 QObject *parent = nullptr);
+						KDecoration3::DecorationButtonGroup::Position position,
+						KDecoration3::Decoration *decoration,
+						QObject *parent = nullptr);
 	~KDE2Button() override = default;
 
 	static KDE2Button *create(KDecoration3::DecorationButtonType type,
-								   KDecoration3::Decoration *decoration,
-								   QObject *parent);
+							  KDecoration3::DecorationButtonGroup::Position position,
+							  KDecoration3::Decoration *decoration,
+							  QObject *parent);
 
 	void paint(QPainter *p, const QRectF &repaintRegion) override;
 
 private:
+	KDecoration3::DecorationButtonGroup::Position m_position;
 	QBitmap iconBits;
 
 	void setIconBits();
+
+	inline bool isLeft() const {
+		return m_position == KDecoration3::DecorationButtonGroup::Position::Left;
+	}
 };

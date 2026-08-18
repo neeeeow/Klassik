@@ -4,6 +4,7 @@
 #include <KDecoration3/DecorationSettings>
 #include <KDecoration3/DecoratedWindow>
 #include <KPluginFactory>
+#include <KIconLoader>
 
 #include <QPainter>
 #include <QBitmap>
@@ -78,14 +79,86 @@ drawGradient(QPixmap &pixmap, const QColor &ca, const QColor &cb,
 	painter.end();
 }
 
+static QPixmap&
+pixmapIntensity(QPixmap &pixmap, float percent)
+{
+	/* Reimplementation of KDE 3's KPixmapEffect/KImageEffect::intensity
+	   Copyright (C) 1998, 1999, 2001, 2002 Daniel M. Duley <mosfet@kde.org>
+	   (C) 1998, 1999 Christian Tibirna <ctibirna@total.net>
+	   (C) 1998, 1999 Dirk Mueller <mueller@kde.org>
+	   (C) 1999 Geert Jansen <g.t.jansen@stud.tue.nl>
+	   (C) 2000 Josef Weidendorfer <weidendo@in.tum.de>
+	   (C) 2004 Zack Rusin <zack@kde.org>
+	*/
+
+	QImage image = pixmap.toImage();
+
+	int segColors = image.depth() > 8 ? 256 : image.colorCount();
+	int pixels = image.depth() > 8 ? image.width() * image.height() :
+		image.colorCount();
+	unsigned int *data = image.depth() > 8 ? (unsigned int *)image.bits() :
+		(unsigned int *)image.colorTable().data();
+	
+	bool brighten = (percent >= 0);
+	if (percent < 0)
+		percent = -percent;
+
+	unsigned char *segTbl = new unsigned char[segColors];
+	int tmp;
+	if(brighten){ // keep overflow check out of loops
+		for(int i=0; i < segColors; ++i){
+			tmp = (int)(i*percent);
+			if(tmp > 255)
+				tmp = 255;
+			segTbl[i] = tmp;
+		}
+	}
+	else{
+		for(int i=0; i < segColors; ++i){
+			tmp = (int)(i*percent);
+			if(tmp < 0)
+				tmp = 0;
+			segTbl[i] = tmp;
+		}
+	}
+
+	if(brighten){ // same here
+		for(int i=0; i < pixels; ++i){
+			int r = qRed(data[i]);
+			int g = qGreen(data[i]);
+			int b = qBlue(data[i]);
+			int a = qAlpha(data[i]);
+			r = r + segTbl[r] > 255 ? 255 : r + segTbl[r];
+			g = g + segTbl[g] > 255 ? 255 : g + segTbl[g];
+			b = b + segTbl[b] > 255 ? 255 : b + segTbl[b];
+			data[i] = qRgba(r, g, b,a);
+		}
+	}
+	else{
+		for(int i=0; i < pixels; ++i){
+			int r = qRed(data[i]);
+			int g = qGreen(data[i]);
+			int b = qBlue(data[i]);
+			int a = qAlpha(data[i]);
+			r = r - segTbl[r] < 0 ? 0 : r - segTbl[r];
+			g = g - segTbl[g] < 0 ? 0 : g - segTbl[g];
+			b = b - segTbl[b] < 0 ? 0 : b - segTbl[b];
+			data[i] = qRgba(r, g, b, a);
+		}
+	}
+	delete [] segTbl;
+	pixmap = QPixmap::fromImage(image);
+
+	return pixmap;
+}
+
 static QRect
 getScaledRect(const QRectF &rect, const qreal dpr)
 {
 	return QRect(qRound(rect.x() * dpr), qRound(rect.y() * dpr), qRound(rect.width() * dpr), qRound(rect.height() * dpr));
 }
 
-
-KDE2Decoration::KDE2Decoration(QObject *parent, const QVariantList &args) : KDecoration3::Decoration(parent, args)
+KDE2Decoration::KDE2Decoration(QObject *parent, const QVariantList &args) : Decoration(parent, args)
 {
 }
 
@@ -96,12 +169,15 @@ KDE2Decoration::init()
 	createPixmaps();
 
 	// Create buttons
-	m_leftButtons = new KDecoration3::DecorationButtonGroup(KDecoration3::DecorationButtonGroup::Position::Left,
-															this, &KDE2Button::create);
-    m_rightButtons = new KDecoration3::DecorationButtonGroup(KDecoration3::DecorationButtonGroup::Position::Right,
-															 this, &KDE2Button::create);
-	m_leftButtons->setSpacing(2);
-	m_rightButtons->setSpacing(2);
+	auto createGroup = [this](KDecoration3::DecorationButtonGroup::Position pos) {
+		auto group = new KDecoration3::DecorationButtonGroup(pos, this, [pos](auto type, auto deco, auto parent) {
+			return KDE2Button::create(type, pos, deco, parent);
+		});
+		group->setSpacing(1);
+		return group;
+	};
+	m_leftButtons  = createGroup(KDecoration3::DecorationButtonGroup::Position::Left);
+	m_rightButtons = createGroup(KDecoration3::DecorationButtonGroup::Position::Right);
 
 	auto s = settings();
 
@@ -298,7 +374,7 @@ KDE2Decoration::createPixmaps()
 		p.drawLine(x2, 0, x2, y2);
 		p.drawLine(0, x2, y2, x2);
 		p.setPen(dark);
-		p.drawRect(1, 1, w-2, h-2);
+		p.drawRect(1, 1, w-3, h-3);
 		p.setPen(sunken ? mid : light);
 		p.drawLine(2, 2, x2-2, 2);
 		p.drawLine(2, 2, 2, y2-2);
@@ -343,8 +419,6 @@ KDE2Decoration::createPixmaps()
 void
 KDE2Decoration::paint(QPainter *p, const QRectF &repaintRegion)
 {	
-	Q_UNUSED(repaintRegion);
-
 	int offset;
 
 	// Colors
@@ -473,12 +547,18 @@ KDE2Decoration::paint(QPainter *p, const QRectF &repaintRegion)
 	p2.end();
 
 	p->drawPixmap(rect().x()+2, rect().y()+2, titleBuffer);
+	if (m_leftButtons)
+		m_leftButtons->paint(p, repaintRegion);
+	if (m_rightButtons)
+		m_rightButtons->paint(p, repaintRegion);
 }
 
 KDE2Button::KDE2Button(KDecoration3::DecorationButtonType type,
+					   KDecoration3::DecorationButtonGroup::Position position,
 					   KDecoration3::Decoration *decoration,
 					   QObject *parent)
-	: KDecoration3::DecorationButton(type, decoration, parent)
+	: KDecoration3::DecorationButton(type, decoration, parent),
+	  m_position(position)
 {	
 	setGeometry(QRectF(0,0,14,14)); // default to 14x14 as a backup
 
@@ -487,11 +567,12 @@ KDE2Button::KDE2Button(KDecoration3::DecorationButtonType type,
 
 KDE2Button
 *KDE2Button::create(KDecoration3::DecorationButtonType type,
-						 KDecoration3::Decoration *decoration,
-						 QObject *parent)
+					KDecoration3::DecorationButtonGroup::Position position,
+					KDecoration3::Decoration *decoration,
+					QObject *parent)
 {
 	if (auto d = qobject_cast<KDecoration3::Decoration *>(decoration)) {
-		KDE2Button *b = new KDE2Button(type, d, parent);
+		KDE2Button *b = new KDE2Button(type, position, d, parent);
 		return b;
 	} else
 		return nullptr;	
@@ -556,6 +637,71 @@ void
 KDE2Button::paint(QPainter *p, const QRectF &repaintRegion)
 {
 	Q_UNUSED(repaintRegion);
+
+	// Get scaled button geometry
+	const qreal scale = decoration()->window()->scale();
+	QRect geometryScaled = getScaledRect(geometry(), scale);
+	int x = geometryScaled.x();
+	int y = geometryScaled.y();
+	int w  = geometryScaled.width();
+	int h = geometryScaled.height();
+	
+	const bool active = decoration()->window()->isActive();
+	if (!iconBits.isNull()) {
+		// First draw the button background
+		QPixmap btnbg;
+		if (isLeft() )	{
+			if (isPressed())
+				btnbg = active ?
+					leftBtnDownPix : ileftBtnDownPix;
+			else
+				btnbg = active ?
+					leftBtnUpPix : ileftBtnUpPix;
+		} else {
+			if (isPressed())
+				btnbg = active ?
+					rightBtnDownPix : irightBtnDownPix;
+			else
+				btnbg = active ?
+					rightBtnUpPix : irightBtnUpPix;
+		}
+		p->drawPixmap(x,y,btnbg);
+
+		// Next draw the button icon
+		bool darkDeco = qGray(decoration()->window()->color(
+								  KDecoration3::ColorGroup::Active,
+								  isLeft() ? KDecoration3::ColorRole::TitleBar : KDecoration3::ColorRole::Frame).rgb()) > 127;
+
+		if (isHovered())
+			p->setPen( darkDeco ? Qt::darkGray : Qt::lightGray );
+		else
+			p->setPen( darkDeco ? Qt::black : Qt::white );
+
+		int xOff = x + (w-10)/2;
+		int yOff = y + (h-10)/2;
+		p->drawPixmap(isPressed() ? xOff+1: xOff, isPressed() ? yOff+1 : yOff, iconBits);
+	} else {
+		QPixmap btnpix;
+		if (type() == KDecoration3::DecorationButtonType::OnAllDesktops) {
+			if (active)
+				btnpix = isChecked() ? pinDownPix : pinUpPix;
+			else
+				btnpix = isChecked() ? ipinDownPix : ipinUpPix;
+		} else {
+			int iconSize = KIconLoader::global()->currentSize(KIconLoader::Small);
+			btnpix = decoration()->window()->icon().pixmap(iconSize,iconSize);
+		}
+
+		if (isHovered())
+			btnpix = pixmapIntensity(btnpix, 0.8);
+
+		if (w < 16) {
+		    btnpix.convertFromImage(btnpix.toImage().scaled(12, 12));
+			p->drawPixmap(x,y,btnpix);
+		} else {
+			p->drawPixmap(x + w/2-8, y + h/2-8, btnpix);
+		}		
+	}
 }
 
 #include "kde2.moc"

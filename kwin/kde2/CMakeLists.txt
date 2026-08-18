@@ -11,6 +11,7 @@ target_link_libraries(kde2-decoration
   Qt6::DBus
   Qt6::Widgets
   KF6::CoreAddons
+  KF6::IconThemes
   KDecoration3::KDecoration
 )
 
