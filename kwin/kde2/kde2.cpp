@@ -485,7 +485,7 @@ KDE2Decoration::paint(QPainter *p, const QRectF &repaintRegion)
 
 	// Fill the background of the decoration with the window color, since
 	// with HiDPI scaling small 1px gaps can sometimes appear due to qdrawutil.h's rounding
-	p->fillRect(r, palette.window());
+	p->fillRect(r.adjusted(-1,-1,-1,-1), palette.window());
 
 	// Determine where to place the extended left titlebar
 	int leftFrameStart = (h > 42) ? y+scaledTitleHeight+26 : y+scaledTitleHeight;
