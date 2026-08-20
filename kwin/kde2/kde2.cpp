@@ -1,3 +1,28 @@
+/*
+  KDE 2 KDecoration 3 theme.
+
+  Copyright (c) 2026 neeeeow
+  Author: neeeeow (https://github.com/neeeeow/Klassik)
+
+  Painting logic based on the original KDE 2 KWin client:
+  Copyright (c) 1999, 2001 Daniel Duley <mosfet@kde.org>
+  Matthias Ettrich <ettrich@kde.org>
+  Karol Szwed <gallium@kde.org>
+  
+  This program is free software: you can redistribute it and/or modify
+  it under the terms of the GNU General Public License as published by
+  the Free Software Foundation, either version 3 of the License, or
+  (at your option) any later version.
+
+  This program is distributed in the hope that it will be useful,
+  but WITHOUT ANY WARRANTY; without even the implied warranty of
+  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+  GNU General Public License for more details.
+
+  You should have received a copy of the GNU General Public License
+  along with this program.  If not, see <https://www.gnu.org/licenses/>.
+*/ 
+
 #include "kde2.h"
 #include "bits.h"
 
@@ -181,35 +206,23 @@ KDE2Decoration::init()
 
 	auto s = settings();
 
-	/* Settings changes */
-	// buttons
-    connect(s.get(), &KDecoration3::DecorationSettings::decorationButtonsLeftChanged, this, &KDE2Decoration::updateButtonsGeometryDelayed);
-	connect(s.get(), &KDecoration3::DecorationSettings::decorationButtonsRightChanged, this, &KDE2Decoration::updateButtonsGeometryDelayed);
+	// Signals requiring a simple update
+	connect(window(), &KDecoration3::DecoratedWindow::activeChanged, this, qOverload<>(&KDE2Decoration::update));
+	connect(window(), &KDecoration3::DecoratedWindow::captionChanged, this, qOverload<>(&KDE2Decoration::update));
 
-	// full reconfiguration
+	// Signals requiring full reconfiguration
 	connect(s.get(), &KDecoration3::DecorationSettings::reconfigured, this, &KDE2Decoration::reconfigure);
-
-	/* Window state changes */
 	connect(window(), &KDecoration3::DecoratedWindow::paletteChanged, this, &KDE2Decoration::createPixmaps);
+	connect(window(), &KDecoration3::DecoratedWindow::scaleChanged, this, &KDE2Decoration::reconfigure);   
 	
-	// Update() signals
-	connect(window(), &KDecoration3::DecoratedWindow::activeChanged, this, [this]() { update(); });
-
-	// titleBar signals
-	connect(window(), &KDecoration3::DecoratedWindow::captionChanged, this, [this]() {
-		// update the caption area
-		update(titleBar());
-    });
-
-	// Scale change
-	connect(window(), &KDecoration3::DecoratedWindow::scaleChanged, this, &KDE2Decoration::reconfigure);
-
-	// Border updates
-	connect(s.get(), &KDecoration3::DecorationSettings::borderSizeChanged, this, &KDE2Decoration::updateBorders);
+	// Signals requiring border size changes
 	connect(window(), &KDecoration3::DecoratedWindow::maximizedChanged, this, &KDE2Decoration::updateBorders);
+	connect(s.get(), &KDecoration3::DecorationSettings::borderSizeChanged, this, &KDE2Decoration::updateBorders);
+		
+	// Signals requiring button and titlebar geometry recalculation (NB: updateTitlebar() is called in updateButtonsGeometry())
 	connect(this, &KDecoration3::Decoration::bordersChanged, this, &KDE2Decoration::updateButtonsGeometry);
-	
-	// Button signals. as a reminder: update() and updateTitleBar() is called in updateButtonsGeometry
+	connect(s.get(), &KDecoration3::DecorationSettings::decorationButtonsLeftChanged, this, &KDE2Decoration::updateButtonsGeometry);
+	connect(s.get(), &KDecoration3::DecorationSettings::decorationButtonsRightChanged, this, &KDE2Decoration::updateButtonsGeometry);
 	connect(window(), &KDecoration3::DecoratedWindow::sizeChanged, this, &KDE2Decoration::updateButtonsGeometry);
 	connect(window(), &KDecoration3::DecoratedWindow::widthChanged, this, &KDE2Decoration::updateButtonsGeometry);
     connect(window(), &KDecoration3::DecoratedWindow::adjacentScreenEdgesChanged, this, &KDE2Decoration::updateButtonsGeometry);
