@@ -10,14 +10,14 @@
 #include <QBitmap>
 #include <QTimer>
 
+#include <qdrawutil.h>
+
 #define TITLE_EDGE_TOP 3
 #define TITLE_EDGE_BOTTOM 1
 
 // Pixmaps used by buttons are declared globally
 QPixmap pinDownPix;
 QPixmap pinUpPix;
-QPixmap ipinDownPix;
-QPixmap ipinUpPix;
 
 QPixmap leftBtnUpPix;
 QPixmap leftBtnDownPix;
@@ -173,7 +173,7 @@ KDE2Decoration::init()
 		auto group = new KDecoration3::DecorationButtonGroup(pos, this, [pos](auto type, auto deco, auto parent) {
 			return KDE2Button::create(type, pos, deco, parent);
 		});
-		group->setSpacing(1);
+		group->setSpacing(0);
 		return group;
 	};
 	m_leftButtons  = createGroup(KDecoration3::DecorationButtonGroup::Position::Left);
@@ -204,7 +204,8 @@ KDE2Decoration::init()
 	// Scale change
 	connect(window(), &KDecoration3::DecoratedWindow::scaleChanged, this, &KDE2Decoration::reconfigure);
 
-	// Add / remove borders when maximized state is changed
+	// Border updates
+	connect(s.get(), &KDecoration3::DecorationSettings::borderSizeChanged, this, &KDE2Decoration::updateBorders);
 	connect(window(), &KDecoration3::DecoratedWindow::maximizedChanged, this, &KDE2Decoration::updateBorders);
 	connect(this, &KDecoration3::Decoration::bordersChanged, this, &KDE2Decoration::updateButtonsGeometry);
 	
@@ -233,13 +234,39 @@ KDE2Decoration::reconfigure()
 void
 KDE2Decoration::updateBorders()
 {
+	// Read in border size from settings
+	{		
+		auto s = settings();
+		using enum KDecoration3::BorderSize;
+		switch (s->borderSize()) {
+		case Large:
+			m_borderWidth = 8;
+			break;
+		case VeryLarge:
+			m_borderWidth = 12;
+			break;
+		case Huge:
+			m_borderWidth = 18;
+			break;
+		case VeryHuge:
+			m_borderWidth = 27;
+			break;
+		case Oversized:
+			m_borderWidth = 40;
+			break;
+		case Normal:
+		default:
+			m_borderWidth = 4;
+		}
+	}
+	m_grabBorderWidth = (m_borderWidth > 15) ? m_borderWidth + 15 : 2*m_borderWidth;
+	
 	const qreal scale = window()->scale();
 	QFontMetrics metrics(settings()->font());
-
-	int topBorderWidth = std::max(14, metrics.height() + 3) + TITLE_EDGE_TOP + TITLE_EDGE_BOTTOM;
+	int topBorderWidth = std::max(14, metrics.height() + 2) + TITLE_EDGE_TOP + TITLE_EDGE_BOTTOM;
 	m_titleHeight = topBorderWidth - ((TITLE_EDGE_TOP + TITLE_EDGE_BOTTOM)/scale);   
 	
-    setBorders(QMarginsF(m_borderWidth, topBorderWidth, m_borderWidth, m_borderWidth));
+    setBorders(QMarginsF(m_borderWidth, topBorderWidth, m_borderWidth, window()->isMaximized() ? m_borderWidth : m_grabBorderWidth));
 }
 
 void
@@ -252,11 +279,14 @@ KDE2Decoration::updateButtonsGeometry()
 	const qreal scale = window()->scale();
 	const auto buttons = m_leftButtons->buttons() + m_rightButtons->buttons();
 	for (auto *button : buttons) {
-		button->setGeometry(QRectF(0, 0, m_titleHeight, m_titleHeight));
+		if (button->type() == KDecoration3::DecorationButtonType::Spacer)
+			button->setGeometry(QRectF(0, 0, 2/scale, m_titleHeight));
+		else
+			button->setGeometry(QRectF(0, 0, m_titleHeight, m_titleHeight));
 	}
 
-	m_leftButtons->setPos(QPointF(4, TITLE_EDGE_TOP/scale));
-	m_rightButtons->setPos(QPointF(size().width() - m_rightButtons->geometry().width() - 4, TITLE_EDGE_TOP/scale));
+	m_leftButtons->setPos(QPointF(m_borderWidth, TITLE_EDGE_TOP/scale));
+	m_rightButtons->setPos(QPointF(size().width() - m_rightButtons->geometry().width() - m_borderWidth, TITLE_EDGE_TOP/scale));
 	
 	updateTitleBar();
 	update();
@@ -269,13 +299,13 @@ KDE2Decoration::updateTitleBar()
 	const qreal scale = window()->scale();
 	if (m_leftButtons && m_rightButtons) {
 		x = m_leftButtons->geometry().right() + 1/scale;
-		width = m_rightButtons->geometry().left() - x;
+		width = m_rightButtons->geometry().left() - 2/scale - x;
 	} else {
 		x = 0;
 		width = window()->width();
 	}
 
-	setTitleBar(QRectF(x, TITLE_EDGE_TOP, width, m_titleHeight));
+	setTitleBar(QRectF(x, TITLE_EDGE_TOP/scale, width, m_titleHeight));
 }
 
 void
@@ -315,7 +345,7 @@ KDE2Decoration::createPixmaps()
 				p.setPen(activeTitleColor.lighter(150));
 				p.drawPoint(x, y);
 				maskPainter.drawPoint(x, y);
-				p.setPen(inactiveTitleColor.darker(150));
+				p.setPen(activeTitleColor.darker(150));
 				p.drawPoint(x+1, y+1);
 				maskPainter.drawPoint(x+1, y+1);
 			}
@@ -437,6 +467,12 @@ KDE2Decoration::paint(QPainter *p, const QRectF &repaintRegion)
 	const qreal scale = window()->scale();
 	const int scaledTitleHeight = qRound(m_titleHeight * scale);
 	const int scaledBorderWidth = qRound(m_borderWidth * scale);
+	const int scaledGrabBorderWidth = qRound(m_grabBorderWidth * scale);
+
+	// Scale our QPainter as appropriate
+	p->setRenderHint(QPainter::Antialiasing, false);
+	p->save();
+	p->scale(1/scale, 1/scale);
 
 	// Obtain widget bounds.
     QRect r(getScaledRect(rect(), scale));
@@ -446,6 +482,10 @@ KDE2Decoration::paint(QPainter *p, const QRectF &repaintRegion)
     int y2 = r.height() - 1;
     int w  = r.width();
     int h  = r.height();
+
+	// Fill the background of the decoration with the window color, since
+	// with HiDPI scaling small 1px gaps can sometimes appear due to qdrawutil.h's rounding
+	p->fillRect(r, palette.window());
 
 	// Determine where to place the extended left titlebar
 	int leftFrameStart = (h > 42) ? y+scaledTitleHeight+26 : y+scaledTitleHeight;
@@ -459,7 +499,7 @@ KDE2Decoration::paint(QPainter *p, const QRectF &repaintRegion)
 	// during painting pixels.
     QPixmap titleBuffer( rightOffset-3, scaledTitleHeight + 1 );
 	titleBuffer.fill(Qt::transparent);
-
+	
 	// Draw an outer black frame
 	p->setPen(Qt::black);
 	p->drawRect(x,y,w-1,h-1);
@@ -506,10 +546,36 @@ KDE2Decoration::paint(QPainter *p, const QRectF &repaintRegion)
 				frameColor);
 
 	// Draw the bottom handle if required
-	// TODO: add the handle, just do the handleless case for now
-	p->fillRect(x+2, y2-scaledBorderWidth+2, w-4, scaledBorderWidth-3,
-				frameColor);
-	offset = scaledBorderWidth;
+	if (!window()->isMaximized()) {
+		// We need to use non-scaled coordinates here, since qDrawShadePanel scales things internally, and as such
+		// if we pre-scale the painter things get ugly.
+		int x = rect().x();
+		int x2 = rect().width() - 1;
+		int y2 = rect().height() - 1;
+		int w  = rect().width();
+		p->scale(scale, scale);
+		
+		if (w > 50) {
+			qDrawShadePanel(p, x+1, y2-m_grabBorderWidth+2, 2*m_borderWidth+12, m_grabBorderWidth-2,
+							palette, false, 1, &palette.mid());
+			qDrawShadePanel(p, x+2*m_borderWidth+13, y2-m_grabBorderWidth+2, w-4*m_borderWidth-26, m_grabBorderWidth-2,
+							palette, false, 1, window()->isActive() ?
+							&palette.window() :
+							&palette.mid());
+			qDrawShadePanel(p, x2-2*m_borderWidth-12, y2-m_grabBorderWidth+2, 2*m_borderWidth+12, m_grabBorderWidth-2,
+							palette, false, 1, &palette.mid());
+		} else
+			qDrawShadePanel(p, x+1, y2-m_grabBorderWidth+2, w-2, m_grabBorderWidth-2,
+							palette, false, 1, window()->isActive() ?
+							&palette.window() :
+							&palette.mid());
+		offset = scaledGrabBorderWidth;
+		p->scale(1/scale, 1/scale);
+	} else {
+		p->fillRect(x+2, y2-scaledBorderWidth+2, w-4, scaledBorderWidth-3,
+					frameColor);
+		offset = scaledBorderWidth;
+	}
 
 	// Draw a frame around the wrapped widget.
     p->setPen( frameColor.darker() );
@@ -526,6 +592,7 @@ KDE2Decoration::paint(QPainter *p, const QRectF &repaintRegion)
 
 	// Draw the title text on the pixmap
 	QFont fnt = settings()->font();
+	fnt.setPointSize(fnt.pointSize() * scale);
 	p2.setFont(fnt);
 
 	// Draw the titlebar stipple if active and available
@@ -551,6 +618,8 @@ KDE2Decoration::paint(QPainter *p, const QRectF &repaintRegion)
 		m_leftButtons->paint(p, repaintRegion);
 	if (m_rightButtons)
 		m_rightButtons->paint(p, repaintRegion);
+
+	p->restore();
 }
 
 KDE2Button::KDE2Button(KDecoration3::DecorationButtonType type,
@@ -561,6 +630,24 @@ KDE2Button::KDE2Button(KDecoration3::DecorationButtonType type,
 	  m_position(position)
 {	
 	setGeometry(QRectF(0,0,14,14)); // default to 14x14 as a backup
+
+	using enum KDecoration3::DecorationButtonType;
+	switch (type) {
+	case Maximize:
+		connect(decoration->window(), &KDecoration3::DecoratedWindow::maximizedChanged, this, &KDE2Button::setIconBits);
+		break;
+	case Shade:
+		connect(decoration->window(), &KDecoration3::DecoratedWindow::shadedChanged, this, &KDE2Button::setIconBits);
+		break;
+	case KeepBelow:
+		connect(decoration->window(), &KDecoration3::DecoratedWindow::keepBelowChanged, this, &KDE2Button::setIconBits);
+		break;
+	case KeepAbove:
+		connect(decoration->window(), &KDecoration3::DecoratedWindow::keepAboveChanged, this, &KDE2Button::setIconBits);
+		break;
+	default:
+		break;
+	}
 
 	setIconBits();
 }
@@ -582,50 +669,28 @@ void
 KDE2Button::setIconBits()
 {
 	// Set decoration bitmap to be drawn
+	using enum KDecoration3::DecorationButtonType;
 	switch (type()) {
-	case KDecoration3::DecorationButtonType::Minimize:
-		if (decoration()->window()->isMinimizeable())
-			iconBits = QBitmap::fromData(QSize(10,10), iconify_bits);
-		else
-			iconBits = QBitmap();
-		connect(decoration()->window(), &KDecoration3::DecoratedWindow::minimizeableChanged, this, &KDE2Button::setIconBits, Qt::UniqueConnection);
+	case Minimize:
+		iconBits = QBitmap::fromData(QSize(10,10), iconify_bits);
 		break;
-	case KDecoration3::DecorationButtonType::Maximize:
-		if (decoration()->window()->isMaximizeable())
-			iconBits = QBitmap::fromData(QSize(10,10), decoration()->window()->isMaximized() ? minmax_bits : maximize_bits);
-		else
-			iconBits = QBitmap();
-		
-		connect(decoration()->window(), &KDecoration3::DecoratedWindow::maximizedChanged, this, &KDE2Button::setIconBits, Qt::UniqueConnection);
-		connect(decoration()->window(), &KDecoration3::DecoratedWindow::maximizeableChanged, this, &KDE2Button::setIconBits, Qt::UniqueConnection);
+	case Maximize:
+		iconBits = QBitmap::fromData(QSize(10,10), decoration()->window()->isMaximized() ? minmax_bits : maximize_bits);
 		break;
-	case KDecoration3::DecorationButtonType::Close:
-		if (decoration()->window()->isCloseable())
-			iconBits = QBitmap::fromData(QSize(10,10), close_bits);
-		else
-			iconBits = QBitmap();
-		connect(decoration()->window(), &KDecoration3::DecoratedWindow::closeableChanged, this, &KDE2Button::setIconBits, Qt::UniqueConnection);
+	case Close:
+		iconBits = QBitmap::fromData(QSize(10,10), close_bits);
 		break;
-	case KDecoration3::DecorationButtonType::ContextHelp:
+	case ContextHelp:
 		iconBits = QBitmap::fromData(QSize(10,10), question_bits);
 		break;
-	case KDecoration3::DecorationButtonType::Shade:
-		if (decoration()->window()->isShadeable())
-			iconBits = QBitmap::fromData(QSize(10,10), decoration()->window()->isShaded() ? shade_off_bits : shade_on_bits);
-		else
-			iconBits = QBitmap();
-
-		connect(decoration()->window(), &KDecoration3::DecoratedWindow::shadedChanged, this, &KDE2Button::setIconBits, Qt::UniqueConnection);
-		connect(decoration()->window(), &KDecoration3::DecoratedWindow::shadeableChanged, this, &KDE2Button::setIconBits, Qt::UniqueConnection);
+	case Shade:
+		iconBits = QBitmap::fromData(QSize(10,10), decoration()->window()->isShaded() ? shade_off_bits : shade_on_bits);
 		break;
-
-	case KDecoration3::DecorationButtonType::KeepBelow:
+	case KeepBelow:
 		iconBits = QBitmap::fromData(QSize(10,10), decoration()->window()->isKeepBelow() ? below_off_bits : below_on_bits);
-		connect(decoration()->window(), &KDecoration3::DecoratedWindow::keepBelowChanged, this, &KDE2Button::setIconBits, Qt::UniqueConnection);
 		break;
-	case KDecoration3::DecorationButtonType::KeepAbove:
+	case KeepAbove:
 		iconBits = QBitmap::fromData(QSize(10,10), decoration()->window()->isKeepAbove() ? above_off_bits : above_on_bits);
-		connect(decoration()->window(), &KDecoration3::DecoratedWindow::keepAboveChanged, this, &KDE2Button::setIconBits, Qt::UniqueConnection);
 		break;
 	default:
 		iconBits = QBitmap();
@@ -637,6 +702,9 @@ void
 KDE2Button::paint(QPainter *p, const QRectF &repaintRegion)
 {
 	Q_UNUSED(repaintRegion);
+
+	if (type() == KDecoration3::DecorationButtonType::Spacer)
+		return;
 
 	// Get scaled button geometry
 	const qreal scale = decoration()->window()->scale();
@@ -683,10 +751,7 @@ KDE2Button::paint(QPainter *p, const QRectF &repaintRegion)
 	} else {
 		QPixmap btnpix;
 		if (type() == KDecoration3::DecorationButtonType::OnAllDesktops) {
-			if (active)
-				btnpix = isChecked() ? pinDownPix : pinUpPix;
-			else
-				btnpix = isChecked() ? ipinDownPix : ipinUpPix;
+			btnpix = isChecked() ? pinDownPix : pinUpPix;
 		} else {
 			int iconSize = KIconLoader::global()->currentSize(KIconLoader::Small);
 			btnpix = decoration()->window()->icon().pixmap(iconSize,iconSize);

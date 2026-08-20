@@ -21,6 +21,7 @@ public:
 private:
 	qreal m_titleHeight = 14;
 	int m_borderWidth = 4;
+	int m_grabBorderWidth = 8;
 
 	QPixmap titlePix;
 			
