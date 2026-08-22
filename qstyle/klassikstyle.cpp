@@ -1,6 +1,112 @@
 #include "klassikstyle.h"
+#include "bitmaps.h"
 
 #include <QStyleOption>
+
+static qreal
+getDpr(const QPainter *p) {		
+	return p->device() ? p->device()->devicePixelRatio() : 1.0;
+}
+
+// Scales a QRect for drawing pixel-perfect lines on HiDPI displays
+static QRect
+getScaledRect(const QRect &rect, const qreal dpr) {
+	return QRect(qRound(rect.x() * dpr), qRound(rect.y() * dpr), rect.width() * dpr, rect.height() * dpr);
+}
+
+static void
+kDrawBeButton(QPainter *p, const QRect &r, const QPalette &pal,
+							bool sunken, const QBrush *fill)
+{	
+	p->save();
+	
+	int x,y,w,h;
+	const qreal dpr = getDpr(p);
+	const qreal inverseScale = qreal(1) / dpr;
+	bool isScaled = false;
+	if (!qFuzzyCompare(dpr, qreal(1))) {
+		isScaled = true;
+	    getScaledRect(r, dpr).getRect(&x, &y, &w, &h);
+		p->scale(inverseScale, inverseScale);
+		p->translate(0.5, 0.5);
+	} else {
+	    r.getRect(&x, &y, &w, &h);
+	}
+
+	int x2 = x+w-1;
+    int y2 = y+h-1;
+    p->setPen(pal.dark().color());
+    p->drawLine(x+1, y, x2-1, y);
+    p->drawLine(x, y+1, x, y2-1);
+    p->drawLine(x+1, y2, x2-1, y2);
+    p->drawLine(x2, y+1, x2, y2-1);
+
+
+    if(!sunken){
+        p->setPen(pal.light().color());
+        p->drawLine(x+2, y+2, x2-1, y+2);
+        p->drawLine(x+2, y+3, x2-2, y+3);
+        p->drawLine(x+2, y+4, x+2, y2-1);
+        p->drawLine(x+3, y+4, x+3, y2-2);
+    }
+    else{
+        p->setPen(pal.mid().color());
+        p->drawLine(x+2, y+2, x2-1, y+2);
+        p->drawLine(x+2, y+3, x2-2, y+3);
+        p->drawLine(x+2, y+4, x+2, y2-1);
+        p->drawLine(x+3, y+4, x+3, y2-2);
+    }
+
+
+    p->setPen(sunken? pal.light().color() : pal.mid().color());
+    p->drawLine(x2-1, y+2, x2-1, y2-1);
+    p->drawLine(x+2, y2-1, x2-1, y2-1);
+
+    p->setPen(pal.mid().color());
+    p->drawLine(x+1, y+1, x2-1, y+1);
+    p->drawLine(x+1, y+2, x+1, y2-1);
+    p->drawLine(x2-2, y+3, x2-2, y2-2);
+
+    if(fill) {
+		if (isScaled)
+			p->translate(-0.5, -0.5);
+        p->fillRect(x+4, y+4, w-6, h-6, *fill);
+	}
+	p->restore();
+}
+
+static void
+colorBitmaps(QPainter *p, const QPalette &palette, int x, int y, int w,
+			 int h, bool isXBitmaps, const uchar *lightColor,
+			 const uchar *midColor, const uchar *midlightColor,
+			 const uchar *darkColor, const uchar *blackColor,
+			 const uchar *whiteColor)
+{
+
+	const uchar *data[]={lightColor, midColor, midlightColor, darkColor,
+		blackColor, whiteColor};
+	
+	QColor colors[]={palette.light().color(), palette.mid().color(), palette.midlight().color(),
+		palette.dark().color(), Qt::black, Qt::white};
+
+	int i;
+	QBitmap b;
+	for(i=0; i < 6; ++i){
+		if(data[i]){
+			b = QBitmap::fromData(QSize(w,h), data[i],
+								  isXBitmaps ? QImage::Format_MonoLSB
+								  : QImage::Format_Mono);
+			b.setMask(b);
+			p->setPen(colors[i]);
+			p->drawPixmap(x, y, b);
+		}
+	}
+}
+
+KlassikStyle::KlassikStyle(StyleType type)
+	: QCommonStyle(), m_styleType(type)
+{
+}
 
 void
 KlassikStyle::drawPrimitive(QStyle::PrimitiveElement pe, const QStyleOption *opt,
@@ -22,8 +128,8 @@ KlassikStyle::drawPrimitive(QStyle::PrimitiveElement pe, const QStyleOption *opt
 	bool on   = opt->state & State_On;
 	
 	switch (pe) {
-		// BUTTONS
-		// -------------------------------------------------------------------
+	// BUTTONS
+	// -------------------------------------------------------------------
 	case PE_FrameDefaultButton: {
 		p->save();
 		if (isScaled) {
@@ -81,9 +187,529 @@ KlassikStyle::drawPrimitive(QStyle::PrimitiveElement pe, const QStyleOption *opt
 
 	// PUSH BUTTON
 	// -------------------------------------------------------------------
-
 	case PE_PanelButtonCommand: {
+		bool sunken = on || down;
+		bool flat = !(opt->state & (State_Raised | State_Sunken));
+
+		int  x, y, w, h;
+		r.getRect(&x, &y, &w, &h);
+		int x2 = x+w-1;
+		int y2 = y+h-1;
+
+		if (sunken)
+			kDrawBeButton(p, opt->rect, opt->palette, true, &opt->palette.mid());
+		else if (opt->state & State_MouseOver && !flat) {
+			QBrush brush(opt->palette.button().color().lighter(110));
+			kDrawBeButton(p, opt->rect, opt->palette, false, &brush);
+		} else if (flat) {
+			if ( opt->state & State_MouseOver )
+				p->fillRect(opt->rect, opt->palette.button().color().lighter(110));		   
+
+			p->save();			
+			if (isScaled) {
+				p->scale(inverseScale, inverseScale);
+				p->translate(0.5, 0.5);
+			}
+
+			p->setPen(opt->palette.button().color().lighter(75));
+			p->drawLine(x, y, x2, y);
+			p->drawLine(x, y, x, y2);
+			p->drawLine(x, y2, x2, y2);
+			p->drawLine(x2, y, x2, y2);
+			
+			p->restore();
+		} else if (m_styleType == HighColor) {
+			p->save();			
+			if (isScaled) {
+				p->scale(inverseScale, inverseScale);
+				p->translate(0.5, 0.5);
+			}
+			
+			p->setPen(opt->palette.shadow().color());
+			p->drawLine(x+1, y, x2-1, y);
+			p->drawLine(x+1, y2, x2-1, y2);
+			p->drawLine(x, y+1, x, y2-1);
+			p->drawLine(x2, y+1, x2, y2-1);
+
+			p->setPen(opt->palette.light().color());
+			p->drawLine(x+2, y+2, x2-1, y+2);
+			p->drawLine(x+2, y+3, x2-2, y+3);
+			p->drawLine(x+2, y+4, x+2, y2-1);
+			p->drawLine(x+3, y+4, x+3, y2-2);
+
+			p->setPen(opt->palette.mid().color());
+			p->drawLine(x2-1, y+2, x2-1, y2-1);
+			p->drawLine(x+2, y2-1, x2-1, y2-1);
+
+			p->drawLine(x+1, y+1, x2-1, y+1);
+			p->drawLine(x+1, y+2, x+1, y2-1);
+			p->drawLine(x2-2, y+3, x2-2, y2-2);
+
+			if (isScaled)
+				p->translate(-0.5, -0.5);
+			renderGradient(p, QRect(x+4, y+4, w-6, h-6),
+						   opt->palette.button().color(), false);
+			p->restore();
+
+		} else
+			kDrawBeButton(p, opt->rect, opt->palette, false, &opt->palette.button());
 		
+		break;
+	}
+
+	// BEVELS
+	// -------------------------------------------------------------------
+	case PE_PanelButtonBevel: {
+		p->save();			
+		if (isScaled) {
+			p->scale(inverseScale, inverseScale);
+			p->translate(0.5, 0.5);
+		}
+		
+		int x,y,w,h;
+		r.getRect(&x, &y, &w, &h);
+		bool sunken = on || down;
+		int x2 = x+w-1;
+		int y2 = y+h-1;
+
+		// Outer frame
+		p->setPen(opt->palette.shadow().color());
+		p->drawRect(r.adjusted(0,0,-1,-1));
+
+		// Bevel
+		p->setPen(sunken ? opt->palette.mid().color() : opt->palette.light().color());
+		p->drawLine(x+1, y+1, x2-1, y+1);
+		p->drawLine(x+1, y+1, x+1, y2-1);
+		p->setPen(sunken ? opt->palette.light().color() : opt->palette.mid().color());
+		p->drawLine(x+2, y2-1, x2-1, y2-1);
+		p->drawLine(x2-1, y+2, x2-1, y2-1);
+
+		if (w > 4 && h > 4) {
+			if (isScaled)
+				p->translate(-0.5,-0.5);
+			
+			if (sunken)
+				p->fillRect(x+2, y+2, w-4, h-4, opt->palette.button().color());
+			else
+				renderGradient( p, QRect(x+2, y+2, w-4, h-4),
+								opt->palette.button().color(), opt->state & State_Horizontal );
+		}
+
+		p->restore();
+		break;
+	}
+
+		
+	// FOCUS RECT
+	// -------------------------------------------------------------------
+	case PE_FrameFocusRect: {
+		if (const QStyleOptionFocusRect *fropt = qstyleoption_cast<const QStyleOptionFocusRect *>(opt)) {
+            p->save();
+			if (isScaled) {
+				p->scale(inverseScale, inverseScale);
+				p->translate(0.5, 0.5);
+			}
+			
+            p->setBackgroundMode(Qt::TransparentMode);
+            QColor bg_col = fropt->backgroundColor;
+            if (!bg_col.isValid())
+                bg_col = p->background().color();
+            // Create an "XOR" color.
+            QColor patternCol((bg_col.red() ^ 0xff) & 0xff,
+                              (bg_col.green() ^ 0xff) & 0xff,
+                              (bg_col.blue() ^ 0xff) & 0xff);
+            p->setBrush(QBrush(patternCol, Qt::Dense4Pattern));
+            p->setBrushOrigin(r.topLeft());
+            p->setPen(Qt::NoPen);
+            p->drawRect(r.left(), r.top(), r.width(), 1);    // Top
+            p->drawRect(r.left(), r.bottom(), r.width(), 1); // Bottom
+            p->drawRect(r.left(), r.top(), 1, r.height());   // Left
+            p->drawRect(r.right(), r.top(), 1, r.height());  // Right
+            p->restore();
+        }
+		break;
+	}
+
+		
+	// CHECKBOX (indicator)
+	// -------------------------------------------------------------------
+	case PE_IndicatorCheckBox: {
+		bool enabled  = opt->state & State_Enabled;
+		bool nochange = opt->state & State_NoChange;
+			
+	    QBitmap xBmp = QBitmap::fromData(QSize(7, 7), x_bits, QImage::Format_MonoLSB);
+		xBmp.setMask(xBmp);
+
+		int x,y,w,h;
+		x=r.x(); y=r.y(); w=r.width(); h=r.height();
+		int x2 = x+w-1;
+		int y2 = y+h-1;
+
+		p->save();
+		if (isScaled) {
+			p->scale(inverseScale, inverseScale);
+			p->translate(0.5, 0.5);
+		}
+
+		p->setPen(opt->palette.mid().color());
+		p->drawLine(x, y, x2, y);
+		p->drawLine(x, y, x, y2);
+
+		p->setPen(opt->palette.light().color());
+		p->drawLine(x2, y+1, x2, y2);
+		p->drawLine(x+1, y2, x2, y2);
+
+		p->setPen(opt->palette.shadow().color());
+		p->drawLine(x+1, y+1, x2-1, y+1);
+		p->drawLine(x+1, y+1, x+1, y2-1);
+
+		p->setPen(opt->palette.midlight().color());
+		p->drawLine(x2-1, y+2, x2-1, y2-1);
+		p->drawLine(x+2, y2-1, x2-1, y2-1);
+
+		if (isScaled)
+			p->translate(-0.5, -0.5);
+		if ( enabled )
+			p->fillRect(x+2, y+2, w-4, h-4, 
+						down ? opt->palette.button().color(): opt->palette.base().color());
+		else
+			p->fillRect(x+2, y+2, w-4, h-4, opt->palette.window().color());
+		if (isScaled)
+			p->translate(0.5, 0.5);
+
+		if (!(opt->state & State_Off)) {
+			if (on) {
+				p->setPen(nochange ? opt->palette.dark().color() : opt->palette.text().color());
+				int offset = w/2 - 3; // x and y offsets are the same since it's a square
+				p->drawPixmap(x+offset, y+offset, xBmp);
+			}
+			else {
+				p->setPen(opt->palette.shadow().color());
+				p->drawRect(x+2, y+2, w-4, h-4);
+				p->setPen(nochange ? opt->palette.text().color() : opt->palette.dark().color());
+				p->drawLine(x+3, (y+h)/2-2, x+w-4, (y+h)/2-2);
+				p->drawLine(x+3, (y+h)/2, x+w-4, (y+h)/2);
+				p->drawLine(x+3, (y+h)/2+2, x+w-4, (y+h)/2+2);
+			}
+		}
+
+		p->restore();
+		break;
+	}
+		
+	// RADIOBUTTON (exclusive indicator)
+	// -------------------------------------------------------------------
+	case PE_IndicatorRadioButton: {
+		QBitmap centerBmp = QBitmap::fromData(QSize(13, 13), radiooff_center_bits, QImage::Format_MonoLSB);
+		centerBmp.setMask( centerBmp );
+		
+		QPixmap radio(13,13);
+		radio.fill(Qt::transparent);
+		QPainter radioPainter(&radio);
+		colorBitmaps(&radioPainter, opt->palette, 0, 0, radio.width(), radio.height(), true, radiooff_light_bits, radiooff_gray_bits,
+					 nullptr, radiooff_dgray_bits, nullptr, nullptr);
+
+		// The center fill of the indicator (grayed out when disabled)
+		if ( opt->state & State_Enabled )
+			radioPainter.setPen( down ? opt->palette.button().color() : opt->palette.base().color() );
+		else
+			radioPainter.setPen( opt->palette.window().color() );
+		radioPainter.drawPixmap( 0, 0, centerBmp );
+
+		// Indicator "dot"
+		if ( on ) {
+			QColor color = opt->state & State_NoChange ?
+				opt->palette.dark().color() : opt->palette.text().color();
+				
+			radioPainter.setPen(color);
+			radioPainter.drawLine(5, 4, 7, 4);
+			radioPainter.drawLine(4, 5, 4, 7);
+			radioPainter.drawLine(5, 8, 7, 8);
+			radioPainter.drawLine(8, 5, 8, 7);
+			radioPainter.fillRect(5, 5, 3, 3, color);
+		}
+		radioPainter.end();
+
+		// Apply the radio button mask
+		QBitmap mask = QBitmap::fromData(QSize(13, 13), radiomask_bits, QImage::Format_MonoLSB);
+		radio.setMask(mask);
+
+		p->save();
+		if (isScaled)
+			p->scale(inverseScale, inverseScale);
+
+		int offset = r.width() / 2 - radio.width() / 2;
+		
+		p->drawPixmap(r.x() + offset, r.y() + offset, radio);
+		p->restore();
+		
+		break;
+	}
+
+	// DOCKWINDOW HANDLES
+	// -------------------------------------------------------------------
+	case PE_IndicatorDockWidgetResizeHandle: {
+		int x,y,w,h;
+		r.getRect(&x, &y, &w, &h);
+		int x2 = x+w-1;
+		int y2 = y+h-1;
+
+		p->save();
+		if (isScaled) {
+			p->scale(inverseScale, inverseScale);
+			p->translate(0.5, 0.5);
+		}
+
+		p->setPen(opt->palette.dark().color());
+		p->drawRect(x, y, w, h);
+		p->setPen(opt->palette.window().color());
+		p->drawPoint(x, y);
+		p->drawPoint(x2, y);
+		p->drawPoint(x, y2);
+		p->drawPoint(x2, y2);
+		p->setPen(opt->palette.light().color());
+		p->drawLine(x+1, y+1, x+1, y2-1);
+		p->drawLine(x+1, y+1, x2-1, y+1);
+		p->setPen(opt->palette.midlight().color());
+		p->drawLine(x+2, y+2, x+2, y2-2);
+		p->drawLine(x+2, y+2, x2-2, y+2);
+		p->setPen(opt->palette.mid().color());
+		p->drawLine(x2-1, y+1, x2-1, y2-1);
+		p->drawLine(x+1, y2-1, x2-1, y2-1);
+
+		if (isScaled)
+			p->translate(-0.5,-0.5);
+		p->fillRect(x+3, y+3, w-5, h-5, opt->palette.window());
+		p->restore();
+		break;
+	}
+
+	// GENERAL PANELS / FRAMES
+	// -------------------------------------------------------------------
+	case PE_Frame:
+	case PE_FrameMenu:
+	case PE_FrameWindow:
+	case PE_PanelLineEdit: {
+		const QStyleOptionFrame *fopt = qstyleoption_cast<const QStyleOptionFrame *>(opt);
+		if (!fopt)
+			break;
+		
+		bool sunken  = opt->state & State_Sunken;
+		int lw = fopt->lineWidth;
+		if (lw == 2) {
+			int x,y,w,h;
+			r.getRect(&x, &y, &w, &h);
+			int x2 = x+w-1;
+			int y2 = y+h-1;
+
+			p->save();
+			if (isScaled) {
+				p->scale(inverseScale, inverseScale);
+				p->translate(0.5, 0.5);
+			}
+			
+			p->setPen(sunken ? opt->palette.light().color() : opt->palette.dark().color());
+			p->drawLine(x, y2, x2, y2);
+			p->drawLine(x2, y, x2, y2);
+			p->setPen(sunken ? opt->palette.mid().color() : opt->palette.light().color());
+			p->drawLine(x, y, x2, y);
+			p->drawLine(x, y, x, y2);
+			p->setPen(sunken ? opt->palette.midlight().color() : opt->palette.mid().color());
+			p->drawLine(x+1, y2-1, x2-1, y2-1);
+			p->drawLine(x2-1, y+1, x2-1, y2-1);
+			p->setPen(sunken ? opt->palette.dark().color() : opt->palette.midlight().color());
+			p->drawLine(x+1, y+1, x2-1, y+1);
+			p->drawLine(x+1, y+1, x+1, y2-1);
+			p->restore();
+		} else
+		    QCommonStyle::drawPrimitive(pe, opt, p, widget);
+
+		break;
+	}
+
+	case PE_PanelMenu: {
+		p->fillRect(opt->rect, opt->palette.window().color());
+		break;
+	}
+
+	// MENU / TOOLBAR PANEL
+    // -------------------------------------------------------------------
+
+	case PE_PanelMenuBar:
+	case PE_FrameDockWidget: {
+		int x,y,w,h;
+		r.getRect(&x, &y, &w, &h);
+		int x2 = x+w-1;
+		int y2 = y+h-1;
+
+		p->save();
+		if (isScaled) {
+			p->scale(inverseScale, inverseScale);
+			p->translate(0.5, 0.5);
+		}
+
+		p->setPen(opt->palette.light().color());
+		p->drawLine(r.x(), r.y(), x2-1,  r.y());
+		p->drawLine(r.x(), r.y(), r.x(), y2-1);
+		p->setPen(opt->palette.dark().color());
+		p->drawLine(r.x(), y2, x2, y2);
+		p->drawLine(x2, r.y(), x2, y2);
+
+		if (isScaled)
+			p->translate(-0.5,-0.5);
+
+		// ### Qt should specify Style_Horizontal where appropriate
+		renderGradient( p, QRect(r.x()+1, r.y()+1, r.width()-2, r.height()-2),
+						opt->palette.button().color(), 
+						(r.width() < r.height()) && (pe != PE_PanelMenuBar) );
+		p->restore();
+		
+		break;
+	}
+
+	// TOOLBAR SEPARATOR
+	// -------------------------------------------------------------------
+	case PE_IndicatorToolBarSeparator: {
+		renderGradient( p, opt->rect, opt->palette.button().color(),
+						!(opt->state & State_Horizontal));
+
+		p->save();
+		if (isScaled) {
+			p->scale(inverseScale, inverseScale);
+			p->translate(0.5, 0.5);
+		}
+
+		if ( !(opt->state & State_Horizontal) ) {
+			p->setPen(opt->palette.mid().color());
+			p->drawLine(4, r.height()/2, r.width()-5, r.height()/2);
+			p->setPen(opt->palette.light().color());
+			p->drawLine(4, r.height()/2+1, r.width()-5, r.height()/2+1);
+		} else {
+			p->setPen(opt->palette.mid().color());
+			p->drawLine(r.width()/2, 4, r.width()/2, r.height()-5);
+			p->setPen(opt->palette.light().color());
+			p->drawLine(r.width()/2+1, 4, r.width()/2+1, r.height()-5);
+		}
+		p->restore();
+		break;
+	}
+
+	// ARROWS
+	// -------------------------------------------------------------------
+	case PE_IndicatorArrowUp:
+	case PE_IndicatorArrowDown:
+	case PE_IndicatorArrowLeft:
+	case PE_IndicatorArrowRight: {
+		QPolygon a;
+
+		if ( m_styleType != B3 ) {
+			// HighColor & Default arrows
+			switch(pe) {
+			case PE_IndicatorArrowUp:
+				a.setPoints(QCOORDARRLEN(u_arrow), u_arrow);
+				break;
+
+			case PE_IndicatorArrowDown:
+				a.setPoints(QCOORDARRLEN(d_arrow), d_arrow);
+				break;
+
+			case PE_IndicatorArrowLeft:
+				a.setPoints(QCOORDARRLEN(l_arrow), l_arrow);
+				break;
+
+			default:
+				a.setPoints(QCOORDARRLEN(r_arrow), r_arrow);
+				break;
+			}
+		} else {
+			// B3 arrows
+			switch(pe) {
+			case PE_IndicatorArrowUp:
+				a.setPoints(QCOORDARRLEN(B3::u_arrow), B3::u_arrow);
+				break;
+
+			case PE_IndicatorArrowDown:
+				a.setPoints(QCOORDARRLEN(B3::d_arrow), B3::d_arrow);
+				break;
+
+			case PE_IndicatorArrowLeft:
+				a.setPoints(QCOORDARRLEN(B3::l_arrow), B3::l_arrow);
+				break;
+
+			default:
+				a.setPoints(QCOORDARRLEN(B3::r_arrow), B3::r_arrow);
+				break;
+			}
+		}
+
+		p->save();
+		if (isScaled) {
+			p->scale(inverseScale, inverseScale);
+			p->translate(0.5, 0.5);
+		}
+		if ( opt->state & State_Sunken )
+			p->translate( pixelMetric( PM_ButtonShiftHorizontal ),
+						  pixelMetric( PM_ButtonShiftVertical ) );
+
+		if ( opt->state & State_Enabled ) {
+			a.translate( r.x() + r.width() / 2, r.y() + r.height() / 2 );
+			p->setPen( opt->palette.buttonText().color() );
+			p->drawPolygon( a );
+		} else {
+			a.translate( r.x() + r.width() / 2 + 1, r.y() + r.height() / 2 + 1 );
+			p->setPen( opt->palette.light().color() );
+			p->drawPolygon( a );
+			a.translate( -1, -1 );
+			p->setPen( opt->palette.mid().color() );
+			p->drawPolygon( a );
+		}
+		p->restore();		
+		break;
+	}
+
+	// TOOLBAR HANDLE
+	// -------------------------------------------------------------------
+	case PE_IndicatorToolBarHandle: {
+		int x = r.x(); int y = r.y();
+		int x2 = r.x() + r.width()-1;
+		int y2 = r.y() + r.height()-1;
+
+		p->save();
+		if (isScaled)
+			p->scale(inverseScale, inverseScale);
+
+		if (opt->state & State_Horizontal) {
+
+			renderGradient( p, r, opt->palette.button().color(), false);
+			if (isScaled)
+				p->translate(0.5, 0.5);
+			p->setPen(opt->palette.light().color());
+			p->drawLine(x+1, y+4, x+1, y2-4);
+			p->drawLine(x+3, y+4, x+3, y2-4);
+			p->drawLine(x+5, y+4, x+5, y2-4);
+
+			p->setPen(opt->palette.mid().color());
+			p->drawLine(x+2, y+4, x+2, y2-4);
+			p->drawLine(x+4, y+4, x+4, y2-4);
+			p->drawLine(x+6, y+4, x+6, y2-4);
+
+		} else {
+				
+			renderGradient( p, r, opt->palette.button().color(), true);
+			if (isScaled)
+				p->translate(0.5, 0.5);
+			p->setPen(opt->palette.light().color());
+			p->drawLine(x+4, y+1, x2-4, y+1);
+			p->drawLine(x+4, y+3, x2-4, y+3);
+			p->drawLine(x+4, y+5, x2-4, y+5);
+
+			p->setPen(opt->palette.mid().color());
+			p->drawLine(x+4, y+2, x2-4, y+2);
+			p->drawLine(x+4, y+4, x2-4, y+4);
+			p->drawLine(x+4, y+6, x2-4, y+6);
+
+		}
+		p->restore();
 		break;
 	}
 		
@@ -92,4 +718,23 @@ KlassikStyle::drawPrimitive(QStyle::PrimitiveElement pe, const QStyleOption *opt
 		break;
 	}
 	}	
+}
+
+
+void
+KlassikStyle::renderGradient(QPainter *p, const QRect &r, const QColor &color,
+							 bool horizontal) const
+{
+	if (m_styleType == HighColor) {
+		const QColor ca = color.lighter(110);
+		const QColor cb = color.darker(110);
+
+		QLinearGradient gradient(0, 0, horizontal ? 1 : 0, horizontal ? 0 : 1);
+		gradient.setCoordinateMode(QGradient::ObjectBoundingMode);
+		gradient.setColorAt(0, ca);
+		gradient.setColorAt(1, cb);
+
+		p->fillRect(r, gradient);
+	} else
+		p->fillRect(r, color);
 }
