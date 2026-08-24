@@ -19,6 +19,9 @@ public:
 	void drawPrimitive(PrimitiveElement pe, const QStyleOption *opt,
 					   QPainter *p, const QWidget *widget = nullptr) const override;
 
+	void drawControl(ControlElement control, const QStyleOption *opt,
+					 QPainter *p, const QWidget *widget = nullptr) const override;
+
 private:
 	StyleType m_styleType = Default;
 

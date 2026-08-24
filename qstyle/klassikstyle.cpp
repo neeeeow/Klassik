@@ -109,6 +109,24 @@ KlassikStyle::KlassikStyle(StyleType type)
 }
 
 void
+KlassikStyle::renderGradient(QPainter *p, const QRect &r, const QColor &color,
+							 bool horizontal) const
+{
+	if (m_styleType == HighColor) {
+		const QColor ca = color.lighter(110);
+		const QColor cb = color.darker(110);
+
+		QLinearGradient gradient(0, 0, horizontal ? 1 : 0, horizontal ? 0 : 1);
+		gradient.setCoordinateMode(QGradient::ObjectBoundingMode);
+		gradient.setColorAt(0, ca);
+		gradient.setColorAt(1, cb);
+
+		p->fillRect(r, gradient);
+	} else
+		p->fillRect(r, color);
+}
+
+void
 KlassikStyle::drawPrimitive(QStyle::PrimitiveElement pe, const QStyleOption *opt,
 							QPainter *p, const QWidget *widget) const
 {
@@ -720,21 +738,276 @@ KlassikStyle::drawPrimitive(QStyle::PrimitiveElement pe, const QStyleOption *opt
 	}	
 }
 
-
 void
-KlassikStyle::renderGradient(QPainter *p, const QRect &r, const QColor &color,
-							 bool horizontal) const
+KlassikStyle::drawControl(ControlElement control, const QStyleOption *opt,
+						  QPainter *p, const QWidget *widget) const
 {
-	if (m_styleType == HighColor) {
-		const QColor ca = color.lighter(110);
-		const QColor cb = color.darker(110);
+	const qreal dpr = getDpr(p);
+	const qreal inverseScale = qreal(1) / dpr;
+	QRect r; // Drawing rectangle for elements which must not be scaled
+	bool isScaled = false;
+	if (!qFuzzyCompare(dpr, qreal(1))) {
+		isScaled = true;
+	    r = getScaledRect(opt->rect, dpr);
+	} else {
+		r = opt->rect;
+	}
 
-		QLinearGradient gradient(0, 0, horizontal ? 1 : 0, horizontal ? 0 : 1);
-		gradient.setCoordinateMode(QGradient::ObjectBoundingMode);
-		gradient.setColorAt(0, ca);
-		gradient.setColorAt(1, cb);
+	bool down = opt->state & State_Sunken;
+	bool on   = opt->state & State_On;
 
-		p->fillRect(r, gradient);
-	} else
-		p->fillRect(r, color);
+	switch (control) {
+
+	// HEADER SECTION
+	// -------------------------------------------------------------------
+	case CE_HeaderSection: {
+		const QStyleOptionHeader *hdr = qstyleoption_cast<const QStyleOptionHeader *>(opt);
+		if (!hdr)
+			break;
+		bool horizontal = hdr->orientation == Qt::Horizontal;
+
+		int x,y,w,h;
+		r.getRect(&x, &y, &w, &h);
+		bool sunken = on || down;
+		int x2 = x+w-1;
+		int y2 = y+h-1;
+
+		p->save();
+		if (isScaled) {
+			p->scale(inverseScale, inverseScale);
+			p->translate(0.5, 0.5);
+		}
+
+		// Bevel
+		p->setPen(sunken ? opt->palette.mid().color() : opt->palette.light().color());
+		p->drawLine(x, y, x2-1, y);
+		p->drawLine(x, y, x, y2-1);
+		p->setPen(sunken ? opt->palette.light().color() : opt->palette.mid().color());
+		p->drawLine(x+1, y2-1, x2-1, y2-1);
+		p->drawLine(x2-1, y+1, x2-1, y2-1);
+		p->setPen(opt->palette.shadow().color());
+		p->drawLine(x, y2, x2, y2);
+		p->drawLine(x2, y, x2, y2);
+
+		if (isScaled)
+			p->translate(-0.5,-0.5);
+		
+		if (sunken)
+			p->fillRect(x+1, y+1, w-3, h-3, opt->palette.button().color());
+		else
+			renderGradient( p, QRect(x+1, y+1, w-3, h-3),
+							opt->palette.button().color(), !horizontal );
+
+		p->restore();
+		break;
+	}
+		
+	// SCROLLBAR
+	// -------------------------------------------------------------------
+	case CE_ScrollBarSlider: {
+		QStyle::State flags = opt->state;
+		flags ^= State_Horizontal;
+
+		// Draw a button bevel
+		QStyleOptionButton btn;
+		btn.palette = opt->palette;
+		btn.rect = opt->rect;
+	    btn.state = (flags | State_Enabled | State_Raised) & ~State_Sunken;
+		drawPrimitive(PE_PanelButtonBevel, &btn, p, nullptr);
+
+		p->save();
+		if (isScaled) {
+			p->scale(inverseScale, inverseScale);
+			p->translate(0.5, 0.5);
+		}
+
+		if ( m_styleType != B3 ) {
+			// HighColor & Default scrollbar
+			if (flags & State_Horizontal) {
+				if (r.height() >= 15) {
+					int x = r.x()+3;
+					int y = r.y() + (r.height()-7)/2;
+					int x2 = r.right()-3;
+					p->setPen(opt->palette.light().color());
+					p->drawLine(x, y, x2, y);
+					p->drawLine(x, y+3, x2, y+3);
+					p->drawLine(x, y+6, x2, y+6);
+
+					p->setPen(opt->palette.mid().color());
+					p->drawLine(x, y+1, x2, y+1);
+					p->drawLine(x, y+4, x2, y+4);
+					p->drawLine(x, y+7, x2, y+7);
+				}
+			} else {
+				if (r.width() >= 15) {
+					int y = r.y()+3;
+					int x = r.x() + (r.width()-7)/2;
+					int y2 = r.bottom()-3;
+					p->setPen(opt->palette.light().color());
+					p->drawLine(x, y, x, y2);
+					p->drawLine(x+3, y, x+3, y2);
+					p->drawLine(x+6, y, x+6, y2);
+
+					p->setPen(opt->palette.mid().color());
+					p->drawLine(x+1, y, x+1, y2);
+					p->drawLine(x+4, y, x+4, y2);
+					p->drawLine(x+7, y, x+7, y2);
+				}
+			}
+		} else {
+			// B3 scrollbar
+			if (flags & State_Horizontal) {
+				int buttons = 0;
+					
+				if (r.height() >= 36) buttons = 3;
+				else if (r.height() >=24) buttons = 2;
+				else if (r.height() >=16) buttons = 1;
+					
+				int x = r.x() + (r.width()-7) / 2;
+				int y = r.y() + (r.height() - (buttons * 5) -
+								 (buttons-1)) / 2;
+				int x2 = x + 7;
+					
+				for ( int i=0; i<buttons; i++, y+=6 )
+				{
+					p->setPen( opt->palette.mid().color() );
+					p->drawLine( x+1, y, x2-1, y );
+					p->drawLine( x, y+1, x, y+3 );
+					p->setPen( opt->palette.light().color() );
+					p->drawLine( x+1, y+1, x2-1, y+1 );
+					p->drawLine( x+1, y+1, x+1, y+3 );
+					p->setPen( opt->palette.dark().color() );
+					p->drawLine( x+1, y+4, x2-1, y+4 );
+					p->drawLine( x2, y+1, x2, y+3 );
+				}
+			} else {
+				int buttons = 0;
+					
+				if (r.width() >= 36) buttons = 3;
+				else if (r.width() >=24) buttons = 2;
+				else if (r.width() >=16) buttons = 1;
+					
+				int x = r.x() + (r.width() - (buttons * 5) -
+								 (buttons-1)) / 2;
+				int y = r.y() + (r.height()-7) / 2;
+				int y2 = y + 7;
+					
+				for ( int i=0; i<buttons; i++, x+=6 )
+				{
+					p->setPen( opt->palette.mid().color() );
+					p->drawLine( x+1, y, x+3, y );
+					p->drawLine( x, y+1, x, y2-1 );
+					p->setPen( opt->palette.light().color() );
+					p->drawLine( x+1, y+1, x+3, y+1 );
+					p->drawLine( x+1, y+1, x+1, y2-1 );
+					p->setPen( opt->palette.dark().color() );
+					p->drawLine( x+1, y2, x+3, y2 );
+					p->drawLine( x+4, y+1, x+4, y2-1 );
+				}
+			}
+		}
+
+		p->restore();
+		break;
+	}
+
+	case CE_ScrollBarAddPage:
+	case CE_ScrollBarSubPage: {
+		int x, y, w, h;
+		r.getRect(&x, &y, &w, &h);
+		int x2 = x+w-1;
+		int y2 = y+h-1;
+		
+		p->save();
+		if (isScaled) {
+			p->scale(inverseScale, inverseScale);
+			p->translate(0.5, 0.5);
+		}
+
+		if ( m_styleType != B3 ) {
+			// HighColor & Default scrollbar
+				
+			p->setPen(opt->palette.shadow().color());
+				
+			if (opt->state & State_Horizontal) {
+				p->drawLine(x, y, x2, y);
+				p->drawLine(x, y2, x2, y2);
+				if (isScaled)
+					p->translate(-0.5,-0.5);
+				renderGradient(p, QRect(x, y+1, w, h-2),
+							   opt->palette.mid().color(), false);
+			} else {
+				p->drawLine(x, y, x, y2);
+				p->drawLine(x2, y, x2, y2);
+				if (isScaled)
+					p->translate(-0.5,-0.5);
+				renderGradient(p, QRect(x+1, y, w-2, h),
+							   opt->palette.mid().color(), true);
+			}	
+		} else {
+			// B3 scrollbar
+				
+			p->setPen( opt->palette.mid().color() );
+				
+			if (opt->state & State_Horizontal) {
+				p->drawLine(x, y, x2, y);
+				p->drawLine(x, y2, x2, y2);
+				if (isScaled)
+					p->translate(-0.5,-0.5);
+				p->fillRect( QRect(x, y+1, w, h-2), 
+							 opt->state & State_Sunken ? opt->palette.button().color() : opt->palette.midlight().color() );
+			} else {
+				p->drawLine(x, y, x, y2);
+				p->drawLine(x2, y, x2, y2);
+				if (isScaled)
+					p->translate(-0.5,-0.5);
+				p->fillRect( QRect(x+1, y, w-2, h), 
+							 opt->state & State_Sunken ? opt->palette.button().color() : opt->palette.midlight().color() );
+			}
+		}
+		p->restore();
+		break;
+	}
+
+	case CE_ScrollBarAddLine:
+	case CE_ScrollBarSubLine: {
+		// Draw the button background
+		QStyleOptionButton btn;
+		btn.palette = opt->palette;
+		btn.rect = opt->rect;
+	    btn.state = (opt->state & State_Enabled) | ((opt->state & State_Sunken) ? State_Sunken : State_Raised);
+		drawPrimitive(PE_PanelButtonBevel, &btn, p, nullptr);
+
+		QStyleOption arrow;
+		arrow.palette = opt->palette;
+		arrow.rect = opt->rect;
+		arrow.state = opt->state;
+		
+		PrimitiveElement pe;
+		if (control == CE_ScrollBarAddLine)
+			pe = (opt->state & State_Horizontal) ? PE_IndicatorArrowRight : PE_IndicatorArrowDown;
+		else
+			pe = (opt->state & State_Horizontal) ? PE_IndicatorArrowLeft : PE_IndicatorArrowUp;
+
+		drawPrimitive(pe, &arrow, p, nullptr);
+		
+		break;
+	}
+
+	// SPLITTER HANDLE
+	// -------------------------------------------------------------------
+	case CE_Splitter: {
+		QStyleOption handle;
+		handle.palette = opt->palette;
+		handle.rect = opt->rect;
+		handle.state = opt->state;
+		drawPrimitive(PE_IndicatorDockWidgetResizeHandle, &handle, p, nullptr);		
+		break;
+	}
+		
+	default: {
+		QCommonStyle::drawControl(control, opt, p, widget);
+		break;
+	}
+	}
 }
