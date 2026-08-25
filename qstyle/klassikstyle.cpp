@@ -197,7 +197,7 @@ KlassikStyle::drawPrimitive(QStyle::PrimitiveElement pe, const QStyleOption *opt
 		p->drawLine(x+2, y2-1, x2-1, y2-1);
 		p->drawLine(x2-1, y+2, x2-1, y2-1);
 
-		p->fillRect(x+2, y+2, w-4, h-4, opt->palette.button().color());
+		p->fillRect(x+2, y+2, w-4, h-4, opt->palette.button());
 		
 		p->restore();
 		break;
@@ -389,9 +389,9 @@ KlassikStyle::drawPrimitive(QStyle::PrimitiveElement pe, const QStyleOption *opt
 			p->translate(-0.5, -0.5);
 		if ( enabled )
 			p->fillRect(x+2, y+2, w-4, h-4, 
-						down ? opt->palette.button().color(): opt->palette.base().color());
+						down ? opt->palette.button().color(): opt->palette.base());
 		else
-			p->fillRect(x+2, y+2, w-4, h-4, opt->palette.window().color());
+			p->fillRect(x+2, y+2, w-4, h-4, opt->palette.window());
 		if (isScaled)
 			p->translate(0.5, 0.5);
 
@@ -546,7 +546,7 @@ KlassikStyle::drawPrimitive(QStyle::PrimitiveElement pe, const QStyleOption *opt
 	}
 
 	case PE_PanelMenu: {
-		p->fillRect(opt->rect, opt->palette.window().color());
+		p->fillRect(opt->rect, opt->palette.window());
 		break;
 	}
 
@@ -793,7 +793,7 @@ KlassikStyle::drawControl(ControlElement control, const QStyleOption *opt,
 			p->translate(-0.5,-0.5);
 		
 		if (sunken)
-			p->fillRect(x+1, y+1, w-3, h-3, opt->palette.button().color());
+			p->fillRect(x+1, y+1, w-3, h-3, opt->palette.button());
 		else
 			renderGradient( p, QRect(x+1, y+1, w-3, h-3),
 							opt->palette.button().color(), !horizontal );
@@ -813,7 +813,7 @@ KlassikStyle::drawControl(ControlElement control, const QStyleOption *opt,
 		btn.palette = opt->palette;
 		btn.rect = opt->rect;
 	    btn.state = (flags | State_Enabled | State_Raised) & ~State_Sunken;
-		drawPrimitive(PE_PanelButtonBevel, &btn, p, nullptr);
+		proxy()->drawPrimitive(PE_PanelButtonBevel, &btn, p, nullptr);
 
 		p->save();
 		if (isScaled) {
@@ -955,14 +955,14 @@ KlassikStyle::drawControl(ControlElement control, const QStyleOption *opt,
 				if (isScaled)
 					p->translate(-0.5,-0.5);
 				p->fillRect( QRect(x, y+1, w, h-2), 
-							 opt->state & State_Sunken ? opt->palette.button().color() : opt->palette.midlight().color() );
+							 opt->state & State_Sunken ? opt->palette.button().color() : opt->palette.midlight() );
 			} else {
 				p->drawLine(x, y, x, y2);
 				p->drawLine(x2, y, x2, y2);
 				if (isScaled)
 					p->translate(-0.5,-0.5);
 				p->fillRect( QRect(x+1, y, w-2, h), 
-							 opt->state & State_Sunken ? opt->palette.button().color() : opt->palette.midlight().color() );
+							 opt->state & State_Sunken ? opt->palette.button().color() : opt->palette.midlight() );
 			}
 		}
 		p->restore();
@@ -976,7 +976,7 @@ KlassikStyle::drawControl(ControlElement control, const QStyleOption *opt,
 		btn.palette = opt->palette;
 		btn.rect = opt->rect;
 	    btn.state = (opt->state & State_Enabled) | ((opt->state & State_Sunken) ? State_Sunken : State_Raised);
-		drawPrimitive(PE_PanelButtonBevel, &btn, p, nullptr);
+		proxy()->drawPrimitive(PE_PanelButtonBevel, &btn, p, nullptr);
 
 		QStyleOption arrow;
 		arrow.palette = opt->palette;
@@ -989,7 +989,7 @@ KlassikStyle::drawControl(ControlElement control, const QStyleOption *opt,
 		else
 			pe = (opt->state & State_Horizontal) ? PE_IndicatorArrowLeft : PE_IndicatorArrowUp;
 
-		drawPrimitive(pe, &arrow, p, nullptr);
+		proxy()->drawPrimitive(pe, &arrow, p, nullptr);
 		
 		break;
 	}
@@ -1001,7 +1001,319 @@ KlassikStyle::drawControl(ControlElement control, const QStyleOption *opt,
 		handle.palette = opt->palette;
 		handle.rect = opt->rect;
 		handle.state = opt->state;
-		drawPrimitive(PE_IndicatorDockWidgetResizeHandle, &handle, p, nullptr);		
+		proxy()->drawPrimitive(PE_IndicatorDockWidgetResizeHandle, &handle, p, nullptr);		
+		break;
+	}
+
+	// PUSHBUTTON LABEL
+	// -------------------------------------------------------------------
+	case CE_PushButtonLabel: {
+		const QStyleOptionButton *button = qstyleoption_cast<const QStyleOptionButton *>(opt);
+		if (!button)
+			break;
+
+		bool active = button->state & (State_On | State_Sunken);
+
+		QRect textRect = button->rect;
+		int tf = Qt::AlignVCenter | Qt::TextShowMnemonic;
+		if (proxy()->styleHint(SH_UnderlineShortcut, button, widget))
+			tf |= Qt::TextHideMnemonic;
+
+		
+		if (button->features & QStyleOptionButton::HasMenu) {
+			int indicatorSize = proxy()->pixelMetric(PM_MenuButtonIndicator, button, widget);
+			if (button->direction == Qt::LeftToRight)
+				textRect = textRect.adjusted(0, 0, -indicatorSize, 0);
+			else
+				textRect = textRect.adjusted(indicatorSize, 0, 0, 0);
+		}
+
+		if (!button->icon.isNull()) {
+			//Center both icon and text
+			QIcon::Mode mode = button->state & State_Enabled ? QIcon::Normal : QIcon::Disabled;
+			if (mode == QIcon::Normal && button->state & State_HasFocus)
+				mode = QIcon::Active;
+			QIcon::State state = QIcon::Off;
+			if (button->state & State_On)
+				state = QIcon::On;
+
+			QPixmap pixmap = button->icon.pixmap(button->iconSize, dpr, mode, state);
+			int pixmapWidth = pixmap.width() / pixmap.devicePixelRatio();
+			int pixmapHeight = pixmap.height() / pixmap.devicePixelRatio();
+			int labelWidth = pixmapWidth;
+			int labelHeight = pixmapHeight;
+			int iconSpacing = 4;//### 4 is currently hardcoded in QPushButton::sizeHint()
+			if (!button->text.isEmpty()) {
+				int textWidth = button->fontMetrics.boundingRect(opt->rect, tf, button->text).width();
+				labelWidth += (textWidth + iconSpacing);
+			}
+
+			QRect iconRect = QRect(textRect.x() + (textRect.width() - labelWidth) / 2,
+								   textRect.y() + (textRect.height() - labelHeight) / 2,
+								   pixmapWidth, pixmapHeight);
+
+			iconRect = visualRect(button->direction, textRect, iconRect);
+
+			if (button->direction == Qt::RightToLeft)
+				textRect.setRight(iconRect.left() - iconSpacing / 2);
+			else
+				textRect.setLeft(iconRect.left() + iconRect.width() + iconSpacing / 2);
+
+			// qt_format_text reverses again when  painter->layoutDirection is also RightToLeft
+			if (p->layoutDirection() == button->direction)
+				tf |= Qt::AlignLeft;
+			else
+				tf |= Qt::AlignRight;
+
+			if (active)
+				iconRect.translate(proxy()->pixelMetric(PM_ButtonShiftHorizontal, opt, widget),
+								   proxy()->pixelMetric(PM_ButtonShiftVertical, opt, widget));
+			p->drawPixmap(iconRect, pixmap);
+		} else {
+			tf |= Qt::AlignHCenter;
+		}
+		if (active)
+			textRect.translate(proxy()->pixelMetric(PM_ButtonShiftHorizontal, opt, widget),
+							   proxy()->pixelMetric(PM_ButtonShiftVertical, opt, widget));
+
+		if (active || (button->features & QStyleOptionButton::DefaultButton)) {
+			int i;
+
+			// Text shadow
+			if (button->state & State_Enabled)
+				for (i=0; i<2; i++)
+					proxy()->drawItemText(p, textRect.translated(i + 1, 1), tf, button->palette, (button->state & State_Enabled),
+										  button->text, active ? QPalette::Dark : QPalette::Mid);
+
+			// Normal text
+			for (i=0; i<2; i++)
+				proxy()->drawItemText(p, textRect.translated(i,0), tf, button->palette, (button->state & State_Enabled),
+									  button->text, active ? QPalette::Light : QPalette::ButtonText);
+		} else
+			proxy()->drawItemText(p, textRect, tf, button->palette, (button->state & State_Enabled),
+								  button->text, QPalette::ButtonText);
+				
+		break;
+	}
+
+	// TOOLBOX TAB
+	// -------------------------------------------------------------------
+	case CE_ToolBoxTabShape: {
+		bool pressed = opt->state & State_Sunken;
+		bool selected = opt->state & State_Selected;
+		int x, y, x2, y2;
+		r.getCoords( &x, &y, &x2, &y2 );
+
+		p->save();
+		if (isScaled) {
+			p->scale(inverseScale, inverseScale);
+			p->translate(0.5, 0.5);
+		}
+
+		p->setPen( pressed ? opt->palette.shadow().color() : opt->palette.light().color() );
+		p->drawLine( x, y, x2-1, y );
+		p->drawLine( x, y, x, y2-1 );
+
+		p->setPen( pressed ? opt->palette.light().color() : opt->palette.shadow().color() );
+		p->drawLine( x, y2, x2, y2 );
+		p->drawLine( x2, y, x2, y2 );
+
+		QColor fill = selected ? opt->palette.highlight().color() : opt->palette.button().color();
+		if (isScaled)
+			p->translate(-0.5,-0.5);
+
+		if ( pressed )
+			p->fillRect( QRect(x+1, y+1, r.width()-2, r.height()-2), fill );
+		else
+			renderGradient(p, QRect(x+1, y+1, r.width()-2, r.height()-2),
+						   fill, false);
+		p->restore();
+		break;
+	}
+
+	// TABBAR TAB
+	// -------------------------------------------------------------------
+	case CE_TabBarTabShape: {
+		const QStyleOptionTab *tb = qstyleoption_cast<const QStyleOptionTab *>(opt);
+		if (!tb)
+			break;
+		QTabBar::Shape tbs = tb->shape;
+		bool selected      = tb->state & State_Selected;
+		int x = r.x(), y=r.y(), bottom=r.bottom(), right=r.right();
+
+		p->save();
+		if (isScaled) {
+			p->scale(inverseScale, inverseScale);
+			p->translate(0.5, 0.5);
+		}
+
+		switch (tbs) {
+		case QTabBar::RoundedNorth: {
+			if (!selected)
+				p->translate(0,1);
+			p->setPen(selected ? tb->palette.light().color() : tb->palette.shadow().color());
+			p->drawLine(x, y+4, x, bottom);
+			p->drawLine(x, y+4, x+4, y);
+			p->drawLine(x+4, y, right-1, y);
+			if (selected)
+				p->setPen(tb->palette.shadow().color());
+			p->drawLine(right, y+1, right, bottom);
+
+			p->setPen(tb->palette.midlight().color());
+			p->drawLine(x+1, y+4, x+1, bottom);
+			p->drawLine(x+1, y+4, x+4, y+1);
+			p->drawLine(x+5, y+1, right-2, y+1);
+
+			if (selected) {
+				p->setPen(tb->palette.mid().color());
+				p->drawLine(right-1, y+1, right-1, bottom);
+			} else {
+				p->setPen(tb->palette.mid().color());
+				p->drawPoint(right-1, y+1);
+				p->drawLine(x+4, y+2, right-1, y+2);
+				p->drawLine(x+3, y+3, right-1, y+3);
+				if (isScaled)
+					p->translate(-0.5,-0.5);
+				p->fillRect(x+2, y+4, r.width()-3, r.height()-6, tb->palette.mid());
+				if (isScaled)
+					p->translate(0.5,0.5);
+
+				p->setPen(tb->palette.light().color());
+				p->drawLine(x, bottom-1, right, bottom-1);
+				p->translate(0,-1);
+			}
+
+			break;
+		}
+
+		case QTabBar::RoundedSouth: {
+			if (!selected)
+				p->translate(0,-1);
+			p->setPen(selected ? tb->palette.light().color() : tb->palette.shadow().color());
+			p->drawLine(x, bottom-4, x, y);
+			if (selected)
+				p->setPen(tb->palette.mid().color());
+			p->drawLine(x, bottom-4, x+4, bottom);
+			if (selected)
+				p->setPen(tb->palette.shadow().color());
+			p->drawLine(x+4, bottom, right-1, bottom);
+			p->drawLine(right, bottom-1, right, y);
+
+			p->setPen(tb->palette.midlight().color());
+			p->drawLine(x+1, bottom-4, x+1, y);
+			p->drawLine(x+1, bottom-4, x+4, bottom-1);
+			p->drawLine(x+5, bottom-1, right-2, bottom-1);
+
+			if (selected) {
+				p->setPen(tb->palette.mid().color());
+				p->drawLine(right-1, y, right-1, bottom-1);
+			} else {
+				p->setPen(tb->palette.mid().color());
+				p->drawPoint(right-1, bottom-1);
+				p->drawLine(x+4, bottom-2, right-1, bottom-2);
+				p->drawLine(x+3, bottom-3, right-1, bottom-3);
+				if (isScaled)
+					p->translate(-0.5,-0.5);
+				p->fillRect(x+2, y+2, r.width()-3, r.height()-6, tb->palette.mid());
+				if (isScaled)
+					p->translate(0.5,0.5);
+				p->translate(0,1);
+				p->setPen(tb->palette.dark().color());
+				p->drawLine(x, y, right, y);
+			}
+			break;
+		}
+
+		case QTabBar::TriangularNorth: {
+			if (!selected)
+				p->translate(0,1);
+			p->setPen(selected ? tb->palette.light().color() : tb->palette.shadow().color());
+			p->drawLine(x, bottom, x, y+6);
+			p->drawLine(x, y+6, x+6, y);
+			p->drawLine(x+6, y, right-6, y);
+			if (selected)
+				p->setPen(tb->palette.mid().color());
+			p->drawLine(right-5, y+1, right-1, y+5);
+			p->setPen(tb->palette.shadow().color());
+			p->drawLine(right, y+6, right, bottom);
+
+			p->setPen(tb->palette.midlight().color());
+			p->drawLine(x+1, bottom, x+1, y+6);
+			p->drawLine(x+1, y+6, x+6, y+1);
+			p->drawLine(x+6, y+1, right-6, y+1);
+			p->drawLine(right-5, y+2, right-2, y+5);
+			p->setPen(tb->palette.mid().color());
+			p->drawLine(right-1, y+6, right-1, bottom);
+
+			QPolygon a(6);
+			a.setPoint(0, x+2, bottom);
+			a.setPoint(1, x+2, y+7);
+			a.setPoint(2, x+7, y+2);
+			a.setPoint(3, right-7, y+2);
+			a.setPoint(4, right-2, y+7);
+			a.setPoint(5, right-2, bottom);
+			p->setPen  (selected ? tb->palette.window().color() : tb->palette.mid().color());
+			p->setBrush(selected ? tb->palette.window() : tb->palette.mid());
+			p->drawPolygon(a);
+			p->setBrush(Qt::NoBrush);
+			if (!selected) {
+				p->translate(0,-1);
+				p->setPen(tb->palette.light().color());
+				p->drawLine(x, bottom, right, bottom);
+			}
+			break;
+		}
+
+		case QTabBar::TriangularSouth: {
+			if (!selected)
+				p->translate(0,-1);
+			p->setPen(selected ? tb->palette.light().color() : tb->palette.shadow().color());
+			p->drawLine(x, y, x, bottom-6);
+			if (selected)
+				p->setPen(tb->palette.mid().color());
+			p->drawLine(x, bottom-6, x+6, bottom);
+			if (selected)
+				p->setPen(tb->palette.shadow().color());
+			p->drawLine(x+6, bottom, right-6, bottom);
+			p->drawLine(right-5, bottom-1, right-1, bottom-5);
+			if (!selected)
+				p->setPen(tb->palette.shadow().color());
+			p->drawLine(right, bottom-6, right, y);
+
+			p->setPen(tb->palette.midlight().color());
+			p->drawLine(x+1, y, x+1, bottom-6);
+			p->drawLine(x+1, bottom-6, x+6, bottom-1);
+			p->drawLine(x+6, bottom-1, right-6, bottom-1);
+			p->drawLine(right-5, bottom-2, right-2, bottom-5);
+			p->setPen(tb->palette.mid().color());
+			p->drawLine(right-1, bottom-6, right-1, y);
+
+			QPolygon a(6);
+			a.setPoint(0, x+2, y);
+			a.setPoint(1, x+2, bottom-7);
+			a.setPoint(2, x+7, bottom-2);
+			a.setPoint(3, right-7, bottom-2);
+			a.setPoint(4, right-2, bottom-7);
+			a.setPoint(5, right-2, y);
+			p->setPen  (selected ? tb->palette.window().color() : tb->palette.mid().color());
+			p->setBrush(selected ? tb->palette.window() : tb->palette.mid());
+			p->drawPolygon(a);
+			p->setBrush(Qt::NoBrush);
+			if (!selected) {
+				p->translate(0,1);
+				p->setPen(tb->palette.dark().color());
+				p->drawLine(x, y, right, y);
+			}
+			break;
+		}
+			
+		default: {
+			// TODO: Add the vertical tabs
+			break;
+		}
+		}
+
+		p->restore();
 		break;
 	}
 		
