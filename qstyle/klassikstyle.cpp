@@ -2,6 +2,9 @@
 #include "bitmaps.h"
 
 #include <QStyleOption>
+#include <QGuiApplication>
+
+#include <qdrawutil.h>
 
 static qreal
 getDpr(const QPainter *p) {		
@@ -1316,7 +1319,165 @@ KlassikStyle::drawControl(ControlElement control, const QStyleOption *opt,
 		p->restore();
 		break;
 	}
+
+	// MENUBAR BACKGROUND
+	// -------------------------------------------------------------------
+	case CE_MenuBarEmptyArea: {
+		renderGradient(p, opt->rect, opt->palette.button().color(), false);
+		break;
+	}
+	
+	// MENUBAR ITEM (sunken panel on mouse over)
+	// -------------------------------------------------------------------
+	case CE_MenuBarItem:
+	{
+		const QStyleOptionMenuItem *menuitem = qstyleoption_cast<const QStyleOptionMenuItem *>(opt);
+		if (!menuitem)
+			break;	   
+
+		if ((menuitem->state & State_Enabled) && (menuitem->state & State_Sunken)) // TODO: draw the non-selected background
+			qDrawShadePanel(p, menuitem->rect, menuitem->palette, true,
+							1, &menuitem->palette.midlight());
+
+		int tf = Qt::AlignCenter | Qt::TextShowMnemonic | Qt::TextDontClip | Qt::TextSingleLine;
+		if (!proxy()->styleHint(SH_UnderlineShortcut, menuitem, widget))
+			tf |= Qt::TextHideMnemonic;
+
+		proxy()->drawItemText(p, menuitem->rect, tf, menuitem->palette,
+							  menuitem->state & State_Enabled, menuitem->text);
+
+		break;
+	}
+
+	// MENU ITEM
+	// -------------------------------------------------------------------
+	case CE_MenuItem: {
+		const QStyleOptionMenuItem *menuitem = qstyleoption_cast<const QStyleOptionMenuItem *>(opt);
+		if (!menuitem)
+			break;
+
+		const int tab = menuitem->reservedShortcutWidth;
+		const int checkcol = qMax<int>(menuitem->maxIconWidth, 20);
+		const int dim = proxy()->pixelMetric(PM_MenuButtonIndicator, opt, widget);
+		const int itemHMargin  = 3;
+		const int itemFrame    = 1;
+		const int arrowHMargin = 6;
 		
+		bool enabled = menuitem->state & State_Enabled;
+		bool checked = menuitem->checkType != QStyleOptionMenuItem::NotCheckable
+			? menuitem->checked : false;
+		bool active = menuitem->state & State_Selected;
+		bool reverse = QGuiApplication::isRightToLeft();
+
+		// Separator
+		if ( menuitem->menuItemType == QStyleOptionMenuItem::Separator ) {
+			p->save();
+			if (isScaled) {
+				p->scale(inverseScale, inverseScale);
+				p->translate(0.5, 0.5);
+			}
+
+			int x,y,w,h;
+			r.getRect(&x,&y,&w,&h);
+			p->setPen( menuitem->palette.dark().color() );
+			p->drawLine( x, y, x+w, y );
+			p->setPen( menuitem->palette.light().color() );
+			p->drawLine( x, y+1, x+w, y+1 );
+			
+			p->restore();
+			break;
+		}
+
+		// Menu background
+		if (active)
+			qDrawShadePanel(p, menuitem->rect, menuitem->palette, true,
+							1, &menuitem->palette.midlight());
+		else
+			p->fillRect(menuitem->rect, menuitem->palette.button());
+
+		// Compute rects
+		int x,y,w,h;
+		menuitem->rect.getRect(&x,&y,&w,&h);
+		QRect cr(x, y, checkcol, h); // Check mark rect
+		QRect sr(x + w - arrowHMargin - 2*itemFrame - dim, y + h / 2 - dim / 2, dim, dim); // Sub menu indicator
+		QRect tr(sr.left() - tab - itemHMargin, y, tab, h); // tab/accelerator text
+		QRect ir(cr.right() + itemHMargin, y, tr.left() - cr.right() - 2 * itemHMargin - x, h); // text
+		if ( reverse ) {
+			cr = visualRect( opt->direction, menuitem->rect, cr );
+			sr = visualRect( opt->direction, menuitem->rect, sr );
+			tr = visualRect( opt->direction, menuitem->rect, tr );
+			ir = visualRect( opt->direction, menuitem->rect, tr );
+		}
+
+		// Do we have an icon?
+		if (!menuitem->icon.isNull()) {
+			// If we have an icon and the menu is checked, draw a sunken frame
+			// around the icon
+			if (checked && !active)
+				qDrawShadePanel(p, cr, menuitem->palette, true, 1,
+								&menuitem->palette.midlight());
+			// Draw the icon
+			QIcon::Mode mode = enabled ? QIcon::Normal : QIcon::Disabled;
+			if (active && enabled)
+				mode = QIcon::Active;
+			const auto size = proxy()->pixelMetric(PM_SmallIconSize, opt, widget);
+			const auto state = checked ? QIcon::On : QIcon::Off;
+			QPixmap pixmap = menuitem->icon.pixmap(QSize(size,size), dpr, mode, state);
+			QRect pmr(QPoint(0, 0), pixmap.size() / pixmap.devicePixelRatio());
+			pmr.moveCenter(cr.center());
+			p->setPen(menuitem->palette.text().color());
+			p->drawPixmap(pmr.topLeft(), pixmap);
+		} else if (checked) { // Are we checked (without an icon)?
+			// We only have to draw the background if the menu item is inactive -
+			// if it's active the "pressed" background is already drawn
+			if (!active)
+				qDrawShadePanel(p, cr, menuitem->palette, true, 1,
+								&menuitem->palette.midlight());
+			// Draw the check mark
+			QStyleOption check;
+			check.state = State_None;
+			check.state |= active ? State_Enabled : State_On;
+			check.rect = cr;
+			check.palette = menuitem->palette;
+			proxy()->drawPrimitive(PE_IndicatorMenuCheckMark, &check, p, widget);
+		}
+
+		// Draw the text
+		QStringView s(menuitem->text);
+		if (!s.isEmpty()) {
+			// Set up text
+			qsizetype t = s.indexOf(u'\t');
+			int tf = Qt::AlignVCenter | Qt::TextShowMnemonic | Qt::TextDontClip | Qt::TextSingleLine;
+			if (!proxy()->styleHint(SH_UnderlineShortcut, menuitem, widget))
+				tf |= Qt::TextHideMnemonic;
+
+			// draw accelerator/tab-text
+			if (t >= 0) {
+				const QString textToDraw = s.mid(t + 1).toString();
+				int alignFlag = tf | ( reverse ? Qt::AlignLeft : Qt::AlignRight );
+				proxy()->drawItemText(p, tr, alignFlag, menuitem->palette, enabled,
+									  textToDraw);
+			}
+
+			// Draw main item text
+			const QString textToDraw = s.left(t).toString();
+			int alignFlag = tf | ( reverse ? Qt::AlignRight : Qt::AlignLeft );
+			proxy()->drawItemText(p, ir, alignFlag, menuitem->palette, enabled,
+								  textToDraw);
+		}
+
+		// Draw submenu indicator (if appropriate)
+		if (menuitem->menuItemType == QStyleOptionMenuItem::SubMenu) {
+			QStyleOption arrow;
+			arrow.state = menuitem->state;
+			arrow.rect = sr;
+			arrow.palette = menuitem->palette;
+			proxy()->drawPrimitive((reverse ? PE_IndicatorArrowLeft : PE_IndicatorArrowRight), &arrow, p, widget);
+		}
+		
+		break;
+	}
+	
 	default: {
 		QCommonStyle::drawControl(control, opt, p, widget);
 		break;
