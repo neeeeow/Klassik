@@ -9,6 +9,7 @@
 #include "../../common/klassikqstyleitem.h"
 
 #include <QPalette>
+#include <QStyleOptionHeader>
 
 class TaskBackground : public KlassikQStyleItem
 {
@@ -36,12 +37,12 @@ protected:
 		if (!m_style)
 			return;
 
-		QStyleOption opt;
-		opt.palette = QGuiApplication::palette();
-		opt.rect = QRect(0,0,width(),height());
-		opt.state = m_sunken ? QStyle::State_Sunken : QStyle::State_Raised;
+		QStyleOptionHeader header;
+		header.palette = QGuiApplication::palette();
+	    header.rect = QRect(0,0,width(),height());
+		header.state = m_sunken ? QStyle::State_Sunken : QStyle::State_Raised;
 
-	    m_style->drawControl(QStyle::CE_HeaderSection, &opt, p);
+	    m_style->drawControl(QStyle::CE_HeaderSection, &header, p);
 	}
 
 private:

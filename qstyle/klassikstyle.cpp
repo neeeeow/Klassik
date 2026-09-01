@@ -1456,14 +1456,14 @@ KlassikStyle::drawControl(ControlElement control, const QStyleOption *opt,
 				const QString textToDraw = s.mid(t + 1).toString();
 				int alignFlag = tf | ( reverse ? Qt::AlignLeft : Qt::AlignRight );
 				proxy()->drawItemText(p, tr, alignFlag, menuitem->palette, enabled,
-									  textToDraw);
+									  textToDraw, QPalette::ButtonText);
 			}
 
 			// Draw main item text
 			const QString textToDraw = s.left(t).toString();
 			int alignFlag = tf | ( reverse ? Qt::AlignRight : Qt::AlignLeft );
 			proxy()->drawItemText(p, ir, alignFlag, menuitem->palette, enabled,
-								  textToDraw);
+								  textToDraw, QPalette::ButtonText);
 		}
 
 		// Draw submenu indicator (if appropriate)
