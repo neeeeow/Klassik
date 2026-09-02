@@ -22,6 +22,9 @@ public:
 	void drawControl(ControlElement control, const QStyleOption *opt,
 					 QPainter *p, const QWidget *widget = nullptr) const override;
 
+	QRect subElementRect(SubElement element, const QStyleOption *opt,
+						 const QWidget *widget = nullptr) const override;
+
 private:
 	StyleType m_styleType = Default;
 

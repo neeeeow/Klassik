@@ -1484,3 +1484,35 @@ KlassikStyle::drawControl(ControlElement control, const QStyleOption *opt,
 	}
 	}
 }
+
+QRect
+KlassikStyle::subElementRect(SubElement element, const QStyleOption *opt,
+							   const QWidget *widget) const
+{
+	// We want the focus rect for buttons to be adjusted from
+	// the Qt6 defaults to be similar to Qt 2's defaults.
+	// -------------------------------------------------------------------
+	if (element == SE_PushButtonFocusRect) {
+		const QStyleOptionButton *btn = qstyleoption_cast<const QStyleOptionButton *>(opt);
+		if (!btn)
+			return QCommonStyle::subElementRect(element, opt, widget);
+
+		QRect r;
+		int dbw1 = 0, dbw2 = 0;
+		if (btn->features & QStyleOptionButton::AutoDefaultButton){
+			dbw1 = proxy()->pixelMetric(PM_ButtonDefaultIndicator, btn, widget);
+			dbw2 = dbw1 * 2;
+		}
+
+		int dfw1 = proxy()->pixelMetric(PM_DefaultFrameWidth, btn, widget) + 1,
+			dfw2 = dfw1 * 2;
+
+		r.setRect(btn->rect.x() + dfw1 + dbw1 + 1,
+				  btn->rect.y() + dfw1 + dbw1 + 1,
+				  btn->rect.width() - dfw2 - dbw2 - 1,
+				  btn->rect.height()- dfw2 - dbw2 - 1);
+		r = visualRect(opt->direction, opt->rect, r);
+		return r;
+	} else
+		return QCommonStyle::subElementRect(element, opt, widget);
+}
