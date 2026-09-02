@@ -1516,3 +1516,113 @@ KlassikStyle::subElementRect(SubElement element, const QStyleOption *opt,
 	} else
 		return QCommonStyle::subElementRect(element, opt, widget);
 }
+
+void
+KlassikStyle::drawComplexControl(ComplexControl control, const QStyleOptionComplex *opt,
+								   QPainter *p, const QWidget *widget) const
+{
+	const qreal dpr = getDpr(p);
+	const qreal inverseScale = qreal(1) / dpr;
+	QRect r;
+	bool isScaled = false;
+	if (!qFuzzyCompare(dpr, qreal(1))) {
+		isScaled = true;
+	    r = getScaledRect(opt->rect, dpr);
+	} else {
+		r = opt->rect;
+	}
+
+	switch (control) {
+	// COMBOBOX
+	// -------------------------------------------------------------------
+	case CC_ComboBox: {
+		const QStyleOptionComboBox *combobox = qstyleoption_cast<const QStyleOptionComboBox *>(opt);
+		if (!combobox)
+			break;
+		
+		bool sunken = (combobox->state & (State_On | State_Sunken));
+
+		// QRect's corresponding to combobox frame, arrow, and entry field
+		QRect frame, arrow, field;
+		frame = subControlRect(CC_ComboBox, combobox, SC_ComboBoxFrame, widget);
+		arrow = subControlRect(CC_ComboBox, combobox, SC_ComboBoxArrow, widget);
+		field = subControlRect(CC_ComboBox, combobox, SC_ComboBoxEditField, widget);
+
+		// Draw combobox frame
+		if ((opt->subControls & SC_ComboBoxFrame) && frame.isValid()) {
+			int x,y,w,h;
+			getScaledRect(frame, dpr).getRect(&x,&y,&w,&h);
+			int x2 = x+w-1;
+			int y2 = y+h-1;
+
+			p->save();
+			if (isScaled) {
+				p->scale(inverseScale, inverseScale);
+				p->translate(0.5, 0.5);
+			}
+
+			p->setPen(combobox->palette.shadow().color());
+			p->drawLine(x+1, y, x2-1, y);
+			p->drawLine(x+1, y2, x2-1, y2);
+			p->drawLine(x, y+1, x, y2-1);
+			p->drawLine(x2, y+1, x2, y2-1);
+
+			// Ensure the edge notches are properly colored
+			p->setPen(combobox->palette.button().color());
+			p->drawPoint(x,y);
+			p->drawPoint(x,y2);
+			p->drawPoint(x2,y);
+			p->drawPoint(x2,y2);
+
+			if (isScaled)
+				p->translate(-0.5,-0.5);			
+			renderGradient( p, QRect(x+2, y+2, w-4, h-4),
+							combobox->palette.button().color(), false);
+			if (isScaled)
+				p->translate(0.5,0.5);
+
+			p->setPen(sunken ? combobox->palette.light().color() : combobox->palette.mid().color());
+			p->drawLine(x2-1, y+2, x2-1, y2-1);
+			p->drawLine(x+1, y2-1, x2-1, y2-1);
+
+			p->setPen(sunken ? combobox->palette.mid().color() : combobox->palette.light().color());
+			p->drawLine(x+1, y+1, x2-1, y+1);
+			p->drawLine(x+1, y+2, x+1, y2-2);
+			
+			p->restore();
+		}
+
+		// Draw combobox arrow
+	    if ((opt->subControls & SC_ComboBoxArrow) && arrow.isValid()) {
+			QStyleOption arrowOpt;
+			arrowOpt.state = combobox->state;
+			arrowOpt.rect = arrow;
+			arrowOpt.palette = combobox->palette;
+			proxy()->drawPrimitive(PE_IndicatorArrowDown, &arrowOpt, p, widget);
+		}
+
+		// Draw combobox line edit
+		if ((opt->subControls & SC_ComboBoxEditField) && field.isValid()) {
+			if (combobox->editable)
+				qDrawShadeRect(p, field.adjusted(-1,-1,1,1), combobox->palette, true);
+			else if (combobox->state & State_HasFocus) {
+				p->fillRect(field, combobox->palette.brush(QPalette::Highlight));
+				QStyleOptionFocusRect focus;
+				focus.QStyleOption::operator=(*combobox);
+				focus.rect = subElementRect(SE_ComboBoxFocusRect, combobox, widget);
+				focus.state |= State_FocusAtBorder;
+				focus.backgroundColor = combobox->palette.highlight().color();
+				proxy()->drawPrimitive(PE_FrameFocusRect, &focus, p, widget);
+			}
+		}
+		
+		break;
+	}		
+		
+	default: {
+		QCommonStyle::drawComplexControl(control, opt, p, widget);
+		break;
+	}
+	}
+   
+}
