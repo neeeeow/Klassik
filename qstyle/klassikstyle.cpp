@@ -1523,14 +1523,7 @@ KlassikStyle::drawComplexControl(ComplexControl control, const QStyleOptionCompl
 {
 	const qreal dpr = getDpr(p);
 	const qreal inverseScale = qreal(1) / dpr;
-	QRect r;
-	bool isScaled = false;
-	if (!qFuzzyCompare(dpr, qreal(1))) {
-		isScaled = true;
-	    r = getScaledRect(opt->rect, dpr);
-	} else {
-		r = opt->rect;
-	}
+	bool isScaled = qFuzzyCompare(dpr, qreal(1)) ? false : true;
 
 	switch (control) {
 	// COMBOBOX
@@ -1544,9 +1537,9 @@ KlassikStyle::drawComplexControl(ComplexControl control, const QStyleOptionCompl
 
 		// QRect's corresponding to combobox frame, arrow, and entry field
 		QRect frame, arrow, field;
-		frame = subControlRect(CC_ComboBox, combobox, SC_ComboBoxFrame, widget);
-		arrow = subControlRect(CC_ComboBox, combobox, SC_ComboBoxArrow, widget);
-		field = subControlRect(CC_ComboBox, combobox, SC_ComboBoxEditField, widget);
+		frame = proxy()->subControlRect(CC_ComboBox, combobox, SC_ComboBoxFrame, widget);
+		arrow = proxy()->subControlRect(CC_ComboBox, combobox, SC_ComboBoxArrow, widget);
+		field = proxy()->subControlRect(CC_ComboBox, combobox, SC_ComboBoxEditField, widget);
 
 		// Draw combobox frame
 		if ((opt->subControls & SC_ComboBoxFrame) && frame.isValid()) {
@@ -1617,7 +1610,125 @@ KlassikStyle::drawComplexControl(ComplexControl control, const QStyleOptionCompl
 		}
 		
 		break;
-	}		
+	}
+
+	// SLIDER
+	// -------------------------------------------------------------------
+	case CC_Slider: {
+		const QStyleOptionSlider *slider = qstyleoption_cast<const QStyleOptionSlider *>(opt);
+		if (!slider)
+			break;
+
+		bool horizontal = slider->orientation == Qt::Horizontal;
+
+		// Draw groove
+		if (slider->subControls & SC_SliderGroove) {
+			QRect r = getScaledRect(proxy()->subControlRect(CC_Slider, slider, SC_SliderGroove, widget), dpr);
+			int gcenter = (horizontal ? r.height() : r.width()) / 2;
+
+			QRect gr;
+			if (horizontal)
+				gr = QRect(r.x(), r.y()+gcenter-3, r.width(), 7);
+			else
+				gr = QRect(r.x()+gcenter-3, r.y(), 7, r.height());
+
+			int x,y,w,h;
+			gr.getRect(&x, &y, &w, &h);
+			int x2=x+w-1;
+			int y2=y+h-1;
+
+			p->save();
+			if (isScaled) {
+				p->scale(inverseScale, inverseScale);
+				p->translate(0.5, 0.5);
+			}
+
+			p->setPen(slider->palette.dark().color());
+			p->drawLine(x+2, y, x2-2, y);
+			p->drawLine(x, y+2, x, y2-2);
+			if (isScaled)
+				p->translate(-0.5,-0.5);
+			p->fillRect(x+2,y+2,w-4, h-4, 
+						(slider->state & State_Enabled) ? slider->palette.dark() : slider->palette.mid());
+			if (isScaled)
+				p->translate(0.5, 0.5);
+			p->setPen(slider->palette.shadow().color());
+			p->drawRect(x+1, y+1, w-3, h-3);
+			p->setPen(slider->palette.light().color());
+			p->drawPoint(x+1,y2-1);
+			p->drawPoint(x2-1,y2-1);
+			p->drawLine(x2, y+2, x2, y2-2);
+			p->drawLine(x+2, y2, x2-2, y2);
+
+			p->restore();
+		}
+
+		// Draw the handle
+		if (slider->subControls & SC_SliderHandle) {
+			QRect r = getScaledRect(proxy()->subControlRect(CC_Slider, slider, SC_SliderHandle, widget), dpr);
+			int x,y,w,h;
+			r.getRect(&x, &y, &w, &h);
+			int x2 = x+w-1;
+			int y2 = y+h-1;
+
+			p->save();
+			if (isScaled) {
+				p->scale(inverseScale, inverseScale);
+				p->translate(0.5, 0.5);
+			}
+
+			p->setPen(slider->palette.mid().color());
+			p->drawLine(x+1, y, x2-1, y);
+			p->drawLine(x, y+1, x, y2-1);
+			p->setPen(slider->palette.shadow().color());
+			p->drawLine(x+1, y2, x2-1, y2);
+			p->drawLine(x2, y+1, x2, y2-1);
+
+			p->setPen(slider->palette.light().color());
+			p->drawLine(x+1, y+1, x2-1, y+1);
+			p->drawLine(x+1, y+1, x+1,  y2-1);
+			p->setPen(slider->palette.dark().color());
+			p->drawLine(x+2, y2-1, x2-1, y2-1);
+			p->drawLine(x2-1, y+2, x2-1, y2-1);
+			p->setPen(slider->palette.midlight().color());
+			p->drawLine(x+2, y+2, x2-2, y+2);
+			p->drawLine(x+2, y+2, x+2, y2-2);
+			p->setPen(slider->palette.mid().color());
+			p->drawLine(x+3, y2-2, x2-2, y2-2);
+			p->drawLine(x2-2, y+3, x2-2, y2-2);
+			if (isScaled)
+				p->translate(-0.5,-0.5);
+			renderGradient(p, QRect(x+3, y+3, w-6, h-6), 
+						   slider->palette.button().color(), !horizontal);
+			if (isScaled)
+				p->translate(0.5, 0.5);
+
+			// Paint riffles
+			if (horizontal) {
+				p->setPen(slider->palette.light().color());
+				p->drawLine(x+5, y+4, x+5, y2-4);
+				p->drawLine(x+8, y+4, x+8, y2-4);
+				p->drawLine(x+11,y+4, x+11, y2-4);
+				p->setPen((slider->state & State_Enabled) ? slider->palette.shadow().color(): slider->palette.mid().color());
+				p->drawLine(x+6, y+4, x+6, y2-4);
+				p->drawLine(x+9, y+4, x+9, y2-4);
+				p->drawLine(x+12,y+4, x+12, y2-4);
+			} else {
+				p->setPen(slider->palette.light().color());
+				p->drawLine(x+4, y+5, x2-4, y+5);
+				p->drawLine(x+4, y+8, x2-4, y+8);
+				p->drawLine(x+4, y+11, x2-4, y+11);
+			    p->setPen((slider->state & State_Enabled) ? slider->palette.shadow().color(): slider->palette.mid().color());
+				p->drawLine(x+4, y+6, x2-4, y+6);
+				p->drawLine(x+4, y+9, x2-4, y+9);
+				p->drawLine(x+4, y+12, x2-4, y+12);
+			}
+			
+			p->restore();
+		}
+			
+		break;
+	}
 		
 	default: {
 		QCommonStyle::drawComplexControl(control, opt, p, widget);
