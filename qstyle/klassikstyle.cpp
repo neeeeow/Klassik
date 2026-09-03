@@ -1726,6 +1726,13 @@ KlassikStyle::drawComplexControl(ComplexControl control, const QStyleOptionCompl
 			
 			p->restore();
 		}
+
+		// Tick marks
+		if (opt->subControls & SC_SliderTickmarks) {
+			QStyleOptionSlider copy(*slider);
+			copy.subControls = SC_SliderTickmarks;
+			QCommonStyle::drawComplexControl(CC_Slider, &copy, p, widget);
+		}
 			
 		break;
 	}
@@ -1736,4 +1743,139 @@ KlassikStyle::drawComplexControl(ComplexControl control, const QStyleOptionCompl
 	}
 	}
    
+}
+
+int
+KlassikStyle::pixelMetric(PixelMetric metric, const QStyleOption *opt,
+							const QWidget *widget) const
+{
+	int ret = 0;
+
+	switch (metric) {
+	// BUTTONS
+	// -------------------------------------------------------------------
+	case PM_ButtonMargin:
+		ret = 4;
+		break;
+
+	case PM_ButtonDefaultIndicator: {
+		if ( m_styleType == HighColor )
+			ret = 0;
+		else
+			ret = 3;
+		break;
+	}
+
+	case PM_MenuButtonIndicator: {
+		if ( m_styleType != B3 )
+			ret = 8;
+		else
+			ret = 7;
+		break;
+	}
+
+	// CHECKBOXES / RADIO BUTTONS
+	// -------------------------------------------------------------------
+	case PM_ExclusiveIndicatorWidth:	// Radiobutton size
+	case PM_ExclusiveIndicatorHeight:
+	case PM_IndicatorWidth:				// Checkbox size
+	case PM_IndicatorHeight: {
+		ret = 13;						// 13x13
+		break;
+	}
+
+	// TABS
+	// ------------------------------------------------------------------------
+	case PM_TabBarTabVSpace: {
+		const QStyleOptionTab *tb = qstyleoption_cast<const QStyleOptionTab *>(opt);
+		if (!tb)
+			break;
+
+		if ( tb->shape == QTabBar::RoundedNorth ||
+			 tb->shape == QTabBar::RoundedSouth ||
+			 tb->shape == QTabBar::TriangularNorth ||
+			 tb->shape == QTabBar::TriangularSouth)
+			ret = 10;
+		else
+			ret = 4;
+		break;
+	}
+
+	case PM_TabBarTabOverlap: {
+		const QStyleOptionTab *tb = qstyleoption_cast<const QStyleOptionTab *>(opt);
+		if (!tb)
+			break;
+
+		if ( tb->shape == QTabBar::RoundedNorth ||
+			 tb->shape == QTabBar::RoundedSouth ||
+			 tb->shape == QTabBar::TriangularNorth ||
+			 tb->shape == QTabBar::TriangularSouth)
+			ret = 0;
+		else
+			ret = 2;
+		break;
+	}
+		
+	// SLIDER
+	// ------------------------------------------------------------------------
+	case PM_SliderLength:
+		ret = 18;
+		break;
+
+	case PM_SliderThickness:
+		ret = 24;
+		break;
+
+	case PM_SliderControlThickness: {
+		const QStyleOptionSlider *slider = qstyleoption_cast<const QStyleOptionSlider *>(opt);
+		if (!slider)
+			break;
+
+		int thickness = (slider->orientation == Qt::Horizontal) ?
+			slider->rect.height() : slider->rect.width();
+
+		if (slider->subControls & SC_SliderTickmarks)
+			thickness = ((thickness*2)/3) + 3;
+
+		ret = thickness;		
+		break;
+	}
+
+	// SPLITTER
+	// ------------------------------------------------------------------------
+	case PM_SplitterWidth:
+		ret = 6;
+		break;
+
+	// FRAMES
+	// ------------------------------------------------------------------------
+	case PM_MenuBarPanelWidth:
+	case PM_DockWidgetFrameWidth:
+		ret = 1;
+		break;
+
+	// GENERAL
+	// ------------------------------------------------------------------------
+	case PM_MaximumDragDistance:
+		ret = -1;
+		break;
+
+	case PM_MenuBarItemSpacing:
+		ret = 5;
+		break;
+
+	case PM_ToolBarItemSpacing:
+		ret = 0;
+		break;
+
+	case PM_MenuScrollerHeight:
+		ret = proxy()->pixelMetric( PM_ScrollBarExtent, opt, widget);
+		break;
+		
+	default:
+		ret = QCommonStyle::pixelMetric(metric, opt, widget);
+		break;
+	}
+	
+	return ret;
 }
