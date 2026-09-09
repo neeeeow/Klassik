@@ -127,85 +127,8 @@ function activateTask(index, model, modifiers, task, plasmoid, tasks, windowView
     }
 
     if (model.IsGroupParent) {
-        // Option 1 (default): Cycle through this group's tasks
-        // ====================================================
-        // If the grouped task does not include the currently active task, bring
-        // forward the most recently used task in the group.
-        // Otherwise cycle through all tasks in the group without paying attention
-        // to the last activation time, which otherwise would change with every click
-        if (plasmoid.configuration.groupedTaskVisualization === 0) {
-            let childTaskList = [];
-
-            for (let i = 0; i < tasks.tasksModel.rowCount(task.modelIndex(index)); ++i) {
-                const childTaskModelIndex = tasks.tasksModel.makeModelIndex(task.index, i);
-                childTaskList.push(childTaskModelIndex);
-            }
-
-            // If the active task is already among in the group that was
-            // activated, cycle through all tasks according to the order of
-            // the immutable model index so the order doesn't change with
-            // every click.
-            if (childTaskList.some(index => tasks.tasksModel.data(index, TaskManager.AbstractTasksModel.IsActive))) {
-                for (let j = 0; j < childTaskList.length; ++j) {
-                    const childTask = childTaskList[j];
-                    if (tasks.tasksModel.data(childTask, TaskManager.AbstractTasksModel.IsActive)) {
-                        // Found the current task. Activate the next one
-                        let nextTask = j + 1;
-                        if (nextTask >= childTaskList.length) {
-                            nextTask = 0;
-                        }
-                        tasks.tasksModel.requestActivate(childTaskList[nextTask]);
-                        break;
-                    }
-                }
-            } else {
-                // If the active task is from a different app from the group that
-                // was clicked on switch to the last-used task from that app.
-                let topTaskIndex = groupTopTask(childTaskList, TaskManager.AbstractTasksModel.LastActivated, tasks);
-
-                // If no task in the group was ever active, the LastActivated property is not set on any task
-                // -> default to the stacking order
-                if (topTaskIndex === undefined) {
-                    topTaskIndex = groupTopTask(childTaskList, TaskManager.AbstractTasksModel.StackingOrder, tasks)
-                }
-
-                tasks.tasksModel.requestActivate(topTaskIndex);
-            }
-        }
-
-        // Option 2: show tooltips for all child tasks
-        // ===========================================
-        else if (plasmoid.configuration.groupedTaskVisualization === 1) {
-            if (tasks.toolTipOpenedByClick) {
-                task.hideImmediately();
-            } else {
-                tasks.toolTipOpenedByClick = task;
-                task.updateMainItemBindings(); // BUG 452187
-                task.showToolTip();
-            }
-        }
-
-        // Option 3: show Window View for all child tasks
-        // ==================================================
-        // Make sure the Window View effect is  are actually enabled though;
-        // if not, fall through to the next option.
-        else if (plasmoid.configuration.groupedTaskVisualization === 2 && windowViewAvailable) {
-            task.hideToolTip();
-            tasks.activateWindowView(model.WinIdList);
-        }
-
-        // Option 4: show group dialog/textual list
-        // ========================================
-        // This is also the final fallback option if Window View
-        // is chosen but not actually available
-        else {
-            if (tasks.groupDialog) {
-                task.hideToolTip();
-                tasks.groupDialog.visible = false;
-            } else {
-                createGroupDialog(task, tasks);
-            }
-        }
+        // Open group menu
+        task.showGroupMenu();
     } else {
         if (model.IsMinimized) {
             tasks.tasksModel.requestToggleMinimized(index);
@@ -243,19 +166,6 @@ function taskPrefixHovered(prefix, location) {
         ...prefix ? taskPrefix("hover", location) : [],
         ...taskPrefix(prefix, location),
     ];
-}
-
-function createGroupDialog(visualParent, tasks) {
-    if (!visualParent) {
-        return;
-    }
-
-    if (tasks.groupDialog) {
-        tasks.groupDialog.visualParent = visualParent;
-        return;
-    }
-
-    tasks.groupDialog = tasks.groupDialogComponent.createObject(tasks, { visualParent });
 }
 
 function foreachChildTask(callback, modelIndex, tasksModel) {

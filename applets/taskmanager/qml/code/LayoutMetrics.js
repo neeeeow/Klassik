@@ -9,107 +9,41 @@
 const iconMargin = Math.round(Kirigami.Units.smallSpacing / 4);
 const labelMargin = Kirigami.Units.smallSpacing;
 
-function adjustMargin(height, margin) {
-    if (height < Kirigami.Units.iconSizes.small) {
-        return Math.floor((margin * (Kirigami.Units.iconSizes.small / height)) / 3);
-    }
-
-    return margin;
-}
-
-function maxStripes() {
-    const length = tasks.vertical ? tasks.width : tasks.height;
-    const minimum = tasks.vertical ? preferredMinWidth() : preferredMinHeight();
-
-    return Math.min(tasks.plasmoid.configuration.maxStripes, Math.max(1, Math.floor(length / minimum)));
-}
-
-function optimumCapacity(width, height) {
-    const length = tasks.vertical ? height : width;
-    const maximum = tasks.vertical ? preferredMaxHeight() : preferredMaxWidth();
-
-    if (!tasks.vertical) {
-        //  Fit more tasks in this case, that is possible to cut text, before combining tasks.
-        return Math.ceil(length / maximum) * maxStripes() + 1;
-    }
-
-    return Math.floor(length / maximum) * maxStripes();
-}
-
-function preferredMinWidth() {
-    let width = preferredMinLauncherWidth();
-
-    if (!tasks.vertical) {
-      width +=
-          (Kirigami.Units.smallSpacing * 2) +
-          (Kirigami.Units.gridUnit * 8);
-    }
-
-    return width;
-}
-
 function preferredMaxWidth() {
-    // Avoid doing a bunch of unnecessary work below in vertical mode
-    if (tasks.vertical) {
-        return preferredMinWidth();
-    }
-
-    // Visually, a large max item width on a tall panel looks cluttered even
-    // with just a task or two open. This clutter is less pronounced on panels
-    // lower in height, as there is generally more horizontal space.
-    //
-    // This allows for one default value for max item width where clutter is
-    // reduced at low task counts for tall panels, while leaving low height
-    // panels less affected (unaffected at 20px).
-    const laneHeight = tasks.height / maxStripes(); // correct for multiple rows
-    let baseFactor = 1; // sane default in case something goes wrong
+    let maxWidth = 200;
     switch (tasks.plasmoid.configuration.taskMaxWidth) {
-    case 0: // narrow
-        baseFactor = 1.2;
-        break;
-    case 1: // medium
-        baseFactor = 1.6;
-        break;
-    case 2: // wide
-        baseFactor = 2;
-        break;
+        case 0: // narrow
+            maxWidth = 150;
+            break;
+        case 1: // medium
+            maxWidth = 200;
+            break;
+        case 2: // wide
+            maxWidth = 250;
+            break;
     }
-    // For every pixel of height above 20, knock the factor down by 0.01. This
-    // produces nice results for 20~50 pixels. Above 50, it suddenly feels like
-    // it's shrinking a lot, and above 80 the Medium and Narrow settings would
-    // end up setting the same width, so don't apply further reduction above 50.
-    const factorReduction = (Math.min(50, laneHeight) - 20) * 0.01;
-    // Clamp the minimum factor to 1 to ensure max width is always >= min width.
-    // and the factor reduction to 0 so we don't ever increase the factor
-    const factor = Math.max(1, baseFactor - Math.max(0, factorReduction));
-    return Math.floor(preferredMinWidth() * factor);
-}
 
-function preferredMinHeight() {
-    // TODO FIXME UPSTREAM: Port to proper font metrics for descenders once we have access to them.
-    return Kirigami.Units.iconSizes.sizeForLabels + 4;
+    return maxWidth;
 }
 
 function preferredMaxHeight() {
-    if (tasks.vertical) {
-        let taskPreferredSize = 0;
-        taskPreferredSize = Math.max(Kirigami.Units.iconSizes.sizeForLabels,
-                                    Kirigami.Units.iconSizes.medium);
-        return Math.min(
-                // Do not allow the preferred icon size to exceed the width of
-                // the vertical task manager.
-                tasks.width / maxStripes(),
-                taskPreferredSize);
+    return 26; // TODO: implement config for this
+}
+
+function stripeCount() {
+    if (Plasmoid.formFactor === PlasmaCore.Types.Vertical) {
+        return 1;
     } else {
-        return Math.min(
-                Kirigami.Units.iconSizes.small * 3,
-                Kirigami.Units.iconSizes.sizeForLabels * 3);
+        const maxHeight = preferredMaxHeight();
+        return Math.max(1, Math.floor(tasks.height / maxHeight)); // KDE 3 logic
     }
 }
 
-function preferredHeightInPopup() {
-    return Math.max(Kirigami.Units.iconSizes.sizeForLabels,
-                                        Kirigami.Units.iconSizes.medium);
+function orthogonalCount(count) {
+    if (count <= 0)
+        return 1;
+    const stripes = stripeCount();
+    return Math.ceil(count / stripes);
 }
 
 function spaceRequiredToShowText() {
@@ -119,14 +53,6 @@ function spaceRequiredToShowText() {
     return Math.round(Kirigami.Units.gridUnit * 1.5);
 }
 
-function preferredMinLauncherWidth() {
-    const baseWidth = tasks.vertical ? preferredMinHeight() : Math.min(tasks.height, Kirigami.Units.iconSizes.small * 3);
-
-    return (baseWidth)
-        - (adjustMargin(baseWidth, 0) + adjustMargin(baseWidth, 0));
-}
-
 function maximumContextMenuTextWidth() {
     return (Kirigami.Units.iconSizes.sizeForLabels * 28);
 }
-

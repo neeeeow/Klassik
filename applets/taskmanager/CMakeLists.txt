@@ -6,7 +6,7 @@ plasma_add_applet(com.github.neeeeow.klassik.taskmanager
         qml/ConfigBehavior.qml
         qml/config.qml
         qml/ContextMenu.qml
-        qml/GroupDialog.qml
+        qml/GroupMenu.qml
         qml/main.qml
         qml/MouseHandler.qml
         qml/PipeWireThumbnail.qml

@@ -30,32 +30,8 @@ GridLayout {
         .filter(item => item.visible && item.width > 0)
         .reduce((minimumWidth, item) => Math.min(minimumWidth, item.width), Infinity)
 
-    readonly property int stripeCount: {
-        if (Plasmoid.configuration.maxStripes === 1) {
-            return 1;
-        }
-        if (Plasmoid.configuration.forceStripes) {
-            return Plasmoid.configuration.maxStripes;
-        }
-
-        // The maximum number of stripes allowed by the applet's size
-        const stripeSizeLimit = vertical
-            ? Math.floor(parent.width / children[0].implicitWidth)
-            : Math.floor(parent.height / children[0].implicitHeight)
-        const maxStripes = Math.min(Plasmoid.configuration.maxStripes, stripeSizeLimit)
-
-
-        // The number of tasks that will fill a "stripe" before starting the next one
-        const maxTasksPerStripe = vertical
-            ? Math.ceil(parent.height / TaskManagerApplet.LayoutMetrics.preferredMinHeight())
-            : Math.ceil(parent.width / TaskManagerApplet.LayoutMetrics.preferredMinWidth())
-
-        return Math.min(Math.ceil(count / maxTasksPerStripe), maxStripes)
-    }
-
-    readonly property int orthogonalCount: {
-        return Math.ceil(count / stripeCount);
-    }
+    readonly property int stripeCount: TaskManagerApplet.LayoutMetrics.stripeCount()
+    readonly property int orthogonalCount: TaskManagerApplet.LayoutMetrics.orthogonalCount(count)
 
     rows: vertical ? orthogonalCount : stripeCount
     columns: vertical ? stripeCount : orthogonalCount

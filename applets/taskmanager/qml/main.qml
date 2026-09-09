@@ -27,8 +27,7 @@ PlasmoidItem {
 
     // For making a bottom to top layout since qml flow can't do that.
     // We just hang the task manager upside down to achieve that.
-    // This mirrors the tasks and group dialog as well, so we un-rotate them
-    // to fix that (see Task.qml and GroupDialog.qml).
+    // This mirrors the tasks and group dialog as well, so we un-rotate them to fix that
     rotation: Plasmoid.configuration.reverseMode && Plasmoid.formFactor === PlasmaCore.Types.Vertical ? 180 : 0
 
     readonly property bool shouldShrinkToZero: tasksModel.count === 0
@@ -38,17 +37,12 @@ PlasmoidItem {
     property Task toolTipAreaItem
 
     readonly property Component contextMenuComponent: Qt.createComponent("ContextMenu.qml")
+    readonly property Component groupMenuComponent: Qt.createComponent("GroupMenu.qml")
     readonly property Component pulseAudioComponent: Qt.createComponent("PulseAudio.qml")
 
     property alias taskList: taskList
 
     preferredRepresentation: fullRepresentation
-
-    Plasmoid.onUserConfiguringChanged: {
-        if (Plasmoid.userConfiguring && groupDialog !== null) {
-            groupDialog.visible = false;
-        }
-    }
 
     Layout.fillWidth: vertical ? true : Plasmoid.configuration.fill
     Layout.fillHeight: !vertical ? true : Plasmoid.configuration.fill
@@ -56,13 +50,13 @@ PlasmoidItem {
         if (shouldShrinkToZero) {
             return Kirigami.Units.gridUnit; // For edit mode
         }
-        return vertical ? 0 : TaskManagerApplet.LayoutMetrics.preferredMinWidth();
+        return vertical ? 0 : Kirigami.Units.iconSizes.small;
     }
     Layout.minimumHeight: {
         if (shouldShrinkToZero) {
             return Kirigami.Units.gridUnit; // For edit mode
         }
-        return !vertical ? 0 : TaskManagerApplet.LayoutMetrics.preferredMinHeight();
+        return !vertical ? 0 : Kirigami.Units.iconSizes.small;
     }
 
 //BEGIN TODO: this is not precise enough: launchers are smaller than full tasks
@@ -430,9 +424,6 @@ PlasmoidItem {
         }
     }
 
-    readonly property Component groupDialogComponent: Qt.createComponent("GroupDialog.qml")
-    property GroupDialog groupDialog
-
     // This is called by plasmashell in response to a Meta+number shortcut.
     // TODO: Change type to int
     function activateTaskAtIndex(index: var): void {
@@ -454,6 +445,14 @@ PlasmoidItem {
             backend,
         });
         return contextMenuComponent.createObject(rootTask, initialArgs);
+    }
+
+    function createGroupMenu(rootTask, modelIndex, args = {}) {
+        const initialArgs = Object.assign(args, {
+            visualParent: rootTask,
+            modelIndex,
+        });
+        return groupMenuComponent.createObject(rootTask, initialArgs);
     }
 
     function shouldBeMirrored(reverseMode, layoutDirection, vertical): bool {

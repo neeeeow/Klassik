@@ -31,18 +31,8 @@ PlasmaCore.ToolTipArea {
     // so un-rotate them here to fix that.
     rotation: Plasmoid.configuration.reverseMode && Plasmoid.formFactor === PlasmaCore.Types.Vertical ? 180 : 0
 
-    implicitHeight: inPopup
-                    ? TaskManagerApplet.LayoutMetrics.preferredHeightInPopup()
-                    : (tasksRoot.vertical
-                        ? TaskManagerApplet.LayoutMetrics.preferredMinHeight()
-                        : Math.max(tasksRoot.height / Plasmoid.configuration.maxStripes,
-                             TaskManagerApplet.LayoutMetrics.preferredMinHeight()))
-    implicitWidth: tasksRoot.vertical
-        ? Math.max(TaskManagerApplet.LayoutMetrics.preferredMinWidth(), Math.min(TaskManagerApplet.LayoutMetrics.preferredMaxWidth(), tasksRoot.width / Plasmoid.configuration.maxStripes))
-        : 0
-
     Layout.fillWidth: true
-    Layout.fillHeight: !inPopup
+    Layout.fillHeight: true
     Layout.maximumWidth: tasksRoot.vertical ? -1 : TaskManagerApplet.LayoutMetrics.preferredMaxWidth()
     Layout.maximumHeight: tasksRoot.vertical ? TaskManagerApplet.LayoutMetrics.preferredMaxHeight() : -1
 
@@ -54,12 +44,12 @@ PlasmaCore.ToolTipArea {
     readonly property string appName: model.AppName
     readonly property string appId: model.AppId.replace(/\.desktop/, '')
     property bool toolTipOpen: false
-    property bool inPopup: false
     property bool isWindow: model.IsWindow
     property int childCount: model.ChildCount
     property int previousChildCount: 0
     property alias labelText: label.text
     property QtObject contextMenu: null
+    property QtObject groupMenu: null
 
     property var audioStreams: []
     property bool delayAudioStreamIndicator: false
@@ -70,11 +60,11 @@ PlasmaCore.ToolTipArea {
     readonly property bool playingAudio: hasAudioStream && audioStreams.some(item => !item.corked)
     readonly property bool muted: hasAudioStream && audioStreams.every(item => item.muted)
 
-    readonly property bool highlighted: (inPopup && activeFocus) || (!inPopup && containsMouse)
+    readonly property bool highlighted: containsMouse
         || (task.contextMenu && task.contextMenu.status === PlasmaExtras.Menu.Open)
-        || (!!tasksRoot.groupDialog && tasksRoot.groupDialog.visualParent === task)
+        || (task.groupMenu && task.groupMenu.status === PlasmaExtras.Menu.Open)
 
-    active: !inPopup && !tasksRoot.groupDialog && task.contextMenu?.status !== PlasmaExtras.Menu.Open
+    active: task.groupMenu?.status !== PlasmaExtras.Menu.Open && task.contextMenu?.status !== PlasmaExtras.Menu.Open
     interactive: model.IsWindow || mainItem.playerData
     location: Plasmoid.location
     mainItem: openWindowToolTipDelegate
@@ -215,7 +205,7 @@ PlasmaCore.ToolTipArea {
     onIndexChanged: {
         hideToolTip();
 
-        if (!inPopup && !tasksRoot.vertical) {
+        if (!tasksRoot.vertical) {
             tasksRoot.requestLayout();
         }
     }
@@ -227,14 +217,14 @@ PlasmaCore.ToolTipArea {
     Keys.onUpPressed: event => Keys.leftPressed(event)
     Keys.onDownPressed: event => Keys.rightPressed(event)
     Keys.onLeftPressed: event => {
-        if (!inPopup && (event.modifiers & Qt.ControlModifier) && (event.modifiers & Qt.ShiftModifier)) {
+        if ((event.modifiers & Qt.ControlModifier) && (event.modifiers & Qt.ShiftModifier)) {
             tasksModel.move(task.index, task.index - 1);
         } else {
             event.accepted = false;
         }
     }
     Keys.onRightPressed: event => {
-        if (!inPopup && (event.modifiers & Qt.ControlModifier) && (event.modifiers & Qt.ShiftModifier)) {
+        if ((event.modifiers & Qt.ControlModifier) && (event.modifiers & Qt.ShiftModifier)) {
             tasksModel.move(task.index, task.index + 1);
         } else {
             event.accepted = false;
@@ -242,15 +232,19 @@ PlasmaCore.ToolTipArea {
     }
 
     function modelIndex(): /*QModelIndex*/ var {
-        return inPopup
-            ? tasksModel.makeModelIndex(groupDialog.visualParent.index, index)
-            : tasksModel.makeModelIndex(index);
+        return tasksModel.makeModelIndex(index);
     }
 
     function showContextMenu(args: var): void {
         task.hideImmediately();
         contextMenu = tasksRoot.createContextMenu(task, modelIndex(), args) as TaskManagerApplet.ContextMenu;
         contextMenu.show();
+    }
+
+    function showGroupMenu(args: var): void {
+        task.hideImmediately();
+        groupMenu = tasksRoot.createGroupMenu(task, modelIndex(), args) as TaskManagerApplet.GroupMenu;
+        groupMenu.show();
     }
 
     function updateAudioStreams(args: var): void {
@@ -353,9 +347,8 @@ PlasmaCore.ToolTipArea {
 
         focusPolicy: Qt.NoFocus
         hoverEnabled: true
-        checkable: true
-
-        checked: model.IsActive
+        checkable: false
+        checked: task.model.IsActive
 
         onClicked: { // logic from leftTapHandler
             if (dragHandler.dragTriggered)
@@ -481,7 +474,7 @@ PlasmaCore.ToolTipArea {
                     id: icon
                     anchors.fill: parent
                     source: task.model.decoration
-                    opacity: model.IsMinimized ? 0.5 : 1.0
+                    opacity: task.model.IsMinimized ? 0.5 : 1.0
                 }
 
                 Loader {
@@ -499,7 +492,7 @@ PlasmaCore.ToolTipArea {
                 Layout.fillWidth: true
                 Layout.alignment: Qt.AlignVCenter
 
-                visible: task.inPopup || (frame.width - iconBox.width - Kirigami.Units.smallSpacing) >= TaskManagerApplet.LayoutMetrics.spaceRequiredToShowText()
+                visible: (frame.width - iconBox.width - Kirigami.Units.smallSpacing) >= TaskManagerApplet.LayoutMetrics.spaceRequiredToShowText()
 
                 text: task.model.display
                 elide: Text.ElideRight
@@ -535,11 +528,9 @@ PlasmaCore.ToolTipArea {
     }
 
     Component.onCompleted: {
-        if (!inPopup && model.IsWindow) {
+        if (model.IsWindow) {
             updateAudioStreams({delay: false});
-        }
-
-        if (!inPopup && !model.IsWindow) {
+        } else {
             taskInitComponent.createObject(task);
         }
         completed = true;
