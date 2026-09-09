@@ -31,7 +31,7 @@ function preferredMaxHeight() {
 }
 
 function stripeCount() {
-    if (Plasmoid.formFactor === PlasmaCore.Types.Vertical) {
+    if (tasks.vertical) {
         return 1;
     } else {
         const maxHeight = preferredMaxHeight();
@@ -44,6 +44,18 @@ function orthogonalCount(count) {
         return 1;
     const stripes = stripeCount();
     return Math.ceil(count / stripes);
+}
+
+function optimumCapacity(width, height) {
+    const length = tasks.vertical ? height : width;
+    const maximum = tasks.vertical ? preferredMaxHeight() : preferredMaxWidth();
+
+    if (!tasks.vertical) {
+        //  Fit more tasks in this case, that is possible to cut text, before combining tasks.
+        return Math.ceil(length / maximum) * stripeCount() + 1;
+    }
+
+    return Math.floor(length / maximum) * stripeCount();
 }
 
 function spaceRequiredToShowText() {

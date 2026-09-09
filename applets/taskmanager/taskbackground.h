@@ -39,6 +39,8 @@ protected:
 
 		QStyleOptionHeader header;
 		header.palette = QGuiApplication::palette();
+		if (m_sunken)
+			header.palette.setColor(QPalette::Button, header.palette.button().color().darker(110));
 	    header.rect = QRect(0,0,width(),height());
 		header.state = m_sunken ? QStyle::State_Sunken : QStyle::State_Raised;
 
