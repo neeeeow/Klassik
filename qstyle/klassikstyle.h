@@ -16,6 +16,8 @@ public:
 	explicit KlassikStyle(StyleType type = Default);
 	~KlassikStyle() override = default;
 
+	void polish(QWidget *widget) override;
+
 	void drawPrimitive(PrimitiveElement pe, const QStyleOption *opt,
 					   QPainter *p, const QWidget *widget = nullptr) const override;
 
@@ -30,10 +32,6 @@ public:
 
 	int pixelMetric(PixelMetric metric, const QStyleOption *opt = nullptr,
 					const QWidget *widget = nullptr) const override;
-
-	QSize sizeFromContents(ContentsType contents, const QStyleOption *opt,
-						   const QSize &contentsSize,
-						   const QWidget *widget = nullptr) const override;
 
 private:
 	StyleType m_styleType = Default;
