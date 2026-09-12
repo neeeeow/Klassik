@@ -1170,6 +1170,7 @@ KlassikStyle::drawControl(ControlElement control, const QStyleOption *opt,
 			if (selected) {
 				p->setPen(tb->palette.mid().color());
 				p->drawLine(right-1, y+1, right-1, bottom);
+				p->fillRect(x+2, y+4, r.width()-3, r.height()-4, tb->palette.window());
 			} else {
 				p->setPen(tb->palette.mid().color());
 				p->drawPoint(right-1, y+1);
@@ -1210,6 +1211,7 @@ KlassikStyle::drawControl(ControlElement control, const QStyleOption *opt,
 			if (selected) {
 				p->setPen(tb->palette.mid().color());
 				p->drawLine(right-1, y, right-1, bottom-1);
+				p->fillRect(x+2, y, r.width()-3, r.height()-4, tb->palette.window());
 			} else {
 				p->setPen(tb->palette.mid().color());
 				p->drawPoint(right-1, bottom-1);
