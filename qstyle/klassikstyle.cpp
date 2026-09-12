@@ -1861,6 +1861,9 @@ KlassikStyle::pixelMetric(PixelMetric metric, const QStyleOption *opt,
 	// FRAMES
 	// ------------------------------------------------------------------------
 	case PM_MenuBarPanelWidth:
+		ret = 3;
+		break;
+
 	case PM_DockWidgetFrameWidth:
 		ret = 1;
 		break;
@@ -1886,6 +1889,39 @@ KlassikStyle::pixelMetric(PixelMetric metric, const QStyleOption *opt,
 	default:
 		ret = QCommonStyle::pixelMetric(metric, opt, widget);
 		break;
+	}
+	
+	return ret;
+}
+
+int
+KlassikStyle::styleHint(StyleHint sh, const QStyleOption *opt,
+						const QWidget *widget,
+						QStyleHintReturn *hret) const
+{
+	int ret;
+
+	switch (sh) {
+	case SH_EtchDisabledText:
+	case SH_ScrollBar_MiddleClickAbsolutePosition:
+	case SH_Slider_SnapToValue:
+	case SH_PrintDialog_RightAlignButtons:
+	case SH_FontDialog_SelectAssociatedText:
+	case SH_Menu_MouseTracking:
+	case SH_MenuBar_MouseTracking:
+	case SH_ComboBox_ListMouseTracking_Current: {
+		ret = true;
+		break;
+	}
+
+	case SH_Menu_SubMenuPopupDelay: {
+		ret = 100;
+		break;
+	}
+		
+	default: {
+		ret = QCommonStyle::styleHint(sh, opt, widget, hret);
+	}
 	}
 	
 	return ret;

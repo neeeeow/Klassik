@@ -33,6 +33,10 @@ public:
 	int pixelMetric(PixelMetric metric, const QStyleOption *opt = nullptr,
 					const QWidget *widget = nullptr) const override;
 
+	int styleHint(StyleHint sh, const QStyleOption *opt = nullptr,
+				  const QWidget *widget = nullptr,
+				  QStyleHintReturn *hret = nullptr) const override;
+
 private:
 	StyleType m_styleType = Default;
 
