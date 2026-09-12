@@ -31,6 +31,9 @@ public:
 	int pixelMetric(PixelMetric metric, const QStyleOption *opt = nullptr,
 					const QWidget *widget = nullptr) const override;
 
+	QSize sizeFromContents(ContentsType contents, const QStyleOption *opt,
+						   const QSize &contentsSize,
+						   const QWidget *widget = nullptr) const override;
 
 private:
 	StyleType m_styleType = Default;

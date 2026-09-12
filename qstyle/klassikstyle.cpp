@@ -1879,3 +1879,54 @@ KlassikStyle::pixelMetric(PixelMetric metric, const QStyleOption *opt,
 	
 	return ret;
 }
+
+QSize
+KlassikStyle::sizeFromContents(ContentsType contents,
+							   const QStyleOption *opt,
+							   const QSize &contentsSize,
+							   const QWidget *widget) const
+{
+	QSize size(contentsSize);
+
+	switch (contents) {
+	// PUSHBUTTON SIZE
+	// ------------------------------------------------------------------
+	case CT_PushButton: {
+		const QStyleOptionButton *button = qstyleoption_cast<const QStyleOptionButton *>(opt);
+		if (!button)
+			break;
+
+		int w  = contentsSize.width();
+		int h  = contentsSize.height();
+		const int fw = proxy()->pixelMetric(PM_DefaultFrameWidth, button, widget) * 2;
+		const int bm = proxy()->pixelMetric(PM_ButtonMargin, button, widget);
+
+		w += bm + fw + 6;	// ### Add 6 to make way for bold font.
+		h += bm + fw;
+
+		if (button->features & (QStyleOptionButton::DefaultButton | QStyleOptionButton::AutoDefaultButton)) {
+			if ( w < 80 && !button->text.isEmpty() )
+				w = 80;
+
+			if ( m_styleType != HighColor ) {
+				// Compensate for default indicator
+				int di = proxy()->pixelMetric( PM_ButtonDefaultIndicator, button, widget );
+				w += di * 2;
+				h += di * 2;
+			}
+		}
+
+		if ( h < 22 )
+			h = 22;
+
+		size = QSize(w,h);		
+		break;
+	}
+	default: {
+		size = QCommonStyle::sizeFromContents(contents, opt, contentsSize, widget);
+		break;
+	}
+	}
+
+	return size;
+}
