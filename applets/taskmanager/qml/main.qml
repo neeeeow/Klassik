@@ -402,9 +402,9 @@ PlasmoidItem {
 
                 flow: {
                     if (tasks.vertical) {
-                        return Plasmoid.configuration.forceStripes ? Grid.LeftToRight : Grid.TopToBottom
+                        return Grid.LeftToRight
                     }
-                    return Plasmoid.configuration.forceStripes ? Grid.TopToBottom : Grid.LeftToRight
+                    return Grid.TopToBottom
                 }
 
                 onAnimatingChanged: {

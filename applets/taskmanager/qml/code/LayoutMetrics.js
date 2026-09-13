@@ -27,7 +27,20 @@ function preferredMaxWidth() {
 }
 
 function preferredMaxHeight() {
-    return 26; // TODO: implement config for this
+    let maxHeight = 18;
+    switch (tasks.plasmoid.configuration.taskMaxHeight) {
+        case 0: // short
+            maxHeight = 18;
+            break;
+        case 1: // medium
+            maxHeight = 26;
+            break;
+        case 2: // tall
+            maxHeight = 34;
+            break;
+    }
+
+    return maxHeight;
 }
 
 function stripeCount() {

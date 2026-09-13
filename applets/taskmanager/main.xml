@@ -54,15 +54,6 @@
       <label>Values from TaskManager::TasksModel::SortMode</label>
       <default>1</default>
     </entry>
-    <entry name="maxStripes" type="Int">
-      <label>The maximum number of rows (in a horizontal-orientation containment, i.e. panel) or columns (in a vertical-orientation containment) to layout task buttons in.</label>
-      <default>1</default>
-      <min>1</min>
-    </entry>
-    <entry name="forceStripes" type="Bool">
-      <label>Whether to try and always layout task buttons in as many rows/columns as set via maxStripes.</label>
-      <default>false</default>
-    </entry>
     <entry name="showToolTips" type="Bool">
       <label>Whether to show tooltips when hovering task buttons.</label>
       <default>true</default>
@@ -75,6 +66,15 @@
         <choice name="Wide"/>
       </choices>
       <default>1</default>
+    </entry>
+    <entry name="taskMaxHeight" type="Enum">
+      <label>Tune the max height of task items.</label>
+      <choices>
+        <choice name="Short"/>
+        <choice name="Medium"/>
+        <choice name="Tall"/>
+      </choices>
+      <default>0</default>
     </entry>
     <entry name="wheelEnabled" type="Enum">
       <label>Whether using the mouse wheel with the mouse pointer above the widget should switch between tasks.</label>
@@ -108,10 +108,6 @@
     </entry>
     <entry name="indicateAudioStreams" type="Bool">
       <label>Whether to indicate applications that are playing audio.</label>
-      <default>true</default>
-    </entry>
-    <entry name="interactiveMute" type="Bool">
-      <label>Whether to mute applications that are playing audio using audio indicators.</label>
       <default>true</default>
     </entry>
     <entry name="tooltipControls" type="Bool">
