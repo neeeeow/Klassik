@@ -343,8 +343,6 @@ PlasmaCore.ToolTipArea {
             rightMargin: 0
         }
 
-        property bool isHovered: task.highlighted && Plasmoid.configuration.taskHoverEffect
-
         focusPolicy: Qt.NoFocus
         hoverEnabled: true
         checkable: false

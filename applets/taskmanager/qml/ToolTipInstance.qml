@@ -109,6 +109,13 @@ ColumnLayout {
                       Application.layoutDirection == Qt.LeftToRight))
             }
 
+            Kirigami.Icon {
+                id: taskIcon
+                Layout.preferredWidth: Kirigami.Units.iconSizes.medium
+                Layout.preferredHeight: Kirigami.Units.iconSizes.medium
+                source: toolTipDelegate.icon
+            }
+
             // all textlabels
             ColumnLayout {
                 spacing: 0
