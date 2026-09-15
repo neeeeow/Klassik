@@ -16,11 +16,11 @@
     </entry>
     <entry name="showAppletHandle" type="Bool">
       <label>Always display applet handle</label>
-      <default>false</default>
+      <default>true</default>
     </entry>
     <entry name="useBackground" type="Bool">
       <label>Draw a background on the panel</label>
-      <default>true</default>
+      <default>false</default>
     </entry>
     <entry name="colorizeBackground" type="Bool">
       <label>Colorize the background image</label>
