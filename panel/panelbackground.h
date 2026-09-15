@@ -84,6 +84,8 @@ public:
 		}
 	}
 
+	bool event(QEvent *event) override;
+
 protected:
 	void componentComplete() override;
 	void paint(QPainter *p) const override;
@@ -95,9 +97,7 @@ private:
 	Plasma::Types::Location m_panelLocation = Plasma::Types::BottomEdge;
 	bool m_useCustomBackground = false;
 	QUrl m_customBackgroundUrl;
-	QImage m_background;
-
-	bool event(QEvent *event) override;
+	QImage m_background;	
 	
 	void loadBackground();
 	void colorize(QImage &image);

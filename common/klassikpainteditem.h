@@ -18,6 +18,8 @@ public:
 	KlassikPaintedItem(QQuickItem *parent = nullptr);
 	virtual ~KlassikPaintedItem() = default;
 
+	bool event(QEvent *event) override;   
+
 	Q_INVOKABLE void updateImage();
 
 protected:
@@ -31,10 +33,5 @@ protected:
 private:
 	QImage m_paintedImage;
 
-	inline QSize imageSize() { return size().toSize(); }
-
-	bool event(QEvent *event) override;
-	
-	int dprAlignedSize(const int size) const;
 	void paintControlToImage();
 };

@@ -23,12 +23,36 @@ KlassikPaintedItem::componentComplete()
     polish();
 }
 
+bool
+KlassikPaintedItem::event(QEvent *event)
+{
+	if (event->type() == QEvent::ApplicationPaletteChange) {
+	    updateImage();
+	}
+
+	return QQuickItem::event(event);
+}
+
 void
 KlassikPaintedItem::updateImage()
 {
 	if (isComponentComplete())
 		polish();
 }
+
+void
+KlassikPaintedItem::geometryChange(const QRectF &newGeometry, const QRectF &oldGeometry)
+{
+    QQuickItem::geometryChange(newGeometry, oldGeometry);
+	updateImage();
+}
+
+void
+KlassikPaintedItem::updatePolish()
+{
+	paintControlToImage();
+}
+
 
 QSGNode *
 KlassikPaintedItem::updatePaintNode(QSGNode *oldNode, QQuickItem::UpdatePaintNodeData *updatePaintNodeData)
@@ -69,63 +93,17 @@ KlassikPaintedItem::updatePaintNode(QSGNode *oldNode, QQuickItem::UpdatePaintNod
 }
 
 void
-KlassikPaintedItem::geometryChange(const QRectF &newGeometry, const QRectF &oldGeometry)
-{
-    QQuickItem::geometryChange(newGeometry, oldGeometry);
-	updateImage();
-}
-
-bool
-KlassikPaintedItem::event(QEvent *event)
-{
-	if (event->type() == QEvent::ApplicationPaletteChange) {
-	    updateImage();
-	}
-
-	return QQuickItem::event(event);
-}
-
-void
-KlassikPaintedItem::updatePolish()
-{
-	paintControlToImage();
-}
-
-int
-KlassikPaintedItem::dprAlignedSize(const int size) const
-{
-    // Return the first value equal to or bigger than size
-    // that is a whole number when multiplied with the dpr.
-    static int multiplier = [&]() {
-        const qreal dpr = window()->effectiveDevicePixelRatio();
-        for (int m = 1; m <= 10; ++m) {
-            const qreal v = m * dpr;
-            if (v == int(v))
-                return m;
-        }
-
-        qWarning() << "The current dpr (" << dpr << ") is not supported"
-                   << "by the style and might result in drawing artifacts";
-        return 1;
-    }();
-
-    return int(qCeil(qreal(size) / qreal(multiplier)) * multiplier);
-}
-
-void
 KlassikPaintedItem::paintControlToImage()
 {
-	const QSize imgSize = imageSize();
+	QSize imgSize = size().toSize();
 	if (imgSize.isEmpty())    
 		return;
 
 	const qreal dpr = window()->effectiveDevicePixelRatio();
-    const int alignedW = int(dprAlignedSize(imgSize.width()) * dpr);
-    const int alignedH = int(dprAlignedSize(imgSize.height()) * dpr);
-    const QSize alignedSize = QSize(alignedW, alignedH);
+	imgSize *= dpr;
 
-	if (m_paintedImage.size() != alignedSize) {
-		m_paintedImage = QImage(alignedSize, QImage::Format_ARGB32_Premultiplied);
+	if (m_paintedImage.size() != imgSize) {
+		m_paintedImage = QImage(imgSize, QImage::Format_ARGB32_Premultiplied);
 		m_paintedImage.setDevicePixelRatio(dpr);
 	}
 
