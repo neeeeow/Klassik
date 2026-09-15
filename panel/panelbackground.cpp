@@ -85,11 +85,10 @@ PanelBackground::paint(QPainter *p) const
 	opt.palette = pal;
 	opt.rect = r;
 	opt.state = QStyle::State_Enabled | QStyle::State_Raised;
-	opt.features = QStyleOptionFrame::None;
 	opt.frameShape = QFrame::StyledPanel;
 	opt.lineWidth = 2;
 
-	m_style->drawControl(QStyle::CE_ShapedFrame, &opt, p);
+	m_style->drawPrimitive(QStyle::PE_Frame, &opt, p);
 }
 
 void

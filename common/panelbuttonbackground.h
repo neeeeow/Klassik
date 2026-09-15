@@ -34,10 +34,9 @@ protected:
 		opt.palette = QGuiApplication::palette();
 		opt.rect = QRect(0,0,width(),height());
 		opt.state = QStyle::State_Enabled | QStyle::State_Sunken;
-		opt.features = QStyleOptionFrame::None;
 		opt.frameShape = QFrame::StyledPanel;
 		opt.lineWidth = 1;
 
-	    m_style->drawControl(QStyle::CE_ShapedFrame, &opt, p);
+	    m_style->drawPrimitive(QStyle::PE_Frame, &opt, p);
 	}
 };
