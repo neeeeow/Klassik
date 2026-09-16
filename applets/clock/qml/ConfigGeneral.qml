@@ -18,32 +18,18 @@ KCMUtils.SimpleKCM {
     id: configGeneral
 
     property alias cfg_useDigitalClock: useDigitalClock.checked
-    readonly property bool cfg_useDigitalClockDefault: Plasmoid.configuration.useDigitalClockDefaultValue
 
     property alias cfg_showDate: showDate.checked
-    readonly property bool cfg_showDateDefault: Plasmoid.configuration.showDateDefaultValue
     property alias cfg_showSeconds: showSeconds.checked
-    readonly property bool cfg_showSecondsDefault: Plasmoid.configuration.showSecondsDefaultValue
     property alias cfg_showFrame: showFrame.checked
-    readonly property bool cfg_showFrameDefault: Plasmoid.configuration.showFrameDefaultValue
     property alias cfg_blinkingDots: blinkingDots.checked
-    readonly property bool cfg_blinkingDotsDefault: Plasmoid.configuration.blinkingDotsDefaultValue
     property alias cfg_antialiasing: antialiasing.checked
-    readonly property bool cfg_antialiasingDefault: Plasmoid.configuration.antialiasingDefaultValue
 
-    property alias cfg_useSystemColors: useSystemColors.checked
-    readonly property bool cfg_useSystemColorsDefault: Plasmoid.configuration.useSystemColorsDefaultValue
-    property alias cfg_lcdLook: lcdLook.checked
-    readonly property bool cfg_lcdLookDefault: Plasmoid.configuration.lcdLookDefaultValue
-    property alias cfg_useCustomColors: useCustomColors.checked
-    readonly property bool cfg_useCustomColorsDefault: Plasmoid.configuration.useCustomColorsDefaultValue
+    property int cfg_colorTheme: 0
 
     property alias cfg_fgColor: fgColor.color
-    readonly property color cfg_fgColorDefault: Plasmoid.configuration.fgColorDefaultValue
     property alias cfg_shadowColor: shadowColor.color
-    readonly property color cfg_shadowColorDefault: Plasmoid.configuration.shadowColorDefaultValue
     property alias cfg_bgColor: bgColor.color
-    readonly property color cfg_bgColorDefault: Plasmoid.configuration.bgColorDefaultValue
 
     Kirigami.FormLayout {
         anchors.left: parent.left
@@ -95,16 +81,20 @@ KCMUtils.SimpleKCM {
 
                 ColumnLayout {
                     RadioButton {
-                        id: useSystemColors
                         text: i18n("Use system colors")
+                        checked: cfg_colorTheme === 0
+                        onToggled: cfg_colorTheme = 0
                     }
                     RadioButton {
-                        id: lcdLook
                         text: i18n("LCD look")
+                        checked: cfg_colorTheme === 1
+                        onToggled: cfg_colorTheme = 1
                     }
                     RadioButton {
                         id: useCustomColors
                         text: i18n("Custom colors")
+                        checked: cfg_colorTheme === 2
+                        onToggled: cfg_colorTheme = 2
                     }
                 }
 

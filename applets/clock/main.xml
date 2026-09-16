@@ -8,13 +8,13 @@
         </entry>
 
         <entry name="showDate" type="Bool">
-            <default>false</default>
+            <default>true</default>
         </entry>
         <entry name="showSeconds" type="Bool">
             <default>false</default>
         </entry>
         <entry name="showFrame" type="Bool">
-            <default>false</default>
+            <default>true</default>
         </entry>
         <entry name="blinkingDots" type="Bool">
             <default>false</default>
@@ -22,17 +22,14 @@
         <entry name="antialiasing" type="Bool">
             <default>false</default>
         </entry>
-
-        <entry name="useSystemColors" type="Bool">
-            <default>true</default>
+        <entry name="colorTheme" type="Enum">
+            <choices>
+                <choice name="System"/>
+                <choice name="LCD"/>
+                <choice name="Custom"/>
+            </choices>
+            <default>0</default>
         </entry>
-        <entry name="lcdLook" type="Bool">
-            <default>false</default>
-        </entry>
-        <entry name="useCustomColors" type="Bool">
-            <default>false</default>
-        </entry>
-
         <entry name="fgColor" type="Color">
             <default>#000000</default>
         </entry>

@@ -34,7 +34,8 @@ Clock::paint(QPainter *p) const
 	QRect r = getRect();
 	
 	// background
-	if (getConfigValue<bool>("lcdLook") && !m_lcdPixmap.isNull()) {
+	const int colorTheme = getConfigValue<int>("colorTheme");
+	if ((colorTheme == 1) && !m_lcdPixmap.isNull()) {
 		p->save();
 		const qreal dpr = getDpr(p);
 		if (!qFuzzyCompare(dpr, qreal(1))) {
@@ -44,7 +45,7 @@ Clock::paint(QPainter *p) const
 		} else		
 			p->drawTiledPixmap(r, m_lcdPixmap);
 		p->restore();
-	} else if (getConfigValue<bool>("useCustomColors")) {
+	} else if (colorTheme == 2) {
 		QColor bgColor = getConfigValue<QColor>("bgColor");
 		p->fillRect(r, bgColor);
 	}
@@ -95,16 +96,24 @@ DigitalClock::drawContents(QPainter *p) const
 		QColor fgColor;
 		QColor shadowColor;
 
-		if (getConfigValue<bool>("lcdLook")) {
+		switch (getConfigValue<int>("colorTheme")) {
+		case 1: { // LCD look
 			fgColor = Qt::black;
 			shadowColor = QColor(128, 128, 128);
-		} else if (getConfigValue<bool>("useCustomColors")) {
+			break;
+		}
+		case 2: { // Custom colors
 			fgColor = getConfigValue<QColor>("fgColor");
 			shadowColor = getConfigValue<QColor>("shadowColor");
-		} else {
+			break;
+		}
+		case 0:
+		default: { // system colors
 			QPalette pal = QGuiApplication::palette();
 			fgColor = pal.color(QPalette::WindowText);
 			shadowColor = pal.color(QPalette::Mid);
+			break;
+		}	
 		}
 
 		p->save();
@@ -428,19 +437,26 @@ AnalogClock::drawContents(QPainter *p) const
 
 	QColor fgColor;
 	QColor shadowColor;
-	if (getConfigValue<bool>("lcdLook")) {
+	switch (getConfigValue<int>("colorTheme")) {
+	case 1: { // LCD look
 		fgColor = Qt::black;
 		shadowColor = QColor(128, 128, 128);
-	} else if (getConfigValue<bool>("useCustomColors")) {
+		break;
+	}
+	case 2: { // Custom colors
 		fgColor = getConfigValue<QColor>("fgColor");
 		shadowColor = getConfigValue<QColor>("shadowColor");
-	} else {
+		break;
+	}
+	case 0:
+	default: { // system colors
 		QPalette pal = QGuiApplication::palette();
 		fgColor = pal.color(QPalette::WindowText);
 		shadowColor = pal.color(QPalette::Mid);
+		break;
+	}	
 	}
 
-	const qreal dpr = getDpr(p);
 	int spWidth = width();
 	int spHeight = height();	   
 

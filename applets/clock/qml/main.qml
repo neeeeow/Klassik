@@ -53,8 +53,7 @@ PlasmoidItem {
     preferredRepresentation: fullRepresentation
     fullRepresentation: ColumnLayout {
         id: mainLayout
-
-        spacing: 2
+        spacing: 0
 
         readonly property bool isHorizontal: Plasmoid.formFactor === PlasmaCore.Types.Horizontal
         readonly property bool isVertical: Plasmoid.formFactor === PlasmaCore.Types.Vertical
@@ -77,6 +76,12 @@ PlasmoidItem {
             } else
                 return parent.height;
         }
+
+        // Ensure the width/height *never* deviates from our computed values
+        Layout.minimumWidth: isHorizontal ? Layout.preferredWidth : -1
+        Layout.maximumWidth: isHorizontal ? Layout.preferredWidth : -1
+        Layout.minimumHeight: isVertical ? Layout.preferredHeight : -1
+        Layout.maximumHeight: isVertical ? Layout.preferredHeight : -1
 
         Connections {
             target: Plasmoid.configuration
@@ -120,7 +125,7 @@ PlasmoidItem {
                             // the clock has absolutely 0 dependance on timeString, however, it's
                             // very useful for determining when we need to do a redraw, instead of
                             // blindly doing on every tick. since timeString already lives within root
-                            // it's been loaded in to memory, and there are no penalties there
+                            // it's been loaded in to memory, there are no penalties there
                             analogClock.updateImage()
                         }
                     }
