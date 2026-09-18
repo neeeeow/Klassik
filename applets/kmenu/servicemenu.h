@@ -36,9 +36,15 @@ public:
 
 protected:
 	// Initializes the menu (not called automatically!)
+	// This must be called by any subclass, as it enables/disables tooltips
+	// depending on the config
 	virtual void initialize();
 	
 	// Reinitializes the menu (usually after a config change)
+	// NOTE: it's a wise idea to reimplement this in a subclass
+	// in case there any member variables, etc, you need to clear.
+	// The base reinitialize() simply clears out the menu and calls
+	// initialize() again.
 	virtual void reinitialize();
 	
 	// Return the initialized flag

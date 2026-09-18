@@ -67,6 +67,8 @@ ContainmentInterface::mayAddLauncher(ContainmentInterface::Target target)
 void
 ContainmentInterface::addLauncher(ContainmentInterface::Target target, const KService::Ptr &service)
 {
+	if (!m_applet)
+		return;
 	Plasma::Containment *appletContainment = m_applet->containment();
 	if (!appletContainment)
 		return;

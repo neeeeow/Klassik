@@ -38,6 +38,8 @@ ServiceMenu::ServiceMenu(KMenuApplet *applet, QWidget *parent)
   m_initialized(false),
   m_applet(applet)
 {
+	this->setContextMenuPolicy(Qt::CustomContextMenu);
+	connect(this, &QMenu::customContextMenuRequested, this, &ServiceMenu::showContextMenu, Qt::UniqueConnection);
 }
 
 ServiceMenu::ServiceMenu(const QString &title, KMenuApplet *applet, QWidget *parent)
@@ -45,6 +47,8 @@ ServiceMenu::ServiceMenu(const QString &title, KMenuApplet *applet, QWidget *par
 	  m_initialized(false),
 	  m_applet(applet)
 {
+	this->setContextMenuPolicy(Qt::CustomContextMenu);
+	connect(this, &QMenu::customContextMenuRequested, this, &ServiceMenu::showContextMenu, Qt::UniqueConnection);
 }
 
 void
@@ -52,8 +56,6 @@ ServiceMenu::initialize()
 {
 	if (initialized()) return;
 	this->setToolTipsVisible(applet() ? applet()->getConfigValue<bool>(QStringLiteral("showTooltips")) : false);
-	this->setContextMenuPolicy(Qt::CustomContextMenu);
-	connect(this, &QMenu::customContextMenuRequested, this, &ServiceMenu::showContextMenu, Qt::UniqueConnection);	
 	setInitialized(true);
 }
 
@@ -61,14 +63,10 @@ void
 ServiceMenu::reinitialize()
 {
 	if (!initialized())
-		return;
-		
+		return;		
 	setInitialized(false);
 
-	// Clear out the menu
 	clear();
-
-	// Finally, call initialize() again
 	initialize();
 }
 
