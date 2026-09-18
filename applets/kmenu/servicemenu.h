@@ -6,26 +6,25 @@
 
 #pragma once
 
-#include "kmenuapplet.h"
-
-#include <QObject>
 #include <QMenu>
 #include <QPointer>
+#include <QUrl>
 
 #include <KService>
 #include <KServiceGroup>
 
+#include <PlasmaActivities/Stats/ResultModel>
+
+class KMenuApplet;
+
 class ServiceMenu : public QMenu
 {
-	Q_OBJECT;
+	Q_OBJECT
 	
 public:
 	explicit ServiceMenu(KMenuApplet *applet, QWidget *parent = nullptr);
 	explicit ServiceMenu(const QString &title, KMenuApplet *applet, QWidget *parent = nullptr);
 	virtual ~ServiceMenu() = default;
-
-	// Initializes the menu
-	virtual void initialize();
 
 	void cleanupActionList(QList<QAction *> &);
 
@@ -36,11 +35,14 @@ public:
 	QAction* createFileExplorerActionFromUrl(const QUrl &url, const QIcon &icon, const QString &title);
 
 protected:
+	// Initializes the menu (not called automatically!)
+	virtual void initialize();
+	
 	// Reinitializes the menu (usually after a config change)
 	virtual void reinitialize();
 	
 	// Return the initialized flag
-	bool initialized();
+	bool initialized() const { return m_initialized; }
 
 	// Set the initialized flag
 	void setInitialized(bool);
@@ -55,16 +57,29 @@ protected:
 	// Launches the menu editor and KRunner
 	static void runMenuEditor(QString arg = QString());
 	static void invokeKRunner(QString arg = QString());
-	
+
+	// QMenu overrides
+	void actionEvent(QActionEvent *e) override;
 	void mousePressEvent(QMouseEvent *ev) override;
 	void mouseMoveEvent(QMouseEvent *ev) override;
+
+	// Template for connecting all of the required signals to a result model
+	template <typename Slot>
+	void connectResultModel(KActivities::Stats::ResultModel *model, Slot slot) {
+		connect(model, &KActivities::Stats::ResultModel::dataChanged, this, slot);
+		connect(model, &KActivities::Stats::ResultModel::modelReset, this, slot);
+		connect(model, &KActivities::Stats::ResultModel::rowsInserted, this, slot);
+		connect(model, &KActivities::Stats::ResultModel::rowsMoved, this, slot);
+		connect(model, &KActivities::Stats::ResultModel::rowsRemoved, this, slot);
+	}
 
 private:
 	bool m_initialized; // Initialization state
 
-    KMenuApplet *m_applet = nullptr; // pointer to plasma applet
+	// Pointer to the plasma applet
+	QPointer<KMenuApplet> m_applet = nullptr;
 	
-	QPointF m_startPos;
+	QPointF m_startPos{-1.0,-1.0}; // Initial drag position
 
 	void showContextMenu(const QPoint &pos);
 };

@@ -18,6 +18,11 @@
             <default>true</default>
         </entry>
 
+        <entry name="showTooltips" type="Bool">
+            <label>Display action tooltips</label>
+            <default>false</default>
+        </entry>
+
         <entry name="showRecentApps" type="Bool">
             <label>Display the Most Used Applications section</label>
             <default>true</default>

@@ -17,6 +17,8 @@ ContainmentInterface::ContainmentInterface(Plasma::Applet *applet)
 bool
 ContainmentInterface::mayAddLauncher(ContainmentInterface::Target target)
 {
+	if (!m_applet)
+		return false;
 	Plasma::Containment *appletContainment = m_applet->containment();
 	if (!appletContainment)
 		return false;
@@ -34,56 +36,29 @@ ContainmentInterface::mayAddLauncher(ContainmentInterface::Target target)
         break;
 	}
 	case Panel: {
-		if (appletContainment->pluginMetaData().pluginId() == QLatin1String("org.kde.panel"))
+		if (appletContainment->pluginMetaData().pluginId() == QLatin1String("com.github.neeeeow.klassik.panel"))
 			return (appletContainment->immutability() == Plasma::Types::Mutable);
 
 		break;
     }
-	case TaskManager: {
-		if (appletContainment->pluginMetaData().pluginId() == QLatin1String("org.kde.panel")) {
-			auto *taskManager = findTaskManagerApplet();
-			if (!taskManager)
+	case Quicklaunch: {
+		if (appletContainment->pluginMetaData().pluginId() == QLatin1String("com.github.neeeeow.klassik.panel")) {
+			auto *quicklaunch = findQuicklaunchApplet();
+			if (!quicklaunch)
 				return false;
 
-			auto *taskManagerQuickItem = PlasmaQuick::AppletQuickItem::itemForApplet(taskManager);
-			if (!taskManagerQuickItem)
+			auto *quicklaunchQuickItem = PlasmaQuick::AppletQuickItem::itemForApplet(quicklaunch);
+			if (!quicklaunchQuickItem)
 				return false;
-			
-			return taskManagerQuickItem->property("supportsLaunchers").toBool();
-        }
 
-        break;
-    }
+			return true;
+		}
+		
+		break;
 	}
-
-	return false;
-}
-
-bool
-ContainmentInterface::hasLauncher(ContainmentInterface::Target target, const KService::Ptr &service)
-{
-	if (target != TaskManager)
-		return false;
-
-	Plasma::Containment *containment = m_applet->containment();
-	if (!containment)
-		return false;
-
-	if (service && containment->pluginMetaData().pluginId() == QLatin1String("org.kde.panel")) {
-		auto *taskManager = findTaskManagerApplet();
-		if (!taskManager)
-			return false;
-
-		auto *taskManagerQuickItem = PlasmaQuick::AppletQuickItem::itemForApplet(taskManager);
-		if (!taskManagerQuickItem)
-			return false;
-
-		bool ret;
-		QMetaObject::invokeMethod(taskManagerQuickItem,
-								  "hasLauncher",
-								  Q_RETURN_ARG(bool, ret),
-								  Q_ARG(QUrl, QUrl(QLatin1String("applications:") + service->storageId())));
-		return ret;
+	default: {
+		break;
+	}
 	}
 
 	return false;
@@ -124,40 +99,45 @@ ContainmentInterface::addLauncher(ContainmentInterface::Target target, const KSe
 		break;
     }
 	case Panel: {
-		if (appletContainment->pluginMetaData().pluginId() == QLatin1String("org.kde.panel")) {
+		if (appletContainment->pluginMetaData().pluginId() == QLatin1String("com.github.neeeeow.klassik.panel")) {
 			appletContainment->createApplet(QStringLiteral("org.kde.plasma.icon"), QVariantList() << url);
 		}
 
 		break;
 	}
-	case TaskManager: {
-		if (appletContainment->pluginMetaData().pluginId() == QLatin1String("org.kde.panel")) {
-			auto *taskManager = findTaskManagerApplet();
-			if (!taskManager)
+	case Quicklaunch: {
+		if (appletContainment->pluginMetaData().pluginId() == QLatin1String("com.github.neeeeow.klassik.panel")) {
+			auto *quicklaunch = findQuicklaunchApplet();
+			if (!quicklaunch)
 				return;
 
-			auto *taskManagerQuickItem = PlasmaQuick::AppletQuickItem::itemForApplet(taskManager);
-            if (!taskManagerQuickItem)
-                return;
+			auto *quicklaunchQuickItem = PlasmaQuick::AppletQuickItem::itemForApplet(quicklaunch);
+			if (!quicklaunchQuickItem)
+				return;
 
-            QMetaObject::invokeMethod(taskManagerQuickItem, "addLauncher", Q_ARG(QUrl, url));
+			QMetaObject::invokeMethod(quicklaunchQuickItem, "addLauncherUrl", Q_ARG(QVariant, QVariant(url.toString())));
 		}
-
+		
+		break;
+	}
+	default: {
 		break;
     }		
 	}
 }
 
 Plasma::Applet
-*ContainmentInterface::findTaskManagerApplet()
+*ContainmentInterface::findQuicklaunchApplet()
 {
+	if (!m_applet)
+		return nullptr;
 	Plasma::Containment *containment = m_applet->containment();
 	if (!containment)
 		return nullptr;
 	
 	const QList<Plasma::Applet *> applets = containment->applets();
 	const auto found = std::ranges::find_if(applets, [this](const Plasma::Applet *applet) {
-		return m_knownTaskManagers.contains(applet->pluginMetaData().pluginId());
+	    return applet->pluginMetaData().pluginId() == QLatin1String("com.github.neeeeow.klassik.quicklaunch");
 	});
 	return found != applets.cend() ? *found : nullptr;
 }

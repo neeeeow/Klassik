@@ -237,4 +237,10 @@ PlasmoidItem {
             Plasmoid.configuration.launcherUrls = launcherModel.urls();
         }
     }
+
+    function addLauncherUrl(url)
+    {
+        // This function is neeeded to allow us to add launchers externally
+        launcherModel.appendUrl(url);
+    }
 }

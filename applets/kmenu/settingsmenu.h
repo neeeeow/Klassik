@@ -8,21 +8,19 @@
 
 #include "servicemenu.h"
 
-#include <QObject>
-
-#include <PlasmaActivities/Stats/ResultModel>
-
 class SettingsMenu : public ServiceMenu
 {
-	Q_OBJECT;
+	Q_OBJECT
 	
 public:
 	explicit SettingsMenu(KMenuApplet *applet, QWidget *parent = nullptr);
 	explicit SettingsMenu(const QString &title, KMenuApplet *applet, QWidget *parent = nullptr);
 	~SettingsMenu() override = default;
 
-private:
+protected:
 	void initialize() override;
+	
+private:
 	void updateSettingsMenu();
 
 	KActivities::Stats::ResultModel *m_settingsList = nullptr;

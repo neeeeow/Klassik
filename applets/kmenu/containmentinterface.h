@@ -20,7 +20,7 @@ public:
 	enum Target {
 		Desktop = 0,
 		Panel,
-		TaskManager,
+		Quicklaunch
 	};
 
 	Q_ENUM(Target)
@@ -29,17 +29,10 @@ public:
 	~ContainmentInterface() override = default;
 
 	bool mayAddLauncher(ContainmentInterface::Target target);
-	bool hasLauncher(ContainmentInterface::Target target, const KService::Ptr &service);
 	void addLauncher(ContainmentInterface::Target target, const KService::Ptr &service);
 
 private:
-	QStringList m_knownTaskManagers{
-		QLatin1String("org.kde.plasma.taskmanager"),
-			QLatin1String("org.kde.plasma.icontasks"),
-			QLatin1String("org.kde.plasma.expandingiconstaskmanager"),
-			};
-	
 	Plasma::Applet *m_applet = nullptr;
 
-	Plasma::Applet *findTaskManagerApplet();
+	Plasma::Applet *findQuicklaunchApplet();
 };

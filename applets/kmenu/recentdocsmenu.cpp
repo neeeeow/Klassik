@@ -5,6 +5,7 @@
 */
 
 #include "recentdocsmenu.h"
+#include "kmenuapplet.h"
 
 #include <KLocalizedString>
 
@@ -35,26 +36,21 @@ RecentDocsMenu::initialize()
 	using namespace KActivities::Stats::Terms;
 	
 	// Run our query once.
+	int numRecentDocs = applet() ? applet()->getConfigValue<int>(QStringLiteral("numRecentDocs")) : 15;
 	auto query = UsedResources
 		| RecentlyUsedFirst
 		| Agent::any()
 		| Type::files()
 		| Activity::current()
 		| Url::file()
-		| Limit(applet()->getConfigValue<int>(QStringLiteral("numRecentDocs")));
+		| Limit(numRecentDocs > 0 ? numRecentDocs : 1);
 
-	if (m_fileList) {
+	if (m_fileList)
 		m_fileList->deleteLater();
-		m_fileList = nullptr;
-	}
     m_fileList = new ResultModel(query, this);	
 
 	// Whenever an application is launched, update the recent apps list
-	connect(m_fileList, &ResultModel::dataChanged, this, &RecentDocsMenu::updateRecentDocs);
-	connect(m_fileList, &ResultModel::modelReset, this, &RecentDocsMenu::updateRecentDocs);
-	connect(m_fileList, &ResultModel::rowsInserted, this, &RecentDocsMenu::updateRecentDocs);
-	connect(m_fileList, &ResultModel::rowsMoved, this, &RecentDocsMenu::updateRecentDocs);
-	connect(m_fileList, &ResultModel::rowsRemoved, this, &RecentDocsMenu::updateRecentDocs);
+	connectResultModel(m_fileList, &RecentDocsMenu::updateRecentDocs);
 
 	updateRecentDocs();
 

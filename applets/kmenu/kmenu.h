@@ -9,15 +9,11 @@
 #include "servicemenu.h"
 #include "popupmenutitle.h"
 
-#include <QObject>
-
-#include <PlasmaActivities/Stats/ResultModel>
-
 #include <sessionmanagement.h>
 
 class KMenu : public ServiceMenu
 {
-	Q_OBJECT;
+	Q_OBJECT
 	
 public:
 	explicit KMenu(KMenuApplet *applet, QWidget *parent = nullptr);
@@ -27,6 +23,9 @@ public:
 	void reinitialize() override;
 
 protected:
+	// Initializes the menu (automatically done during construction)
+	void initialize() override;
+	
 	void changeEvent(QEvent *event) override;
 	void paintEvent(QPaintEvent *e) override;
 
@@ -34,7 +33,20 @@ protected:
 	void mouseReleaseEvent(QMouseEvent *e) override;
 	void mouseMoveEvent(QMouseEvent *e) override;
 
-private:	
+private:
+	// Struct holding the config keys used in the KMenu class,
+	// to avoid loading them many times unnecessarily.
+	struct Config {
+		bool drawSideImage = true;
+		bool showTitles = true;
+		bool showRecentApps = true;
+		int numRecentApps = 3;
+		bool showSearch = true;
+		bool showSettings = true;
+		bool showRecentDocs = true;
+	};
+	Config m_config;	
+		
 	// Session manager
 	SessionManagement m_session;
 	
@@ -50,19 +62,14 @@ private:
 
 	// Action lists
 	QList<QAction *> m_recentActions; // List of actions linking to recent applications
-	QList<QAction *> m_recentDocumentsActions; // List of actions linking to recent documents
 	QList<QAction *> m_applicationActions; // List of actions in the root of the applications list
-
-	// Initializes the menu (automatically done during construction)
-	void initialize() override;
-
+	
 	// Sets the margin dependant on the side pixmap setting
 	void setMargins();
 
 	// Side pixmap related functions
 	void loadSidePixmap();
-	QRect sideImageRect();
-	void colorize(QImage &image);
+	QRect sideImageRect() const;
 
 	// Functions for populating the menu
 	void createRecentMenuItems();
@@ -71,5 +78,10 @@ private:
 	void updateSearchResults();
 	void updateApplications();
 
-	QMouseEvent* translateMouseEvent( QMouseEvent* e );
+	// Translate mouse event, allowing actions to be highlighted if the
+	// mouse is over the side image 
+	std::unique_ptr<QMouseEvent> translateMouseEvent( QMouseEvent* e );
+
+	// KDE 3 colorize function
+	void colorize(QImage &image) const;
 };

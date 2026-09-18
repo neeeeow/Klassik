@@ -25,6 +25,8 @@ public:
 	KMenuApplet(QObject *parentObject, const KPluginMetaData &data, const QVariantList &args);
 	~KMenuApplet() override;
 
+	void init() override;
+	
 	inline bool isMenuActive() const { return m_menuActive; }
 	inline ContainmentInterface* containmentInterface() const { return m_containmentInterface; }
 
@@ -59,11 +61,11 @@ Q_SIGNALS:
 
 private:
 	ContainmentInterface *m_containmentInterface = nullptr;
-	QPointer<KMenu> m_menu = nullptr; // m_menu should never be a dangling pointer, but just in case	
+	QPointer<KMenu> m_menu = nullptr; // m_menu should never be a dangling pointer, but just in case
+	QTimer *m_reinitTimer = nullptr;
 	bool m_menuActive = false;
 
 	void showMenu(QQuickItem *button, Plasma::Types::Location panelLocation);
 	void hideMenu();
-	QPoint adjustedMenuPosition(QQuickItem *button, QQuickItem *root, Plasma::Types::Location panelLocation);
 	QPoint popupPosition(QQuickItem *item, Plasma::Types::Location panelLocation);
 };

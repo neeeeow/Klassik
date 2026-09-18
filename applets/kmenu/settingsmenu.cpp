@@ -5,6 +5,7 @@
 */
 
 #include "settingsmenu.h"
+#include "kmenuapplet.h"
 
 #include <KLocalizedString>
 #include <KService>
@@ -34,17 +35,11 @@ SettingsMenu::initialize()
 
 	auto query = AllResources | Agent(QStringLiteral("org.kde.systemsettings")) | HighScoredFirst | Limit(5);
 
-	if (m_settingsList) {
+	if (m_settingsList)
 	    m_settingsList->deleteLater();
-		m_settingsList = nullptr;
-	}
     m_settingsList = new ResultModel(query, this);	
 
-	connect(m_settingsList, &ResultModel::dataChanged, this, &SettingsMenu::updateSettingsMenu);
-	connect(m_settingsList, &ResultModel::modelReset, this, &SettingsMenu::updateSettingsMenu);
-	connect(m_settingsList, &ResultModel::rowsInserted, this, &SettingsMenu::updateSettingsMenu);
-	connect(m_settingsList, &ResultModel::rowsMoved, this, &SettingsMenu::updateSettingsMenu);
-	connect(m_settingsList, &ResultModel::rowsRemoved, this, &SettingsMenu::updateSettingsMenu);
+	connectResultModel(m_settingsList, &SettingsMenu::updateSettingsMenu);
 
 	updateSettingsMenu();
 

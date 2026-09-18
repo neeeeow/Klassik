@@ -11,46 +11,79 @@
 #include <QPoint>
 #include <QRect>
 #include <QQuickWindow>
+#include <QTimer>
+
 #include <KPluginFactory>
 #include <KConfigPropertyMap>
 
 K_PLUGIN_CLASS_WITH_JSON(KMenuApplet, "metadata.json")
 
 KMenuApplet::KMenuApplet(QObject *parentObject, const KPluginMetaData &data, const QVariantList &args)
-	: Plasma::Applet(parentObject, data, args),
-	  m_containmentInterface(new ContainmentInterface(this)),
-	  m_menu(new KMenu(this)) // this is fine since the applet is only used for pulling configs
+	: Plasma::Applet(parentObject, data, args)	 
 {
+}
+
+KMenuApplet::~KMenuApplet()
+{
+	if (m_menu) {
+		m_menu->close();
+		m_menu->deleteLater();
+	}
+}
+
+void
+KMenuApplet::init()
+{
+	// Call the original init function
+	Plasma::Applet::init();
+	
+	// init() should only ever be called once, but we check to see if
+	// m_menu and m_containmentInterface exist just in case.
+	if (m_menu) {
+		m_menu->close();
+		m_menu->deleteLater();		
+	}
+	if (m_containmentInterface)
+		m_containmentInterface->deleteLater();
+	
+	// Create the objects
+	m_containmentInterface = new ContainmentInterface(this);
+	m_menu = new KMenu(this);
+
+	// Connect signals
 	connect(m_menu, &QMenu::aboutToShow, this, [this]() {
 		m_menuActive = true;
 		Q_EMIT menuActiveChanged();
 	});
-
 	connect(m_menu, &QMenu::aboutToHide, this, [this]() {
 		m_menuActive = false;
 		Q_EMIT menuActiveChanged();
 	});
 
-	// Reinitialize menu on config changes
-	connect(configuration(), &KConfigPropertyMap::valueChanged, this, [this]() {
+	// Set up a QTimer to deal with multiple config changes simultaneously
+	// Firing the timer immediately on the next loop is sufficient.
+	if (m_reinitTimer)
+		m_reinitTimer->deleteLater();
+	m_reinitTimer = new QTimer(this);
+	m_reinitTimer->setSingleShot(true);
+	m_reinitTimer->setInterval(0);
+	connect(m_reinitTimer, &QTimer::timeout, this, [this]() {
 		if (m_menu)
 			m_menu->reinitialize();
+	});	
+	connect(configuration(), &KConfigPropertyMap::valueChanged, this, [this]() {
+		m_reinitTimer->start();
 	});
-}
-
-KMenuApplet::~KMenuApplet()
-{
-	delete m_menu;
 }
 
 void
 KMenuApplet::showMenu(QQuickItem *button, Plasma::Types::Location panelLocation)
 {
-	if (!m_menu) {
-		qWarning("KMenuApplet: KMenu not initialized!");
+	if (!m_menu)
 		return;
-	}
-
+	if (!button)
+		return;
+	
 	if (QQuickWindow *plasmoidWindow = button->window()) {
 		m_menu->createWinId();
 		if (QWindow *menuWindow = m_menu->windowHandle()) {

@@ -5,6 +5,7 @@
 */
 
 #include "servicemenu.h"
+#include "kmenuapplet.h"
 #include "popupmenutitle.h"
 #include "containmentinterface.h"
 
@@ -49,7 +50,8 @@ ServiceMenu::ServiceMenu(const QString &title, KMenuApplet *applet, QWidget *par
 void
 ServiceMenu::initialize()
 {
-	if (initialized()) return;	
+	if (initialized()) return;
+	this->setToolTipsVisible(applet() ? applet()->getConfigValue<bool>(QStringLiteral("showTooltips")) : false);
 	this->setContextMenuPolicy(Qt::CustomContextMenu);
 	connect(this, &QMenu::customContextMenuRequested, this, &ServiceMenu::showContextMenu, Qt::UniqueConnection);	
 	setInitialized(true);
@@ -64,18 +66,10 @@ ServiceMenu::reinitialize()
 	setInitialized(false);
 
 	// Clear out the menu
-	QList<QAction *> allActions = actions();
-	cleanupActionList(allActions);
 	clear();
 
 	// Finally, call initialize() again
 	initialize();
-}
-
-bool
-ServiceMenu::initialized()
-{
-	return m_initialized;
 }
 
 void
@@ -85,16 +79,26 @@ ServiceMenu::setInitialized(bool initialized)
 }
 
 void
+ServiceMenu::actionEvent(QActionEvent *e)
+{
+	// If the action has an associated menu, delete the menu if it's
+	// parented by this.
+	if (e->type() == QEvent::ActionRemoved)
+		if (QAction *action = e->action())
+			if (QMenu *menu = action->menu())
+				if (menu->parentWidget() == this)
+					menu->deleteLater();
+
+	QMenu::actionEvent(e);
+}
+
+void
 ServiceMenu::cleanupActionList(QList<QAction *> &actionList)
 {		
 	// Cleans up all member actions of our QList from the menu
 	for (QAction *action : actionList) {
 		removeAction(action);
-		if (action) {
-			if (QMenu *menu = action->menu())
-				menu->deleteLater(); // submenus must be cleared here too
-			action->deleteLater();			
-		}
+		action->deleteLater();
 	}
 
 	// Clear out the list itself
@@ -107,9 +111,10 @@ ServiceMenu::createActionFromService(const KService::Ptr &service, const QUrl &u
 	if (!service || !service->isValid())
 		return nullptr;
 	
-	QAction *action = new QAction(QIcon::fromTheme(service->icon()), service->name().replace(QStringLiteral("&"), QStringLiteral("&&")), this);
+	QAction *action = new QAction(QIcon::fromTheme(service->icon()), service->name().replace(QLatin1Char('&'), QStringLiteral("&&")), this);
 
     action->setData(QVariant::fromValue(service)); // Store the KService
+	action->setToolTip(service->comment()); // Set the action tooltip
 	
 	connect(action, &QAction::triggered, this, [service, url]() {
 		auto *job = new KIO::ApplicationLauncherJob(service);
@@ -133,7 +138,7 @@ ServiceMenu::createActionFromUrl(const QUrl &url)
 	if (!url.isValid())
 		return nullptr;
 	
-	QString fileName = url.fileName().replace(QStringLiteral("&"), QStringLiteral("&&")); // name to display in the menu
+    QString fileName = url.fileName().replace(QLatin1Char('&'), QStringLiteral("&&")); // name to display in the menu
 		
 	QMimeDatabase db; // use QMimeDatabase to fetch the icon name
 	QMimeType mime = db.mimeTypeForUrl(url);
@@ -234,6 +239,8 @@ ServiceMenu::actionListFromServiceGroup(const KServiceGroup::Ptr &root)
 void
 ServiceMenu::showContextMenu(const QPoint &pos)
 {
+	if (!applet())
+		return;
 	ContainmentInterface *containmentInterface = applet()->containmentInterface();
 	if (!containmentInterface)
 		return; // should never happen, but just in case
@@ -242,7 +249,8 @@ ServiceMenu::showContextMenu(const QPoint &pos)
 	if (!action)
 		return;
 
-	ServiceMenu contextMenu(applet(), this);
+	ServiceMenu contextMenu(applet()); // No need for a parent since we're declaring on the stack
+	contextMenu.initialize();
 
 	if (action->data().canConvert<KService::Ptr>()) {
 		// KService means application!
@@ -255,13 +263,11 @@ ServiceMenu::showContextMenu(const QPoint &pos)
 			});
 		}
 
-		if (containmentInterface->mayAddLauncher(ContainmentInterface::TaskManager)) {
-			if (!containmentInterface->hasLauncher(ContainmentInterface::TaskManager, service)) {
-				QAction *taskManagerAction = contextMenu.addAction(QIcon::fromTheme(QStringLiteral("pin")), i18n("Pin to Task Manager"));
-				connect(taskManagerAction, &QAction::triggered, containmentInterface, [containmentInterface, service]() {
-					containmentInterface->addLauncher(ContainmentInterface::TaskManager, service);
-				});
-			}
+		if (containmentInterface->mayAddLauncher(ContainmentInterface::Quicklaunch)) {
+			QAction *desktopAction = contextMenu.addAction(QIcon::fromTheme(QStringLiteral("list-add")), i18n("Add to Quicklaunch"));
+			connect(desktopAction, &QAction::triggered, containmentInterface, [containmentInterface, service]() {
+				containmentInterface->addLauncher(ContainmentInterface::Quicklaunch, service);
+			});
 		}
 
 		if (containmentInterface->mayAddLauncher(ContainmentInterface::Panel)) {
@@ -376,10 +382,10 @@ ServiceMenu::mousePressEvent(QMouseEvent *ev)
 	// If the right-clicked action has a submenu, we must
 	// close it before displaying the context menu
 	if (ev->button() == Qt::RightButton) {
-		QAction *action = actionAt(ev->pos());
+		QAction *action = actionAt(ev->position().toPoint());
 		if (action && action->menu()) {
 			action->menu()->close();
-			showContextMenu(ev->pos());
+			showContextMenu(ev->position().toPoint());
 			return;
 		}		
 	}
@@ -426,7 +432,9 @@ ServiceMenu::mouseMoveEvent(QMouseEvent *ev)
 		drag->setPixmap(action->icon().pixmap(iconSize, iconSize));
 	}
 
+	QPointer<ServiceMenu> guard(this); // guard in case the menu destroys itself
 	drag->exec(Qt::CopyAction | Qt::LinkAction);
-
+	if (!guard) return;
+	if (drag) drag->deleteLater();
 	m_startPos = QPointF(-1.0, -1.0);
 }
