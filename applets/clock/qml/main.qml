@@ -58,15 +58,15 @@ PlasmoidItem {
         readonly property bool isHorizontal: Plasmoid.formFactor === PlasmaCore.Types.Horizontal
         readonly property bool isVertical: Plasmoid.formFactor === PlasmaCore.Types.Vertical
 
-        Layout.fillWidth: isVertical ? true : false
-        Layout.fillHeight: isHorizontal ? true : false
+        Layout.fillWidth: isVertical
+        Layout.fillHeight: isHorizontal
 
         Layout.preferredWidth: {
             var _showSeconds = Plasmoid.configuration.showSeconds; // forces geometry to be recomputed if we change second config
             if (isHorizontal) {
                 return Math.max(clockLoader.item ? clockLoader.item.preferredWidthForHeight(clockLoader.item.height) : 0, date.visible ? date.implicitWidth : 0);
             } else
-                return parent.width;
+                return -1;
         }
 
         Layout.preferredHeight: {
@@ -74,7 +74,7 @@ PlasmoidItem {
             if (isVertical) {
                 return (clockLoader.item ? clockLoader.item.preferredHeightForWidth(clockLoader.item.width) : 0) + (date.visible ? date.implicitHeight : 0);
             } else
-                return parent.height;
+                return -1;
         }
 
         // Ensure the width/height *never* deviates from our computed values

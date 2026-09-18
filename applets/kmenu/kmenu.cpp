@@ -74,9 +74,9 @@ KMenu::initialize()
 	if (applet()) {
 		m_config.drawSideImage  = applet()->getConfigValue<bool>(QStringLiteral("drawSideImage"));
 		m_config.showTitles     = applet()->getConfigValue<bool>(QStringLiteral("showTitles"));
+		m_config.showSearch     = applet()->getConfigValue<bool>(QStringLiteral("showSearch"));
 		m_config.showRecentApps = applet()->getConfigValue<bool>(QStringLiteral("showRecentApps"));
 		m_config.numRecentApps  = applet()->getConfigValue<int>(QStringLiteral("numRecentApps"));
-		m_config.showSearch     = applet()->getConfigValue<bool>(QStringLiteral("showSearch"));
 		m_config.showSettings   = applet()->getConfigValue<bool>(QStringLiteral("showSettings"));
 		m_config.showRecentDocs = applet()->getConfigValue<bool>(QStringLiteral("showRecentDocs"));
 	}

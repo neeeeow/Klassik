@@ -12,12 +12,14 @@
             <label>Draw the KDE side image</label>
             <default>true</default>
         </entry>
-
         <entry name="showTitles" type="Bool">
             <label>Display section titles</label>
             <default>true</default>
         </entry>
-
+        <entry name="showSearch" type="Bool">
+            <label>Display the applications search bar</label>
+            <default>true</default>
+        </entry>
         <entry name="showTooltips" type="Bool">
             <label>Display action tooltips</label>
             <default>false</default>
@@ -30,11 +32,6 @@
         <entry name="numRecentApps" type="Int">
             <label>Number of applications to display in the Most Used Applications section</label>
             <default>3</default>
-        </entry>
-
-        <entry name="showSearch" type="Bool">
-            <label>Display the applications search bar</label>
-            <default>true</default>
         </entry>
 
         <entry name="showSettings" type="Bool">

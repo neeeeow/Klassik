@@ -22,26 +22,17 @@ KCMUtils.SimpleKCM {
     readonly property string cfg_iconDefault: Plasmoid.configuration.iconDefaultValue
 
     property alias cfg_drawSideImage: drawSideImage.checked
-    readonly property bool cfg_drawSideImageDefault: Plasmoid.configuration.drawSideImageDefaultValue // Matches main.xml default
-
     property alias cfg_showTitles: showTitles.checked
-    readonly property bool cfg_showTitlesDefault: Plasmoid.configuration.showTitlesDefaultValue
+    property alias cfg_showSearch: showSearch.checked
+    property alias cfg_showTooltips: showTooltips.checked
 
     property alias cfg_showRecentApps: showRecentApps.checked
-    readonly property bool cfg_showRecentAppsDefault: Plasmoid.configuration.showRecentAppsDefaultValue
     property alias cfg_numRecentApps: numRecentApps.value
-    readonly property int cfg_numRecentAppsDefault: Plasmoid.configuration.numRecentAppsDefaultValue
-
-    property alias cfg_showSearch: showSearch.checked
-    readonly property bool cfg_showSearchDefault: Plasmoid.configuration.showSearchDefaultValue
 
     property alias cfg_showSettings: showSettings.checked
-    readonly property bool cfg_showSettingsDefault: Plasmoid.configuration.showSettingsDefaultValue
 
     property alias cfg_showRecentDocs: showRecentDocs.checked
-    readonly property bool cfg_showRecentDocsDefault: Plasmoid.configuration.showRecentDocsDefaultValue
     property alias cfg_numRecentDocs: numRecentDocs.value
-    readonly property int cfg_numRecentDocsDefault: Plasmoid.configuration.numRecentDocsDefaultValue
 
     Kirigami.FormLayout {
         anchors.left: parent.left
@@ -52,8 +43,12 @@ KCMUtils.SimpleKCM {
 
             Kirigami.FormData.label: i18n("Icon:")
 
-            implicitWidth: previewFrame.width + Kirigami.Units.smallSpacing * 2
-            implicitHeight: previewFrame.height + Kirigami.Units.smallSpacing * 2
+            implicitWidth: Kirigami.Units.iconSizes.large + Kirigami.Units.smallSpacing * 2
+            implicitHeight: implicitWidth
+
+            icon.name: configGeneral.cfg_icon
+            icon.width: Kirigami.Units.iconSizes.large
+            icon.height: Kirigami.Units.iconSizes.large
 
             checkable: true
 
@@ -67,22 +62,6 @@ KCMUtils.SimpleKCM {
             }
 
             onClicked: iconMenu.opened ? iconMenu.close() : iconMenu.open()
-
-            KSvg.FrameSvgItem {
-                id: previewFrame
-                anchors.centerIn: parent
-                imagePath: Plasmoid.location === PlasmaCore.Types.Vertical || Plasmoid.location === PlasmaCore.Types.Horizontal
-                        ? "widgets/panel-background" : "widgets/background"
-                width: Kirigami.Units.iconSizes.large + fixedMargins.left + fixedMargins.right
-                height: Kirigami.Units.iconSizes.large + fixedMargins.top + fixedMargins.bottom
-
-                Kirigami.Icon {
-                    anchors.centerIn: parent
-                    width: Kirigami.Units.iconSizes.large
-                    height: width
-                    source: configGeneral.cfg_icon
-                }
-            }
 
             Menu {
                 id: iconMenu
@@ -118,8 +97,17 @@ KCMUtils.SimpleKCM {
             id: showTitles
             text: i18n("Display section titles")
         }
+        CheckBox {
+            id: showSearch
+            text: i18n("Display application search bar")
+        }
+        CheckBox {
+            id: showTooltips
+            text: i18n("Display tooltips on menu items")
+        }
 
         Item {
+            Kirigami.FormData.label: i18n("Menu sections:")
             Kirigami.FormData.isSection: true
         }
 
@@ -146,10 +134,6 @@ KCMUtils.SimpleKCM {
             Kirigami.FormData.isSection: true
         }
 
-        CheckBox {
-            id: showSearch
-            text: i18n("Display application search bar")
-        }
         CheckBox {
             id: showSettings
             text: i18n("Display settings submenu")

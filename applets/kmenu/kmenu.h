@@ -39,9 +39,9 @@ private:
 	struct Config {
 		bool drawSideImage = true;
 		bool showTitles = true;
+		bool showSearch = true;
 		bool showRecentApps = true;
 		int numRecentApps = 3;
-		bool showSearch = true;
 		bool showSettings = true;
 		bool showRecentDocs = true;
 	};

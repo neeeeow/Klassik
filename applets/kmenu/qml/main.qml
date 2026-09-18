@@ -26,11 +26,22 @@ PlasmoidItem{
         checkable: true
         checked: Plasmoid.menuActive
 
-        // Fill the height of the container
         readonly property bool isHorizontal: Plasmoid.formFactor === PlasmaCore.Types.Horizontal
         readonly property bool isVertical: Plasmoid.formFactor === PlasmaCore.Types.Vertical
-        Layout.fillWidth: isVertical ? true : false
-        Layout.fillHeight: isHorizontal ? true : false
+
+        // Fill the height of the container
+        Layout.fillWidth: isVertical
+        Layout.fillHeight: isHorizontal
+
+        // Make the applet a square
+        Layout.preferredWidth: isHorizontal ? parent.height : -1
+        Layout.preferredHeight: isVertical ? parent.width : -1
+
+        // Ensure the width/height *never* deviates from our computed values
+        Layout.minimumWidth: isHorizontal ? Layout.preferredWidth : -1
+        Layout.maximumWidth: isHorizontal ? Layout.preferredWidth : -1
+        Layout.minimumHeight: isVertical ? Layout.preferredHeight : -1
+        Layout.maximumHeight: isVertical ? Layout.preferredHeight : -1
 
         background: PanelButtonBackground {
             visible: menuButton.down || menuButton.checked
