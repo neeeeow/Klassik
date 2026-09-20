@@ -33,8 +33,8 @@ PlasmoidItem {
     Layout.fillHeight: horizontal
 
     // If the grid is empty, reserve space for the add launchers icon
-    Layout.preferredWidth: horizontal ? ((grid.count > 0) ? LayoutManager.preferredExtent() : parent.height) : -1
-    Layout.preferredHeight: vertical ? ((grid.count > 0) ? LayoutManager.preferredExtent() : parent.width) : -1
+    Layout.preferredWidth: horizontal ? ((grid.count > 0) ? LayoutManager.preferredExtent() : height) : -1
+    Layout.preferredHeight: vertical ? ((grid.count > 0) ? LayoutManager.preferredExtent() : width) : -1
 
     Layout.minimumWidth: horizontal ? Layout.preferredWidth : -1
     Layout.maximumWidth: horizontal ? Layout.preferredWidth : -1

@@ -34,8 +34,8 @@ PlasmoidItem{
         Layout.fillHeight: isHorizontal
 
         // Make the applet a square
-        Layout.preferredWidth: isHorizontal ? parent.height : -1
-        Layout.preferredHeight: isVertical ? parent.width : -1
+        Layout.preferredWidth: isHorizontal ? height : -1
+        Layout.preferredHeight: isVertical ? width : -1
 
         // Ensure the width/height *never* deviates from our computed values
         Layout.minimumWidth: isHorizontal ? Layout.preferredWidth : -1
