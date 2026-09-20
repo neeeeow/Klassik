@@ -36,8 +36,8 @@ RecentDocsMenu::initialize()
 	using namespace KActivities::Stats::Terms;
 	
 	// Run our query once.
-	int numRecentDocs = applet() ? applet()->getConfigValue<int>(QStringLiteral("numRecentDocs")) : 15;
-	auto query = UsedResources
+	const int numRecentDocs = applet() ? applet()->getConfigValue<int>(QStringLiteral("numRecentDocs")) : 15;
+	const auto query = UsedResources
 		| RecentlyUsedFirst
 		| Agent::any()
 		| Type::files()
@@ -70,8 +70,8 @@ RecentDocsMenu::updateRecentDocs()
 
 	QList<QAction *> actionList;
 	for (int i=0; i < m_fileList->rowCount(); ++i) {
-		QModelIndex index = m_fileList->index(i,0);
-		QUrl url = QUrl::fromUserInput(m_fileList->data(index, KActivities::Stats::ResultModel::ResourceRole).toString());
+		const QModelIndex index = m_fileList->index(i,0);
+		const QUrl url = QUrl::fromUserInput(m_fileList->data(index, KActivities::Stats::ResultModel::ResourceRole).toString());
 		QAction *action = createActionFromUrl(url);
 		if (!action)
 			continue;

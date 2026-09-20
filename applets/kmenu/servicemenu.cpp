@@ -119,7 +119,6 @@ ServiceMenu::createActionFromService(const KService::Ptr &service, const QUrl &u
 		job->setUiDelegate(new KNotificationJobUiDelegate(KJobUiDelegate::AutoHandlingEnabled));
 		if (!url.isEmpty())
 			job->setUrls({url});
-		job->setAutoDelete(true);
 		job->start();
 		KActivities::ResourceInstance::notifyAccessed(
 			QUrl(QStringLiteral("applications:") + service->storageId()),
@@ -136,11 +135,11 @@ ServiceMenu::createActionFromUrl(const QUrl &url)
 	if (!url.isValid())
 		return nullptr;
 	
-    QString fileName = url.fileName().replace(QLatin1Char('&'), QStringLiteral("&&")); // name to display in the menu
+    const QString fileName = url.fileName().replace(QLatin1Char('&'), QStringLiteral("&&")); // name to display in the menu
 		
-	QMimeDatabase db; // use QMimeDatabase to fetch the icon name
-	QMimeType mime = db.mimeTypeForUrl(url);
-	QIcon icon = QIcon::fromTheme(mime.iconName());
+	const QMimeDatabase db; // use QMimeDatabase to fetch the icon name
+	const QMimeType mime = db.mimeTypeForUrl(url);
+	const QIcon icon = QIcon::fromTheme(mime.iconName());
 
 	QAction *action = new QAction(icon, fileName, this);
 	action->setData(url);
@@ -148,7 +147,6 @@ ServiceMenu::createActionFromUrl(const QUrl &url)
 	connect(action, &QAction::triggered, this, [url]() {
 		auto *job = new KIO::OpenUrlJob(url);
 	    job->setUiDelegate(new KNotificationJobUiDelegate(KJobUiDelegate::AutoHandlingEnabled));
-		job->setAutoDelete(true);
 		job->start();
 		KActivities::ResourceInstance::notifyAccessed(
 			url,
@@ -171,7 +169,6 @@ ServiceMenu::createFileExplorerActionFromUrl(const QUrl &url, const QIcon &icon,
 		auto *job = new KIO::OpenFileManagerWindowJob();
 		job->setUiDelegate(new KNotificationJobUiDelegate(KJobUiDelegate::AutoHandlingEnabled));
 		job->setHighlightUrls({url});
-		job->setAutoDelete(true);
 		job->start();
 	});
 
@@ -192,7 +189,7 @@ ServiceMenu::actionListFromServiceGroup(const KServiceGroup::Ptr &root)
 		for (const auto &entry : group->entries(true)) {
 			if (entry->isType(KST_KService)) {
 				// If the entry is a service, it's an individual application
-				KService::Ptr service(static_cast<KService*>(entry.data()));
+				const KService::Ptr service(static_cast<KService*>(entry.data()));
 
 				// Create the entry
 				QAction *action = parent->createActionFromService(service, QUrl());
@@ -205,7 +202,7 @@ ServiceMenu::actionListFromServiceGroup(const KServiceGroup::Ptr &root)
 					parent->addAction(action);
 			} else if (entry->isType(KST_KServiceGroup)) {
 				// If the entry is a service group, we need to make a submenu and recurse through this function
-				KServiceGroup::Ptr subGroup(static_cast<KServiceGroup*>(entry.data()));
+				const KServiceGroup::Ptr subGroup(static_cast<KServiceGroup*>(entry.data()));
 				if (subGroup->childCount() == 0)
 					continue;
 					
@@ -235,7 +232,7 @@ ServiceMenu::actionListFromServiceGroup(const KServiceGroup::Ptr &root)
 }
 
 void
-ServiceMenu::showContextMenu(const QPoint &pos)
+ServiceMenu::showContextMenu(const QPoint &pos) const
 {
 	if (!applet())
 		return;
@@ -252,22 +249,45 @@ ServiceMenu::showContextMenu(const QPoint &pos)
 
 	if (action->data().canConvert<KService::Ptr>()) {
 		// KService means application!
-		KService::Ptr service = action->data().value<KService::Ptr>();
+		const KService::Ptr service = action->data().value<KService::Ptr>();
 		
+		// Add any execs the service might have
+		const QList<KServiceAction> serviceActions = service->actions();
+		for (const KServiceAction &serviceAction : serviceActions) {
+			const QString &name = serviceAction.text();
+			const QString exec = serviceAction.exec();
+			if (name.isEmpty() || exec.isEmpty()) {
+				continue;
+			}
+
+			QAction *action = contextMenu.addAction(QIcon::fromTheme(serviceAction.icon()), name);   
+			connect(action, &QAction::triggered, &contextMenu, [service, exec]() {
+			    auto *job = new KIO::CommandLauncherJob(exec);
+				job->setUiDelegate(new KNotificationJobUiDelegate(KJobUiDelegate::AutoHandlingEnabled));
+				job->start();				
+				KActivities::ResourceInstance::notifyAccessed(
+					QUrl(QStringLiteral("applications:") + service->storageId()),
+					QStringLiteral("com.github.neeeeow.klassik.kmenu")
+					);			
+			});
+		}
+
+		if (!contextMenu.isEmpty())
+			contextMenu.addSeparator();
+
+		// Actions for adding the item to the desktop/quicklaunch/panel
 		if (containmentInterface->mayAddLauncher(ContainmentInterface::Desktop)) {
 			QAction *desktopAction = contextMenu.addAction(QIcon::fromTheme(QStringLiteral("list-add")), i18n("Add to Desktop"));
 			connect(desktopAction, &QAction::triggered, containmentInterface, [containmentInterface, service]() {
 				containmentInterface->addLauncher(ContainmentInterface::Desktop, service);
 			});
 		}
-
 		if (containmentInterface->mayAddLauncher(ContainmentInterface::Quicklaunch)) {
-			QAction *desktopAction = contextMenu.addAction(QIcon::fromTheme(QStringLiteral("list-add")), i18n("Add to Quicklaunch"));
-			connect(desktopAction, &QAction::triggered, containmentInterface, [containmentInterface, service]() {
+			QAction *launcherAction = contextMenu.addAction(QIcon::fromTheme(QStringLiteral("list-add")), i18n("Add to Quicklaunch"));
+			connect(launcherAction, &QAction::triggered, containmentInterface, [containmentInterface, service]() {
 				containmentInterface->addLauncher(ContainmentInterface::Quicklaunch, service);
 			});
 		}
-
 		if (containmentInterface->mayAddLauncher(ContainmentInterface::Panel)) {
 			QAction *panelAction = contextMenu.addAction(QIcon::fromTheme(QStringLiteral("list-add")), i18n("Add to Panel"));
 			connect(panelAction, &QAction::triggered, containmentInterface, [containmentInterface, service]() {
@@ -278,25 +298,25 @@ ServiceMenu::showContextMenu(const QPoint &pos)
 		if (!contextMenu.isEmpty())
 			contextMenu.addSeparator();
 
+		// Action for editing the menu item
 		QAction *editAction = contextMenu.addAction(QIcon::fromTheme(QStringLiteral("kmenuedit")), i18n("Edit Application"));
-		connect(editAction, &QAction::triggered, &contextMenu, [this, service]() {
-			runMenuEditor(service->menuId());
-		});
+		connect(editAction, &QAction::triggered, &contextMenu, [service]() {runMenuEditor(service->menuId());});
 
+		// Action to put the action's exec command in krunner
 		QAction *runAction = contextMenu.addAction(QIcon::fromTheme(QStringLiteral("run")), i18n("Put Into Run Dialog"));
-	    connect(runAction, &QAction::triggered, this, [service](){invokeKRunner(service->exec());});
+	    connect(runAction, &QAction::triggered, &contextMenu, [service](){invokeKRunner(service->exec());});
 		
 	} else if (action->data().canConvert<KServiceGroup::Ptr>()) {
 		// KServiceGroup means sub menu container
-		KServiceGroup::Ptr serviceGroup = action->data().value<KServiceGroup::Ptr>();
+		const KServiceGroup::Ptr serviceGroup = action->data().value<KServiceGroup::Ptr>();
 		QAction *editAction = contextMenu.addAction(QIcon::fromTheme(QStringLiteral("kmenuedit")), i18n("Edit Menu"));
 		connect(editAction, &QAction::triggered, &contextMenu, [this, serviceGroup]() {
 			runMenuEditor(serviceGroup->relPath());
 		});
 	} else if (action->data().canConvert<QUrl>()) {
 		// QUrl means a file path
-		QUrl url = action->data().toUrl();
-		KFileItem fileItem(url);
+		const QUrl url = action->data().toUrl();
+		const KFileItem fileItem(url);
 
 		const KService::List services = KApplicationTrader::queryByMimeType(fileItem.mimetype());
 

@@ -32,7 +32,7 @@ public:
 	void addLauncher(ContainmentInterface::Target target, const KService::Ptr &service);
 
 private:
-	Plasma::Applet *m_applet = nullptr;
+	Plasma::Containment *m_containment = nullptr;
 
 	Plasma::Applet *findQuicklaunchApplet();
 };

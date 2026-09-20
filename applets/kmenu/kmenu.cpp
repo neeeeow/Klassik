@@ -218,16 +218,16 @@ KMenu::loadSidePixmap()
 
 	// Create the painter for drawing the side text
 	QPainter sidePainter(&m_sidePixmap);
-	QFont sideFont(QStringLiteral("Nimbus Sans"), 12, QFont::Bold); // TODO: use a better font
+	const QFont sideFont(QStringLiteral("Nimbus Sans"), 12, QFont::Bold); // TODO: use a better font
 	sidePainter.setFont(sideFont);
 	sidePainter.translate(0, m_sidePixmap.height());
 	sidePainter.rotate(-90);
 
 	// Area in which to draw the text
-	QRect textRect(5, 1, m_sidePixmap.height() - 5, m_sidePixmap.width() - 2);
+	const QRect textRect(5, 1, m_sidePixmap.height() - 5, m_sidePixmap.width() - 2);
 
 	// Draw the text.
-	QString sideText = QStringLiteral("Klassik");
+	const QString sideText = QStringLiteral("Klassik");
 	sidePainter.setPen(Qt::black);
 	sidePainter.drawText(textRect.translated(-1, 1), Qt::AlignVCenter | Qt::AlignLeft, sideText);
 	sidePainter.setPen(Qt::white);
@@ -249,13 +249,13 @@ KMenu::loadSidePixmap()
 QRect
 KMenu::sideImageRect() const
 {
-	int panelWidth = style()->pixelMetric(QStyle::PM_MenuPanelWidth, nullptr, this);
-    int hMargin = style()->pixelMetric(QStyle::PM_MenuHMargin, nullptr, this);
-    int vMargin = style()->pixelMetric(QStyle::PM_MenuVMargin, nullptr, this);
+	const int panelWidth = style()->pixelMetric(QStyle::PM_MenuPanelWidth, nullptr, this);
+    const int hMargin = style()->pixelMetric(QStyle::PM_MenuHMargin, nullptr, this);
+    const int vMargin = style()->pixelMetric(QStyle::PM_MenuVMargin, nullptr, this);
 
 	// Rectangle containing our side pixmap
-	QRect pixRect(panelWidth + hMargin, panelWidth + vMargin,
-				  m_sidePixmap.width(), height() - 2 * (panelWidth + vMargin));
+	const QRect pixRect(panelWidth + hMargin, panelWidth + vMargin,
+						m_sidePixmap.width(), height() - 2 * (panelWidth + vMargin));
 
 	// Convert to screen coordinates based on text direction
 	return style()->visualRect(layoutDirection(), rect(), pixRect);
@@ -268,7 +268,7 @@ KMenu::createRecentMenuItems()
 	using namespace KActivities::Stats::Terms;
 	
 	// Run our query once.
-	auto query = UsedResources
+	const auto query = UsedResources
 		| HighScoredFirst		
 		| Agent::any()
 		| Type::any()
@@ -306,13 +306,13 @@ KMenu::updateRecent()
 
 	QList<QAction *> actionList;
 	for (int i=0; i < m_recentApps->rowCount(); ++i) {
-		QModelIndex index = m_recentApps->index(i,0);
+		const QModelIndex index = m_recentApps->index(i,0);
 		
 		const QUrl resourceUrl(m_recentApps->data(index, KActivities::Stats::ResultModel::ResourceRole).toString());
 		if (resourceUrl.scheme() != QStringLiteral("applications"))
 			continue; // The resource url should always point to an application, but just to be safe
 		const QString storageId = resourceUrl.path();
-		KService::Ptr service = KService::serviceByStorageId(storageId);
+		const KService::Ptr service = KService::serviceByStorageId(storageId);
 		QAction *action = createActionFromService(service);
 		if (action)
 			actionList.append(action);
@@ -358,8 +358,8 @@ KMenu::updateSearchResults()
 	if (!lineEdit)
 		return;
 
-	QString text = lineEdit->text();
-
+	const QString text = lineEdit->text();
+	
 	auto setActionStates = [&](this auto&& self, QAction *parent, const QList<QAction *> &children) -> bool {
 		bool enableParent = false;
 			
@@ -393,9 +393,9 @@ KMenu::updateApplications()
 	cleanupActionList(m_applicationActions);
 	
 	// The root of the applications menu
-    KServiceGroup::Ptr root = KServiceGroup::root();
+    const KServiceGroup::Ptr root = KServiceGroup::root();
 
-	QList<QAction *> actionList = actionListFromServiceGroup(root);
+	const QList<QAction *> actionList = actionListFromServiceGroup(root);
 
 	if (actionList.isEmpty()) {
 		QAction *emptyAction = new QAction(i18n("No Entries"), this);
@@ -423,7 +423,7 @@ KMenu::translateMouseEvent( QMouseEvent* e )
 	if (!m_config.drawSideImage)
 		return nullptr;
 	
-    QRect side = sideImageRect();
+    const QRect side = sideImageRect();
 
 	if (!side.contains(e->position().toPoint()))
 		return nullptr;

@@ -33,7 +33,7 @@ SettingsMenu::initialize()
 	using namespace KActivities::Stats;
 	using namespace KActivities::Stats::Terms;
 
-	auto query = AllResources | Agent(QStringLiteral("org.kde.systemsettings")) | HighScoredFirst | Limit(5);
+	const auto query = AllResources | Agent(QStringLiteral("org.kde.systemsettings")) | HighScoredFirst | Limit(5);
 
 	if (m_settingsList)
 	    m_settingsList->deleteLater();
@@ -64,9 +64,9 @@ SettingsMenu::updateSettingsMenu()
 
 	QList<QAction*> actionList;
 	for (int i=0; i < m_settingsList->rowCount(); ++i) {
-		QModelIndex index = m_settingsList->index(i,0);
+		const QModelIndex index = m_settingsList->index(i,0);
 		const QString storageId = QUrl(m_settingsList->data(index, KActivities::Stats::ResultModel::ResourceRole).toString()).path();
-		KService::Ptr service = KService::serviceByStorageId(storageId);
+		const KService::Ptr service = KService::serviceByStorageId(storageId);
 		QAction *action = createActionFromService(service);
 		if (action)
 			actionList.append(action);

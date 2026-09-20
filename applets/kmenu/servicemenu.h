@@ -87,5 +87,6 @@ private:
 	
 	QPointF m_startPos{-1.0,-1.0}; // Initial drag position
 
-	void showContextMenu(const QPoint &pos);
+	// Creates and displays the context menu
+	void showContextMenu(const QPoint &pos) const;
 };

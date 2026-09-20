@@ -31,24 +31,23 @@ namespace menuWidgets {
 		void paintEvent(QPaintEvent *) override {
 			// This is a straight port from KDE 3's K Menu
 			QPainter p(this);
-			QRect r = rect();
 
 			// Draw the background
 			QStyleOptionHeader opt;
 			opt.initFrom(this);
-			opt.rect = r; // NOTE: PE_HeaderSection is replaced by CE_HeaderSection
+			opt.rect = rect(); // NOTE: PE_HeaderSection is replaced by CE_HeaderSection
 			style()->drawControl(QStyle::CE_HeaderSection, &opt, &p, this);
 
 			// Draw the text
 			if (!m_text.isEmpty()) {
 				p.setPen(palette().buttonText().color());
 				p.setFont(m_font);
-				p.drawText(r, Qt::AlignCenter | Qt::TextSingleLine, m_text);
+				p.drawText(rect(), Qt::AlignCenter | Qt::TextSingleLine, m_text);
 			}
 		}
 		
 		QSize sizeHint() const override {
-			QFontMetrics fm(m_font);
+			const QFontMetrics fm(m_font);
 			QSize size = fm.size(Qt::TextSingleLine, m_text);
 			size.setHeight(fm.height() + (style()->pixelMetric(QStyle::PM_DefaultFrameWidth) * 2) + 2);
 			return size;

@@ -28,8 +28,8 @@ namespace menuWidgets {
 			layout->setSpacing(0);
 	
 			QToolButton *clearBtn = new QToolButton(this);
-			int iconSize = style()->pixelMetric(QStyle::PM_SmallIconSize);
-			int height = sizeHint().height();
+			const int iconSize = style()->pixelMetric(QStyle::PM_SmallIconSize);
+			const int height = sizeHint().height();
 			clearBtn->setFixedSize(height, height); // ensure the button is square	
 			clearBtn->setIconSize(QSize(iconSize, iconSize));
 			clearBtn->setIcon(QIcon::fromTheme(QStringLiteral("edit-clear")));
@@ -58,10 +58,10 @@ namespace menuWidgets {
 	protected:
 		QSize sizeHint() const override {
 			QSize size = QWidget::sizeHint();
-			int iconSize = style()->pixelMetric(QStyle::PM_SmallIconSize); // The size of menu item icons (by default)
+			const int iconSize = style()->pixelMetric(QStyle::PM_SmallIconSize); // The size of menu item icons (by default)
 			QStyleOptionMenuItem opt; // Call sizeFromContents to get the height of a menu item in the current QStyle,
 			opt.initFrom(this);       // ensuring the search bar is the same height as a menu item, giving a more consistent look
-			int menuHeight = style()->sizeFromContents(QStyle::CT_MenuItem, &opt, QSize(0, qMax(opt.fontMetrics.height(), iconSize))).height();
+			const int menuHeight = style()->sizeFromContents(QStyle::CT_MenuItem, &opt, QSize(0, qMax(opt.fontMetrics.height(), iconSize))).height();
 			size.setHeight(menuHeight);
 			return size;
 		}
