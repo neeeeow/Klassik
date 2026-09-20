@@ -1,4 +1,6 @@
 /*
+ *  SPDX-FileCopyrightText: 2026 neeeeow <https://github.com/neeeeow>
+ *
  *  SPDX-FileCopyrightText: 2015 David Rosca <nowrep@gmail.com>
  *
  *  SPDX-License-Identifier: GPL-2.0-only OR GPL-3.0-only OR LicenseRef-KDE-Accepted-GPL
@@ -7,64 +9,57 @@
 import QtQuick
 
 ListModel {
+    // NOTE: here, id refers to storageId, but I'd rather not write storageId
+    // a million times.
     id: listModel
 
     property int dropMarkerIndex : -1
 
-    signal urlsChanged()
+    signal idsChanged()
 
-    function urls()
+    function ids()
     {
         var out = [];
         for (var i = 0; i < listModel.count; ++i) {
-            out.push(get(i).url);
+            out.push(get(i).storageId);
         }
         return out;
     }
 
-    function setUrls(urls)
+    function setIds(ids)
     {
         clear();
-        insertUrls(0, urls);
+        insertIds(0, ids);
 
-        urlsChanged();
+        idsChanged();
     }
 
-    function appendUrl(url)
+    function appendId(storageId)
     {
-        append({ url: url });
+        append({ storageId: storageId });
 
-        urlsChanged();
+        idsChanged();
     }
 
-    function insertUrl(index, url)
+    function insertId(index, storageId)
     {
-        insert(index, { url: url });
+        insert(index, { storageId: storageId });
 
-        urlsChanged();
+        idsChanged();
     }
 
-    function insertUrls(index, urls)
+    function insertIds(index, ids)
     {
-        for (var i = 0; i < urls.length; ++i) {
-            insert(index + i, { url: urls[i] });
+        for (var i = 0; i < ids.length; ++i) {
+            insert(index + i, { storageId: ids[i] });
         }
 
-        if (urls.length) {
-            urlsChanged();
+        if (ids.length) {
+            idsChanged();
         }
     }
 
-    function changeUrl(index, url)
-    {
-        // Force reloading delegate data
-        set(index, { url: "quicklaunch:empty" });
-        set(index, { url: url });
-
-        urlsChanged();
-    }
-
-    function moveUrl(from, to)
+    function moveId(from, to)
     {
         if (from == -1 || to == -1 || from == to) {
             return false;
@@ -72,18 +67,18 @@ ListModel {
 
         move(from, to, 1);
 
-        urlsChanged();
+        idsChanged();
         return true;
     }
 
-    function removeUrl(index)
+    function removeId(index)
     {
         remove(index, 1);
 
-        urlsChanged();
+        idsChanged();
     }
 
-    // Drop marker is internally represented as "quicklaunch:drop" url
+    // Drop marker is internally represented as a "quicklaunch:drop" id
     function showDropMarker(index)
     {
         if (index == -1) {
@@ -94,7 +89,7 @@ ListModel {
             move(dropMarkerIndex, index, 1);
             dropMarkerIndex = index;
         } else {
-            insert(index, { url: "quicklaunch:drop" });
+            insert(index, { storageId: "quicklaunch:drop" });
             dropMarkerIndex = index;
         }
     }

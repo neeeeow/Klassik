@@ -21,85 +21,65 @@ import "layout.js" as LayoutManager
 PlasmoidItem {
     id: root
 
-    readonly property int maxSectionCount: Plasmoid.configuration.maxSectionCount
-    readonly property bool showLauncherNames : Plasmoid.configuration.showLauncherNames
-    readonly property string title : Plasmoid.formFactor == PlasmaCore.Types.Planar ? Plasmoid.configuration.title : ""
+    readonly property int sectionCount: Plasmoid.configuration.sectionCount
     readonly property bool vertical : Plasmoid.formFactor == PlasmaCore.Types.Vertical || (Plasmoid.formFactor == PlasmaCore.Types.Planar && height > width)
     readonly property bool horizontal : Plasmoid.formFactor == PlasmaCore.Types.Horizontal
     property bool dragging : false
     property int internalDragIndex: -1
     property int internalDragOriginalIndex: -1
 
-    Layout.minimumWidth: LayoutManager.minimumWidth()
-    Layout.minimumHeight: LayoutManager.minimumHeight()
-    Layout.preferredWidth: LayoutManager.preferredWidth()
-    Layout.preferredHeight: LayoutManager.preferredHeight()
+    // Set up the layout
+    Layout.fillWidth: vertical
+    Layout.fillHeight: horizontal
+
+    // If the grid is empty, reserve space for the add launchers icon
+    Layout.preferredWidth: horizontal ? ((grid.count > 0) ? LayoutManager.preferredExtent() : parent.height) : -1
+    Layout.preferredHeight: vertical ? ((grid.count > 0) ? LayoutManager.preferredExtent() : parent.width) : -1
+
+    Layout.minimumWidth: horizontal ? Layout.preferredWidth : -1
+    Layout.maximumWidth: horizontal ? Layout.preferredWidth : -1
+    Layout.minimumHeight: vertical ? Layout.preferredHeight : -1
+    Layout.maximumHeight: vertical ? Layout.preferredHeight : -1
 
     preferredRepresentation: fullRepresentation
     Plasmoid.backgroundHints: PlasmaCore.Types.DefaultBackground | PlasmaCore.Types.ConfigurableBackground
 
     Item {
+        id: launcher
         anchors.fill: parent
 
-        PlasmaComponents3.Label {
-            id: titleLabel
+        // Quicklauncher grid
+        GridView {
+            id: grid
+            anchors.fill: parent
+            interactive: false
+            flow: root.horizontal ? GridView.FlowTopToBottom : GridView.FlowLeftToRight
+            cellWidth: LayoutManager.preferredCellExtent()
+            cellHeight: LayoutManager.preferredCellExtent()
+            visible: count
 
-            anchors {
-                top: parent.top
-                left: parent.left
-                right: parent.right
+            model: LauncherModel {
+                id: launcherModel
             }
 
-            height: Kirigami.Units.iconSizes.sizeForLabels
-            horizontalAlignment: Text.AlignHCenter
-            verticalAlignment: Text.AlignTop
-            elide: Text.ElideMiddle
-            text: root.title
-            textFormat: Text.PlainText
+            delegate: IconItem {
+                logic: logic
+                grid: grid
+                launcherModel: launcherModel
+            }
         }
 
-        Item {
-            id: launcher
+        Kirigami.Icon {
+            id: defaultIcon
+            anchors.fill: parent
+            source: "fork"
+            visible: !grid.visible
 
-            anchors {
-                top: root.title.length ? titleLabel.bottom : parent.top
-                left: parent.left
-                right: parent.right
-                bottom: parent.bottom
-            }
-
-            GridView {
-                id: grid
+            PlasmaCore.ToolTipArea {
                 anchors.fill: parent
-                interactive: false
-                flow: root.horizontal ? GridView.FlowTopToBottom : GridView.FlowLeftToRight
-                cellWidth: LayoutManager.preferredCellWidth()
-                cellHeight: LayoutManager.preferredCellHeight()
-                visible: count
-
-                model: UrlModel {
-                    id: launcherModel
-                }
-
-                delegate: IconItem {
-                    logic: logic
-                    grid: grid
-                    launcherModel: launcherModel
-                }
-            }
-
-            Kirigami.Icon {
-                id: defaultIcon
-                anchors.fill: parent
-                source: "fork"
-                visible: !grid.visible
-
-                PlasmaCore.ToolTipArea {
-                    anchors.fill: parent
-                    mainText: i18n("Quicklaunch")
-                    subText: i18nc("@info", "Add launchers by Drag and Drop or by using the context menu.")
-                    location: Plasmoid.location
-                }
+                mainText: i18n("Quicklaunch")
+                subText: i18nc("@info", "Add launchers using the context menu.")
+                location: Plasmoid.location
             }
         }
 
@@ -122,10 +102,10 @@ PlasmoidItem {
 
                     var urls = event.mimeData.urls;
                     if (urls.length === 1) {
-                        var dragUrl = urls[0].toString();
-                        var modelUrls = launcherModel.urls();
-                        for (var i = 0; i < modelUrls.length; ++i) {
-                            if (modelUrls[i].toString() === dragUrl) {
+                        var dragId = logic.urlToStorageId(urls[0]);
+                        var modelIds = launcherModel.ids();
+                        for (var i = 0; i < modelIds.length; ++i) {
+                            if (modelIds[i] === dragId) {
                                 root.internalDragIndex = i;
                                 root.internalDragOriginalIndex = i;
                                 break;
@@ -177,7 +157,14 @@ PlasmoidItem {
                     var urls = event.mimeData.urls;
                     event.accept(event.proposedAction);
                     Qt.callLater(function() {
-                        launcherModel.insertUrls(index == -1 ? launcherModel.count : index, urls);
+                        var ids = [];
+                        for (var i = 0; i < urls.length; ++i) {
+                            var id = logic.urlToStorageId(urls[i]);
+                            if (id.length) {
+                                ids.push(id);
+                            }
+                        }
+                        launcherModel.insertIds(index == -1 ? launcherModel.count : index, ids);
                     });
                 }
             }
@@ -187,34 +174,30 @@ PlasmoidItem {
     Logic {
         id: logic
 
-        onLauncherAdded: (url) => {
-            launcherModel.appendUrl(url);
-        }
-
-        onLauncherEdited: (url, index) => {
-            launcherModel.changeUrl(index, url);
+        onLauncherAdded: (storageId) => {
+            launcherModel.appendId(storageId);
         }
     }
 
     Connections {
         target: Plasmoid.configuration
-       function onLauncherUrlsChanged() {
+        function onLauncherIdsChanged() {
             if (root.dragging) return;
-            var configUrls = Plasmoid.configuration.launcherUrls;
-            var modelUrls = launcherModel.urls();
-            if (configUrls.length === modelUrls.length) {
+            var configIds = Plasmoid.configuration.launcherIds;
+            var modelIds = launcherModel.ids();
+            if (configIds.length === modelIds.length) {
                 var same = true;
-                for (var i = 0; i < configUrls.length; ++i) {
-                    if (configUrls[i].toString() !== modelUrls[i].toString()) {
+                for (var i = 0; i < configIds.length; ++i) {
+                    if (configIds[i] !== modelIds[i]) {
                         same = false;
                         break;
                     }
                 }
                 if (same) return;
             }
-            launcherModel.urlsChanged.disconnect(root.saveConfiguration);
-            launcherModel.setUrls(Plasmoid.configuration.launcherUrls);
-            launcherModel.urlsChanged.connect(root.saveConfiguration);
+            launcherModel.idsChanged.disconnect(root.saveConfiguration);
+            launcherModel.setIds(Plasmoid.configuration.launcherIds);
+            launcherModel.idsChanged.connect(root.saveConfiguration);
         }
     }
 
@@ -227,20 +210,21 @@ PlasmoidItem {
     ]
 
     Component.onCompleted: {
-        launcherModel.setUrls(Plasmoid.configuration.launcherUrls);
-        launcherModel.urlsChanged.connect(saveConfiguration);
+        launcherModel.setIds(Plasmoid.configuration.launcherIds);
+        launcherModel.idsChanged.connect(saveConfiguration);
     }
 
     function saveConfiguration()
     {
         if (!dragging) {
-            Plasmoid.configuration.launcherUrls = launcherModel.urls();
+            Plasmoid.configuration.launcherIds = launcherModel.ids();
         }
     }
 
     function addLauncherUrl(url)
     {
         // This function is neeeded to allow us to add launchers externally
-        launcherModel.appendUrl(url);
+        var storageId = logic.urlToStorageId(url);
+        launcherModel.appendId(storageId);
     }
 }

@@ -20,62 +20,15 @@ KCM.SimpleKCM {
 
     readonly property bool vertical: Plasmoid.formFactor == PlasmaCore.Types.Vertical || (Plasmoid.formFactor == PlasmaCore.Types.Planar && Plasmoid.height > Plasmoid.width)
 
-    property alias cfg_maxSectionCount: maxSectionCount.value
-    property alias cfg_title: title.text
+    property alias cfg_sectionCount: sectionCount.value
 
     Kirigami.FormLayout {
         QQC2.SpinBox {
-            id: maxSectionCount
+            id: sectionCount
 
-            Kirigami.FormData.label: root.vertical ? i18nc("@label:spinbox", "Maximum columns:") : i18nc("@label:spinbox", "Maximum rows:")
+            Kirigami.FormData.label: root.vertical ? i18nc("@label:spinbox", "Number of columns:") : i18nc("@label:spinbox", "Number of rows:")
 
             from: 1
-        }
-
-        Item {
-            Kirigami.FormData.isSection: true
-        }
-
-        Item {
-            Kirigami.FormData.isSection: true
-        }
-
-
-        RowLayout {
-            Kirigami.FormData.label: i18nc("@title:group", "Title:")
-            Layout.fillWidth: true
-
-            visible: Plasmoid.formFactor == PlasmaCore.Types.Planar
-
-            QQC2.CheckBox {
-                id: showTitle
-                checked: title.length
-                text: i18nc("@option:check", "Show:")
-
-                onClicked: {
-                    if (checked) {
-                        title.forceActiveFocus();
-                    } else {
-                        title.text = "";
-                    }
-                }
-            }
-
-            Kirigami.ActionTextField {
-                id: title
-                enabled: showTitle.checked
-
-                Layout.fillWidth: true
-                placeholderText: i18nc("@info:placeholder", "Custom title")
-
-                rightActions: [
-                    Kirigami.Action {
-                        icon.name: "edit-clear"
-                        visible: title.text.length !== 0
-                        onTriggered: title.text = "";
-                    }
-                ]
-            }
         }
     }
 }

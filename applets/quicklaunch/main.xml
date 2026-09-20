@@ -6,14 +6,11 @@
   <kcfgfile name=""/>
 
   <group name="General">
-    <entry name="maxSectionCount" type="Int">
+    <entry name="sectionCount" type="Int">
       <default>1</default>
     </entry>
-    <entry name="title" type="String">
-      <default></default>
-    </entry>
-    <entry name="launcherUrls" type="StringList">
-      <default></default>
+    <entry name="launcherIds" type="StringList">
+      <default>org.kde.dolphin,org.kde.konsole</default>
     </entry>
   </group>
 

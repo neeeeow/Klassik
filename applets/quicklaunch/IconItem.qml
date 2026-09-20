@@ -14,20 +14,18 @@ import org.kde.draganddrop as DragAndDrop
 import org.kde.plasma.extras as PlasmaExtras
 import plasma.applet.com.github.neeeeow.klassik.quicklaunch
 
-import "layout.js" as LayoutManager
-
 Item {
     id: iconItem
 
-    required property url url
+    required property string storageId
     required property int index
     required property Logic logic
     required property GridView grid
-    required property UrlModel launcherModel
+    required property LauncherModel launcherModel
 
     readonly property int itemIndex : index
     property bool dragging : false
-    readonly property var launcher : logic.launcherData(url)
+    readonly property var launcher : logic.launcherData(storageId)
     readonly property string iconName : launcher.iconName || "fork"
 
     width: grid.cellWidth
@@ -38,7 +36,7 @@ Item {
         if (newIndex < 0) {
             return;
         }
-        launcherModel.moveUrl(iconItem.itemIndex, newIndex);
+        launcherModel.moveId(iconItem.itemIndex, newIndex);
         iconItem.GridView.view.currentIndex = newIndex;
     }
 
@@ -47,7 +45,7 @@ Item {
         if (newIndex === (iconItem.GridView.view.count)) {
             return;
         }
-        launcherModel.moveUrl(iconItem.itemIndex, newIndex);
+        launcherModel.moveId(iconItem.itemIndex, newIndex);
         iconItem.GridView.view.currentIndex = newIndex;
     }
 
@@ -61,7 +59,7 @@ Item {
         delegate: icon
 
         mimeData {
-            url: iconItem.url
+            url: iconItem.storageId == "quicklaunch:drop" ? "" : iconItem.logic.storageIdToUrl(iconItem.storageId)
             source: iconItem
         }
 
@@ -76,7 +74,7 @@ Item {
         MouseArea {
             id: mouseArea
             anchors.fill: parent
-            anchors.margins: LayoutManager.itemPadding()
+            anchors.margins: 0
             hoverEnabled: true
             acceptedButtons: Qt.LeftButton | Qt.RightButton
 
@@ -96,7 +94,7 @@ Item {
 
             onClicked: mouse => {
                 if (mouse.button == Qt.LeftButton) {
-                    iconItem.logic.openUrl(iconItem.url)
+                    iconItem.logic.openLauncher(iconItem.storageId)
                 }
             }
 
@@ -109,7 +107,7 @@ Item {
                 id: icon
                 anchors.fill: parent
 
-                source: iconItem.url == "quicklaunch:drop" ? "" : iconItem.iconName
+                source: iconItem.storageId == "quicklaunch:drop" ? "" : iconItem.iconName
                 active: mouseArea.containsMouse
 
                 scale: mouseArea.isDown ? (width - 2) / width : 1.0
@@ -140,12 +138,6 @@ Item {
                     text: i18nc("@action:inmenu", "Add Launcher…")
                     icon: "list-add"
                     onClicked: iconItem.addLauncher()
-                }
-
-                PlasmaExtras.MenuItem {
-                    text: i18nc("@action:inmenu", "Edit Launcher…")
-                    icon: "document-edit"
-                    onClicked: iconItem.editLauncher()
                 }
 
                 PlasmaExtras.MenuItem {
@@ -180,9 +172,11 @@ Item {
                             "text": action.name,
                             "icon": action.icon
                         });
-                        item.clicked.connect(function() {
-                            logic.openExec(this.exec);
-                        }.bind(action));
+                        item.clicked.connect((function(actionExec) {
+                            return function() {
+                                logic.openExec(actionExec);
+                            };
+                        })(action.exec));
 
                         addMenuItem(item, jumpListSeparator);
                         jumpListItems.push(item);
@@ -202,14 +196,9 @@ Item {
         logic.addLauncher();
     }
 
-    function editLauncher()
-    {
-        logic.editLauncher(url, itemIndex);
-    }
-
     function removeLauncher()
     {
         var m = launcherModel;
-        m.removeUrl(itemIndex);
+        m.removeId(itemIndex);
     }
 }

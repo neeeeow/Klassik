@@ -6,8 +6,7 @@
  *  SPDX-License-Identifier: GPL-2.0-only OR GPL-3.0-only OR LicenseRef-KDE-Accepted-GPL
  */
 
-#ifndef QUICKLAUNCH_P_H
-#define QUICKLAUNCH_P_H
+#pragma once
 
 #include <QObject>
 #include <QUrl>
@@ -22,16 +21,19 @@ class QuicklaunchPrivate : public QObject
 public:
     explicit QuicklaunchPrivate(QObject *parent = nullptr);
 
-    Q_INVOKABLE QVariantMap launcherData(const QUrl &url);
-    Q_INVOKABLE void openUrl(const QUrl &url);
+    Q_INVOKABLE QVariantMap launcherData(const QString &storageId);
+	Q_INVOKABLE void openLauncher(const QString &storageId);
     Q_INVOKABLE void openExec(const QString &exec);
 
     Q_INVOKABLE void addLauncher();
-    Q_INVOKABLE void editLauncher(QUrl url, int index);
+
+	// Functions to convert between storageIDs and URLs
+	// Internally, launchers are stored by the storageID, but
+	// we need to convert to/from URLs for drag/drop functionality
+	Q_INVOKABLE QUrl storageIdToUrl(const QString &storageId) const;
+    Q_INVOKABLE QString urlToStorageId(const QUrl &url) const;
 
 Q_SIGNALS:
-    void launcherAdded(const QString &url);
-    void launcherEdited(const QString &url, int index);
+    void launcherAdded(const QString &storageId);
 };
 
-#endif // QUICKLAUNCH_P_H
