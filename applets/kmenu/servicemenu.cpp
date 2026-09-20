@@ -106,6 +106,8 @@ ServiceMenu::cleanupActionList(QList<QAction *> &actionList)
 QAction*
 ServiceMenu::createActionFromService(const KService::Ptr &service, const QUrl &url)
 {
+	/* Takes a KService (and an optional url pointing to a file to open, and
+	   creates a QAction which launches the service, parented to this. */
 	if (!service || !service->isValid())
 		return nullptr;
 	
@@ -129,9 +131,44 @@ ServiceMenu::createActionFromService(const KService::Ptr &service, const QUrl &u
 	return action;
 }
 
+QList<QAction *>
+ServiceMenu::createActionsFromServiceActions(const KService::Ptr &service)
+{
+	/* Takes a KService and returns a list of QAction*s corresponding to 
+	   each KServiceAction within the KService, all parented to this. */
+	QList<QAction *> actions;	
+	if (!service || !service->isValid())
+		return actions;
+
+	const QList<KServiceAction> serviceActions = service->actions();
+	for (const KServiceAction &serviceAction : serviceActions) {
+		const QString name = serviceAction.text();
+		const QString exec = serviceAction.exec();
+		if (name.isEmpty() || exec.isEmpty()) {
+			continue;
+		}
+
+		QAction *action = new QAction(QIcon::fromTheme(serviceAction.icon()), name, this);   
+		connect(action, &QAction::triggered, this, [service, exec]() {
+			auto *job = new KIO::CommandLauncherJob(exec);
+			job->setUiDelegate(new KNotificationJobUiDelegate(KJobUiDelegate::AutoHandlingEnabled));
+			job->start();				
+			KActivities::ResourceInstance::notifyAccessed(
+				QUrl(QStringLiteral("applications:") + service->storageId()),
+				QStringLiteral("com.github.neeeeow.klassik.kmenu")
+				);			
+		});
+
+		actions.append(action);
+	}
+
+	return actions;
+}
+
 QAction*
 ServiceMenu::createActionFromUrl(const QUrl &url)
 {
+	/* Returns a QAction* which launches a given QUrl, parented to this. */
 	if (!url.isValid())
 		return nullptr;
 	
@@ -158,13 +195,14 @@ ServiceMenu::createActionFromUrl(const QUrl &url)
 }
 
 QAction*
-ServiceMenu::createFileExplorerActionFromUrl(const QUrl &url, const QIcon &icon, const QString &title)
+ServiceMenu::createFileExplorerActionFromUrl(const QUrl &url)
 {
+	/* Returns a QAction* which opens the file pointed to by the QUrl
+	   in the file explorer, parented to this. */
 	if (!url.isValid())
 		return nullptr;
 	
-    QAction *action = new QAction(icon, title, this);
-
+    QAction *action = new QAction(QIcon::fromTheme(QStringLiteral("system-file-manager")), i18n("Open in File Explorer"), this);
 	connect(action, &QAction::triggered, this, [url]() {
 		auto *job = new KIO::OpenFileManagerWindowJob();
 		job->setUiDelegate(new KNotificationJobUiDelegate(KJobUiDelegate::AutoHandlingEnabled));
@@ -179,10 +217,10 @@ QList<QAction*>
 ServiceMenu::actionListFromServiceGroup(const KServiceGroup::Ptr &root)
 {
 	// TODO: improve this function
-	QList<QAction *> actionList;
+	QList<QAction *> actions;
 
 	if (!root || !root->isValid())
-		return actionList;
+		return actions;
 
 	// Define a recursive lambda for traversing the service groups and populating the submenus
 	auto populateSubmenu = [&](this auto&& self, ServiceMenu *parent, KServiceGroup::Ptr group) -> void {
@@ -197,7 +235,7 @@ ServiceMenu::actionListFromServiceGroup(const KServiceGroup::Ptr &root)
 					continue;
 
 				if (parent == this) { // Don't add top-level actions to the menu, add them to our QList.
-					actionList.append(action);
+					actions.append(action);
 				} else
 					parent->addAction(action);
 			} else if (entry->isType(KST_KServiceGroup)) {
@@ -214,7 +252,7 @@ ServiceMenu::actionListFromServiceGroup(const KServiceGroup::Ptr &root)
 					QAction *action = new QAction(subMenu->icon(), subMenu->title(), parent);
 					action->setMenu(subMenu);
 					action->setData(QVariant::fromValue(subGroup));
-				    actionList.append(action);						
+				    actions.append(action);						
 				} else {
 					QAction *action = parent->addMenu(subMenu);
 					action->setData(QVariant::fromValue(subGroup));
@@ -228,7 +266,7 @@ ServiceMenu::actionListFromServiceGroup(const KServiceGroup::Ptr &root)
 
 	populateSubmenu(this, root);
 	
-	return actionList;
+	return actions;
 }
 
 void
@@ -250,27 +288,11 @@ ServiceMenu::showContextMenu(const QPoint &pos) const
 	if (action->data().canConvert<KService::Ptr>()) {
 		// KService means application!
 		const KService::Ptr service = action->data().value<KService::Ptr>();
-		
-		// Add any execs the service might have
-		const QList<KServiceAction> serviceActions = service->actions();
-		for (const KServiceAction &serviceAction : serviceActions) {
-			const QString &name = serviceAction.text();
-			const QString exec = serviceAction.exec();
-			if (name.isEmpty() || exec.isEmpty()) {
-				continue;
-			}
 
-			QAction *action = contextMenu.addAction(QIcon::fromTheme(serviceAction.icon()), name);   
-			connect(action, &QAction::triggered, &contextMenu, [service, exec]() {
-			    auto *job = new KIO::CommandLauncherJob(exec);
-				job->setUiDelegate(new KNotificationJobUiDelegate(KJobUiDelegate::AutoHandlingEnabled));
-				job->start();				
-				KActivities::ResourceInstance::notifyAccessed(
-					QUrl(QStringLiteral("applications:") + service->storageId()),
-					QStringLiteral("com.github.neeeeow.klassik.kmenu")
-					);			
-			});
-		}
+		// Actions corresponding to the KServiceActions
+		const QList<QAction *> serviceSubActions = contextMenu.createActionsFromServiceActions(service);
+		if (!serviceSubActions.isEmpty())
+			contextMenu.addActions(serviceSubActions);
 
 		if (!contextMenu.isEmpty())
 			contextMenu.addSeparator();
@@ -340,7 +362,7 @@ ServiceMenu::showContextMenu(const QPoint &pos) const
 			dlg->show();
 		});
 		
-		QAction *fileExplorerAction = contextMenu.createFileExplorerActionFromUrl(url, QIcon::fromTheme(QStringLiteral("system-file-manager")), i18n("Open in File Explorer"));
+		QAction *fileExplorerAction = contextMenu.createFileExplorerActionFromUrl(url);
 		if (fileExplorerAction) {			
 			contextMenu.addSeparator();
 			contextMenu.addAction(fileExplorerAction);

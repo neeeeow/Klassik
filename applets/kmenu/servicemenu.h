@@ -30,9 +30,10 @@ public:
 
 	// Functions for creating QActions, from either a service, a url, or an action which launches a
 	// url in the file explorer. All QActions are parented to the menu
-	QAction* createActionFromService(const KService::Ptr &, const QUrl &url = QUrl());
-	QAction* createActionFromUrl(const QUrl &);
-	QAction* createFileExplorerActionFromUrl(const QUrl &url, const QIcon &icon, const QString &title);
+	QAction* createActionFromService(const KService::Ptr &service, const QUrl &url = QUrl());
+	QList<QAction *> createActionsFromServiceActions(const KService::Ptr &service);
+	QAction* createActionFromUrl(const QUrl &url);
+	QAction* createFileExplorerActionFromUrl(const QUrl &url);
 
 protected:
 	// Initializes the menu (not called automatically!)
