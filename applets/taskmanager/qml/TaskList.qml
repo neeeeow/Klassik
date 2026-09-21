@@ -1,4 +1,6 @@
 /*
+    SPDX-FileCopyrightText: 2026 neeeeow <https://github.com/neeeeow>
+
     SPDX-FileCopyrightText: 2012-2013 Eike Hein <hein@kde.org>
 
     SPDX-License-Identifier: GPL-2.0-or-later
@@ -25,10 +27,6 @@ GridLayout {
     required property int count
 
     readonly property bool vertical: Plasmoid.formFactor === PlasmaCore.Types.Vertical
-
-    readonly property real minimumWidth: children
-        .filter(item => item.visible && item.width > 0)
-        .reduce((minimumWidth, item) => Math.min(minimumWidth, item.width), Infinity)
 
     readonly property int stripeCount: TaskManagerApplet.LayoutMetrics.stripeCount()
     readonly property int orthogonalCount: TaskManagerApplet.LayoutMetrics.orthogonalCount(count)

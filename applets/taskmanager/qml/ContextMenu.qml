@@ -23,8 +23,6 @@ PlasmaExtras.Menu {
     required property Mpris.Mpris2Model mpris2Source
     required property /*QModelIndex*/var modelIndex
 
-    readonly property var atm: TaskManager.AbstractTasksModel
-
     property bool showAllPlaces: false
 
     placement: {

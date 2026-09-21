@@ -47,7 +47,6 @@ PlasmaCore.ToolTipArea {
     property bool isWindow: model.IsWindow
     property int childCount: model.ChildCount
     property int previousChildCount: 0
-    property alias labelText: label.text
     property QtObject contextMenu: null
     property QtObject groupMenu: null
 
@@ -57,7 +56,6 @@ PlasmaCore.ToolTipArea {
     readonly property bool audioIndicatorsEnabled: Plasmoid.configuration.indicateAudioStreams
     readonly property bool tooltipControlsEnabled: Plasmoid.configuration.tooltipControls
     readonly property bool hasAudioStream: audioStreams.length > 0
-    readonly property bool playingAudio: hasAudioStream && audioStreams.some(item => !item.corked)
     readonly property bool muted: hasAudioStream && audioStreams.every(item => item.muted)
 
     readonly property bool highlighted: containsMouse
@@ -159,7 +157,6 @@ PlasmaCore.ToolTipArea {
         return i18nc("@info:usagetip %1 task name", "Activate %1", model.display);
     }
     Accessible.role: Accessible.Button
-    //Accessible.onPressAction: leftTapHandler.leftClick()
 
     onToolTipVisibleChanged: toolTipVisible => {
         task.toolTipOpen = toolTipVisible;
@@ -413,7 +410,6 @@ PlasmaCore.ToolTipArea {
         // Avoid repositioning delegate item after dragFinished
         DragHandler {
             id: dragHandler
-            //grabPermissions: PointerHandler.CanTakeOverFromHandlersOfDifferentType
             grabPermissions: PointerHandler.CanTakeOverFromItems | PointerHandler.CanTakeOverFromHandlersOfDifferentType
             property bool dragTriggered: false
 

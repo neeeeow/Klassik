@@ -73,7 +73,7 @@ PlasmaExtras.Menu {
                 if (isMinimized) {
                     tasksModel.requestToggleMinimized(childIndex);
                     tasksModel.requestActivate(childIndex);
-                } else if (isActive && plasmoid.configuration.minimizeActiveTaskOnClick) {
+                } else if (isActive && Plasmoid.configuration.minimizeActiveTaskOnClick) {
                     tasksModel.requestToggleMinimized(childIndex);
                 } else {
                     tasksModel.requestActivate(childIndex);

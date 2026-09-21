@@ -308,9 +308,6 @@ ColumnLayout {
             // if this is a group tooltip, we check if window title and track match, to allow distinguishing the different windows
             // if this app is a browser, we also check the title, so album art is not shown when the user is on some other tab
             // in all other cases we can safely show the album art without checking the title
-            /*readonly property bool available: (status === Image.Ready || status === Image.Loading)
-                && (!(toolTipDelegate.isGroup) || root.titleIncludesTrack)*/
-
             readonly property bool available: (status === Image.Ready || status === Image.Loading)
                 && (!(toolTipDelegate.isGroup) || root.titleIncludesTrack)
 
