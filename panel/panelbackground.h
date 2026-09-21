@@ -23,8 +23,8 @@ class PanelBackground : public KlassikQStyleItem
 	Q_OBJECT
 	QML_ELEMENT
 	Q_PROPERTY(bool drawFrame READ drawFrame WRITE setDrawFrame)
+	Q_PROPERTY(bool colorizePanel READ colorizePanel WRITE setColorizePanel)
 	Q_PROPERTY(bool useBackground READ useBackground WRITE setUseBackground)
-	Q_PROPERTY(bool colorizeBackground READ colorizeBackground WRITE setColorizeBackground)
 	Q_PROPERTY(Plasma::Types::Location panelLocation READ panelLocation WRITE setPanelLocation)
 	Q_PROPERTY(bool useCustomBackground READ useCustomBackground WRITE setUseCustomBackground)
 	Q_PROPERTY(QUrl customBackgroundUrl READ customBackgroundUrl WRITE setCustomBackgroundUrl)
@@ -39,20 +39,20 @@ public:
 			updateImage();
 		}
 	}
-
-	bool useBackground() const { return m_useBackground; }
-	void setUseBackground(bool state) {
-		if (m_useBackground != state) {
-			m_useBackground = state;
+	
+	bool colorizePanel() const { return m_colorizePanel; }
+	void setColorizePanel(bool state) {
+		if (m_colorizePanel != state) {
+			m_colorizePanel = state;
 			loadBackground();
 			updateImage();
 		}
 	}
 
-	bool colorizeBackground() const { return m_colorizeBackground; }
-	void setColorizeBackground(bool state) {
-		if (m_colorizeBackground != state) {
-			m_colorizeBackground = state;
+	bool useBackground() const { return m_useBackground; }
+	void setUseBackground(bool state) {
+		if (m_useBackground != state) {
+			m_useBackground = state;
 			loadBackground();
 			updateImage();
 		}
@@ -91,14 +91,15 @@ protected:
 	void paint(QPainter *p) const override;
 
 private:
-	bool m_drawFrame = false;
-	bool m_useBackground = true;
-	bool m_colorizeBackground = false;
+	bool m_drawFrame = true;
+	bool m_colorizePanel = false;
+	bool m_useBackground = false;
 	Plasma::Types::Location m_panelLocation = Plasma::Types::BottomEdge;
 	bool m_useCustomBackground = false;
 	QUrl m_customBackgroundUrl;
 	QImage m_background;	
 	
 	void loadBackground();
-	void colorize(QImage &image);
+	void colorize(QImage &image) const;
+	QColor tintColor(const QColor &baseColor) const;
 };

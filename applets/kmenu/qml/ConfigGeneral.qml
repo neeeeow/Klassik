@@ -85,7 +85,7 @@ KCMUtils.SimpleKCM {
         }
 
         Item {
-            Kirigami.FormData.label: i18n("General:")
+            Kirigami.FormData.label: i18n("General")
             Kirigami.FormData.isSection: true
         }
 
@@ -107,7 +107,7 @@ KCMUtils.SimpleKCM {
         }
 
         Item {
-            Kirigami.FormData.label: i18n("Menu sections:")
+            Kirigami.FormData.label: i18n("Menu sections")
             Kirigami.FormData.isSection: true
         }
 

@@ -35,15 +35,11 @@ ContainmentItem {
     }
     Layout.fillHeight: Layout.fillWidth
 
-    property Item toolBox
-    property var layoutManager: LayoutManager
-
     property bool isHorizontal: Plasmoid.formFactor !== PlasmaCore.Types.Vertical
     property int fixedWidth: 0
     property int fixedHeight: 0
     property bool hasSpacer
-    // True when e.g. the task manager is drag and dropping tasks.
-    property bool appletRequestsInhibitDnD: false
+
     property bool reverse: Application.layoutDirection === Qt.RightToLeft
 
     readonly property int panelMargin: 2
@@ -138,8 +134,8 @@ ContainmentItem {
     PanelBackground {
         anchors.fill: parent
         drawFrame: Plasmoid.configuration.drawFrame
+        colorizePanel: Plasmoid.configuration.colorizePanel
         useBackground: Plasmoid.configuration.useBackground
-        colorizeBackground: Plasmoid.configuration.colorizeBackground
         panelLocation: Plasmoid.location
         useCustomBackground: Plasmoid.configuration.useCustomBackground
         customBackgroundUrl: Plasmoid.configuration.customBackgroundUrl
@@ -173,7 +169,7 @@ ContainmentItem {
         }
 
         onDragEnter: event => {
-            if (Plasmoid.immutable || root.appletRequestsInhibitDnD) {
+            if (Plasmoid.immutable) {
                 event.ignore();
                 return;
             }
@@ -451,7 +447,6 @@ ContainmentItem {
 
         Item {
             id: dndSpacer
-            property bool busy: false
             Layout.preferredWidth: width
             Layout.preferredHeight: height
             width: root.isHorizontal ? Kirigami.Units.iconSizes.sizeForLabels * 5 : currentLayout.width
@@ -474,10 +469,9 @@ ContainmentItem {
             columnSpacing: 0
 
             x: 0
-            readonly property int toolBoxSize: !root.toolBox || !Plasmoid.containment.corona.editMode ? 0 : (root.isHorizontal ? root.toolBox.width : root.toolBox.height)
 
-            property int horizontalDisplacement: dropArea.anchors.leftMargin + dropArea.anchors.rightMargin + (root.isHorizontal ? currentLayout.toolBoxSize : 0)
-            property int verticalDisplacement: dropArea.anchors.topMargin + dropArea.anchors.bottomMargin + (root.isHorizontal ? 0 : currentLayout.toolBoxSize)
+            property int horizontalDisplacement: dropArea.anchors.leftMargin + dropArea.anchors.rightMargin
+            property int verticalDisplacement: dropArea.anchors.topMargin + dropArea.anchors.bottomMargin
 
     // BEGIN BUG 454095: use lastSpacer to left align applets, as implicitWidth is updated too late
             width: root.width - horizontalDisplacement
