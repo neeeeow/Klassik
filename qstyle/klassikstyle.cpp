@@ -13,8 +13,6 @@
 #include "klassikstyle.h"
 #include "bitmaps.h"
 
-#include <QStyleOption>
-
 #include <qdrawutil.h>
 
 // constants used for calculating menu item geometry
