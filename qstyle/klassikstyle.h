@@ -1,3 +1,15 @@
+/*
+   SPDX-FileCopyrightText: 2026 neeeeow <https://github.com/neeeeow>
+ 
+   SPDX-FileCopyrightText: 2001-2002 Karol Szwed <gallium@kde.org>
+   SPDX-FileCopyrightText: 2001-2002 Fredrik Höglund <fredrik@kde.org>
+   SPDX-FileCopyrightText: 2001 Martijn Klingens <klingens@kde.org>
+   SPDX-FileCopyrightText: 2000 Daniel M. Duley <mosfet@kde.org>
+   SPDX-FileCopyrightText: 2000 Dirk Mueller <mueller@kde.org>
+  
+   SPDX-License-Identifier: GPL-3.0-or-later
+*/
+
 #pragma once
 
 #include <QCommonStyle>
@@ -32,6 +44,10 @@ public:
 
 	int pixelMetric(PixelMetric metric, const QStyleOption *opt = nullptr,
 					const QWidget *widget = nullptr) const override;
+
+	QSize sizeFromContents(ContentsType contents, const QStyleOption *opt,
+						   const QSize &contentsSize,
+						   const QWidget *widget = nullptr) const override;
 
 	int styleHint(StyleHint sh, const QStyleOption *opt = nullptr,
 				  const QWidget *widget = nullptr,

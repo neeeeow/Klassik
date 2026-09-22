@@ -1,3 +1,15 @@
+/*
+   SPDX-FileCopyrightText: 2026 neeeeow <https://github.com/neeeeow>
+ 
+   SPDX-FileCopyrightText: 2001-2002 Karol Szwed <gallium@kde.org>
+   SPDX-FileCopyrightText: 2001-2002 Fredrik Höglund <fredrik@kde.org>
+   SPDX-FileCopyrightText: 2001 Martijn Klingens <klingens@kde.org>
+   SPDX-FileCopyrightText: 2000 Daniel M. Duley <mosfet@kde.org>
+   SPDX-FileCopyrightText: 2000 Dirk Mueller <mueller@kde.org>
+  
+   SPDX-License-Identifier: GPL-3.0-or-later
+*/
+
 #include "klassikstyle.h"
 #include "bitmaps.h"
 
@@ -5,6 +17,10 @@
 #include <QGuiApplication>
 
 #include <qdrawutil.h>
+
+// constants used for calculating menu item geometry
+#define MENU_HMARGIN 3
+#define MENU_ARROW_HMARGIN 6
 
 static qreal
 getDpr(const QPainter *p) {		
@@ -1108,41 +1124,6 @@ KlassikStyle::drawControl(ControlElement control, const QStyleOption *opt,
 		break;
 	}
 
-	// TOOLBOX TAB
-	// -------------------------------------------------------------------
-	case CE_ToolBoxTabShape: {
-		bool pressed = opt->state & State_Sunken;
-		bool selected = opt->state & State_Selected;
-		int x, y, x2, y2;
-		r.getCoords( &x, &y, &x2, &y2 );
-
-		p->save();
-		if (isScaled) {
-			p->scale(inverseScale, inverseScale);
-			p->translate(0.5, 0.5);
-		}
-
-		p->setPen( pressed ? opt->palette.shadow().color() : opt->palette.light().color() );
-		p->drawLine( x, y, x2-1, y );
-		p->drawLine( x, y, x, y2-1 );
-
-		p->setPen( pressed ? opt->palette.light().color() : opt->palette.shadow().color() );
-		p->drawLine( x, y2, x2, y2 );
-		p->drawLine( x2, y, x2, y2 );
-
-		QColor fill = selected ? opt->palette.highlight().color() : opt->palette.button().color();
-		if (isScaled)
-			p->translate(-0.5,-0.5);
-
-		if ( pressed )
-			p->fillRect( QRect(x+1, y+1, r.width()-2, r.height()-2), fill );
-		else
-			renderGradient(p, QRect(x+1, y+1, r.width()-2, r.height()-2),
-						   fill, false);
-		p->restore();
-		break;
-	}
-
 	// TABBAR TAB
 	// -------------------------------------------------------------------
 	case CE_TabBarTabShape: {
@@ -1182,7 +1163,6 @@ KlassikStyle::drawControl(ControlElement control, const QStyleOption *opt,
 				p->fillRect(x+2, y+4, r.width()-3, r.height()-4, tb->palette.window());
 			} else {
 				p->setPen(tb->palette.mid().color());
-				p->drawPoint(right-1, y+1);
 				p->drawLine(x+4, y+2, right-1, y+2);
 				p->drawLine(x+3, y+3, right-1, y+3);
 				if (isScaled)
@@ -1193,7 +1173,6 @@ KlassikStyle::drawControl(ControlElement control, const QStyleOption *opt,
 
 				p->setPen(tb->palette.light().color());
 				p->drawLine(x, bottom-1, right, bottom-1);
-				p->translate(0,-1);
 			}
 
 			break;
@@ -1223,7 +1202,6 @@ KlassikStyle::drawControl(ControlElement control, const QStyleOption *opt,
 				p->fillRect(x+2, y, r.width()-3, r.height()-4, tb->palette.window());
 			} else {
 				p->setPen(tb->palette.mid().color());
-				p->drawPoint(right-1, bottom-1);
 				p->drawLine(x+4, bottom-2, right-1, bottom-2);
 				p->drawLine(x+3, bottom-3, right-1, bottom-3);
 				if (isScaled)
@@ -1346,9 +1324,12 @@ KlassikStyle::drawControl(ControlElement control, const QStyleOption *opt,
 		if (!menuitem)
 			break;	   
 
-		if ((menuitem->state & State_Enabled) && (menuitem->state & State_Sunken)) // TODO: draw the non-selected background
+		if ((menuitem->state & State_Enabled) && (menuitem->state & State_Selected)) // TODO: draw the non-selected background
 			qDrawShadePanel(p, menuitem->rect, menuitem->palette, true,
 							1, &menuitem->palette.midlight());
+		else
+			renderGradient(p, QRect(menuitem->rect.x(), menuitem->menuRect.y(), menuitem->rect.width(), menuitem->menuRect.height()),
+						   menuitem->palette.button().color(), false);
 
 		int tf = Qt::AlignCenter | Qt::TextShowMnemonic | Qt::TextDontClip | Qt::TextSingleLine;
 		if (!proxy()->styleHint(SH_UnderlineShortcut, menuitem, widget))
@@ -1370,9 +1351,9 @@ KlassikStyle::drawControl(ControlElement control, const QStyleOption *opt,
 		const int tab = menuitem->reservedShortcutWidth;
 		const int checkcol = qMax<int>(menuitem->maxIconWidth, 20);
 		const int dim = proxy()->pixelMetric(PM_MenuButtonIndicator, opt, widget);
-		const int itemHMargin  = 3;
+		const int itemHMargin  = MENU_HMARGIN;
 		const int itemFrame    = 1;
-		const int arrowHMargin = 6;
+		const int arrowHMargin = MENU_ARROW_HMARGIN;
 		
 		bool enabled = menuitem->state & State_Enabled;
 		bool checked = menuitem->checkType != QStyleOptionMenuItem::NotCheckable
@@ -1446,8 +1427,7 @@ KlassikStyle::drawControl(ControlElement control, const QStyleOption *opt,
 								&menuitem->palette.midlight());
 			// Draw the check mark
 			QStyleOption check;
-			check.state = State_None;
-			check.state |= active ? State_Enabled : State_On;
+			check.state = State_Enabled;
 			check.rect = cr;
 			check.palette = menuitem->palette;
 			proxy()->drawPrimitive(PE_IndicatorMenuCheckMark, &check, p, widget);
@@ -1488,6 +1468,133 @@ KlassikStyle::drawControl(ControlElement control, const QStyleOption *opt,
 		
 		break;
 	}
+
+	// PROGRESS BAR
+	// -------------------------------------------------------------------
+	case CE_ProgressBarGroove: {
+		QStyleOptionFrame frame;
+		frame.QStyleOption::operator=(*opt);
+		frame.state |= State_Sunken;
+		frame.lineWidth = proxy()->pixelMetric(PM_DefaultFrameWidth, opt, widget);
+		proxy()->drawPrimitive(PE_Frame, &frame, p, widget);
+		break;
+	}
+		
+	case CE_ProgressBarContents: {
+		const QStyleOptionProgressBar *bar = qstyleoption_cast<const QStyleOptionProgressBar *>(opt);
+		if (!bar)
+			break;		
+
+		// progress bar properties
+		const bool indeterminate = (bar->minimum == 0 && bar->maximum == 0);
+		const bool horizontal = bar->state & State_Horizontal;
+		const bool inverted = bar->invertedAppearance;
+
+		// progress bar dimensions
+		int x,y,w,h;
+		bar->rect.getRect(&x,&y,&w,&h);
+
+		// Compute the area over which to draw the bar
+		QRect progressBar;
+		if (indeterminate) {
+			int start, length, remains;
+			length = qBound(1, (horizontal ? w : h) / 2, 25);
+			remains = qMax((horizontal ? w : h) - length, 1);
+			start = bar->progress % (remains * 2);
+			if (start > remains)
+				start = 2 * remains - start;
+
+			if (horizontal)
+				progressBar = visualRect( bar->direction, bar->rect,
+										  QRect(x + start, y, length, h) );
+			else
+				progressBar.setRect(x, y + start, w, length);
+				
+		} else {
+			const int progress = qMax(bar->progress, bar->minimum);
+			const int totalSteps = qMax(Q_INT64_C(1), qint64(bar->maximum) - bar->minimum);
+            const int progressSteps = qint64(progress) - bar->minimum;
+            const int length = progressSteps * (horizontal ? w : h) / totalSteps;
+
+			if (horizontal)
+				progressBar = visualRect( bar->direction, bar->rect,
+										  QRect(x, y, length, h) );
+			else
+				progressBar.setRect(x,y,w,length);
+			
+		}
+
+		// Invert the progress bar if needed
+		if (inverted) {
+			if (horizontal)
+				progressBar.moveLeft(x + (w - (progressBar.x() - x) - progressBar.width()));
+			else
+				progressBar.moveTop(y + (h - (progressBar.y() - y) - progressBar.height()));
+		}
+
+		// Draw the bar
+		if (m_styleType == HighColor) {
+			QLinearGradient gradient(0, 0, horizontal ? 1 : 0, horizontal ? 0 : 1);
+			gradient.setCoordinateMode(QGradient::ObjectBoundingMode);
+			gradient.setColorAt(0, bar->palette.highlight().color().darker(150));
+			gradient.setColorAt(1, bar->palette.highlight().color().lighter(150));
+			p->fillRect(progressBar, gradient);
+		} else
+			p->fillRect(progressBar, bar->palette.highlight());
+		
+		break;
+	}
+
+	case CE_ProgressBarLabel: {
+		const QStyleOptionProgressBar *bar = qstyleoption_cast<const QStyleOptionProgressBar *>(opt);
+		if (!bar)
+			break;
+
+		const QRect &rect = bar->rect;
+		QRect leftRect = rect;
+		QRect rightRect = rect;
+		QColor textColor = bar->palette.text().color();
+		QColor highlightedTextColor = bar->palette.highlightedText().color();
+
+		const bool vertical = !(bar->state & QStyle::State_Horizontal);
+		const bool inverted = bar->invertedAppearance;
+		const bool reverse = (bar->direction == Qt::RightToLeft) ^ inverted;
+		const int totalSteps = qMax(Q_INT64_C(1), qint64(bar->maximum) - bar->minimum);
+		const int progressSteps = qint64(bar->progress) - bar->minimum;
+		const int progressIndicatorPos = progressSteps * (vertical ? rect.height() : rect.width()) / totalSteps;
+
+		if (vertical) {
+			if (progressIndicatorPos >= 0 && progressIndicatorPos <= rect.height()) {
+				if (inverted) {
+					leftRect.setHeight(progressIndicatorPos);
+					rightRect.setY(progressIndicatorPos);
+				} else {
+					leftRect.setHeight(rect.height() - progressIndicatorPos);
+					rightRect.setY(rect.height() - progressIndicatorPos);
+				}
+			}
+		} else {
+			if (progressIndicatorPos >= 0 && progressIndicatorPos <= rect.width()) {
+				if (reverse) {
+					leftRect.setWidth(rect.width() - progressIndicatorPos);
+					rightRect.setX(rect.width() - progressIndicatorPos);
+				} else {
+					leftRect.setWidth(progressIndicatorPos);
+					rightRect.setX(progressIndicatorPos);
+				}
+			}
+		}
+
+		const auto firstIsHighlightedColor = (vertical && !inverted) || (!vertical && reverse);
+		p->setClipRect(rightRect);
+		p->setPen(firstIsHighlightedColor ? highlightedTextColor : textColor);
+		p->drawText(rect, bar->text, QTextOption(Qt::AlignAbsolute | Qt::AlignHCenter | Qt::AlignVCenter));
+		p->setPen(firstIsHighlightedColor ? textColor : highlightedTextColor);
+		p->setClipRect(leftRect);
+		p->drawText(rect, bar->text, QTextOption(Qt::AlignAbsolute | Qt::AlignHCenter | Qt::AlignVCenter));
+
+		break;
+	}
 	
 	default: {
 		QCommonStyle::drawControl(control, opt, p, widget);
@@ -1500,10 +1607,12 @@ QRect
 KlassikStyle::subElementRect(SubElement element, const QStyleOption *opt,
 							   const QWidget *widget) const
 {
-	// We want the focus rect for buttons to be adjusted from
-	// the Qt6 defaults to be similar to Qt 2's defaults.
-	// -------------------------------------------------------------------
-	if (element == SE_PushButtonFocusRect) {
+	QRect r;
+	
+	switch (element) {
+	case SE_PushButtonFocusRect: {
+		// We want the focus rect for buttons to be adjusted from
+	    // the Qt6 defaults to be similar to Qt 2's defaults.
 		const QStyleOptionButton *btn = qstyleoption_cast<const QStyleOptionButton *>(opt);
 		if (!btn)
 			return QCommonStyle::subElementRect(element, opt, widget);
@@ -1515,17 +1624,33 @@ KlassikStyle::subElementRect(SubElement element, const QStyleOption *opt,
 			dbw2 = dbw1 * 2;
 		}
 
-		int dfw1 = proxy()->pixelMetric(PM_DefaultFrameWidth, btn, widget) + 1,
-			dfw2 = dfw1 * 2;
+		const int dfw1 = proxy()->pixelMetric(PM_DefaultFrameWidth, btn, widget) + 1,
+			      dfw2 = dfw1 * 2;
 
 		r.setRect(btn->rect.x() + dfw1 + dbw1 + 1,
 				  btn->rect.y() + dfw1 + dbw1 + 1,
 				  btn->rect.width() - dfw2 - dbw2 - 1,
 				  btn->rect.height()- dfw2 - dbw2 - 1);
 		r = visualRect(opt->direction, opt->rect, r);
-		return r;
-	} else
-		return QCommonStyle::subElementRect(element, opt, widget);
+		break;
+	}
+	case SE_ProgressBarGroove: {
+		r = opt->rect;
+		break;
+	}
+	case SE_ProgressBarLabel:
+	case SE_ProgressBarContents: {
+		const int fw = proxy()->pixelMetric(PM_DefaultFrameWidth, opt, widget);
+		r = opt->rect.adjusted(fw,fw,-fw,-fw);
+		break;
+	}
+	default: {
+		r = QCommonStyle::subElementRect(element, opt, widget);
+		break;
+	}
+	}
+
+	return r;
 }
 
 void
@@ -1610,12 +1735,10 @@ KlassikStyle::drawComplexControl(ComplexControl control, const QStyleOptionCompl
 			if (combobox->editable)
 				qDrawShadeRect(p, field.adjusted(-1,-1,1,1), combobox->palette, true);
 			else if (combobox->state & State_HasFocus) {
-				p->fillRect(field, combobox->palette.brush(QPalette::Highlight));
 				QStyleOptionFocusRect focus;
 				focus.QStyleOption::operator=(*combobox);
 				focus.rect = subElementRect(SE_ComboBoxFocusRect, combobox, widget);
 				focus.state |= State_FocusAtBorder;
-				focus.backgroundColor = combobox->palette.highlight().color();
 				proxy()->drawPrimitive(PE_FrameFocusRect, &focus, p, widget);
 			}
 		}
@@ -1765,10 +1888,6 @@ KlassikStyle::pixelMetric(PixelMetric metric, const QStyleOption *opt,
 	switch (metric) {
 	// BUTTONS
 	// -------------------------------------------------------------------
-	case PM_ButtonMargin:
-		ret = 4;
-		break;
-
 	case PM_ButtonDefaultIndicator: {
 		if ( m_styleType == HighColor )
 			ret = 0;
@@ -1779,9 +1898,9 @@ KlassikStyle::pixelMetric(PixelMetric metric, const QStyleOption *opt,
 
 	case PM_MenuButtonIndicator: {
 		if ( m_styleType != B3 )
-			ret = 8;
+			ret = 12;
 		else
-			ret = 7;
+			ret = 11;
 		break;
 	}
 
@@ -1875,7 +1994,7 @@ KlassikStyle::pixelMetric(PixelMetric metric, const QStyleOption *opt,
 		break;
 
 	case PM_MenuBarItemSpacing:
-		ret = 5;
+		ret = 3;
 		break;
 
 	case PM_ToolBarItemSpacing:
@@ -1892,6 +2011,67 @@ KlassikStyle::pixelMetric(PixelMetric metric, const QStyleOption *opt,
 	}
 	
 	return ret;
+}
+
+QSize
+KlassikStyle::sizeFromContents(ContentsType contents,
+							   const QStyleOption *opt,
+							   const QSize &contentsSize,
+							   const QWidget *widget) const
+{
+	QSize size(contentsSize);
+	switch (contents) {
+	// MENU ITEMS
+	// -------------------------------------------------------------------
+	case CT_MenuItem: {
+		const QStyleOptionMenuItem *menuitem = qstyleoption_cast<const QStyleOptionMenuItem *>(opt);
+		if (!menuitem)
+			break;
+
+		// Set separator dimensions
+		if (menuitem->menuItemType == QStyleOptionMenuItem::Separator) {
+			size = QSize(10, 2);
+			break;
+		}
+
+		// Set menuitem height
+		int h =  menuitem->fontMetrics.height() + 8;
+		if (!menuitem->icon.isNull()) {
+			const int iconExtent = proxy()->pixelMetric(PM_SmallIconSize, opt, widget);
+			h = qMax(h,
+					 menuitem->icon.actualSize(QSize(iconExtent,
+													 iconExtent)).height() + 4);
+		}
+							
+		// Set menuitem width
+		int w = size.width() + 12;
+		const int maxpmw = menuitem->maxIconWidth;
+		const int dim = proxy()->pixelMetric(PM_MenuButtonIndicator, opt, widget);
+		w += dim + MENU_ARROW_HMARGIN; // Add space reserved for submenu arrow
+		w += qMax(maxpmw,22) + MENU_HMARGIN; // Area reserved for icon/checkmark
+		if (menuitem->text.contains(u'\t'))
+			w += MENU_HMARGIN; // Area to separate tab/accelerator text
+		
+		size = QSize(w,h);	
+		break;
+	}
+	case CT_MenuBarItem: {
+		const QStyleOptionMenuItem *menuitem = qstyleoption_cast<const QStyleOptionMenuItem *>(opt);
+		if (!menuitem)
+			break;
+
+		int h = menuitem->fontMetrics.height() + 4;
+		int w = size.width() + 8;
+		size = QSize(w,h);		
+		break;
+	}
+	default: {
+		size = QCommonStyle::sizeFromContents(contents, opt, contentsSize, widget);
+		break;
+	}
+	}
+
+	return size;
 }
 
 int
