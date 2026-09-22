@@ -28,11 +28,11 @@ public:
 	explicit ContainmentInterface(Plasma::Applet *applet);
 	~ContainmentInterface() override = default;
 
-	bool mayAddLauncher(ContainmentInterface::Target target);
-	void addLauncher(ContainmentInterface::Target target, const KService::Ptr &service);
+	bool mayAddLauncher(ContainmentInterface::Target target) const;
+	void addLauncher(ContainmentInterface::Target target, const KService::Ptr &service) const;
 
 private:
 	Plasma::Containment *m_containment = nullptr;
 
-	Plasma::Applet *findQuicklaunchApplet();
+	Plasma::Applet *findQuicklaunchApplet() const;
 };

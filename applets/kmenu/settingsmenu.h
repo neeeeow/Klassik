@@ -8,7 +8,7 @@
 
 #include "servicemenu.h"
 
-class SettingsMenu : public ServiceMenu
+class SettingsMenu final : public ServiceMenu
 {
 	Q_OBJECT
 	

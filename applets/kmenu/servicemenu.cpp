@@ -71,12 +71,6 @@ ServiceMenu::reinitialize()
 }
 
 void
-ServiceMenu::setInitialized(bool initialized)
-{
-	m_initialized = initialized;
-}
-
-void
 ServiceMenu::actionEvent(QActionEvent *e)
 {
 	// If the action has an associated menu, delete the menu if it's
@@ -131,40 +125,6 @@ ServiceMenu::createActionFromService(const KService::Ptr &service, const QUrl &u
 	return action;
 }
 
-QList<QAction *>
-ServiceMenu::createActionsFromServiceActions(const KService::Ptr &service)
-{
-	/* Takes a KService and returns a list of QAction*s corresponding to 
-	   each KServiceAction within the KService, all parented to this. */
-	QList<QAction *> actions;	
-	if (!service || !service->isValid())
-		return actions;
-
-	const QList<KServiceAction> serviceActions = service->actions();
-	for (const KServiceAction &serviceAction : serviceActions) {
-		const QString name = serviceAction.text();
-		const QString exec = serviceAction.exec();
-		if (name.isEmpty() || exec.isEmpty()) {
-			continue;
-		}
-
-		QAction *action = new QAction(QIcon::fromTheme(serviceAction.icon()), name, this);   
-		connect(action, &QAction::triggered, this, [service, exec]() {
-			auto *job = new KIO::CommandLauncherJob(exec);
-			job->setUiDelegate(new KNotificationJobUiDelegate(KJobUiDelegate::AutoHandlingEnabled));
-			job->start();				
-			KActivities::ResourceInstance::notifyAccessed(
-				QUrl(QStringLiteral("applications:") + service->storageId()),
-				QStringLiteral("com.github.neeeeow.klassik.kmenu")
-				);			
-		});
-
-		actions.append(action);
-	}
-
-	return actions;
-}
-
 QAction*
 ServiceMenu::createActionFromUrl(const QUrl &url)
 {
@@ -213,8 +173,42 @@ ServiceMenu::createFileExplorerActionFromUrl(const QUrl &url)
 	return action;
 }
 
-QList<QAction*>
-ServiceMenu::actionListFromServiceGroup(const KServiceGroup::Ptr &root)
+QList<QAction *>
+ServiceMenu::createActionsFromServiceActions(const KService::Ptr &service)
+{
+	/* Takes a KService and returns a list of QAction*s corresponding to 
+	   each KServiceAction within the KService, all parented to this. */
+	QList<QAction *> actions;	
+	if (!service || !service->isValid())
+		return actions;
+
+	const QList<KServiceAction> serviceActions = service->actions();
+	for (const KServiceAction &serviceAction : serviceActions) {
+		const QString name = serviceAction.text();
+		const QString exec = serviceAction.exec();
+		if (name.isEmpty() || exec.isEmpty()) {
+			continue;
+		}
+
+		QAction *action = new QAction(QIcon::fromTheme(serviceAction.icon()), name, this);   
+		connect(action, &QAction::triggered, this, [service, exec]() {
+			auto *job = new KIO::CommandLauncherJob(exec);
+			job->setUiDelegate(new KNotificationJobUiDelegate(KJobUiDelegate::AutoHandlingEnabled));
+			job->start();				
+			KActivities::ResourceInstance::notifyAccessed(
+				QUrl(QStringLiteral("applications:") + service->storageId()),
+				QStringLiteral("com.github.neeeeow.klassik.kmenu")
+				);			
+		});
+
+		actions.append(action);
+	}
+
+	return actions;
+}
+
+QList<QAction *>
+ServiceMenu::createActionsFromServiceGroup(const KServiceGroup::Ptr &root)
 {
 	// TODO: improve this function
 	QList<QAction *> actions;

@@ -26,9 +26,8 @@ KlassikPaintedItem::componentComplete()
 bool
 KlassikPaintedItem::event(QEvent *event)
 {
-	if (event->type() == QEvent::ApplicationPaletteChange) {
+	if (event->type() == QEvent::ApplicationPaletteChange)
 	    updateImage();
-	}
 
 	return QQuickItem::event(event);
 }
@@ -50,6 +49,7 @@ KlassikPaintedItem::geometryChange(const QRectF &newGeometry, const QRectF &oldG
 void
 KlassikPaintedItem::updatePolish()
 {
+	QQuickItem::updatePolish();
 	paintControlToImage();
 }
 
@@ -57,6 +57,7 @@ KlassikPaintedItem::updatePolish()
 QSGNode *
 KlassikPaintedItem::updatePaintNode(QSGNode *oldNode, QQuickItem::UpdatePaintNodeData *updatePaintNodeData)
 {
+	Q_UNUSED(updatePaintNodeData);
     QSGSimpleTextureNode *node = static_cast<QSGSimpleTextureNode *>(oldNode);
 	if (!node) {
 		node = new QSGSimpleTextureNode();
@@ -78,11 +79,11 @@ KlassikPaintedItem::updatePaintNode(QSGNode *oldNode, QQuickItem::UpdatePaintNod
 	// Correct bounds for fractional scaling
 	const qreal dpr = window()->effectiveDevicePixelRatio();
 	if (!qFuzzyCompare(dpr, qreal(1))) {
-		QPointF windowPos = mapToScene(QPointF(0, 0));
-		qreal physX = windowPos.x() * dpr;
-		qreal physY = windowPos.y() * dpr;
-		qreal fractionalX = physX - qFloor(physX);
-		qreal fractionalY = physY - qFloor(physY);
+		const QPointF windowPos = mapToScene(QPointF(0, 0));
+		const qreal physX = windowPos.x() * dpr;
+		const qreal physY = windowPos.y() * dpr;
+		const qreal fractionalX = physX - qFloor(physX);
+		const qreal fractionalY = physY - qFloor(physY);
 		bounds.adjust(-fractionalX / dpr, -fractionalY / dpr, -fractionalX / dpr, -fractionalY / dpr);
 	}
 

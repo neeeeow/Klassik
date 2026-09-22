@@ -8,8 +8,6 @@
 
 #include "../common/klassikqstyleitem.h"
 
-#include <QPalette>
-
 #include <Plasma/Plasma>
 
 class HandleArrow : public KlassikQStyleItem
@@ -32,9 +30,12 @@ public:
 			updateImage();
 		}
 	}
-protected:	
+
+private:
+    Plasma::Types::Location m_panelLocation = Plasma::Types::BottomEdge;
+
 	void paint(QPainter *p) const override {		
-		if (!m_style)
+		if (!style())
 			return;
 
 		QStyleOption opt;
@@ -58,9 +59,6 @@ protected:
 			break;
 		}
 		
-		m_style->drawPrimitive(pe, &opt, p);
+		style()->drawPrimitive(pe, &opt, p);
 	}
-
-private:
-    Plasma::Types::Location m_panelLocation = Plasma::Types::BottomEdge;
 };

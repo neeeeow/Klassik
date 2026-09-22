@@ -6,7 +6,6 @@
 
 #include "panelbackground.h"
 
-#include <QPalette>
 #include <QStyleOptionFrame>
 #include <QBrush>
 #include <QTransform>
@@ -82,7 +81,7 @@ PanelBackground::paint(QPainter *p) const
 	}
 
 	// Draw the panel frame
-	if (!m_style || !m_drawFrame)
+	if (!style() || !m_drawFrame)
 		return;		
 	QStyleOptionFrame opt;
 	opt.palette = pal;
@@ -91,7 +90,7 @@ PanelBackground::paint(QPainter *p) const
 	opt.frameShape = QFrame::StyledPanel;
 	opt.lineWidth = 2;
 
-	m_style->drawPrimitive(QStyle::PE_Frame, &opt, p);
+	style()->drawPrimitive(QStyle::PE_Frame, &opt, p);
 }
 
 void

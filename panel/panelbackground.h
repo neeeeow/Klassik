@@ -82,13 +82,11 @@ public:
 			loadBackground();
 			updateImage();
 		}
-	}
-
-	bool event(QEvent *event) override;
+	}	
 
 protected:
 	void componentComplete() override;
-	void paint(QPainter *p) const override;
+	bool event(QEvent *event) override;
 
 private:
 	bool m_drawFrame = true;
@@ -98,7 +96,8 @@ private:
 	bool m_useCustomBackground = false;
 	QUrl m_customBackgroundUrl;
 	QImage m_background;	
-	
+
+	void paint(QPainter *p) const override;
 	void loadBackground();
 	void colorize(QImage &image) const;
 	QColor tintColor(const QColor &baseColor) const;

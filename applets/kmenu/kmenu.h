@@ -7,23 +7,20 @@
 #pragma once
 
 #include "servicemenu.h"
-#include "popupmenutitle.h"
 
 #include <sessionmanagement.h>
 
-class KMenu : public ServiceMenu
+class KMenu final : public ServiceMenu
 {
 	Q_OBJECT
 	
 public:
 	explicit KMenu(KMenuApplet *applet, QWidget *parent = nullptr);
 	~KMenu() override = default;
-
-	// Resets the menu
+	
 	void reinitialize() override;
 
 protected:
-	// Initializes the menu (automatically done during construction)
 	void initialize() override;
 	
 	void changeEvent(QEvent *event) override;

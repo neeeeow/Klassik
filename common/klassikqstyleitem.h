@@ -19,26 +19,31 @@ class KlassikQStyleItem : public KlassikPaintedItem
 	Q_OBJECT
 public:
 	KlassikQStyleItem(QQuickItem *parent = nullptr) : KlassikPaintedItem(parent) {
-		m_style = qApp->style();
-		if (m_style)
-			connect(m_style, &QObject::destroyed, this, &KlassikQStyleItem::styleChanged, Qt::UniqueConnection);
+		loadStyle();
 	}
 	virtual ~KlassikQStyleItem() = default;
 
-protected:
-	QStyle *m_style;
-	
-	virtual void paint(QPainter *painter) const override = 0;
+protected:		
+	QStyle* style() const { return m_style; }
 
 private:
+	QStyle *m_style;
+
+	// Same as klassikpainteditem.h
+	virtual void paint(QPainter *painter) const override = 0;
+
+	// Functions for loading and handling changes in the active QStyle.
+	void loadStyle() {
+		m_style = qApp->style();
+		if (m_style)
+			connect(m_style, &QObject::destroyed, this, &KlassikQStyleItem::styleChanged, Qt::UniqueConnection);
+	}	
 	void styleChanged() {
 		// we cannot simply connect to QEvent::StyleChange
 		if (QCoreApplication::closingDown())
 			return;
-		m_style = qApp->style();
-		if (m_style) {
-		    connect(m_style, &QObject::destroyed, this, &KlassikQStyleItem::styleChanged, Qt::UniqueConnection);
+		loadStyle();
+		if (m_style)
 			updateImage();
-		}
 	}
 };

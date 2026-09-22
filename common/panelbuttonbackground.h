@@ -8,7 +8,6 @@
 
 #include "klassikqstyleitem.h"
 
-#include <QPalette>
 #include <QStyleOptionFrame>
 
 class PanelButtonBackground : public KlassikQStyleItem
@@ -25,9 +24,9 @@ public:
 	PanelButtonBackground(QQuickItem *parent = nullptr) : KlassikQStyleItem(parent) {}
 	~PanelButtonBackground() override = default;
 
-protected:	
+private:	
 	void paint(QPainter *p) const override {		
-		if (!m_style)
+		if (!style())
 			return;
 
 		QStyleOptionFrame opt;
@@ -35,8 +34,8 @@ protected:
 		opt.rect = QRect(0,0,width(),height());
 		opt.state = QStyle::State_Enabled | QStyle::State_Sunken;
 		opt.frameShape = QFrame::StyledPanel;
-		opt.lineWidth = 1;
+		opt.lineWidth = 2;
 
-	    m_style->drawPrimitive(QStyle::PE_Frame, &opt, p);
+	    style()->drawPrimitive(QStyle::PE_Frame, &opt, p);
 	}
 };

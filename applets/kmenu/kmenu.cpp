@@ -395,7 +395,7 @@ KMenu::updateApplications()
 	// The root of the applications menu
     const KServiceGroup::Ptr root = KServiceGroup::root();
 
-	const QList<QAction *> actionList = actionListFromServiceGroup(root);
+	const QList<QAction *> actionList = createActionsFromServiceGroup(root);
 
 	if (actionList.isEmpty()) {
 		QAction *emptyAction = new QAction(i18n("No Entries"), this);

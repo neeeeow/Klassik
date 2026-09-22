@@ -8,8 +8,6 @@
 
 #include "klassikqstyleitem.h"
 
-#include <QPalette>
-
 class PanelButtonArrow : public KlassikQStyleItem
 {
 	/*
@@ -48,15 +46,18 @@ public:
 		}
 	}
 
-protected:
-	void paint(QPainter *p) const override {		
-		if (!m_style)
+private:
+	MenuLocation m_location = Above;
+	bool m_active = false;
+
+	void paint(QPainter *p) const override {
+		if (!style())
 			return;  
 		
 		// Here we use the slightly older KDE 3 panel button arrow logic, it
 		// looks better than the new style adopted later in 3.5's life.
 		QStyle::PrimitiveElement e = QStyle::PE_IndicatorArrowUp;
-		int arrowSize = m_style->pixelMetric(QStyle::PM_MenuButtonIndicator);
+		const int arrowSize = style()->pixelMetric(QStyle::PM_MenuButtonIndicator);
 		QRect r(0, 0, arrowSize, arrowSize);
 		switch (m_location) {
 		case Above:
@@ -81,10 +82,6 @@ protected:
 		opt.state = QStyle::State_Enabled;
 		if (m_active)
 			opt.state |= QStyle::State_Sunken; // most QStyle's don't have a separate sunken state, but just in case
-		m_style->drawPrimitive(e, &opt, p);
+		style()->drawPrimitive(e, &opt, p);
 	}
-
-private:
-	MenuLocation m_location = Above;
-	bool m_active = false;	
 };

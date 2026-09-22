@@ -8,7 +8,6 @@
 
 #include "../../common/klassikqstyleitem.h"
 
-#include <QPalette>
 #include <QStyleOptionHeader>
 
 class TaskBackground : public KlassikQStyleItem
@@ -19,7 +18,7 @@ class TaskBackground : public KlassikQStyleItem
 	  
 	Q_OBJECT
 	QML_ELEMENT
-	Q_PROPERTY(bool sunken READ sunken WRITE setSunken);
+	Q_PROPERTY(bool sunken READ sunken WRITE setSunken)
 public:
 	TaskBackground(QQuickItem *parent = nullptr) : KlassikQStyleItem(parent) {}
 	~TaskBackground() override = default;
@@ -32,9 +31,11 @@ public:
 		}
 	}
 
-protected:	
+private:
+	bool m_sunken;
+
 	void paint(QPainter *p) const override {		
-		if (!m_style)
+		if (!style())
 			return;
 
 		QStyleOptionHeader header;
@@ -44,9 +45,6 @@ protected:
 	    header.rect = QRect(0,0,width(),height());
 		header.state = m_sunken ? QStyle::State_Sunken : QStyle::State_Raised;
 
-	    m_style->drawControl(QStyle::CE_HeaderSection, &header, p);
+	    style()->drawControl(QStyle::CE_HeaderSection, &header, p);
 	}
-
-private:
-	bool m_sunken;
 };

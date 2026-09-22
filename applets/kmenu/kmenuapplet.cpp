@@ -76,6 +76,12 @@ KMenuApplet::init()
 	});
 }
 
+ContainmentInterface*
+KMenuApplet::containmentInterface() const
+{
+	return m_containmentInterface;
+}
+
 void
 KMenuApplet::showMenu(QQuickItem *button, Plasma::Types::Location panelLocation)
 {

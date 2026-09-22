@@ -15,7 +15,7 @@ ContainmentInterface::ContainmentInterface(Plasma::Applet *applet)
 }
 
 bool
-ContainmentInterface::mayAddLauncher(ContainmentInterface::Target target)
+ContainmentInterface::mayAddLauncher(ContainmentInterface::Target target) const
 {
 	if (!m_containment)
 		return false;
@@ -62,7 +62,7 @@ ContainmentInterface::mayAddLauncher(ContainmentInterface::Target target)
 }
 
 void
-ContainmentInterface::addLauncher(ContainmentInterface::Target target, const KService::Ptr &service)
+ContainmentInterface::addLauncher(ContainmentInterface::Target target, const KService::Ptr &service) const
 {
 	if (!m_containment)
 		return;
@@ -123,7 +123,7 @@ ContainmentInterface::addLauncher(ContainmentInterface::Target target, const KSe
 }
 
 Plasma::Applet
-*ContainmentInterface::findQuicklaunchApplet()
+*ContainmentInterface::findQuicklaunchApplet() const
 {
 	if (!m_containment)
 		return nullptr;

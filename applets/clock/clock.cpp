@@ -35,7 +35,7 @@ Clock::paint(QPainter *p) const
 	
 	// background
 	const int colorTheme = getConfigValue<int>("colorTheme");
-	if ((colorTheme == 1) && !m_lcdPixmap.isNull()) {
+	if ((colorTheme == 1) && !m_lcdPixmap.isNull()) { // LCD style
 		p->save();
 		const qreal dpr = getDpr(p);
 		if (!qFuzzyCompare(dpr, qreal(1))) {
@@ -45,7 +45,7 @@ Clock::paint(QPainter *p) const
 		} else		
 			p->drawTiledPixmap(r, m_lcdPixmap);
 		p->restore();
-	} else if (colorTheme == 2) {
+	} else if (colorTheme == 2) { // Custom colors
 		QColor bgColor = getConfigValue<QColor>("bgColor");
 		p->fillRect(r, bgColor);
 	}
@@ -262,7 +262,7 @@ DigitalClock::drawDigit(const QPoint &pos, const QColor &color, QPainter &p, int
 static void
 addPoint(QPolygon &a, const QPoint &p)
 {
-	uint n = a.size();
+	const uint n = a.size();
 	a.resize(n + 1);
 	a.setPoint(n, p);
 }
@@ -273,7 +273,7 @@ DigitalClock::drawSegment(const QPoint &pos, const QColor &color, char segmentNo
 {
     QPoint ppt;
     QPoint pt = pos;
-    int width = segLen/5; 
+    const int width = segLen/5; 
 
 #define LINETO(X,Y) addPoint(a, QPoint(pt.x() + (X),pt.y() + (Y)))
 #define LIGHT
@@ -457,12 +457,12 @@ AnalogClock::drawContents(QPainter *p) const
 	}	
 	}
 
-	int spWidth = width();
-	int spHeight = height();	   
+	const int spWidth = width();
+	const int spHeight = height();	   
 
 	QPolygon pts;
-    QPoint cp(spWidth / 2, spHeight / 2);
-	int d = qMin(spWidth,spHeight) - 10;
+    const QPoint cp(spWidth / 2, spHeight / 2);
+	const int d = qMin(spWidth,spHeight) - 10;
 
 	QPen shadowPen(shadowColor);
 	shadowPen.setCosmetic(true);
@@ -476,7 +476,7 @@ AnalogClock::drawContents(QPainter *p) const
         matrix.scale( d/1000.0F, d/1000.0F );
 
 		// hour
-        float h_angle = 30*(time.hour()%12-3) + time.minute()/2;
+        const float h_angle = 30*(time.hour()%12-3) + time.minute()/2;
         matrix.rotate( h_angle );
         p->setTransform( matrix );
         pts.setPoints( 4, -20,0,  0,-20, 300,0, 0,20 );
@@ -484,7 +484,7 @@ AnalogClock::drawContents(QPainter *p) const
         matrix.rotate( -h_angle );
 
 		// minute
-        float m_angle = (time.minute()-15)*6;
+        const float m_angle = (time.minute()-15)*6;
         matrix.rotate( m_angle );
         p->setTransform( matrix );
         pts.setPoints( 4, -10,0, 0,-10, 400,0, 0,10 );
@@ -492,7 +492,7 @@ AnalogClock::drawContents(QPainter *p) const
         matrix.rotate( -m_angle );
 
 		if (getConfigValue<bool>("showSeconds")) {   // second
-            float s_angle = (time.second()-15)*6;
+            const float s_angle = (time.second()-15)*6;
             matrix.rotate( s_angle );
             p->setTransform( matrix );
             pts.setPoints(4,0,0,0,0,400,0,0,0);

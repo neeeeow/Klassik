@@ -24,12 +24,12 @@ class KMenuApplet : public Plasma::Applet
 public:
 	KMenuApplet(QObject *parentObject, const KPluginMetaData &data, const QVariantList &args);
 	~KMenuApplet() override;
-
 	void init() override;
 	
 	inline bool isMenuActive() const { return m_menuActive; }
-	inline ContainmentInterface* containmentInterface() const { return m_containmentInterface; }
+    ContainmentInterface* containmentInterface() const;
 
+	// Show/hide the menu from QML
 	Q_INVOKABLE void toggleMenu(QQuickItem *button, Plasma::Types::Location panelLocation) {
 		if (m_menuActive)
 			hideMenu();
@@ -37,6 +37,7 @@ public:
 			showMenu(button, panelLocation);
 	}
 
+	// Config getter
 	template <typename T>
 		T getConfigValue(const QString &key) {
 		KConfigLoader *configLoader = configScheme();
@@ -45,11 +46,11 @@ public:
 
 		QVariant value = configLoader->property(key);
 		if (value.isNull() || !value.isValid()) {
-			qWarning("AppletConfig: Key not found!");
+			qWarning("KMenuApplet: Key not found!");
 			return T();
 		}
 		if (!value.canConvert<T>()) {
-			qWarning("AppletConfig: Key type mismatch!");
+			qWarning("KMenuApplet: Key type mismatch!");
 			return T();
 		}
 
@@ -60,8 +61,8 @@ Q_SIGNALS:
 	void menuActiveChanged();
 
 private:
-	ContainmentInterface *m_containmentInterface = nullptr;
-	QPointer<KMenu> m_menu = nullptr; // m_menu should never be a dangling pointer, but just in case
+	QPointer<ContainmentInterface> m_containmentInterface = nullptr;
+	QPointer<KMenu> m_menu = nullptr;
 	QTimer *m_reinitTimer = nullptr;
 	bool m_menuActive = false;
 

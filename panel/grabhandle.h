@@ -8,8 +8,6 @@
 
 #include "../common/klassikqstyleitem.h"
 
-#include <QPalette>
-
 class GrabHandle : public KlassikQStyleItem
 {
 	/*
@@ -30,9 +28,12 @@ public:
 			updateImage();
 		}
 	}
-protected:	
+
+private:
+	bool m_horizontal = true;
+
 	void paint(QPainter *p) const override {		
-		if (!m_style)
+		if (!style())
 			return;
 
 		QStyleOption opt;
@@ -41,9 +42,6 @@ protected:
 		opt.state = QStyle::State_Enabled;
 		if (m_horizontal)
 			opt.state |= QStyle::State_Horizontal;
-		m_style->drawPrimitive(QStyle::PE_IndicatorToolBarHandle, &opt, p);
+		style()->drawPrimitive(QStyle::PE_IndicatorToolBarHandle, &opt, p);
 	}
-
-private:
-	bool m_horizontal = true;
 };

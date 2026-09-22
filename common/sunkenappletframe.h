@@ -25,7 +25,7 @@ public:
 	SunkenAppletFrame(QQuickItem *parent = nullptr) : KlassikPaintedItem(parent) {}
 	~SunkenAppletFrame() override = default;
 
-protected:
+private:
 	void paint(QPainter *p) const override {
 		qDrawShadePanel(p, QRect(0,0,width(),height()), QGuiApplication::palette(), true);
 	}

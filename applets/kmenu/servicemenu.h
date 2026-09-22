@@ -25,21 +25,6 @@ public:
 	explicit ServiceMenu(KMenuApplet *applet, QWidget *parent = nullptr);
 	explicit ServiceMenu(const QString &title, KMenuApplet *applet, QWidget *parent = nullptr);
 	virtual ~ServiceMenu() = default;
-
-	void cleanupActionList(QList<QAction *> &);
-
-	// Functions for creating QActions, from either a service, a url, or an action which launches a
-	// url in the file explorer. All QActions are parented to the menu
-	QAction* createActionFromService(const KService::Ptr &service, const QUrl &url = QUrl());
-	QList<QAction *> createActionsFromServiceActions(const KService::Ptr &service);
-	QAction* createActionFromUrl(const QUrl &url);
-	QAction* createFileExplorerActionFromUrl(const QUrl &url);
-
-protected:
-	// Initializes the menu (not called automatically!)
-	// This must be called by any subclass, as it enables/disables tooltips
-	// depending on the config
-	virtual void initialize();
 	
 	// Reinitializes the menu (usually after a config change)
 	// NOTE: it's a wise idea to reimplement this in a subclass
@@ -47,19 +32,32 @@ protected:
 	// The base reinitialize() simply clears out the menu and calls
 	// initialize() again.
 	virtual void reinitialize();
+
+protected:
+	// Initializes the menu (not called automatically!)
+	// This must be called by any subclass, as it enables/disables tooltips
+	// depending on the config
+	virtual void initialize();
 	
 	// Return the initialized flag
 	bool initialized() const { return m_initialized; }
 
 	// Set the initialized flag
-	void setInitialized(bool);
+	void setInitialized(bool initialized) { m_initialized = initialized; }
 
 	// Returns a pointer to the Plasma applet attached to our menu
     KMenuApplet* applet() const { return m_applet; }
 
-	// Creates a list of QAction pointers (with nested submenus) from a given
-	// KServiceGroup, parented to the menu
-	QList<QAction*> actionListFromServiceGroup(const KServiceGroup::Ptr &root);
+	// Takes a QList of QActions * and removes them from the menu
+	void cleanupActionList(QList<QAction *> &);
+
+	// Functions for creating QActions, from either a service, a url, or an action which launches a
+	// url in the file explorer. All QActions are parented to the menu
+	QAction* createActionFromService(const KService::Ptr &service, const QUrl &url = QUrl());	
+	QAction* createActionFromUrl(const QUrl &url);
+	QAction* createFileExplorerActionFromUrl(const QUrl &url);
+	QList<QAction *> createActionsFromServiceActions(const KService::Ptr &service);
+	QList<QAction *> createActionsFromServiceGroup(const KServiceGroup::Ptr &root);
 
 	// Launches the menu editor and KRunner
 	static void runMenuEditor(QString arg = QString());

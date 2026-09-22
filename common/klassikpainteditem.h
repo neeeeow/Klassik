@@ -16,22 +16,23 @@ class KlassikPaintedItem : public QQuickItem
 	Q_OBJECT
 public:
 	KlassikPaintedItem(QQuickItem *parent = nullptr);
-	virtual ~KlassikPaintedItem() = default;
-
-	bool event(QEvent *event) override;   
+	virtual ~KlassikPaintedItem() = default;	  
 
 	Q_INVOKABLE void updateImage();
 
 protected:
 	void componentComplete() override;
-	QSGNode *updatePaintNode(QSGNode *oldNode, QQuickItem::UpdatePaintNodeData *updatePaintNodeData) override;
+	bool event(QEvent *event) override;
 	void geometryChange(const QRectF &newGeometry, const QRectF &oldGeometry) override;
-	void updatePolish() override;
-
-	virtual void paint(QPainter *painter) const = 0;
+	QSGNode *updatePaintNode(QSGNode *oldNode, QQuickItem::UpdatePaintNodeData *updatePaintNodeData) override;
+	void updatePolish() override;   
 
 private:
 	QImage m_paintedImage;
-
 	void paintControlToImage();
+
+	// Function used for painting to the QQuickItem. This function must be implemented
+	// by subclasses, and must *never* be called directly outside of paintControlToImage(),
+	// otherwise things will break;
+	virtual void paint(QPainter *painter) const = 0;
 };
