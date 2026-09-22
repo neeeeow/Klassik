@@ -14,7 +14,6 @@
 #include "bitmaps.h"
 
 #include <QStyleOption>
-#include <QGuiApplication>
 
 #include <qdrawutil.h>
 
@@ -1359,7 +1358,7 @@ KlassikStyle::drawControl(ControlElement control, const QStyleOption *opt,
 		bool checked = menuitem->checkType != QStyleOptionMenuItem::NotCheckable
 			? menuitem->checked : false;
 		bool active = menuitem->state & State_Selected;
-		bool reverse = QGuiApplication::isRightToLeft();
+		bool reverse = (menuitem->direction == Qt::RightToLeft);
 
 		// Separator
 		if ( menuitem->menuItemType == QStyleOptionMenuItem::Separator ) {
