@@ -1,27 +1,12 @@
 /*
-  KDE 2 KDecoration 3 theme.
+   SPDX-FileCopyrightText: 2026 neeeeow <https://github.com/neeeeow>
 
-  Copyright (c) 2026 neeeeow
-  Author: neeeeow (https://github.com/neeeeow/Klassik)
-
-  Painting logic based on the original KDE 2 KWin client:
-  Copyright (c) 1999, 2001 Daniel Duley <mosfet@kde.org>
-  Matthias Ettrich <ettrich@kde.org>
-  Karol Szwed <gallium@kde.org>
+   SPDX-FileCopyrightText: 1999-2001 Daniel Duley <mosfet@kde.org>
+   SPDX-FileCopyrightText: 1999-2001 Matthias Ettrich <ettrich@kde.org>
+   SPDX-FileCopyrightText: 1999-2001 Karol Szwed <gallium@kde.org>
   
-  This program is free software: you can redistribute it and/or modify
-  it under the terms of the GNU General Public License as published by
-  the Free Software Foundation, either version 3 of the License, or
-  (at your option) any later version.
-
-  This program is distributed in the hope that it will be useful,
-  but WITHOUT ANY WARRANTY; without even the implied warranty of
-  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-  GNU General Public License for more details.
-
-  You should have received a copy of the GNU General Public License
-  along with this program.  If not, see <https://www.gnu.org/licenses/>.
-*/ 
+   SPDX-License-Identifier: GPL-3.0-or-later
+*/
 
 #include "kde2.h"
 #include "bits.h"
@@ -32,27 +17,12 @@
 #include <KIconLoader>
 
 #include <QPainter>
-#include <QBitmap>
-#include <QTimer>
+#include <QPixmap>
 
 #include <qdrawutil.h>
 
 #define TITLE_EDGE_TOP 3
 #define TITLE_EDGE_BOTTOM 1
-
-// Pixmaps used by buttons are declared globally
-QPixmap pinDownPix;
-QPixmap pinUpPix;
-
-QPixmap leftBtnUpPix;
-QPixmap leftBtnDownPix;
-QPixmap ileftBtnUpPix;
-QPixmap ileftBtnDownPix;
-
-QPixmap rightBtnUpPix;
-QPixmap rightBtnDownPix;
-QPixmap irightBtnUpPix;
-QPixmap irightBtnDownPix;
 
 K_PLUGIN_FACTORY_WITH_JSON(
 	KDE2DecorationFactory,
@@ -241,7 +211,7 @@ KDE2Decoration::reconfigure()
 
 	updateBorders();
 	createPixmaps();	
-	updateButtonsGeometryDelayed();
+	updateButtonsGeometry();
 }
 
 void
@@ -322,12 +292,6 @@ KDE2Decoration::updateTitleBar()
 }
 
 void
-KDE2Decoration::updateButtonsGeometryDelayed()
-{
-	QTimer::singleShot(0, this, &KDE2Decoration::updateButtonsGeometry);
-}
-
-void
 KDE2Decoration::createPixmaps()
 {
 	QPalette palette = window()->palette();
@@ -344,12 +308,12 @@ KDE2Decoration::createPixmaps()
 		QPainter p;
 		QPainter maskPainter;		
 		int i, x, y;
-		titlePix = QPixmap(132, qRound(m_titleHeight*scale)+2);
-		titlePix.fill(Qt::transparent);
+		m_pixmaps.titlePix = QPixmap(132, qRound(m_titleHeight*scale)+2);
+		m_pixmaps.titlePix.fill(Qt::transparent);
 		QBitmap mask(132, qRound(m_titleHeight*scale)+2);
 		mask.fill(Qt::color0);
 
-		p.begin(&titlePix);
+		p.begin(&m_pixmaps.titlePix);
 		maskPainter.begin(&mask);
 		maskPainter.setPen(Qt::color1);
 
@@ -365,33 +329,33 @@ KDE2Decoration::createPixmaps()
 		}
 		maskPainter.end();
 		p.end();
-		titlePix.setMask(mask);
+		m_pixmaps.titlePix.setMask(mask);
 	} else {
-		titlePix = QPixmap();
+		m_pixmaps.titlePix = QPixmap();
 	}
 
 	QPainter p;
 	
 	// Pins
-	pinUpPix = QPixmap(14, 14);
-	pinUpPix.fill(Qt::transparent);
-	p.begin( &pinUpPix );
+	m_pixmaps.pinUpPix = QPixmap(14, 14);
+	m_pixmaps.pinUpPix.fill(Qt::transparent);
+	p.begin( &m_pixmaps.pinUpPix );
 	colorBitmaps( &p, palette, 0, 0, 14, 14, true, pinup_white_bits,
 				  pinup_gray_bits, NULL, NULL, pinup_dgray_bits, NULL );
 	p.end();
-	pinUpPix.setMask(QBitmap::fromData(
-						 QSize(14, 14),
-						 pinup_mask_bits, QImage::Format_MonoLSB));
+	m_pixmaps.pinUpPix.setMask(QBitmap::fromData(
+								   QSize(14, 14),
+								   pinup_mask_bits, QImage::Format_MonoLSB));
 
-	pinDownPix = QPixmap(14, 14);
-	pinDownPix.fill(Qt::transparent);
-	p.begin( &pinDownPix );
+	m_pixmaps.pinDownPix = QPixmap(14, 14);
+	m_pixmaps.pinDownPix.fill(Qt::transparent);
+	p.begin( &m_pixmaps.pinDownPix );
 	colorBitmaps( &p, palette, 0, 0, 14, 14, true, pindown_white_bits,
 				  pindown_gray_bits, NULL, NULL, pindown_dgray_bits, NULL );
 	p.end();
-	pinDownPix.setMask(QBitmap::fromData(
-						   QSize(14, 14),
-						   pindown_mask_bits, QImage::Format_MonoLSB));
+	m_pixmaps.pinDownPix.setMask(QBitmap::fromData(
+									 QSize(14, 14),
+									 pindown_mask_bits, QImage::Format_MonoLSB));
 
 	auto drawButtonBackground = [](QPixmap &pixmap, const QColor &bg, bool sunken) {
 		QPainter p;
@@ -428,35 +392,35 @@ KDE2Decoration::createPixmaps()
 
 	// Button backgrounds	
 	QSize buttonPixSize(qRound(m_titleHeight * scale), qRound(m_titleHeight * scale));	
-	leftBtnUpPix = QPixmap(buttonPixSize);
-	leftBtnUpPix.fill(Qt::transparent);
-    leftBtnDownPix = QPixmap(buttonPixSize);
-	leftBtnDownPix.fill(Qt::transparent);
-    ileftBtnUpPix = QPixmap(buttonPixSize);
-	ileftBtnUpPix.fill(Qt::transparent);
-    ileftBtnDownPix = QPixmap(buttonPixSize);
-	ileftBtnDownPix.fill(Qt::transparent);
+	m_pixmaps.leftBtnUpPix = QPixmap(buttonPixSize);
+	m_pixmaps.leftBtnUpPix.fill(Qt::transparent);
+    m_pixmaps.leftBtnDownPix = QPixmap(buttonPixSize);
+	m_pixmaps.leftBtnDownPix.fill(Qt::transparent);
+    m_pixmaps.ileftBtnUpPix = QPixmap(buttonPixSize);
+	m_pixmaps.ileftBtnUpPix.fill(Qt::transparent);
+    m_pixmaps.ileftBtnDownPix = QPixmap(buttonPixSize);
+	m_pixmaps.ileftBtnDownPix.fill(Qt::transparent);
 
-    rightBtnUpPix = QPixmap(buttonPixSize);
-	rightBtnUpPix.fill(Qt::transparent);
-    rightBtnDownPix = QPixmap(buttonPixSize);
-	rightBtnDownPix.fill(Qt::transparent);
-    irightBtnUpPix = QPixmap(buttonPixSize);
-	irightBtnUpPix.fill(Qt::transparent);
-    irightBtnDownPix = QPixmap(buttonPixSize);
-	irightBtnDownPix.fill(Qt::transparent);
+    m_pixmaps.rightBtnUpPix = QPixmap(buttonPixSize);
+	m_pixmaps.rightBtnUpPix.fill(Qt::transparent);
+    m_pixmaps.rightBtnDownPix = QPixmap(buttonPixSize);
+	m_pixmaps.rightBtnDownPix.fill(Qt::transparent);
+    m_pixmaps.irightBtnUpPix = QPixmap(buttonPixSize);
+	m_pixmaps.irightBtnUpPix.fill(Qt::transparent);
+    m_pixmaps.irightBtnDownPix = QPixmap(buttonPixSize);
+	m_pixmaps.irightBtnDownPix.fill(Qt::transparent);
 	
-	drawButtonBackground( leftBtnUpPix, activeTitleColor, false );
-	drawButtonBackground( leftBtnDownPix, activeTitleColor, true );
+	drawButtonBackground( m_pixmaps.leftBtnUpPix, activeTitleColor, false );
+	drawButtonBackground( m_pixmaps.leftBtnDownPix, activeTitleColor, true );
 
-	drawButtonBackground( rightBtnUpPix, activeButtonColor, false );
-	drawButtonBackground( rightBtnDownPix, activeButtonColor, true );
+	drawButtonBackground( m_pixmaps.rightBtnUpPix, activeButtonColor, false );
+	drawButtonBackground( m_pixmaps.rightBtnDownPix, activeButtonColor, true );
 
-	drawButtonBackground( ileftBtnUpPix, inactiveTitleColor, false );
-	drawButtonBackground( ileftBtnDownPix, inactiveTitleColor, true );
+	drawButtonBackground( m_pixmaps.ileftBtnUpPix, inactiveTitleColor, false );
+	drawButtonBackground( m_pixmaps.ileftBtnDownPix, inactiveTitleColor, true );
 
-	drawButtonBackground( irightBtnUpPix, inactiveButtonColor, false );
-	drawButtonBackground( irightBtnDownPix, inactiveButtonColor, true );
+	drawButtonBackground( m_pixmaps.irightBtnUpPix, inactiveButtonColor, false );
+	drawButtonBackground( m_pixmaps.irightBtnDownPix, inactiveButtonColor, true );
 }
 
 void
@@ -609,15 +573,15 @@ KDE2Decoration::paint(QPainter *p, const QRectF &repaintRegion)
 	p2.setFont(fnt);
 
 	// Draw the titlebar stipple if active and available
-	if (window()->isActive() && !titlePix.isNull()) {
+	if (window()->isActive() && !m_pixmaps.titlePix.isNull()) {
 		QFontMetrics fm(fnt);
 		int captionWidth = fm.horizontalAdvance(window()->caption());
 		if (window()->caption().isRightToLeft())
 			p2.drawTiledPixmap(r.x(), 0, r.width()-captionWidth-4,
-							   scaledTitleHeight+1, titlePix);
+							   scaledTitleHeight+1, m_pixmaps.titlePix);
 		else
 			p2.drawTiledPixmap(r.x()+captionWidth+3, 0, r.width()-captionWidth-4,
-							   scaledTitleHeight+1, titlePix);
+							   scaledTitleHeight+1, m_pixmaps.titlePix);
 	}
 
 	p2.setPen(foregroundColor);
@@ -716,35 +680,40 @@ KDE2Button::paint(QPainter *p, const QRectF &repaintRegion)
 {
 	Q_UNUSED(repaintRegion);
 
+	auto *deco = qobject_cast<KDE2Decoration *>(decoration());
+    if (!deco)
+        return;
+    const KDE2Pixmaps &pixmaps = deco->pixmaps();
+
 	if (type() == KDecoration3::DecorationButtonType::Spacer)
 		return;
 
 	// Get scaled button geometry
-	const qreal scale = decoration()->window()->scale();
+	const qreal scale = deco->window()->scale();
 	QRect geometryScaled = getScaledRect(geometry(), scale);
 	int x = geometryScaled.x();
 	int y = geometryScaled.y();
 	int w  = geometryScaled.width();
 	int h = geometryScaled.height();
 	
-	const bool active = decoration()->window()->isActive();
+	const bool active = deco->window()->isActive();
 	if (!iconBits.isNull()) {
 		// First draw the button background
 		QPixmap btnbg;
 		if (isLeft() )	{
 			if (isPressed())
 				btnbg = active ?
-					leftBtnDownPix : ileftBtnDownPix;
+					pixmaps.leftBtnDownPix : pixmaps.ileftBtnDownPix;
 			else
 				btnbg = active ?
-					leftBtnUpPix : ileftBtnUpPix;
+					pixmaps.leftBtnUpPix : pixmaps.ileftBtnUpPix;
 		} else {
 			if (isPressed())
 				btnbg = active ?
-					rightBtnDownPix : irightBtnDownPix;
+					pixmaps.rightBtnDownPix : pixmaps.irightBtnDownPix;
 			else
 				btnbg = active ?
-					rightBtnUpPix : irightBtnUpPix;
+					pixmaps.rightBtnUpPix : pixmaps.irightBtnUpPix;
 		}
 		p->drawPixmap(x,y,btnbg);
 
@@ -764,7 +733,7 @@ KDE2Button::paint(QPainter *p, const QRectF &repaintRegion)
 	} else {
 		QPixmap btnpix;
 		if (type() == KDecoration3::DecorationButtonType::OnAllDesktops) {
-			btnpix = isChecked() ? pinDownPix : pinUpPix;
+			btnpix = isChecked() ? pixmaps.pinDownPix : pixmaps.pinUpPix;
 		} else {
 			int iconSize = KIconLoader::global()->currentSize(KIconLoader::Small);
 			btnpix = decoration()->window()->icon().pixmap(iconSize,iconSize);
