@@ -1,8 +1,8 @@
 /*
- *  SPDX-FileCopyrightText: 2026 neeeeow <https://github.com/neeeeow>
- *
- *  SPDX-License-Identifier: GPL-3.0-or-later
- */
+    SPDX-FileCopyrightText: 2026 neeeeow <https://github.com/neeeeow>
+
+    SPDX-License-Identifier: GPL-3.0-or-later
+*/
 
 import QtQuick
 import QtQuick.Layouts
@@ -15,10 +15,9 @@ import org.kde.kirigami as Kirigami
 PlasmoidItem{
     id: root
 
-    preferredRepresentation: fullRepresentation
-
     Plasmoid.icon: Plasmoid.configuration.icon
 
+    preferredRepresentation: fullRepresentation
     fullRepresentation: Button { // We can build the menu button in qml, since Qt Quick hands off buttons to Qt.
         id: menuButton
 

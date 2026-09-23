@@ -1,0 +1,17 @@
+{
+    "KPlugin": {
+        "Authors": [
+            {
+                "Name": "neeeeow"
+            }
+        ],
+        "Category": "System Information",
+        "Description": "KDE 3 style panel buttons for lock/log out",
+        "Icon": "system-shutdown",
+        "License": "GPL-3.0+",
+        "Id": "com.github.neeeeow.klassik.lockout",
+        "Name": "Klassik Lock/Log Out",
+        "Website": "https://github.com/neeeeow/Klassik"
+    },
+    "X-Plasma-API-Minimum-Version": "6.0"
+}
