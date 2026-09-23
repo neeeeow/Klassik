@@ -22,7 +22,6 @@ KCMUtils.SimpleKCM {
     property alias cfg_highlightWindows: highlightWindows.checked
     property bool cfg_indicateAudioStreams
     property bool cfg_tooltipControls
-    property alias cfg_fill: fill.checked
     property alias cfg_taskMaxWidth: taskMaxWidth.currentIndex
     property alias cfg_taskMaxHeight: taskMaxHeight.currentIndex
 
@@ -55,11 +54,6 @@ KCMUtils.SimpleKCM {
             checked: root.cfg_tooltipControls && root.plasmaPaAvailable
             onToggled: root.cfg_tooltipControls = checked
             enabled: root.plasmaPaAvailable
-        }
-
-        QQC2.CheckBox {
-            id: fill
-            text: i18nc("@option:check section General", "Fill free space on panel")
         }
 
         QQC2.CheckBox {

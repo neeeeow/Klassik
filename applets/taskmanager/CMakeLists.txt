@@ -24,9 +24,8 @@ plasma_add_applet(com.github.neeeeow.klassik.taskmanager
     CPP_SOURCES
         backend.cpp
         taskbackground.h
-        ${CMAKE_CURRENT_SOURCE_DIR}/../../common/klassikpainteditem.cpp
-        ${CMAKE_CURRENT_SOURCE_DIR}/../../common/klassikqstyleitem.h
-        ${CMAKE_CURRENT_SOURCE_DIR}/../../common/sunkenappletframe.h
+        ${CMAKE_CURRENT_SOURCE_DIR}/../../common/painteditem.cpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/../../common/sunkenappletframe.cpp
     RESOURCES
         main.xml
         ${CMAKE_CURRENT_SOURCE_DIR}/../../common/busyindicator.png

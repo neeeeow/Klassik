@@ -8,9 +8,8 @@ plasma_add_applet(com.github.neeeeow.klassik.quicklaunch
         layout.js
     CPP_SOURCES
         quicklaunch_p.cpp
-        ${CMAKE_CURRENT_SOURCE_DIR}/../../common/klassikpainteditem.cpp
-        ${CMAKE_CURRENT_SOURCE_DIR}/../../common/klassikqstyleitem.h
-        ${CMAKE_CURRENT_SOURCE_DIR}/../../common/panelbuttonbackground.h
+        ${CMAKE_CURRENT_SOURCE_DIR}/../../common/painteditem.cpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/../../common/sunkenappletframe.cpp
     RESOURCES
         main.xml
     GENERATE_APPLET_CLASS

@@ -30,8 +30,12 @@ PlasmoidItem {
     // This mirrors the tasks and group dialog as well, so we un-rotate them to fix that
     rotation: Plasmoid.configuration.reverseMode && Plasmoid.formFactor === PlasmaCore.Types.Vertical ? 180 : 0
 
-    readonly property bool shouldShrinkToZero: tasksModel.count === 0
     readonly property bool vertical: Plasmoid.formFactor === PlasmaCore.Types.Vertical
+
+    // Usable task area (after subtracting frame area)
+    readonly property int margin: Plasmoid.configuration.drawFrame ? sunkenFrame.lineWidth : 0
+    readonly property real taskAreaWidth: tasks.width - 2*margin
+    readonly property real taskAreaHeight: tasks.height - 2*margin
 
     property Task toolTipOpenedByClick
     property Task toolTipAreaItem
@@ -44,41 +48,8 @@ PlasmoidItem {
 
     preferredRepresentation: fullRepresentation
 
-    Layout.fillWidth: vertical ? true : Plasmoid.configuration.fill
-    Layout.fillHeight: !vertical ? true : Plasmoid.configuration.fill
-    Layout.minimumWidth: {
-        if (shouldShrinkToZero) {
-            return Kirigami.Units.gridUnit; // For edit mode
-        }
-        return vertical ? 0 : Kirigami.Units.iconSizes.small;
-    }
-    Layout.minimumHeight: {
-        if (shouldShrinkToZero) {
-            return Kirigami.Units.gridUnit; // For edit mode
-        }
-        return !vertical ? 0 : Kirigami.Units.iconSizes.small;
-    }
-
-//BEGIN TODO: this is not precise enough: launchers are smaller than full tasks
-    Layout.preferredWidth: {
-        if (shouldShrinkToZero) {
-            return 0.01;
-        }
-        if (vertical) {
-            return Kirigami.Units.gridUnit * 10;
-        }
-        return taskList.Layout.maximumWidth
-    }
-    Layout.preferredHeight: {
-        if (shouldShrinkToZero) {
-            return 0.01;
-        }
-        if (vertical) {
-            return taskList.Layout.maximumHeight
-        }
-        return Kirigami.Units.gridUnit * 2;
-    }
-//END TODO
+    Layout.fillWidth: true
+    Layout.fillHeight: true
 
     property Item dragSource
 
@@ -134,7 +105,7 @@ PlasmoidItem {
         groupMode: groupModeEnumValue(Plasmoid.configuration.groupingStrategy)
         groupInline: !Plasmoid.configuration.groupPopups
         groupingWindowTasksThreshold: (Plasmoid.configuration.onlyGroupWhenFull
-            ? TaskManagerApplet.LayoutMetrics.optimumCapacity(tasks.width, tasks.height) + 1 : -1)
+            ? TaskManagerApplet.LayoutMetrics.optimumCapacity(tasks.taskAreaWidth, tasks.taskAreaHeight) + 1 : -1)
 
         onGroupingAppIdBlacklistChanged: {
             Plasmoid.configuration.groupingAppIdBlacklist = groupingAppIdBlacklist;
@@ -232,8 +203,10 @@ PlasmoidItem {
         anchors.fill: parent
 
         TaskManagerApplet.SunkenAppletFrame {
+            id: sunkenFrame
             anchors.fill: parent
             visible: Plasmoid.configuration.drawFrame
+            lineWidth: 1
         }
 
         TaskManager.VirtualDesktopInfo {
@@ -339,64 +312,34 @@ PlasmoidItem {
             }
 
             LayoutMirroring.enabled: tasks.shouldBeMirrored(Plasmoid.configuration.reverseMode, Application.layoutDirection, tasks.vertical)
-            anchors {
-                left: parent.left
-                top: parent.top
-            }
-
-            height: taskList.height
-            width: taskList.width
+            anchors.fill: parent
 
             TaskList {
                 id: taskList
+                count: tasksModel.count
 
                 LayoutMirroring.enabled: tasks.shouldBeMirrored(Plasmoid.configuration.reverseMode, Application.layoutDirection, tasks.vertical)
                 anchors {
                     left: parent.left
                     top: parent.top
+                    margins: tasks.margin
                 }
+                Layout.fillWidth: true
+                Layout.fillHeight: true
 
-                count: tasksModel.count
-
-                readonly property real widthOccupation: taskRepeater.count / columns
-                readonly property real heightOccupation: taskRepeater.count / rows
-
-                Layout.maximumWidth: {
-                    const totalMaxWidth = children.reduce((accumulator, child) => {
-                            if (!isFinite(child.Layout.maximumWidth)) {
-                                return accumulator;
-                            }
-                            return accumulator + child.Layout.maximumWidth
-                        }, 0);
-                    return Math.round(totalMaxWidth / widthOccupation);
-                }
-                Layout.maximumHeight: {
-                    const totalMaxHeight = children.reduce((accumulator, child) => {
-                            if (!isFinite(child.Layout.maximumHeight)) {
-                                return accumulator;
-                            }
-                            return accumulator + child.Layout.maximumHeight
-                        }, 0);
-                    return Math.round(totalMaxHeight / heightOccupation);
-                }
                 width: {
-                    if (tasks.shouldShrinkToZero) {
-                        return 0;
-                    }
-                    if (tasks.vertical) {
-                        return tasks.width * Math.min(1, widthOccupation);
+                    if (vertical) {
+                        return Math.min(((tasks.taskAreaWidth)/taskList.stripeCount) * count, tasks.taskAreaWidth);
                     } else {
-                        return Math.min(tasks.width, Layout.maximumWidth);
+                        return Math.min(taskList.orthogonalCount * TaskManagerApplet.LayoutMetrics.preferredMaxWidth(), tasks.taskAreaWidth);
                     }
                 }
+
                 height: {
-                    if (tasks.shouldShrinkToZero) {
-                        return 0;
-                    }
-                    if (tasks.vertical) {
-                        return Math.min(tasks.height, Layout.maximumHeight);
+                    if (vertical) {
+                        return Math.min(taskList.orthogonalCount * TaskManagerApplet.LayoutMetrics.preferredMaxHeight(), tasks.taskAreaHeight);
                     } else {
-                        return tasks.height * Math.min(1, heightOccupation);
+                        return Math.min(((tasks.taskAreaHeight)/taskList.stripeCount) * count, tasks.taskAreaHeight);
                     }
                 }
 

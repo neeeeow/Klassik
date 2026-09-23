@@ -4,27 +4,55 @@
   SPDX-License-Identifier: GPL-3.0-or-later
 */
 
-#include "klassikpainteditem.h"
+#include "painteditem.h"
 
 #include <QQuickWindow>
 #include <QSGNode>
 #include <QSGSimpleTextureNode>
 #include <QPainter>
+#include <QApplication>
+#include <QImage>
 
-KlassikPaintedItem::KlassikPaintedItem(QQuickItem *parent) : QQuickItem(parent)
+PaintedItem::PaintedItem(QQuickItem *parent) : QQuickItem(parent)
 {
 	setFlag(QQuickItem::ItemHasContents, true);
+	loadStyle();
 }
 
 void
-KlassikPaintedItem::componentComplete()
+PaintedItem::loadStyle()
+{	
+	m_style = qApp->style();
+	// We cannot connect to QEvent::StyleChange, so we do it this way instead
+	if (m_style)
+		connect(m_style, &QObject::destroyed, this, &PaintedItem::styleChanged, Qt::UniqueConnection);
+}	
+void
+PaintedItem::styleChanged()
+{
+	if (QCoreApplication::closingDown())
+		return;
+	loadStyle();
+	if (m_style)
+		updateImage();
+}
+
+void
+PaintedItem::componentComplete()
 {
 	QQuickItem::componentComplete();
     polish();
 }
 
+void
+PaintedItem::updateImage()
+{
+	if (isComponentComplete())
+		polish();
+}
+
 bool
-KlassikPaintedItem::event(QEvent *event)
+PaintedItem::event(QEvent *event)
 {
 	if (event->type() == QEvent::ApplicationPaletteChange)
 	    updateImage();
@@ -33,21 +61,14 @@ KlassikPaintedItem::event(QEvent *event)
 }
 
 void
-KlassikPaintedItem::updateImage()
-{
-	if (isComponentComplete())
-		polish();
-}
-
-void
-KlassikPaintedItem::geometryChange(const QRectF &newGeometry, const QRectF &oldGeometry)
+PaintedItem::geometryChange(const QRectF &newGeometry, const QRectF &oldGeometry)
 {
     QQuickItem::geometryChange(newGeometry, oldGeometry);
 	updateImage();
 }
 
 void
-KlassikPaintedItem::updatePolish()
+PaintedItem::updatePolish()
 {
 	QQuickItem::updatePolish();
 	paintControlToImage();
@@ -55,7 +76,7 @@ KlassikPaintedItem::updatePolish()
 
 
 QSGNode *
-KlassikPaintedItem::updatePaintNode(QSGNode *oldNode, QQuickItem::UpdatePaintNodeData *updatePaintNodeData)
+PaintedItem::updatePaintNode(QSGNode *oldNode, QQuickItem::UpdatePaintNodeData *updatePaintNodeData)
 {
 	Q_UNUSED(updatePaintNodeData);
     QSGSimpleTextureNode *node = static_cast<QSGSimpleTextureNode *>(oldNode);
@@ -94,7 +115,7 @@ KlassikPaintedItem::updatePaintNode(QSGNode *oldNode, QQuickItem::UpdatePaintNod
 }
 
 void
-KlassikPaintedItem::paintControlToImage()
+PaintedItem::paintControlToImage()
 {
 	QSize imgSize = size().toSize();
 	if (imgSize.isEmpty())    

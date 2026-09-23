@@ -43,7 +43,8 @@ PlasmoidItem{
         Layout.minimumHeight: isVertical ? Layout.preferredHeight : -1
         Layout.maximumHeight: isVertical ? Layout.preferredHeight : -1
 
-        background: PanelButtonBackground {
+        background: SunkenAppletFrame {
+            id: sunkenFrame
             visible: menuButton.down || menuButton.checked
         }
 
@@ -51,7 +52,7 @@ PlasmoidItem{
             source: Plasmoid.icon
             active: menuButton.hovered
 
-            scale: (menuButton.down || menuButton.checked) ? (width - 2) / width : 1.0
+            scale: (menuButton.down || menuButton.checked) ? (width - sunkenFrame.lineWidth) / width : 1.0
             transformOrigin: Item.Center
         }
 

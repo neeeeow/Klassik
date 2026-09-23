@@ -6,7 +6,7 @@
 
 #pragma once
 
-#include <../../common/klassikpainteditem.h>
+#include <../../common/painteditem.h>
 
 #include <QQuickPaintedItem>
 #include <QQuickWindow>
@@ -14,7 +14,7 @@
 
 #include <KConfigPropertyMap>
 
-class Clock : public KlassikPaintedItem
+class Clock : public PaintedItem
 {
 	Q_OBJECT
 	Q_PROPERTY(KConfigPropertyMap* config READ config WRITE setConfig)

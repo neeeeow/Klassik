@@ -10,11 +10,10 @@
 #include <QColor>
 #include <QDateTime>
 #include <QPolygon>
-
-#include <qdrawutil.h>
+#include <QStyleOptionFrame>
 
 Clock::Clock(QQuickItem *parent)
-	: KlassikPaintedItem(parent),
+	: PaintedItem(parent),
 	  m_lcdPixmap(QStringLiteral(":/qt/qml/plasma/applet/com/github/neeeeow/klassik/clock/lcd.png"))
 {
 }
@@ -55,8 +54,16 @@ Clock::paint(QPainter *p) const
 	p->restore();
 
 	// frame
-	if (getConfigValue<bool>("showFrame"))
-		qDrawShadePanel(p, r, QGuiApplication::palette(), true);
+	if (style() && getConfigValue<bool>("showFrame")) {
+		QStyleOptionFrame frame;
+		frame.palette = QGuiApplication::palette();
+		frame.rect = QRect(0,0,width(),height());
+		frame.state = QStyle::State_Enabled | QStyle::State_Sunken;
+		frame.frameShape = QFrame::Panel;
+		frame.lineWidth = 1;
+
+		style()->drawControl(QStyle::CE_ShapedFrame, &frame, p);
+	}
 }
 
 DigitalClock::DigitalClock(QQuickItem *parent)

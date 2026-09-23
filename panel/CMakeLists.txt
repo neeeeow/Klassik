@@ -6,8 +6,7 @@ plasma_add_applet(com.github.neeeeow.klassik.panel
         LayoutManager.js
         ${CMAKE_CURRENT_SOURCE_DIR}/../common/KlassikBusyIndicator.qml
     CPP_SOURCES
-        ${CMAKE_CURRENT_SOURCE_DIR}/../common/klassikpainteditem.cpp
-        ${CMAKE_CURRENT_SOURCE_DIR}/../common/klassikqstyleitem.h
+        ${CMAKE_CURRENT_SOURCE_DIR}/../common/painteditem.cpp
         panelbackground.cpp
         grabhandle.h
         handlearrow.h

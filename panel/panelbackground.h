@@ -6,7 +6,7 @@
 
 #pragma once
 
-#include "../common/klassikqstyleitem.h"
+#include "../common/painteditem.h"
 
 #include <QPainter>
 #include <QImage>
@@ -14,7 +14,7 @@
 
 #include <Plasma/Plasma>
 
-class PanelBackground : public KlassikQStyleItem
+class PanelBackground : public PaintedItem
 {
 	/*
 	  This class draws a KDE 3 style panel background

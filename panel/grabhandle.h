@@ -6,9 +6,9 @@
 
 #pragma once
 
-#include "../common/klassikqstyleitem.h"
+#include "../common/painteditem.h"
 
-class GrabHandle : public KlassikQStyleItem
+class GrabHandle : public PaintedItem
 {
 	/*
 	  This class draws a grab handle for panel applets
@@ -18,7 +18,7 @@ class GrabHandle : public KlassikQStyleItem
 	QML_ELEMENT
 	Q_PROPERTY(bool horizontal READ horizontal WRITE setHorizontal)
 public:
-    GrabHandle(QQuickItem *parent = nullptr) : KlassikQStyleItem(parent) {}
+    GrabHandle(QQuickItem *parent = nullptr) : PaintedItem(parent) {}
     ~GrabHandle() override = default;
 
 	bool horizontal() const { return m_horizontal; }
@@ -36,12 +36,12 @@ private:
 		if (!style())
 			return;
 
-		QStyleOption opt;
-		opt.palette = QGuiApplication::palette();
-		opt.rect = QRect(0,0,width(),height());
-		opt.state = QStyle::State_Enabled;
+		QStyleOption handle;
+		handle.palette = QGuiApplication::palette();
+		handle.rect = QRect(0,0,width(),height());
+		handle.state = QStyle::State_Enabled;
 		if (m_horizontal)
-			opt.state |= QStyle::State_Horizontal;
-		style()->drawPrimitive(QStyle::PE_IndicatorToolBarHandle, &opt, p);
+			handle.state |= QStyle::State_Horizontal;
+		style()->drawPrimitive(QStyle::PE_IndicatorToolBarHandle, &handle, p);
 	}
 };

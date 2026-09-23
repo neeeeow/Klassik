@@ -6,11 +6,11 @@
 
 #pragma once
 
-#include "../common/klassikqstyleitem.h"
+#include "../common/painteditem.h"
 
 #include <Plasma/Plasma>
 
-class HandleArrow : public KlassikQStyleItem
+class HandleArrow : public PaintedItem
 {
 	/*
 	  This class draws the arrow used in the panel handle
@@ -20,7 +20,7 @@ class HandleArrow : public KlassikQStyleItem
 	QML_ELEMENT
     Q_PROPERTY(Plasma::Types::Location panelLocation READ panelLocation WRITE setPanelLocation)
 public:
-    HandleArrow(QQuickItem *parent = nullptr) : KlassikQStyleItem(parent) {}
+    HandleArrow(QQuickItem *parent = nullptr) : PaintedItem(parent) {}
     ~HandleArrow() override = default;
 
     Plasma::Types::Location panelLocation() const { return m_panelLocation; }
@@ -38,10 +38,10 @@ private:
 		if (!style())
 			return;
 
-		QStyleOption opt;
-		opt.palette = QGuiApplication::palette();
-		opt.rect = QRect(0,0,width(),height());
-		opt.state = QStyle::State_Enabled;
+		QStyleOption arrow;
+		arrow.palette = QGuiApplication::palette();
+		arrow.rect = QRect(0,0,width(),height());
+		arrow.state = QStyle::State_Enabled;
 
 		QStyle::PrimitiveElement pe;
 		switch (m_panelLocation) {
@@ -59,6 +59,6 @@ private:
 			break;
 		}
 		
-		style()->drawPrimitive(pe, &opt, p);
+		style()->drawPrimitive(pe, &arrow, p);
 	}
 };

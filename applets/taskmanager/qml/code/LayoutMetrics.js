@@ -50,7 +50,7 @@ function stripeCount() {
         return 1;
     } else {
         const maxHeight = preferredMaxHeight();
-        return Math.max(1, Math.floor(tasks.height / maxHeight)); // KDE 3 logic
+        return Math.max(1, Math.floor(tasks.taskAreaHeight / maxHeight)); // KDE 3 logic
     }
 }
 

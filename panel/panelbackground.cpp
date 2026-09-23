@@ -12,7 +12,7 @@
 
 #include <KColorScheme>
 
-PanelBackground::PanelBackground(QQuickItem *parent) : KlassikQStyleItem(parent)
+PanelBackground::PanelBackground(QQuickItem *parent) : PaintedItem(parent)
 {
 }
 
@@ -20,7 +20,7 @@ void
 PanelBackground::componentComplete()
 {
 	loadBackground();
-	KlassikQStyleItem::componentComplete();
+	PaintedItem::componentComplete();
 }
 
 bool
@@ -28,7 +28,7 @@ PanelBackground::event(QEvent *event)
 {
 	if (event->type() == QEvent::ApplicationPaletteChange)
 		loadBackground();
-	return KlassikQStyleItem::event(event);
+	return PaintedItem::event(event);
 }
 
 void
@@ -83,14 +83,14 @@ PanelBackground::paint(QPainter *p) const
 	// Draw the panel frame
 	if (!style() || !m_drawFrame)
 		return;		
-	QStyleOptionFrame opt;
-	opt.palette = pal;
-	opt.rect = r;
-	opt.state = QStyle::State_Enabled | QStyle::State_Raised;
-	opt.frameShape = QFrame::StyledPanel;
-	opt.lineWidth = 2;
+	QStyleOptionFrame frame;
+	frame.palette = pal;
+	frame.rect = r;
+	frame.state = QStyle::State_Enabled | QStyle::State_Raised;
+	frame.frameShape = QFrame::StyledPanel;
+	frame.lineWidth = 2;
 
-	style()->drawPrimitive(QStyle::PE_Frame, &opt, p);
+	style()->drawControl(QStyle::CE_ShapedFrame, &frame, p);
 }
 
 void

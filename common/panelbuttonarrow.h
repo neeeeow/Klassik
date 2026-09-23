@@ -6,9 +6,9 @@
 
 #pragma once
 
-#include "klassikqstyleitem.h"
+#include "painteditem.h"
 
-class PanelButtonArrow : public KlassikQStyleItem
+class PanelButtonArrow : public PaintedItem
 {
 	/*
 	   This class draws a sunken KDE 3 style popup menu arrow for buttons
@@ -19,7 +19,7 @@ class PanelButtonArrow : public KlassikQStyleItem
 	Q_PROPERTY(bool active READ active WRITE setActive)
 	Q_PROPERTY(MenuLocation location READ location WRITE setLocation)
 public:
-	PanelButtonArrow(QQuickItem *parent = nullptr) : KlassikQStyleItem(parent) {}
+	PanelButtonArrow(QQuickItem *parent = nullptr);
 	~PanelButtonArrow() override = default;
 
 	enum MenuLocation {
@@ -50,38 +50,5 @@ private:
 	MenuLocation m_location = Above;
 	bool m_active = false;
 
-	void paint(QPainter *p) const override {
-		if (!style())
-			return;  
-		
-		// Here we use the slightly older KDE 3 panel button arrow logic, it
-		// looks better than the new style adopted later in 3.5's life.
-		QStyle::PrimitiveElement e = QStyle::PE_IndicatorArrowUp;
-		const int arrowSize = style()->pixelMetric(QStyle::PM_MenuButtonIndicator);
-		QRect r(0, 0, arrowSize, arrowSize);
-		switch (m_location) {
-		case Above:
-			e = QStyle::PE_IndicatorArrowUp;
-			break;
-		case Below:
-			e = QStyle::PE_IndicatorArrowDown;
-			r.translate(0, height() - arrowSize);
-			break;
-		case Right:
-			e = QStyle::PE_IndicatorArrowRight;
-		    r.translate(width() - arrowSize, 0);
-			break;
-		case Left:
-			e = QStyle::PE_IndicatorArrowLeft;
-			break;
-		}
-
-		QStyleOption opt;
-		opt.rect = r;
-		opt.palette = QGuiApplication::palette();
-		opt.state = QStyle::State_Enabled;
-		if (m_active)
-			opt.state |= QStyle::State_Sunken; // most QStyle's don't have a separate sunken state, but just in case
-		style()->drawPrimitive(e, &opt, p);
-	}
+	void paint(QPainter *p) const override;
 };

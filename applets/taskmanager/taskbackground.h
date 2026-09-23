@@ -6,11 +6,11 @@
 
 #pragma once
 
-#include "../../common/klassikqstyleitem.h"
+#include "../../common/painteditem.h"
 
 #include <QStyleOptionHeader>
 
-class TaskBackground : public KlassikQStyleItem
+class TaskBackground : public PaintedItem
 {
 	/*
 	  This class draws a sunken KDE 3 style panel background
@@ -20,7 +20,7 @@ class TaskBackground : public KlassikQStyleItem
 	QML_ELEMENT
 	Q_PROPERTY(bool sunken READ sunken WRITE setSunken)
 public:
-	TaskBackground(QQuickItem *parent = nullptr) : KlassikQStyleItem(parent) {}
+	TaskBackground(QQuickItem *parent = nullptr) : PaintedItem(parent) {}
 	~TaskBackground() override = default;
 
 	bool sunken() const { return m_sunken; }

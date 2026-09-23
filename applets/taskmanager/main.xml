@@ -110,10 +110,6 @@
       <label>Whether to show media and volume controls in the tooltip.</label>
       <default>true</default>
     </entry>
-    <entry name="fill" type="Bool">
-      <label>Whether task manager should occupy all available space.</label>
-      <default>true</default>
-    </entry>
     <entry name="minimizeActiveTaskOnClick" type="Bool">
       <label>Whether to minimize the currently-active task when clicked. If false, clicking on the currently-active task will do nothing.</label>
       <default>true</default>
