@@ -16,15 +16,23 @@ import org.kde.kirigami as Kirigami
 PlasmoidItem {
     id: root
 
-    readonly property int minButtonSize: Kirigami.Units.iconSizes.small
-
     preferredRepresentation: fullRepresentation
     fullRepresentation: GridLayout {
         id: grid
+        anchors.fill: parent
+
+        readonly property bool horizontal: Plasmoid.formFactor === PlasmaCore.Types.Horizontal
+        readonly property int iconSize: Kirigami.Units.iconSizes.small
 
         rowSpacing: 0
-        rows: 2
-        columns: 1
+        columnSpacing: 0
+        flow: {
+            if (horizontal) {
+                return ((2 * iconSize) > height) ? GridLayout.LeftToRight : GridLayout.TopToBottom;
+            } else {
+                return ((2 * iconSize) > width) ? GridLayout.TopToBottom : GridLayout.LeftToRight;
+            }
+        }
 
         SessionManagement {
             id: session
@@ -32,20 +40,32 @@ PlasmoidItem {
 
         ToolButton {
             id: lock
-            Layout.fillHeight: true
             flat: false
+            Layout.fillWidth: grid.horizontal ? false : true
+            Layout.fillHeight: grid.horizontal ? true : false
 
             onClicked: session["lock"]()
-            icon.name: "system-lock-screen"
+            Kirigami.Icon {
+                source: "system-lock-screen"
+                width: grid.iconSize
+                height: grid.iconSize
+                anchors.centerIn: parent
+            }
         }
 
         ToolButton {
             id: logout
-            Layout.fillHeight: true
             flat: false
+            Layout.fillWidth: grid.horizontal ? false : true
+            Layout.fillHeight: grid.horizontal ? true : false
 
             onClicked: session["requestLogoutPrompt"]()
-            icon.name: "system-log-out"
+            Kirigami.Icon {
+                source: "system-log-out"
+                width: grid.iconSize
+                height: grid.iconSize
+                anchors.centerIn: parent
+            }
         }
     }
 }
