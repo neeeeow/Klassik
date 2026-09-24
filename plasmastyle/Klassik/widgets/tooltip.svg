@@ -1,0 +1,382 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!-- Created with Inkscape (http://www.inkscape.org/) -->
+
+<svg
+   width="35"
+   height="35"
+   viewBox="0 0 35 35"
+   version="1.1"
+   id="svg1"
+   inkscape:version="1.4.4 (dcaf3e7d9e, 2026-05-05)"
+   sodipodi:docname="tooltip.svg"
+   xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
+   xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
+   xmlns="http://www.w3.org/2000/svg"
+   xmlns:svg="http://www.w3.org/2000/svg">
+  <sodipodi:namedview
+     id="namedview1"
+     pagecolor="#ffffff"
+     bordercolor="#000000"
+     borderopacity="0.25"
+     inkscape:showpageshadow="2"
+     inkscape:pageopacity="0.0"
+     inkscape:pagecheckerboard="0"
+     inkscape:deskcolor="#d1d1d1"
+     inkscape:document-units="px"
+     showgrid="true"
+     inkscape:zoom="8"
+     inkscape:cx="32.1875"
+     inkscape:cy="23.125"
+     inkscape:window-width="1920"
+     inkscape:window-height="1003"
+     inkscape:window-x="0"
+     inkscape:window-y="0"
+     inkscape:window-maximized="1"
+     inkscape:current-layer="layer1">
+    <inkscape:grid
+       id="grid1"
+       units="px"
+       originx="0"
+       originy="0"
+       spacingx="1"
+       spacingy="1"
+       empcolor="#0099e5"
+       empopacity="0.30196078"
+       color="#0099e5"
+       opacity="0.14902"
+       empspacing="5"
+       enabled="true"
+       visible="true" />
+  </sodipodi:namedview>
+  <defs
+     id="defs1">
+    <style
+       id="current-color-scheme"
+       type="text/css">
+	  .ColorScheme-Background { color:#dcdcdc; }
+	</style>
+  </defs>
+  <g
+     inkscape:label="Layer 1"
+     inkscape:groupmode="layer"
+     id="layer1"
+     class="ColorScheme-Background">
+    <rect
+       id="center"
+       width="15"
+       height="15"
+       x="10"
+       y="10"
+       fill="currentColor" />
+    <g
+       id="top">
+      <rect
+         id="rect5"
+         width="15"
+         height="4"
+         x="10"
+         y="6"
+         fill="currentColor" />
+      <rect
+         id="rect6"
+         width="15"
+         height="1"
+         x="10"
+         y="5"
+         fill="#000000" />
+    </g>
+    <g
+       id="bottom"
+       transform="matrix(1,0,0,-1,0,35)">
+      <rect
+         id="rect7"
+         width="15"
+         height="4"
+         x="10"
+         y="6"
+         fill="currentColor" />
+      <rect
+         id="rect8"
+         width="15"
+         height="1"
+         x="10"
+         y="5"
+         fill="#000000" />
+    </g>
+    <g
+       id="right"
+       transform="rotate(90,17.5,17.5)">
+      <rect
+         id="rect9"
+         width="15"
+         height="4"
+         x="10"
+         y="6"
+         fill="currentColor" />
+      <rect
+         id="rect10"
+         width="15"
+         height="1"
+         x="10"
+         y="5"
+         fill="#000000" />
+    </g>
+    <g
+       id="left"
+       transform="matrix(0,1,1,0,0,0)">
+      <rect
+         id="rect11"
+         width="15"
+         height="4"
+         x="10"
+         y="6"
+         fill="currentColor" />
+      <rect
+         id="rect12"
+         width="15"
+         height="1"
+         x="10"
+         y="5"
+         fill="#000000" />
+    </g>
+    <g
+       id="topleft">
+      <rect
+         id="rect13"
+         width="1"
+         height="1"
+         x="5"
+         y="9"
+         opacity="0" />
+      <rect
+         id="rect14"
+         width="1"
+         height="2"
+         x="6"
+         y="8"
+         fill="#000000" />
+      <rect
+         id="rect15"
+         width="3"
+         height="3"
+         x="7"
+         y="7"
+         fill="currentColor" />
+      <rect
+         id="rect16"
+         width="1"
+         height="1"
+         x="7"
+         y="7"
+         fill="#000000" />
+      <rect
+         id="rect17"
+         width="1"
+         height="1"
+         x="8"
+         y="6"
+         fill="#000000" />
+      <rect
+         id="rect18"
+         width="1"
+         height="1"
+         x="9"
+         y="5"
+         fill="#000000" />
+      <rect
+         id="rect19"
+         width="1"
+         height="1"
+         x="9"
+         y="6"
+         fill="currentColor" />
+    </g>
+    <g
+       id="bottomleft"
+       transform="matrix(1,0,0,-1,0,35)">
+      <rect
+         id="rect20"
+         width="1"
+         height="1"
+         x="5"
+         y="9"
+         opacity="0" />
+      <rect
+         id="rect21"
+         width="1"
+         height="2"
+         x="6"
+         y="8"
+         fill="#000000" />
+      <rect
+         id="rect22"
+         width="3"
+         height="3"
+         x="7"
+         y="7"
+         fill="currentColor" />
+      <rect
+         id="rect23"
+         width="1"
+         height="1"
+         x="7"
+         y="7"
+         fill="#000000" />
+      <rect
+         id="rect24"
+         width="1"
+         height="1"
+         x="8"
+         y="6"
+         fill="#000000" />
+      <rect
+         id="rect25"
+         width="1"
+         height="1"
+         x="9"
+         y="5"
+         fill="#000000" />
+      <rect
+         id="rect26"
+         width="1"
+         height="1"
+         x="9"
+         y="6"
+         fill="currentColor" />
+    </g>
+    <g
+       id="topright"
+       transform="matrix(-1,0,0,1,35,0)">
+      <rect
+         id="rect27"
+         width="1"
+         height="1"
+         x="5"
+         y="9"
+         opacity="0" />
+      <rect
+         id="rect28"
+         width="1"
+         height="2"
+         x="6"
+         y="8"
+         fill="#000000" />
+      <rect
+         id="rect29"
+         width="3"
+         height="3"
+         x="7"
+         y="7"
+         fill="currentColor" />
+      <rect
+         id="rect30"
+         width="1"
+         height="1"
+         x="7"
+         y="7"
+         fill="#000000" />
+      <rect
+         id="rect31"
+         width="1"
+         height="1"
+         x="8"
+         y="6"
+         fill="#000000" />
+      <rect
+         id="rect32"
+         width="1"
+         height="1"
+         x="9"
+         y="5"
+         fill="#000000" />
+      <rect
+         id="rect33"
+         width="1"
+         height="1"
+         x="9"
+         y="6"
+         fill="currentColor" />
+    </g>
+    <g
+       id="bottomright"
+       transform="rotate(180,17.5,17.5)">
+      <rect
+         id="rect34"
+         width="1"
+         height="1"
+         x="5"
+         y="9"
+         opacity="0" />
+      <rect
+         id="rect35"
+         width="1"
+         height="2"
+         x="6"
+         y="8"
+         fill="#000000" />
+      <rect
+         id="rect36"
+         width="3"
+         height="3"
+         x="7"
+         y="7"
+         fill="currentColor" />
+      <rect
+         id="rect37"
+         width="1"
+         height="1"
+         x="7"
+         y="7"
+         fill="#000000" />
+      <rect
+         id="rect38"
+         width="1"
+         height="1"
+         x="8"
+         y="6"
+         fill="#000000" />
+      <rect
+         id="rect39"
+         width="1"
+         height="1"
+         x="9"
+         y="5"
+         fill="#000000" />
+      <rect
+         id="rect40"
+         width="1"
+         height="1"
+         x="9"
+         y="6"
+         fill="currentColor" />
+    </g>
+    <rect
+       style="fill:#ff0000"
+       id="hint-top-margin"
+       width="1"
+       height="10"
+       x="17"
+       y="5" />
+    <rect
+       style="fill:#ff0000"
+       id="hint-left-margin"
+       width="10"
+       height="1"
+       x="5"
+       y="17" />
+    <rect
+       style="fill:#ff0000"
+       id="hint-bottom-margin"
+       width="1"
+       height="10"
+       x="17"
+       y="20" />
+    <rect
+       style="fill:#ff0000"
+       id="hint-right-margin"
+       width="10"
+       height="1"
+       x="20"
+       y="17" />
+  </g>
+</svg>
