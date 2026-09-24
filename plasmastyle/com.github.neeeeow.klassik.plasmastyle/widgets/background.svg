@@ -25,8 +25,8 @@
      inkscape:document-units="px"
      showgrid="true"
      inkscape:zoom="16.126161"
-     inkscape:cx="23.564194"
-     inkscape:cy="6.0150707"
+     inkscape:cx="23.533189"
+     inkscape:cy="5.9530598"
      inkscape:window-width="1920"
      inkscape:window-height="1003"
      inkscape:window-x="0"
@@ -193,7 +193,7 @@
          filter="url(#dark)" />
     </g>
     <g
-       id="g19">
+       id="bottomright">
       <rect
          id="rect9"
          width="2"
@@ -258,7 +258,7 @@
          filter="url(#dark)" />
     </g>
     <g
-       id="bottomright">
+       id="bottomleft">
       <rect
          id="rect16"
          width="1"

@@ -24,9 +24,9 @@
      inkscape:deskcolor="#d1d1d1"
      inkscape:document-units="px"
      showgrid="true"
-     inkscape:zoom="8"
-     inkscape:cx="32.1875"
-     inkscape:cy="23.125"
+     inkscape:zoom="22.627417"
+     inkscape:cx="20.837553"
+     inkscape:cy="21.169009"
      inkscape:window-width="1920"
      inkscape:window-height="1003"
      inkscape:window-x="0"
@@ -354,13 +354,13 @@
        style="fill:#ff0000"
        id="hint-top-margin"
        width="1"
-       height="10"
+       height="8"
        x="17"
        y="5" />
     <rect
        style="fill:#ff0000"
        id="hint-left-margin"
-       width="10"
+       width="8"
        height="1"
        x="5"
        y="17" />
@@ -368,15 +368,15 @@
        style="fill:#ff0000"
        id="hint-bottom-margin"
        width="1"
-       height="10"
+       height="8"
        x="17"
-       y="20" />
+       y="22" />
     <rect
        style="fill:#ff0000"
        id="hint-right-margin"
-       width="10"
+       width="8"
        height="1"
-       x="20"
+       x="22"
        y="17" />
   </g>
 </svg>

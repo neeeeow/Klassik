@@ -1,0 +1,18 @@
+{
+    "KPlugin": {
+        "Authors": [
+            {
+                "Name": "neeeeow"
+            }
+        ],
+        "Category": "",
+        "Description": "Klassik Plasma style",
+        "EnabledByDefault": true,
+        "Id": "com.github.neeeeow.klassik.plasmastyle",
+        "License": "GPLv3+",
+        "Name": "Klassik",
+        "Version": "1.0.0",
+        "Website": "https://github.com/neeeeow/Klassik"
+    },
+    "X-Plasma-API": "5.0"
+}
