@@ -31,7 +31,7 @@ plasma_add_applet(com.github.neeeeow.klassik.taskmanager
     GENERATE_APPLET_CLASS
 )
 
-kconfig_add_kcfg_files(com.github.neeeeow.klassik.taskmanager ${CMAKE_SOURCE_DIR}/applets/taskmanager/kactivitymanagerd_plugins_settings.kcfgc)
+kconfig_add_kcfg_files(com.github.neeeeow.klassik.taskmanager ${CMAKE_CURRENT_SOURCE_DIR}/kactivitymanagerd_plugins_settings.kcfgc)
 
 # FIXME Cleanup no longer used libs.
 target_link_libraries(com.github.neeeeow.klassik.taskmanager PRIVATE

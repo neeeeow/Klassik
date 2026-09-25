@@ -6,7 +6,6 @@
 
 #include "backend.h"
 
-#include "log_settings.h"
 #include <KConfigGroup>
 #include <KDesktopFile>
 #include <KFileItem>
