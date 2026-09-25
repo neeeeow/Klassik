@@ -5,12 +5,14 @@
                 "Name": "neeeeow"
             }
         ],
+        "BugReportUrl": "https://github.com/neeeeow/Klassik/issues",
         "Category": "Date and Time",
-        "Description": "Classic KDE 3 style clock",
+        "Description": "Classic KDE 3 style digital/analog clock",
         "Icon": "preferences-system-time",
-        "License": "GPL-3.0+",
+        "License": "GPLv3+",
         "Id": "com.github.neeeeow.klassik.clock",
         "Name": "Klassik Clock",
+        "Version": "@PROJECT_VERSION@",
         "Website": "https://github.com/neeeeow/Klassik"
     },
     "X-Plasma-API-Minimum-Version": "6.0",

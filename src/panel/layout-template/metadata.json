@@ -6,8 +6,9 @@
                 "Name": "neeeeow"
             }
         ],
+        "BugReportUrl": "https://github.com/neeeeow/Klassik/issues",
         "Category": "",
-        "Description": "Klassik panel",
+        "Description": "Default Klassik panel layout",
         "EnabledByDefault": true,
         "Id": "com.github.neeeeow.klassik.panel.default",
         "License": "GPLv3+",

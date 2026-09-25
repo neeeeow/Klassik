@@ -128,7 +128,7 @@ Window {
             Layout.alignment: Qt.AlignBottom
 
             Text {
-                text: i18n("Klassik 1.0.0")
+                text: "Klassik " + Plasmoid.metaData.version
                 font.italic: true
                 font.bold: true
                 font.pointSize: 16

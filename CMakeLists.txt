@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.16)
 
-project(klassik)
+project(klassik VERSION 1.0.0)
 
 set(QT_MIN_VERSION "6.6.0")
 set(KF6_MIN_VERSION "6.0.0")
@@ -44,7 +44,6 @@ find_package(PlasmaActivities REQUIRED)
 find_package(PlasmaQuick REQUIRED)
 find_package(LibKWorkspace REQUIRED)
 find_package(KSysGuard REQUIRED)
-find_package(LibNotificationManager REQUIRED)
 find_package(KDecoration3 REQUIRED)
 
 add_subdirectory(src)

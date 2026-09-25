@@ -1,5 +1,11 @@
 add_definitions(-DTRANSLATION_DOMAIN=\"plasma_applet_com.github.neeeeow.klassik.taskmanager\")
 
+configure_file(
+    ${CMAKE_CURRENT_SOURCE_DIR}/metadata.json.in
+    ${CMAKE_CURRENT_BINARY_DIR}/metadata.json
+    @ONLY
+)
+
 plasma_add_applet(com.github.neeeeow.klassik.taskmanager
     QML_SOURCES
         qml/ConfigAppearance.qml

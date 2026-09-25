@@ -5,9 +5,11 @@
                 "Name": "neeeeow"
             }
         ],
+        "BugReportUrl": "https://github.com/neeeeow/Klassik/issues",
         "Category": "",
-        "License": "GPL-3.0+",
+        "License": "GPLv3+",
         "Name": "Klassik Panel",
+        "Version": "@PROJECT_VERSION@",
         "Website": "https://github.com/neeeeow/Klassik"
     },
     "Keywords": "",

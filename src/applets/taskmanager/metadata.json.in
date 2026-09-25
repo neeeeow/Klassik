@@ -5,12 +5,14 @@
                 "Name": "neeeeow"
             }
         ],
+        "BugReportUrl": "https://github.com/neeeeow/Klassik/issues",
         "Category": "Windows and Tasks",
-        "Description": "Classic style task manager",
+        "Description": "Classic KDE 3 style task manager",
         "EnabledByDefault": true,
         "Icon": "preferences-system-windows",
-        "License": "GPL-3.0+",
+        "License": "GPLv3+",
         "Name": "Klassik Task Manager",
+        "Version": "@PROJECT_VERSION@",
         "Website": "https://github.com/neeeeow/klassik"
     },
     "X-Plasma-API-Minimum-Version": "6.0",
