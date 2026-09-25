@@ -6,7 +6,7 @@
 
 #pragma once
 
-#include "../../common/painteditem.h"
+#include "painteditem.h"
 
 #include <QStyleOptionHeader>
 

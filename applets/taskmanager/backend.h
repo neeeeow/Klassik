@@ -11,7 +11,6 @@
 #include <QObject>
 #include <QRect>
 
-#include <netwm.h>
 #include <qqmlregistration.h>
 #include <qwindowdefs.h>
 

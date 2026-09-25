@@ -20,45 +20,33 @@ plasma_add_applet(com.github.neeeeow.klassik.taskmanager
         qml/ToolTipWindowMouseArea.qml
         qml/code/LayoutMetrics.js
         qml/code/TaskTools.js
-        ${CMAKE_CURRENT_SOURCE_DIR}/../../common/KlassikBusyIndicator.qml
+        ${KLASSIK_COMMON_DIR}/KlassikBusyIndicator.qml
     CPP_SOURCES
         backend.cpp
         taskbackground.h
-        ${CMAKE_CURRENT_SOURCE_DIR}/../../common/painteditem.cpp
-        ${CMAKE_CURRENT_SOURCE_DIR}/../../common/sunkenappletframe.cpp
+        ${KLASSIK_COMMON_DIR}/sunkenappletframe.cpp
     RESOURCES
         main.xml
-        ${CMAKE_CURRENT_SOURCE_DIR}/../../common/busyindicator.png
+        ${KLASSIK_COMMON_DIR}/busyindicator.png
     GENERATE_APPLET_CLASS
 )
 
-target_include_directories(com.github.neeeeow.klassik.taskmanager PRIVATE 
-    ${CMAKE_CURRENT_SOURCE_DIR}/../../common/
-) # ensure that CMake sees our frame
-
 kconfig_add_kcfg_files(com.github.neeeeow.klassik.taskmanager ${CMAKE_SOURCE_DIR}/applets/taskmanager/kactivitymanagerd_plugins_settings.kcfgc)
-
-ecm_qt_declare_logging_category(com.github.neeeeow.klassik.taskmanager
-    HEADER log_settings.h
-    IDENTIFIER TASKMANAGER_DEBUG
-    CATEGORY_NAME com.github.neeeeow.klassik.taskmanager
-)
 
 # FIXME Cleanup no longer used libs.
 target_link_libraries(com.github.neeeeow.klassik.taskmanager PRIVATE
-  Qt::Core
-  Qt::Qml
-  Qt::Quick
-  Plasma::Activities
-  Plasma::ActivitiesStats
-  KF6::ConfigGui
-  KF6::I18n
-  KF6::KIOCore
-  KF6::KIOGui
-  KF6::KIOFileWidgets # KFilePlacesModel
-  KF6::Notifications # KNotificationJobUiDelegate
-  Plasma::Plasma
-  KSysGuard::ProcessCore
-  KF6::Service
-  KF6::WindowSystem
-  PW::LibNotificationManager)
+    klassik_painteditem
+    Qt::Core
+    Qt::Qml
+    Qt::Quick
+    Plasma::Activities
+    Plasma::ActivitiesStats
+    KF6::ConfigGui
+    KF6::I18n
+    KF6::KIOCore
+    KF6::KIOGui
+    KF6::KIOFileWidgets # KFilePlacesModel
+    KF6::Notifications # KNotificationJobUiDelegate
+    Plasma::Plasma
+    KSysGuard::ProcessCore
+    KF6::Service)

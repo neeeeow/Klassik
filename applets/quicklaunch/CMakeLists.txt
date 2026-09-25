@@ -8,18 +8,14 @@ plasma_add_applet(com.github.neeeeow.klassik.quicklaunch
         layout.js
     CPP_SOURCES
         quicklaunch_p.cpp
-        ${CMAKE_CURRENT_SOURCE_DIR}/../../common/painteditem.cpp
-        ${CMAKE_CURRENT_SOURCE_DIR}/../../common/sunkenappletframe.cpp
+        ${KLASSIK_COMMON_DIR}/sunkenappletframe.cpp
     RESOURCES
         main.xml
     GENERATE_APPLET_CLASS
 )
 
-target_include_directories(com.github.neeeeow.klassik.quicklaunch PRIVATE 
-  ${CMAKE_CURRENT_SOURCE_DIR}/../../common/
-)
-
 target_link_libraries(com.github.neeeeow.klassik.quicklaunch PRIVATE
-  Qt::Quick
-  KF6::KIOWidgets
-  KF6::JobWidgets)
+    klassik_painteditem
+    Qt::Quick
+    KF6::KIOWidgets
+    KF6::JobWidgets)

@@ -1,0 +1,18 @@
+[kdeglobals][KDE]
+widgetStyle=Klassik
+
+[kdeglobals][General]
+ColorScheme=KDETwo
+
+[kdeglobals][Icons]
+Theme=breeze
+
+[plasmarc][Theme]
+name=klassik
+
+[kcminputrc][Mouse]
+cursorTheme=breeze_cursors
+
+[kwinrc][org.kde.kdecoration2]
+library=com.github.neeeeow.klassik.kwin.kde2
+theme=KDE 2

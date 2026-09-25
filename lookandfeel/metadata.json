@@ -1,0 +1,18 @@
+{
+    "KPackageStructure": "Plasma/LookAndFeel",
+    "KPlugin": {
+        "Authors": [
+            {
+                "Name": "neeeeow"
+            }
+        ],
+        "Category": "",
+        "Description": "Klassik global theme",
+        "Id": "com.github.neeeeow.klassik.desktop",
+        "License": "GPLv3+",
+        "Name": "Klassik",
+        "Website": "https://github.com/neeeeow/Klassik"
+    },
+    "Keywords": "Desktop;Workspace;Appearance;Look and Feel;",
+    "X-Plasma-APIVersion": "2"
+}

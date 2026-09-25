@@ -11,6 +11,8 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 find_package(ECM ${KF6_MIN_VERSION} REQUIRED NO_MODULE)
 set(CMAKE_MODULE_PATH ${ECM_MODULE_PATH} ${CMAKE_CURRENT_SOURCE_DIR}/cmake/modules)
 
+set(KLASSIK_COMMON_DIR ${CMAKE_SOURCE_DIR}/common) # directory for common files
+
 include(KDEInstallDirs)
 include(KDECMakeSettings)
 include(KDECompilerSettings NO_POLICY_SCOPE)
@@ -47,9 +49,13 @@ find_package(KSysGuard REQUIRED)
 find_package(LibNotificationManager REQUIRED)
 find_package(KDecoration3 REQUIRED)
 
+add_subdirectory(common)
 add_subdirectory(applets)
 add_subdirectory(panel)
 add_subdirectory(kwin)
 add_subdirectory(qstyle)
-add_subdirectory(plasmastyle)
 add_subdirectory(color-schemes)
+
+# Install plasma style and global theme directly here
+plasma_install_package(plasmastyle klassik desktoptheme desktoptheme)
+plasma_install_package(lookandfeel com.github.neeeeow.klassik.desktop look-and-feel lookandfeel)

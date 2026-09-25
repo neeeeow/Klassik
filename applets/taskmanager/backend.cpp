@@ -16,8 +16,6 @@
 #include <KProtocolInfo>
 #include <KService>
 #include <KServiceAction>
-#include <KWindowEffects>
-#include <KWindowSystem>
 
 #include <KApplicationTrader>
 #include <KIO/ApplicationLauncherJob>
@@ -437,13 +435,9 @@ void Backend::handleRecentDocumentAction() const
         if (!service->hasMimeType(mimetype)) {
             // needs to find the application that supports this mimetype
             service = KApplicationTrader::preferredService(mimetype);
-
-            if (!service) {
+            if (!service)
                 // no service found to handle the mimetype
                 return;
-            } else {
-                qCWarning(TASKMANAGER_DEBUG) << "Preventing the file to open with " << service->desktopEntryName() << "no alternative found";
-            }
         }
     }
 
