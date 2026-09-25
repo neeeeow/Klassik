@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="logo.svg" alt="Klassik logo">
+  <img src="logo.svg" width="500" alt="Klassik logo">
 </p>
 
 # Klassik
