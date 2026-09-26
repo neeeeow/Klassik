@@ -47,27 +47,30 @@ PlasmoidItem{
             visible: menuButton.down || menuButton.checked
         }
 
-        contentItem: Kirigami.Icon {
-            source: Plasmoid.icon
-            active: menuButton.hovered
+        contentItem: Item {
+            Kirigami.Icon {
+                anchors.fill: parent
+                source: Plasmoid.icon
+                active: menuButton.hovered
 
-            scale: (menuButton.down || menuButton.checked) ? (width - sunkenFrame.lineWidth) / width : 1.0
-            transformOrigin: Item.Center
-        }
+                scale: (menuButton.down || menuButton.checked) ? (width - sunkenFrame.lineWidth) / width : 1.0
+                transformOrigin: Item.Center
+            }
 
-        PanelButtonArrow {
-            anchors.fill: parent
-            active: menuButton.down || menuButton.checked
-            location: {
-                switch (Plasmoid.location) {
-                    case PlasmaCore.Types.TopEdge:
-                        return PanelButtonArrow.Below;
-                    case PlasmaCore.Types.LeftEdge:
-                        return PanelButtonArrow.Right;
-                    case PlasmaCore.Types.RightEdge:
-                        return PanelButtonArrow.Left;
-                    default:
-                        return PanelButtonArrow.Above;
+            PanelButtonArrow {
+                anchors.fill: parent
+                active: menuButton.down || menuButton.checked
+                location: {
+                    switch (Plasmoid.location) {
+                        case PlasmaCore.Types.TopEdge:
+                            return PanelButtonArrow.Below;
+                        case PlasmaCore.Types.LeftEdge:
+                            return PanelButtonArrow.Right;
+                        case PlasmaCore.Types.RightEdge:
+                            return PanelButtonArrow.Left;
+                        default:
+                            return PanelButtonArrow.Above;
+                    }
                 }
             }
         }
