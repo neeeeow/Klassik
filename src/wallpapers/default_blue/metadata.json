@@ -1,0 +1,11 @@
+{
+    "KPlugin": {
+        "Authors": [
+            {
+                "Name": "Qwertz"
+            }
+        ],
+        "Id": "default_blue",
+        "Name": "Default Blue"
+    }
+}

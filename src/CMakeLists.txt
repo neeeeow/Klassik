@@ -6,6 +6,7 @@ add_subdirectory(panel)
 add_subdirectory(kwin)
 add_subdirectory(qstyle)
 add_subdirectory(color-schemes)
+add_subdirectory(wallpapers)
 
 # Install plasma style and global theme directly here
 plasma_install_package(plasmastyle klassik desktoptheme desktoptheme)

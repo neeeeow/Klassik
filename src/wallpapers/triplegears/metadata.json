@@ -1,0 +1,11 @@
+{
+    "KPlugin": {
+        "Authors": [
+            {
+                "Name": "Jörg Gastner"
+            }
+        ],
+        "Id": "triplegears",
+        "Name": "Triple Gears"
+    }
+}
