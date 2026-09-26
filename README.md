@@ -1,5 +1,5 @@
 # Klassik
-A modern recreation of the classic KDE 3 desktop experience for KDE Plasma 6, built entirely using Qt6 and Qt Quick with full support for Wayland and fractional scaling.
+A modern recreation of the classic KDE 3 desktop experience for KDE Plasma 6, built entirely using Qt 6 and Qt Quick, with full support for Wayland and fractional scaling.
 
 ![Desktop screenshot](screenshots/desktop.png)
 
