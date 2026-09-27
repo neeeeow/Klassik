@@ -26,14 +26,13 @@ For compilation, the following C++ development libraries are required:
 ## Installation
 
 ### 1. Download Klassik
-Clone the repository and checkout the latest release:
+Clone the repository:
 ```bash
 git clone https://github.com/neeeeow/Klassik.git
 cd Klassik
-git checkout $(git describe --tags $(git rev-list --tags --max-count=1))
 ```
 > [!CAUTION]
-> Remember to checkout the latest tagged release. `master` will often contain work-in-progress features which are not yet ready for use, and may cause issues!
+> By default the `master` branch is cloned. Do not clone the `develop` branch unless you are a developer/contributor; it contains work-in-progress features and may be unstable!
 
 ### 2. Compile and install
 Compile using `cmake`:
