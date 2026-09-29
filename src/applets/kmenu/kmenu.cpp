@@ -10,6 +10,7 @@
 #include "popupmenusearch.h"
 #include "recentdocsmenu.h"
 #include "settingsmenu.h"
+#include "systemmenu.h"
 
 #include <QPainter>
 #include <QPoint>
@@ -109,16 +110,19 @@ KMenu::initialize()
 	// any QAction that gets deleted
 	if (m_config.showSettings) {
 		// Settings submenu
-		SettingsMenu *settingsMenu = new SettingsMenu(i18n("Settings"), applet(), this);
+	    auto *settingsMenu = new SettingsMenu(i18n("Settings"), applet(), this);
 		settingsMenu->setIcon(QIcon::fromTheme(QStringLiteral("preferences-desktop")));
 		addMenu(settingsMenu);
 	}
 	if (m_config.showRecentDocs) {
 		// Recent documents submenu
-		RecentDocsMenu *documentsMenu = new RecentDocsMenu(i18n("Recent Documents"), applet(), this);
+		auto *documentsMenu = new RecentDocsMenu(i18n("Recent Documents"), applet(), this);
 		documentsMenu->setIcon(QIcon::fromTheme(QStringLiteral("document-open-recent")));
 		addMenu(documentsMenu);
 	}
+	auto *systemMenu = new SystemMenu(i18n("My System"), applet(), this);
+	systemMenu->setIcon(QIcon::fromTheme(QStringLiteral("computer")));
+	addMenu(systemMenu);
 
 	if (m_config.showSettings || m_config.showRecentDocs)
 		addSeparator();

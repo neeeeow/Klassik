@@ -18,6 +18,7 @@ plasma_add_applet(com.github.neeeeow.klassik.kmenu
         kmenuapplet.cpp
         recentdocsmenu.cpp
         settingsmenu.cpp
+        systemmenu.cpp
         popupmenutitle.h
         popupmenusearch.h
         ${KLASSIK_COMMON_DIR}/sunkenappletframe.cpp
@@ -42,6 +43,7 @@ target_link_libraries(com.github.neeeeow.klassik.kmenu PRIVATE
     KF6::KIOWidgets
     KF6::ConfigGui
     KF6::ConfigQml
+    KF6::KIOFileWidgets
     Plasma::Plasma
     Plasma::ActivitiesStats
     Plasma::Activities
