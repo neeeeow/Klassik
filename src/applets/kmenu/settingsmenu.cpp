@@ -7,10 +7,10 @@
 #include "settingsmenu.h"
 #include "kmenuapplet.h"
 
-#include <KLocalizedString>
-#include <KService>
-
-#include <PlasmaActivities/Stats/Query>
+#include <KPluginFactory>
+#include <KAuthorized>
+#include <KFileUtils>
+#include <KDesktopFile>
 
 SettingsMenu::SettingsMenu(KMenuApplet *applet, QWidget *parent)
 	: ServiceMenu(applet, parent)
@@ -30,52 +30,132 @@ SettingsMenu::initialize()
 	if (initialized()) return;
 	ServiceMenu::initialize();
 
-	using namespace KActivities::Stats;
-	using namespace KActivities::Stats::Terms;
+	// Add system settings action at the top of the menu
+	const KService::Ptr systemsettings = KService::serviceByDesktopName(QStringLiteral("systemsettings"));
+	if (QAction *settingsAction = createActionFromService(systemsettings))
+		addAction(settingsAction);
 
-	const auto query = AllResources | Agent(QStringLiteral("org.kde.systemsettings")) | HighScoredFirst | Limit(5);
+	// Load KCM meta data
+	m_pluginModules = findKCMsMetaData();
 
-	if (m_settingsList)
-	    m_settingsList->deleteLater();
-    m_settingsList = new ResultModel(query, this);	
+	// Load category data
+	const QStringList dirs = QStandardPaths::locateAll(QStandardPaths::GenericDataLocation, QStringLiteral("systemsettings/categories"), QStandardPaths::LocateDirectory);
+	m_categories = KFileUtils::findAllUniqueFiles(dirs, QStringList(QStringLiteral("*.desktop")));
 
-	connectResultModel(m_settingsList, &SettingsMenu::updateSettingsMenu);
+	// Populate our settings tree
+	SettingsItem root;
+	root.isCategory = true;
+	buildSettingsTree(&root);
 
-	updateSettingsMenu();
-
+	// Populate the menu itself
+	if (!root.children.isEmpty()) {
+		addSeparator();
+		populateMenu(&root, this);
+	}
+	
 	setInitialized(true);
 }
 
-void
-SettingsMenu::updateSettingsMenu()
+QList<KPluginMetaData>
+SettingsMenu::findKCMsMetaData()
 {
-	if (!m_settingsList) // sanity check
-		return;
-	
-	clear();
+	QList<KPluginMetaData> modules;
+	std::set<QString> uniquePluginIds;
 
-	// Add settings action
-	const KService::Ptr systemsettings = KService::serviceByDesktopName(QStringLiteral("systemsettings"));
-	if (QAction *action = createActionFromService(systemsettings)) {
-		addAction(action);
+	QList<KPluginMetaData> metaDataList = KPluginMetaData::findPlugins(QStringLiteral("plasma/kcms"));
+	metaDataList << KPluginMetaData::findPlugins(QStringLiteral("plasma/kcms/systemsettings"));
+	metaDataList << KPluginMetaData::findPlugins(QStringLiteral("plasma/kcms/systemsettings_qwidgets"));
+	for (const auto &m : std::as_const(metaDataList)) {
+		if (!KAuthorized::authorizeControlModule(m.pluginId()))
+            continue;
+		modules << m;
+		const bool inserted = uniquePluginIds.insert(m.pluginId()).second;
+		if (!inserted)
+            qWarning() << "the plugin" << m.pluginId() << " was found in multiple namespaces";
 	}
-	
-	addSeparator();
+	std::stable_sort(modules.begin(), modules.end(), [](const KPluginMetaData &m1, const KPluginMetaData &m2) {
+        return QString::compare(m1.pluginId(), m2.pluginId(), Qt::CaseInsensitive) < 0;
+    });
 
-	QList<QAction*> actionList;
-	for (int i=0; i < m_settingsList->rowCount(); ++i) {
-		const QModelIndex index = m_settingsList->index(i,0);
-		const QString storageId = QUrl(m_settingsList->data(index, KActivities::Stats::ResultModel::ResourceRole).toString()).path();
-		const KService::Ptr service = KService::serviceByStorageId(storageId);
-		QAction *action = createActionFromService(service);
-		if (action)
-			actionList.append(action);
+	return modules;
+}
+
+void
+SettingsMenu::buildSettingsTree(SettingsItem *parent)
+{
+	// Look for categories
+	for (const QString &category : std::as_const(m_categories)) {
+		const KDesktopFile file(category);
+		const KConfigGroup entry = file.desktopGroup();
+		const QString parentCategory = entry.readEntry("X-KDE-System-Settings-Parent-Category");
+		const QString parentCategory2 = entry.readEntry("X-KDE-System-Settings-Parent-Category-V2");
+
+		if (parentCategory == parent->id ||
+			// V2 entries must not be empty if they want to become a proper category.
+			(!parentCategory2.isEmpty() && parentCategory2 == parent->id)) {
+
+			const QString id = entry.readEntry("X-KDE-System-Settings-Category");
+			if (id == QStringLiteral("rootcategory"))
+				continue; // skip the root category
+
+			// Create category settings item
+			auto item = new SettingsItem();
+			item->isCategory = true;
+			item->id = id;
+			item->name = entry.readEntry("Name");
+			item->icon = entry.readEntry("Icon");
+			item->weight = entry.readEntry("X-KDE-Weight", 100);
+			parent->children.append(item);
+			buildSettingsTree(item); // Recurse for the new item
+		}
 	}
 
-	if (actionList.isEmpty()) {
-		QAction *emptyAction = addAction(i18n("No Entries"));
-		emptyAction->setEnabled(false);
-	} else {
-		addActions(actionList);
+	// Add KCMs
+	for (const auto &metaData : std::as_const(m_pluginModules)) {
+		const QString parentCategory = metaData.value(QStringLiteral("X-KDE-System-Settings-Parent-Category"));
+		const QString parentCategory2 = metaData.value(QStringLiteral("X-KDE-System-Settings-Parent-Category-V2"));
+
+		if (!parent->id.isEmpty() &&
+			(parentCategory == parent->id || parentCategory2 == parent->id)) {
+
+			// Create KCM (i.e. isCategory = false) settings item
+			auto item = new SettingsItem();
+			item->isCategory = false;
+			item->id = metaData.pluginId();
+			item->name = metaData.name();
+			item->icon = metaData.iconName();
+			item->weight = metaData.value(QStringLiteral("X-KDE-Weight"), 100);
+			parent->children.append(item);
+		}
+	}
+
+	// Sort children by weight
+	std::stable_sort(parent->children.begin(), parent->children.end(), [](const SettingsItem *i1, const SettingsItem *i2) {
+		if (!i1 || !i2)
+			return i1 < i2;
+		return i1->weight < i2->weight;
+	});
+}
+
+void
+SettingsMenu::populateMenu(SettingsItem *item, ServiceMenu *menu)
+{
+	for (SettingsItem *child : std::as_const(item->children)) {
+		if (child->isCategory) {
+			// If it's a category, add a sub menu for each child and recurse
+			if (!child->children.isEmpty()) {
+				auto *subMenu = new ServiceMenu(child->name.replace(QLatin1Char('&'), QStringLiteral("&&")), applet(), menu);
+				subMenu->initialize();
+				subMenu->setIcon(QIcon::fromTheme(child->icon));
+				menu->addMenu(subMenu);
+				populateMenu(child, subMenu);
+			}
+		} else {
+			// If it's not a category, then it's a KCM, so just generate a service from the id
+			// and add it to the menu
+			const KService::Ptr service = KService::serviceByStorageId(child->id);
+			if (QAction *action = menu->createActionFromService(service))
+				menu->addAction(action);
+		}
 	}
 }
