@@ -31,7 +31,7 @@ private:
 		QString id;
 		QString name;
 		QString icon;
-		int weight = 100;
+		int weight = 100; // default weight
 
 		QList<SettingsItem*> children;
 
@@ -50,5 +50,5 @@ private:
 	void buildSettingsTree(SettingsItem *parent);
 
 	// Adds a settingsitem (and all of its children) to a given menu
-	void populateMenu(SettingsItem *item, ServiceMenu *menu);
+	void populateMenu(const SettingsItem *item, ServiceMenu *menu);
 };

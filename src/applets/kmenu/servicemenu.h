@@ -44,7 +44,7 @@ public:
 	QAction* createActionFromUrl(const QUrl &url);
 	QAction* createFileExplorerActionFromUrl(const QUrl &url);
 	QList<QAction *> createActionsFromServiceActions(const KService::Ptr &service);
-	QList<QAction *> createActionsFromServiceGroup(const KServiceGroup::Ptr &root);
+	QList<QAction *> createActionsFromServiceGroup(const KServiceGroup::Ptr &group);
 
 protected:   
 	// Returns and sets the initialized flag (in general, this should only ever

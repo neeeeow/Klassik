@@ -138,7 +138,7 @@ SettingsMenu::buildSettingsTree(SettingsItem *parent)
 }
 
 void
-SettingsMenu::populateMenu(SettingsItem *item, ServiceMenu *menu)
+SettingsMenu::populateMenu(const SettingsItem *item, ServiceMenu *menu)
 {
 	for (SettingsItem *child : std::as_const(item->children)) {
 		if (child->isCategory) {

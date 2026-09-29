@@ -105,7 +105,7 @@ ServiceMenu::createActionFromService(const KService::Ptr &service, const QUrl &u
 	if (!service || !service->isValid())
 		return nullptr;
 	
-	QAction *action = new QAction(QIcon::fromTheme(service->icon()), service->name().replace(QLatin1Char('&'), QStringLiteral("&&")), this);
+	auto *action = new QAction(QIcon::fromTheme(service->icon()), service->name().replace(QLatin1Char('&'), QStringLiteral("&&")), this);
 
     action->setData(QVariant::fromValue(service)); // Store the KService
 	action->setToolTip(service->comment()); // Set the action tooltip
@@ -138,7 +138,7 @@ ServiceMenu::createActionFromUrl(const QUrl &url)
 	const QMimeType mime = db.mimeTypeForUrl(url);
 	const QIcon icon = QIcon::fromTheme(mime.iconName());
 
-	QAction *action = new QAction(icon, fileName, this);
+	auto *action = new QAction(icon, fileName, this);
 	action->setData(url);
 	
 	connect(action, &QAction::triggered, this, [url]() {
@@ -162,7 +162,7 @@ ServiceMenu::createFileExplorerActionFromUrl(const QUrl &url)
 	if (!url.isValid())
 		return nullptr;
 	
-    QAction *action = new QAction(QIcon::fromTheme(QStringLiteral("system-file-manager")), i18n("Open in File Explorer"), this);
+    auto *action = new QAction(QIcon::fromTheme(QStringLiteral("system-file-manager")), i18n("Open in File Explorer"), this);
 	connect(action, &QAction::triggered, this, [url]() {
 		auto *job = new KIO::OpenFileManagerWindowJob();
 		job->setUiDelegate(new KNotificationJobUiDelegate(KJobUiDelegate::AutoHandlingEnabled));
@@ -190,7 +190,7 @@ ServiceMenu::createActionsFromServiceActions(const KService::Ptr &service)
 			continue;
 		}
 
-		QAction *action = new QAction(QIcon::fromTheme(serviceAction.icon()), name, this);   
+		auto *action = new QAction(QIcon::fromTheme(serviceAction.icon()), name, this);   
 		connect(action, &QAction::triggered, this, [service, exec]() {
 			auto *job = new KIO::CommandLauncherJob(exec);
 			job->setUiDelegate(new KNotificationJobUiDelegate(KJobUiDelegate::AutoHandlingEnabled));
@@ -208,58 +208,36 @@ ServiceMenu::createActionsFromServiceActions(const KService::Ptr &service)
 }
 
 QList<QAction *>
-ServiceMenu::createActionsFromServiceGroup(const KServiceGroup::Ptr &root)
+ServiceMenu::createActionsFromServiceGroup(const KServiceGroup::Ptr &group)
 {
-	// TODO: improve this function
 	QList<QAction *> actions;
-
-	if (!root || !root->isValid())
+	if (!group || !group->isValid())
 		return actions;
 
-	// Define a recursive lambda for traversing the service groups and populating the submenus
-	auto populateSubmenu = [&](this auto&& self, ServiceMenu *parent, KServiceGroup::Ptr group) -> void {
-		for (const auto &entry : group->entries(true)) {
-			if (entry->isType(KST_KService)) {
-				// If the entry is a service, it's an individual application
-				const KService::Ptr service(static_cast<KService*>(entry.data()));
-
-				// Create the entry
-				QAction *action = parent->createActionFromService(service, QUrl());
-				if (!action)
-					continue;
-
-				if (parent == this) { // Don't add top-level actions to the menu, add them to our QList.
-					actions.append(action);
-				} else
-					parent->addAction(action);
-			} else if (entry->isType(KST_KServiceGroup)) {
-				// If the entry is a service group, we need to make a submenu and recurse through this function
-				const KServiceGroup::Ptr subGroup(static_cast<KServiceGroup*>(entry.data()));
-				if (subGroup->childCount() == 0)
-					continue;
+	const auto entries = group->entries(true);
+	for (const auto &entry : entries) {
+		if (entry->isType(KST_KService)) {
+			// If the entry is a service, it's an individual application
+			const KService::Ptr service(static_cast<KService*>(entry.data()));
+			if (QAction *action = createActionFromService(service))
+				actions.append(action);
+		} else if (entry->isType(KST_KServiceGroup)) {
+			// If the entry is a service group, we need to make a submenu and recurse through this function
+			const KServiceGroup::Ptr subGroup(static_cast<KServiceGroup*>(entry.data()));
+			if (subGroup->childCount() == 0)
+				continue;
 					
-				ServiceMenu *subMenu = new ServiceMenu(subGroup->caption().replace(QStringLiteral("&"), QStringLiteral("&&")), applet(), parent);
-				subMenu->initialize();
-				subMenu->setIcon(QIcon::fromTheme(subGroup->icon()));
+			auto *subMenu = new ServiceMenu(subGroup->caption().replace(QStringLiteral("&"), QStringLiteral("&&")), applet(), this);
+			subMenu->initialize();
+			subMenu->setIcon(QIcon::fromTheme(subGroup->icon()));
+			subMenu->addActions(subMenu->createActionsFromServiceGroup(subGroup));
 
-				if (parent == this) {
-					QAction *action = new QAction(subMenu->icon(), subMenu->title(), parent);
-					action->setMenu(subMenu);
-					action->setData(QVariant::fromValue(subGroup));
-				    actions.append(action);						
-				} else {
-					QAction *action = parent->addMenu(subMenu);
-					action->setData(QVariant::fromValue(subGroup));
-				}
-
-				self(subMenu, subGroup);
-			}
+			auto *action = new QAction(subMenu->icon(), subMenu->title(), this);
+			action->setMenu(subMenu);
+			action->setData(QVariant::fromValue(subGroup));
+			actions.append(action);	
 		}
-			
-	};
-
-	populateSubmenu(this, root);
-	
+	}
 	return actions;
 }
 
