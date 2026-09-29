@@ -17,12 +17,11 @@ class KMenu final : public ServiceMenu
 public:
 	explicit KMenu(KMenuApplet *applet, QWidget *parent = nullptr);
 	~KMenu() override = default;
-	
+
+	void initialize() override;
 	void reinitialize() override;
 
-protected:
-	void initialize() override;
-	
+protected:	
 	void changeEvent(QEvent *event) override;
 	void paintEvent(QPaintEvent *e) override;
 
@@ -39,8 +38,9 @@ private:
 		bool showSearch = true;
 		bool showRecentApps = true;
 		int numRecentApps = 3;
-		bool showSettings = true;
 		bool showRecentDocs = true;
+		bool showSystem = true;
+		bool showSettings = true;		
 	};
 	Config m_config;	
 		

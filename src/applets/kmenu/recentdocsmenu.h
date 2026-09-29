@@ -17,7 +17,6 @@ public:
 	explicit RecentDocsMenu(const QString &title, KMenuApplet *applet, QWidget *parent = nullptr);
 	~RecentDocsMenu() override = default;
 
-protected:
 	void initialize() override;
 	
 private:

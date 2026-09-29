@@ -34,11 +34,6 @@
             <default>3</default>
         </entry>
 
-        <entry name="showSettings" type="Bool">
-            <label>Display the Settings menu</label>
-            <default>true</default>
-        </entry>
-
         <entry name="showRecentDocs" type="Bool">
             <label>Display the Recent Documents menu</label>
             <default>true</default>
@@ -46,6 +41,16 @@
         <entry name="numRecentDocs" type="Int">
             <label>Number of recent documents to display</label>
             <default>15</default>
+        </entry>
+
+        <entry name="showSystem" type="Bool">
+            <label>Display the System menu</label>
+            <default>true</default>
+        </entry>
+
+        <entry name="showSettings" type="Bool">
+            <label>Display the Settings menu</label>
+            <default>true</default>
         </entry>
     </group>
 

@@ -78,8 +78,9 @@ KMenu::initialize()
 		m_config.showSearch     = applet()->getConfigValue<bool>(QStringLiteral("showSearch"));
 		m_config.showRecentApps = applet()->getConfigValue<bool>(QStringLiteral("showRecentApps"));
 		m_config.numRecentApps  = applet()->getConfigValue<int>(QStringLiteral("numRecentApps"));
-		m_config.showSettings   = applet()->getConfigValue<bool>(QStringLiteral("showSettings"));
 		m_config.showRecentDocs = applet()->getConfigValue<bool>(QStringLiteral("showRecentDocs"));
+		m_config.showSystem     = applet()->getConfigValue<bool>(QStringLiteral("showSystem"));	
+		m_config.showSettings   = applet()->getConfigValue<bool>(QStringLiteral("showSettings"));
 	}
 	
 	loadSidePixmap();
@@ -108,23 +109,26 @@ KMenu::initialize()
 	// NB: we do not need to worry about memory leaks here, since
 	// our actionEvent handler automatically deletes menus associated with
 	// any QAction that gets deleted
-	if (m_config.showSettings) {
-		// Settings submenu
-	    auto *settingsMenu = new SettingsMenu(i18n("Settings"), applet(), this);
-		settingsMenu->setIcon(QIcon::fromTheme(QStringLiteral("preferences-desktop")));
-		addMenu(settingsMenu);
-	}
 	if (m_config.showRecentDocs) {
 		// Recent documents submenu
 		auto *documentsMenu = new RecentDocsMenu(i18n("Recent Documents"), applet(), this);
 		documentsMenu->setIcon(QIcon::fromTheme(QStringLiteral("document-open-recent")));
 		addMenu(documentsMenu);
 	}
-	auto *systemMenu = new SystemMenu(i18n("My System"), applet(), this);
-	systemMenu->setIcon(QIcon::fromTheme(QStringLiteral("computer")));
-	addMenu(systemMenu);
+	if (m_config.showSystem) {
+		// My system submenu
+		auto *systemMenu = new SystemMenu(i18n("My System"), applet(), this);
+		systemMenu->setIcon(QIcon::fromTheme(QStringLiteral("computer")));
+		addMenu(systemMenu);
+	}
+	if (m_config.showSettings) {
+		// Settings submenu
+	    auto *settingsMenu = new SettingsMenu(i18n("Settings"), applet(), this);
+		settingsMenu->setIcon(QIcon::fromTheme(QStringLiteral("preferences-desktop")));
+		addMenu(settingsMenu);
+	}
 
-	if (m_config.showSettings || m_config.showRecentDocs)
+	if (m_config.showRecentDocs || m_config.showSystem || m_config.showSettings)
 		addSeparator();
 
 	// Add the run command option
@@ -139,7 +143,7 @@ KMenu::initialize()
 			connect(action, &QAction::triggered, &m_session, &SessionManagement::switchUser);
 		}
 		if (m_session.canLock()) {
-			action = addAction(QIcon::fromTheme(QStringLiteral("system-lock-screen")), i18n("Lock"));
+			action = addAction(QIcon::fromTheme(QStringLiteral("system-lock-screen")), i18n("Lock Session"));
 			connect(action, &QAction::triggered, &m_session, &SessionManagement::lock);
 		}
 		if (m_session.canLogout()) {

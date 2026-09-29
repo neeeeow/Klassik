@@ -29,10 +29,12 @@ KCMUtils.SimpleKCM {
     property alias cfg_showRecentApps: showRecentApps.checked
     property alias cfg_numRecentApps: numRecentApps.value
 
-    property alias cfg_showSettings: showSettings.checked
-
     property alias cfg_showRecentDocs: showRecentDocs.checked
     property alias cfg_numRecentDocs: numRecentDocs.value
+
+    property alias cfg_showSystem: showSystem.checked
+
+    property alias cfg_showSettings: showSettings.checked
 
     Kirigami.FormLayout {
         anchors.left: parent.left
@@ -135,17 +137,8 @@ KCMUtils.SimpleKCM {
         }
 
         CheckBox {
-            id: showSettings
-            text: i18n("Display settings submenu")
-        }
-
-        Item {
-            Kirigami.FormData.isSection: true
-        }
-
-        CheckBox {
             id: showRecentDocs
-            text: i18n("Display recent documents")
+            text: i18n("Display Recent Documents menu")
         }
         RowLayout {
             enabled: showRecentDocs.checked
@@ -160,6 +153,24 @@ KCMUtils.SimpleKCM {
                 from: 1
                 to: 20
             }
+        }
+
+        Item {
+            Kirigami.FormData.isSection: true
+        }
+
+        CheckBox {
+            id: showSystem
+            text: i18n("Display My System menu")
+        }
+
+        Item {
+            Kirigami.FormData.isSection: true
+        }
+
+        CheckBox {
+            id: showSettings
+            text: i18n("Display Settings menu")
         }
     }
 }

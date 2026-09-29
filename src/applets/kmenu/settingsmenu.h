@@ -19,7 +19,6 @@ public:
 	explicit SettingsMenu(const QString &title, KMenuApplet *applet, QWidget *parent = nullptr);
 	~SettingsMenu() override = default;
 
-protected:
 	void initialize() override;
 	
 private:
