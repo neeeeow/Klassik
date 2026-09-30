@@ -71,9 +71,13 @@ private:
 	// Functions for populating the menu
 	void createRecentMenuItems();
 	void updateRecent();
-	void createApplicationsItems();
-	void updateSearchResults();
+	void createApplicationsItems();   
 	void updateApplications();
+
+	// Enables/disables actions based on a search filter. If the search filter text
+	// is empty, all actions are enabled. Returns a bool corresponding to whether or
+	// not any actions in the hierarchy are enabled.
+	bool applySearchFilter(const QList<QAction *> &actions, QStringView text);
 
 	// Translate mouse event, allowing actions to be highlighted if the
 	// mouse is over the side image 

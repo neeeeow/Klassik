@@ -210,6 +210,8 @@ ServiceMenu::createActionsFromServiceActions(const KService::Ptr &service)
 QList<QAction *>
 ServiceMenu::createActionsFromServiceGroup(const KServiceGroup::Ptr &group)
 {
+	/* Takes a KServiceGroup, and returns a QList of actions corresponding to every
+	   KService in the group, all in the correct hierarchy. */
 	QList<QAction *> actions;
 	if (!group || !group->isValid())
 		return actions;

@@ -189,7 +189,7 @@ KMenu::reinitialize()
 void
 KMenu::setMargins()
 {
-	if (m_config.drawSideImage) {
+	if (m_config.drawSideImage && (!m_sidePixmap.isNull())) {
 		setContentsMargins(
 			layoutDirection() == Qt::LeftToRight ? m_sidePixmap.width() : 0,
 			0,
@@ -275,7 +275,7 @@ KMenu::createRecentMenuItems()
 	using namespace KActivities::Stats;
 	using namespace KActivities::Stats::Terms;
 	
-	// Run our query once.
+	// Create the query used for tracking the most used applications
 	const auto query = UsedResources
 		| HighScoredFirst		
 		| Agent::any()
@@ -298,9 +298,9 @@ KMenu::createRecentMenuItems()
 void
 KMenu::updateRecent()
 {
-	/* Updates the most used applications section. It probably *shouldn't* be called updateRecent,
-	   but we follow the convention used by the original KDE 3 KMenu, even if it doesn't
-	   make sense */
+	/* Updates and populates the most used applications section. It probably *shouldn't* be
+	   called updateRecent, but we follow the convention used by the original KDE 3 KMenu,
+	   even if it doesn't make sense. */
 	
 	cleanupActionList(m_recentActions);
 	if (!m_recentApps)
@@ -308,7 +308,7 @@ KMenu::updateRecent()
 
 	// Add the section header here so we can clear it if necessary
 	if (m_config.showTitles) {
-		PopupMenuTitle *recentHeader = new PopupMenuTitle(i18n("Most Used Applications"), this);
+	    auto *recentHeader = new PopupMenuTitle(i18n("Most Used Applications"), this);
 		m_recentActions.append(recentHeader);
 	}
 
@@ -320,14 +320,13 @@ KMenu::updateRecent()
 		if (resourceUrl.scheme() != QStringLiteral("applications"))
 			continue; // The resource url should always point to an application, but just to be safe
 		const QString storageId = resourceUrl.path();
-		const KService::Ptr service = KService::serviceByStorageId(storageId);
-		QAction *action = createActionFromService(service);
-		if (action)
+		const KService::Ptr service = KService::serviceByStorageId(storageId);		
+		if (QAction *action = createActionFromService(service))
 			actionList.append(action);
 	}
 
 	if (actionList.isEmpty()) {
-		QAction *emptyAction = new QAction(i18n("No Entries"), this);
+	    auto *emptyAction = new QAction(i18n("No Entries"), this);
 		emptyAction->setEnabled(false);
 		m_recentActions.append(emptyAction);	
 	} else {	
@@ -346,12 +345,14 @@ KMenu::createApplicationsItems()
 {	
 	// Create the search bar container
 	if (m_config.showSearch) {
-		PopupMenuSearch *search = new PopupMenuSearch(i18n("Press '/' to search..."), Qt::Key_Slash, this);
+	    auto *search = new PopupMenuSearch(i18n("Press '/' to search..."), Qt::Key_Slash, this);
 		insertAction(m_applicationsAnchor, search);				
 		if (QLineEdit *lineEdit = search->lineEdit()) {
 			connect(this, &QMenu::aboutToHide, lineEdit, &QLineEdit::clear, Qt::UniqueConnection);
 			connect(this, &QMenu::aboutToHide, lineEdit, &QLineEdit::clearFocus, Qt::UniqueConnection);
-			connect(lineEdit, &QLineEdit::textChanged, this, &KMenu::updateSearchResults);
+			connect(lineEdit, &QLineEdit::textChanged, this, [this](QStringView text) {
+			    applySearchFilter(m_applicationActions, text.trimmed());
+			});
 		}
 	}
 	
@@ -360,53 +361,15 @@ KMenu::createApplicationsItems()
 }
 
 void
-KMenu::updateSearchResults()
-{
-	QLineEdit *lineEdit = qobject_cast<QLineEdit *>(sender());
-	if (!lineEdit)
-		return;
-
-	const QString text = lineEdit->text();
-	
-	auto setActionStates = [&](this auto&& self, QAction *parent, const QList<QAction *> &children) -> bool {
-		bool enableParent = false;
-			
-		for (QAction *action : children) {
-			if (QMenu *subMenu = action->menu()) {
-				// If the action is a sub menu, recurse through it and check to see if the current action (which
-				// opens a sub menu) must be enabled, if so, set enableParent to true for now.
-			    enableParent |= self(action, subMenu->actions());
-			} else {					
-				if (text.isEmpty() || (action->text().left(text.length()).compare(text, Qt::CaseInsensitive) == 0)) {
-					// Item must be enabled either if the search string matches the action name, or if the search bar is empty
-					enableParent = true;
-					action->setEnabled(true);
-				} else
-					action->setEnabled(false);
-			}
-		}
-
-		if (parent)
-			parent->setEnabled(enableParent);
-
-		return enableParent;
-	};
-
-	setActionStates(nullptr, m_applicationActions);
-}
-
-void
 KMenu::updateApplications()
-{
+{	
+	// Remove old application actions
 	cleanupActionList(m_applicationActions);
-	
-	// The root of the applications menu
-    const KServiceGroup::Ptr root = KServiceGroup::root();
 
-	const QList<QAction *> actionList = createActionsFromServiceGroup(root);
-
+	// Construct our new list of actions
+	const QList<QAction *> actionList = createActionsFromServiceGroup(KServiceGroup::root());
 	if (actionList.isEmpty()) {
-		QAction *emptyAction = new QAction(i18n("No Entries"), this);
+	    auto *emptyAction = new QAction(i18n("No Entries"), this);
 		emptyAction->setEnabled(false);
 		m_applicationActions.append(emptyAction);
 	} else {
@@ -417,9 +380,35 @@ KMenu::updateApplications()
 	// the actions to the menu. This behaviour is fine (although
 	// it should never really be null when updateApplications
 	// is called).
-	insertActions(m_applicationsAnchor, m_applicationActions);
-	
+	insertActions(m_applicationsAnchor, m_applicationActions);	
 }
+
+bool
+KMenu::applySearchFilter(const QList<QAction *> &actions, QStringView text)
+{
+   	bool anyEnabled = false;
+	for (QAction *action : actions) {
+		if (action->isSeparator())
+			continue;
+
+		bool enabled = false; // Whether or not to enable the individual action
+		
+		if (QMenu *subMenu = action->menu()) {
+			enabled = applySearchFilter(subMenu->actions(), text);
+		} else {
+			const QString actionText = action->text().replace(QStringLiteral("&&"), QStringLiteral("&")); // replace to handle mnemonics
+			if (text.isEmpty() || actionText.contains(text, Qt::CaseInsensitive))
+				// Item must be enabled either if the search string matches the action name, or if the search bar is empty
+				enabled = true;
+		}
+
+	    anyEnabled |= enabled;
+		action->setEnabled(enabled);
+	}
+
+	return anyEnabled;
+}
+
 
 /* Mouse events adapted from KDE 3.5 kicker source code.
    Copyright (c) 1996-2000 the KDE 3 kicker authors.
