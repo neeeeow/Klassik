@@ -10,44 +10,14 @@ import QtQuick.Controls
 
 import org.kde.plasma.core as PlasmaCore
 import org.kde.plasma.plasmoid
+import org.kde.plasma.clock
 
 PlasmoidItem {
     id: root
 
-    property string timeString: "99:99" // use a default value just in case
-    property string dateString: ""
-    Timer { // Internal timer used for keeping track of our clock
-        id: clockTimer
-        interval: 500
-        running: true
-        repeat: true
-        triggeredOnStart: true
-
-        property bool showDots: true
-
-        onTriggered: {
-            var time = new Date();
-
-            clockTimer.showDots = !clockTimer.showDots;
-            var hourString = Qt.formatTime(time, "hh");
-            var minuteString = Qt.formatTime(time, "mm");
-            var secondString = Qt.formatTime(time, "ss");
-            var separator = (Plasmoid.configuration.blinkingDots && Plasmoid.configuration.useDigitalClock) ? (clockTimer.showDots ? ":" : " ") : ":";
-
-            var timeString;
-            if (Plasmoid.configuration.showSeconds) {
-                timeString = hourString + separator + minuteString + separator + secondString;
-            } else {
-                timeString = hourString + separator + minuteString;
-            }
-
-            if (root.timeString !== timeString)
-                root.timeString = timeString;
-
-            var dateString = Qt.formatDate(time, "dd/MM/yyyy");
-            if (root.dateString !== dateString)
-                root.dateString = dateString;
-        }
+    Clock {
+        id: clock
+        trackSeconds: Plasmoid.configuration.showSeconds
     }
 
     preferredRepresentation: fullRepresentation
@@ -65,16 +35,18 @@ PlasmoidItem {
             var _showSeconds = Plasmoid.configuration.showSeconds; // forces geometry to be recomputed if we change second config
             if (isHorizontal) {
                 return Math.max(clockLoader.item ? clockLoader.item.preferredWidthForHeight(clockLoader.item.height) : 0, date.visible ? date.implicitWidth : 0);
-            } else
+            } else {
                 return -1;
+            }
         }
 
         Layout.preferredHeight: {
             var _showSeconds = Plasmoid.configuration.showSeconds;
             if (isVertical) {
                 return (clockLoader.item ? clockLoader.item.preferredHeightForWidth(clockLoader.item.width) : 0) + (date.visible ? date.implicitHeight : 0);
-            } else
+            } else {
                 return -1;
+            }
         }
 
         // Ensure the width/height *never* deviates from our computed values
@@ -82,16 +54,6 @@ PlasmoidItem {
         Layout.maximumWidth: isHorizontal ? Layout.preferredWidth : -1
         Layout.minimumHeight: isVertical ? Layout.preferredHeight : -1
         Layout.maximumHeight: isVertical ? Layout.preferredHeight : -1
-
-        Connections {
-            target: Plasmoid.configuration
-            function onValueChanged() {
-                clockTimer.triggered();
-
-                if (clockLoader.item)
-                    clockLoader.item.updateImage();
-            }
-        }
 
         Loader {
             id: clockLoader
@@ -111,7 +73,37 @@ PlasmoidItem {
             Component {
                 id: digitalComponent
                 DigitalClock {
-                    text: root.timeString
+                    id: digitalClock
+                    readonly property bool blinkingDots: Plasmoid.configuration.blinkingDots
+                    property bool dotsVisible: true // whether or not the dots are visible *if* blinkingDots is enabled
+
+                    text: {
+                        if (dotsVisible || (!blinkingDots)) {
+                            return Qt.formatTime(clock.dateTime, Plasmoid.configuration.showSeconds ? "HH:mm:ss" : "HH:mm");
+                        } else {
+                            return Qt.formatTime(clock.dateTime, Plasmoid.configuration.showSeconds ? "HH mm ss" : "HH mm");
+                        }
+                    }
+
+                    Timer {
+                        id: blinkingDotsTimer
+                        interval: 500
+                        repeat: true
+                        running: digitalClock.blinkingDots
+                        onTriggered: digitalClock.dotsVisible = !digitalClock.dotsVisible
+                    }
+
+                    Connections {
+                        target: clock
+                        function onDateTimeChanged() {
+                            if (digitalClock.blinkingDots) {
+                                // Start each time update with the dots visible. This is technically not 100% accurate per KDE 3 behaviour, but
+                                // it looks way more consistent.
+                                digitalClock.dotsVisible = true;
+                                blinkingDotsTimer.restart();
+                            }
+                        }
+                    }
                 }
             }
 
@@ -120,12 +112,8 @@ PlasmoidItem {
                 AnalogClock {
                     id: analogClock
                     Connections {
-                        target: root
-                        function onTimeStringChanged() {
-                            // the clock has absolutely 0 dependance on timeString, however, it's
-                            // very useful for determining when we need to do a redraw, instead of
-                            // blindly doing on every tick. since timeString already lives within root
-                            // it's been loaded in to memory, there are no penalties there
+                        target: clock
+                        function onDateTimeChanged() {
                             analogClock.updateImage()
                         }
                     }
@@ -141,7 +129,7 @@ PlasmoidItem {
             verticalAlignment: Text.AlignVCenter
             font.pointSize: 8
             visible: Plasmoid.configuration.showDate
-            text: dateString
+            text: Qt.formatDate(clock.dateTime, Qt.locale().dateFormat(Locale.ShortFormat))
         }
     }
 }
