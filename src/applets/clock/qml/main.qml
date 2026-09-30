@@ -131,5 +131,19 @@ PlasmoidItem {
             visible: Plasmoid.configuration.showDate
             text: Qt.formatDate(clock.dateTime, Qt.locale().dateFormat(Locale.ShortFormat))
         }
+
+        MouseArea {
+            id: mouseArea
+            anchors.fill: parent
+            hoverEnabled: true
+            acceptedButtons: Qt.LeftButton
+
+            PlasmaCore.ToolTipArea {
+                anchors.fill: parent
+                mainText: Qt.formatTime(clock.dateTime, "HH:mm");
+                subText: Qt.formatDate(clock.dateTime, Qt.locale().dateFormat(Locale.LongFormat))
+                icon: "preferences-system-time"
+            }
+        }
     }
 }
