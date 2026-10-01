@@ -20,6 +20,11 @@ PlasmoidItem {
         trackSeconds: Plasmoid.configuration.showSeconds
     }
 
+    CalendarPopup {
+        id: calendar
+        location: Plasmoid.location
+    }
+
     preferredRepresentation: fullRepresentation
     fullRepresentation: ColumnLayout {
         id: mainLayout
@@ -137,6 +142,12 @@ PlasmoidItem {
             anchors.fill: parent
             hoverEnabled: true
             acceptedButtons: Qt.LeftButton
+
+            onClicked: mouse => {
+                if (mouse.button == Qt.LeftButton) {
+                    calendar.togglePopup();
+                }
+            }
 
             PlasmaCore.ToolTipArea {
                 anchors.fill: parent

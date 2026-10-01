@@ -11,6 +11,7 @@ plasma_add_applet(com.github.neeeeow.klassik.clock
         qml/ConfigGeneral.qml
     CPP_SOURCES
         clock.cpp
+        calendar.cpp
     RESOURCES
         main.xml
         lcd.png
@@ -19,6 +20,7 @@ plasma_add_applet(com.github.neeeeow.klassik.clock
 
 target_link_libraries(com.github.neeeeow.klassik.clock PRIVATE
     klassik_painteditem
+    klassik_panelpopupitem
     Qt::Core
     Qt::Widgets
     Qt::Qml
