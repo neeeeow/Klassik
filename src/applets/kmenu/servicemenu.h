@@ -24,7 +24,7 @@ class ServiceMenu : public QMenu
 public:
 	explicit ServiceMenu(KMenuApplet *applet, QWidget *parent = nullptr);
 	explicit ServiceMenu(const QString &title, KMenuApplet *applet, QWidget *parent = nullptr);
-	virtual ~ServiceMenu() = default;
+    ~ServiceMenu() override = default;
 
 	// Initializes the menu (not called automatically!)
 	// This must be called by any subclass, as it enables/disables tooltips

@@ -19,7 +19,7 @@ class PaintedItem : public QQuickItem
 	Q_OBJECT
 public:
 	PaintedItem(QQuickItem *parent = nullptr);
-	virtual ~PaintedItem() = default;	  
+    ~PaintedItem() override = default;	  
 
 	Q_INVOKABLE void updateImage();
 
