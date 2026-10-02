@@ -50,10 +50,6 @@
       <label>Values from TaskManager::TasksModel::SortMode</label>
       <default>1</default>
     </entry>
-    <entry name="showToolTips" type="Bool">
-      <label>Whether to show tooltips when hovering task buttons.</label>
-      <default>true</default>
-    </entry>
     <entry name="taskMaxWidth" type="Enum">
       <label>Tune the max width of task items.</label>
       <choices>
@@ -86,10 +82,6 @@
       <label>Whether to skip minimized tasks when switching between them using the mouse wheel.</label>
       <default>true</default>
     </entry>
-    <entry name="highlightWindows" type="Bool">
-      <label>Whether to request the window manager highlight windows when hovering corresponding task tooltips.</label>
-      <default>false</default>
-    </entry>
     <entry name="middleClickAction" type="Enum">
       <label>What to do on middle-mouse click on a task button.</label>
       <choices>
@@ -104,10 +96,6 @@
     </entry>
     <entry name="indicateAudioStreams" type="Bool">
       <label>Whether to indicate applications that are playing audio.</label>
-      <default>true</default>
-    </entry>
-    <entry name="tooltipControls" type="Bool">
-      <label>Whether to show media and volume controls in the tooltip.</label>
       <default>true</default>
     </entry>
     <entry name="minimizeActiveTaskOnClick" type="Bool">

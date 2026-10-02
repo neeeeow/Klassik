@@ -37,9 +37,6 @@ PlasmoidItem {
     readonly property real taskAreaWidth: tasks.width - 2*margin
     readonly property real taskAreaHeight: tasks.height - 2*margin
 
-    property Task toolTipOpenedByClick
-    property Task toolTipAreaItem
-
     readonly property Component contextMenuComponent: Qt.createComponent("ContextMenu.qml")
     readonly property Component groupMenuComponent: Qt.createComponent("GroupMenu.qml")
     readonly property Component pulseAudioComponent: Qt.createComponent("PulseAudio.qml")
@@ -55,22 +52,10 @@ PlasmoidItem {
 
     signal requestLayout
 
-    function windowsHovered(winIds: var, hovered: bool): DBus.DBusPendingReply {
-        if (!Plasmoid.configuration.highlightWindows) {
-            return;
-        }
-        return DBus.SessionBus.asyncCall({service: "org.kde.KWin.HighlightWindow", path: "/org/kde/KWin/HighlightWindow", iface: "org.kde.KWin.HighlightWindow", member: "highlightWindows", arguments: [hovered ? winIds : []], signature: "(as)"});
-    }
-
-    function cancelHighlightWindows(): DBus.DBusPendingReply {
-        return DBus.SessionBus.asyncCall({service: "org.kde.KWin.HighlightWindow", path: "/org/kde/KWin/HighlightWindow", iface: "org.kde.KWin.HighlightWindow", member: "highlightWindows", arguments: [[]], signature: "(as)"});
-    }
-
     function activateWindowView(winIds: var): DBus.DBusPendingReply {
         if (!effectWatcher.registered) {
             return;
         }
-        cancelHighlightWindows();
         return DBus.SessionBus.asyncCall({service: "org.kde.KWin.Effect.WindowView1", path: "/org/kde/KWin/Effect/WindowView1", iface: "org.kde.KWin.Effect.WindowView1", member: "activate", arguments: [winIds.map(s => String(s))], signature: "(as)"});
     }
 
@@ -285,83 +270,51 @@ PlasmoidItem {
             }
         }
 
-        ToolTipDelegate {
-            id: openWindowToolTipDelegate
-            visible: false
-        }
+        TaskList {
+            id: taskList
+            count: tasksModel.count
 
-        TriangleMouseFilter {
-            id: tmf
-            filterTimeOut: 300
-            active: tasks.toolTipAreaItem && tasks.toolTipAreaItem.toolTipOpen
-            blockFirstEnter: false
+            LayoutMirroring.enabled: tasks.shouldBeMirrored(Plasmoid.configuration.reverseMode, Application.layoutDirection, tasks.vertical)
+            anchors {
+                left: parent.left
+                top: parent.top
+                margins: tasks.margin
+            }
 
-            edge: {
-                switch (Plasmoid.location) {
-                case PlasmaCore.Types.BottomEdge:
-                    return Qt.TopEdge;
-                case PlasmaCore.Types.TopEdge:
-                    return Qt.BottomEdge;
-                case PlasmaCore.Types.LeftEdge:
-                    return Qt.RightEdge;
-                case PlasmaCore.Types.RightEdge:
-                    return Qt.LeftEdge;
-                default:
-                    return Qt.TopEdge;
+            width: {
+                if (vertical) {
+                    return Math.min(((tasks.taskAreaWidth)/taskList.stripeCount) * count, tasks.taskAreaWidth);
+                } else {
+                    return Math.min(taskList.orthogonalCount * TaskManagerApplet.LayoutMetrics.preferredMaxWidth(), tasks.taskAreaWidth);
                 }
             }
 
-            LayoutMirroring.enabled: tasks.shouldBeMirrored(Plasmoid.configuration.reverseMode, Application.layoutDirection, tasks.vertical)
-            anchors.fill: parent
-
-            TaskList {
-                id: taskList
-                count: tasksModel.count
-
-                LayoutMirroring.enabled: tasks.shouldBeMirrored(Plasmoid.configuration.reverseMode, Application.layoutDirection, tasks.vertical)
-                anchors {
-                    left: parent.left
-                    top: parent.top
-                    margins: tasks.margin
+            height: {
+                if (vertical) {
+                    return Math.min(taskList.orthogonalCount * TaskManagerApplet.LayoutMetrics.preferredMaxHeight(), tasks.taskAreaHeight);
+                } else {
+                    return Math.min(((tasks.taskAreaHeight)/taskList.stripeCount) * count, tasks.taskAreaHeight);
                 }
-                Layout.fillWidth: true
-                Layout.fillHeight: true
+            }
 
-                width: {
-                    if (vertical) {
-                        return Math.min(((tasks.taskAreaWidth)/taskList.stripeCount) * count, tasks.taskAreaWidth);
-                    } else {
-                        return Math.min(taskList.orthogonalCount * TaskManagerApplet.LayoutMetrics.preferredMaxWidth(), tasks.taskAreaWidth);
-                    }
+            flow: {
+                if (tasks.vertical) {
+                    return Grid.LeftToRight
                 }
+                return Grid.TopToBottom
+            }
 
-                height: {
-                    if (vertical) {
-                        return Math.min(taskList.orthogonalCount * TaskManagerApplet.LayoutMetrics.preferredMaxHeight(), tasks.taskAreaHeight);
-                    } else {
-                        return Math.min(((tasks.taskAreaHeight)/taskList.stripeCount) * count, tasks.taskAreaHeight);
-                    }
+            onAnimatingChanged: {
+                if (!animating) {
+                    tasks.publishIconGeometries(children, tasks);
                 }
+            }
 
-                flow: {
-                    if (tasks.vertical) {
-                        return Grid.LeftToRight
-                    }
-                    return Grid.TopToBottom
-                }
+            Repeater {
+                id: taskRepeater
 
-                onAnimatingChanged: {
-                    if (!animating) {
-                        tasks.publishIconGeometries(children, tasks);
-                    }
-                }
-
-                Repeater {
-                    id: taskRepeater
-
-                    delegate: Task {
-                        tasksRoot: tasks
-                    }
+                delegate: Task {
+                    tasksRoot: tasks
                 }
             }
         }

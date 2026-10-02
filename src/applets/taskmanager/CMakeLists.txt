@@ -15,15 +15,9 @@ plasma_add_applet(com.github.neeeeow.klassik.taskmanager
         qml/GroupMenu.qml
         qml/main.qml
         qml/MouseHandler.qml
-        qml/PipeWireThumbnail.qml
-        qml/PlayerController.qml
         qml/PulseAudio.qml
-        qml/ScrollableTextWrapper.qml
         qml/TaskList.qml
         qml/Task.qml
-        qml/ToolTipDelegate.qml
-        qml/ToolTipInstance.qml
-        qml/ToolTipWindowMouseArea.qml
         qml/code/LayoutMetrics.js
         qml/code/TaskTools.js
         ${KLASSIK_COMMON_DIR}/KlassikBusyIndicator.qml

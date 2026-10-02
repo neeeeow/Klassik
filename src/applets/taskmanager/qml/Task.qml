@@ -43,7 +43,6 @@ PlasmaCore.ToolTipArea {
     readonly property int pid: model.AppPid
     readonly property string appName: model.AppName
     readonly property string appId: model.AppId.replace(/\.desktop/, '')
-    property bool toolTipOpen: false
     property bool isWindow: model.IsWindow
     property int childCount: model.ChildCount
     property int previousChildCount: 0
@@ -54,18 +53,13 @@ PlasmaCore.ToolTipArea {
     property bool delayAudioStreamIndicator: false
     property bool completed: false
     readonly property bool audioIndicatorsEnabled: Plasmoid.configuration.indicateAudioStreams
-    readonly property bool tooltipControlsEnabled: Plasmoid.configuration.tooltipControls
     readonly property bool hasAudioStream: audioStreams.length > 0
     readonly property bool muted: hasAudioStream && audioStreams.every(item => item.muted)
 
-    readonly property bool highlighted: containsMouse
-        || (task.contextMenu && task.contextMenu.status === PlasmaExtras.Menu.Open)
-        || (task.groupMenu && task.groupMenu.status === PlasmaExtras.Menu.Open)
-
     active: task.groupMenu?.status !== PlasmaExtras.Menu.Open && task.contextMenu?.status !== PlasmaExtras.Menu.Open
-    interactive: model.IsWindow || mainItem.playerData
     location: Plasmoid.location
-    mainItem: openWindowToolTipDelegate
+    mainText: task.model.display
+    icon: task.model.decoration
 
     onXChanged: {
         if (!completed) {
@@ -158,27 +152,10 @@ PlasmaCore.ToolTipArea {
     }
     Accessible.role: Accessible.Button
 
-    onToolTipVisibleChanged: toolTipVisible => {
-        task.toolTipOpen = toolTipVisible;
-        if (!toolTipVisible) {
-            tasksRoot.toolTipOpenedByClick = null;
-        } else {
-            tasksRoot.toolTipAreaItem = task;
-        }
-    }
-
     onContainsMouseChanged: {
         if (containsMouse) {
             task.forceActiveFocus(Qt.MouseFocusReason);
-            task.updateMainItemBindings();
-        } else {
-            tasksRoot.toolTipOpenedByClick = null;
         }
-    }
-
-    onHighlightedChanged: {
-        // ensure it doesn't get stuck with a window highlighted
-        tasksRoot.cancelHighlightWindows();
     }
 
     onPidChanged: updateAudioStreams({delay: false})
@@ -287,35 +264,6 @@ PlasmaCore.ToolTipArea {
         }
     }
 
-    // Will also be called in activateTaskAtIndex(index)
-    function updateMainItemBindings(): void {
-        if ((mainItem.parentTask === this && mainItem.rootIndex.row === index)
-            || (tasksRoot.toolTipOpenedByClick === null && !active)
-            || (tasksRoot.toolTipOpenedByClick !== null && tasksRoot.toolTipOpenedByClick !== this)) {
-            return;
-        }
-
-        mainItem.blockingUpdates = (mainItem.isGroup !== model.IsGroupParent); // BUG 464597 Force unload the previous component
-
-        mainItem.parentTask = this;
-        mainItem.rootIndex = tasksModel.makeModelIndex(index, -1);
-
-        mainItem.appName = Qt.binding(() => model.AppName);
-        mainItem.pidParent = Qt.binding(() => model.AppPid);
-        mainItem.windows = Qt.binding(() => model.WinIdList);
-        mainItem.isGroup = Qt.binding(() => model.IsGroupParent);
-        mainItem.icon = Qt.binding(() => model.decoration);
-        mainItem.isMinimized = Qt.binding(() => model.IsMinimized);
-        mainItem.display = Qt.binding(() => model.display);
-        mainItem.genericName = Qt.binding(() => model.GenericName);
-        mainItem.virtualDesktops = Qt.binding(() => model.VirtualDesktops);
-        mainItem.isOnAllVirtualDesktops = Qt.binding(() => model.IsOnAllVirtualDesktops);
-        mainItem.activities = Qt.binding(() => model.Activities);
-
-        mainItem.blockingUpdates = false;
-        tasksRoot.toolTipAreaItem = this;
-    }
-
     Connections {
         target: pulseAudio.item
         ignoreUnknownSignals: true // Plasma-PA might not be available
@@ -354,15 +302,6 @@ PlasmaCore.ToolTipArea {
             TaskManagerApplet.TaskTools.activateTask(modelIndex(), model, Qt.NoModifier, task, Plasmoid, tasksRoot, effectWatcher.registered);
         }
 
-        TapHandler { // KDE 3 never had touchscreen support, but we include it anyways!
-            acceptedButtons: Qt.LeftButton
-            acceptedDevices: PointerDevice.TouchScreen | PointerDevice.Stylus
-            gesturePolicy: TapHandler.ReleaseWithinBounds
-            onLongPressed: {
-                task.showContextMenu();
-            }
-        }
-
         MouseArea {
             anchors.fill: parent
             acceptedButtons: Qt.RightButton | Qt.MiddleButton | Qt.BackButton | Qt.ForwardButton
@@ -397,8 +336,6 @@ PlasmaCore.ToolTipArea {
                         eventPoint.accepted = false;
                     }
                 }
-
-                task.tasksRoot.cancelHighlightWindows();
             }
         }
 
