@@ -9,11 +9,9 @@ pragma ComponentBehavior: Bound
 
 import QtQuick
 import QtQuick.Layouts
-import QtQuick.Controls
 
 import org.kde.plasma.plasmoid
 import org.kde.plasma.core as PlasmaCore
-import org.kde.kirigami as Kirigami
 
 import org.kde.taskmanager as TaskManager
 import plasma.applet.com.github.neeeeow.klassik.taskmanager as TaskManagerApplet
@@ -77,7 +75,7 @@ PlasmoidItem {
         launchInPlace: Plasmoid.configuration.sortingStrategy === 1
 
         groupMode: groupModeEnumValue(Plasmoid.configuration.groupingStrategy)
-        groupInline: !Plasmoid.configuration.groupPopups
+        groupInline: false // KDE 3 never had the option to group inline... follow that convention
         groupingWindowTasksThreshold: (Plasmoid.configuration.onlyGroupWhenFull
             ? TaskManagerApplet.LayoutMetrics.optimumCapacity(tasks.taskAreaWidth, tasks.taskAreaHeight) + 1 : -1)
 
@@ -124,12 +122,6 @@ PlasmoidItem {
 
     readonly property TaskManagerApplet.Backend backend: TaskManagerApplet.Backend {
         id: backend
-    }
-
-    DBus.DBusServiceWatcher {
-        id: effectWatcher
-        busType: DBus.BusType.Session
-        watchedService: "org.kde.KWin.Effect.WindowView1"
     }
 
     readonly property Component taskInitComponent: Component {
@@ -185,7 +177,6 @@ PlasmoidItem {
 
         TaskManager.ActivityInfo {
             id: activityInfo
-            readonly property string nullUuid: "00000000-0000-0000-0000-000000000000"
         }
 
         Timer {
@@ -229,6 +220,12 @@ PlasmoidItem {
             Drag.onDragFinished: dropAction => {
                 tasks.dragSource = null;
             }
+        }
+
+        MouseHandler {
+            id: mouseHandler
+            anchors.fill: parent
+            target: taskList
         }
 
         TaskList {
@@ -290,7 +287,7 @@ PlasmoidItem {
 
         const task = taskRepeater.itemAt(index) as Task;
         if (task) {
-            TaskManagerApplet.TaskTools.activateTask(task.modelIndex(), task.model, null, task, Plasmoid, this, effectWatcher.registered);
+            TaskManagerApplet.TaskTools.activateTask(task.modelIndex(), task.model, null, task, Plasmoid, this);
         }
     }
 

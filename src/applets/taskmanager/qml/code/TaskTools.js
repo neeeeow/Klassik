@@ -97,26 +97,7 @@ function activateNextPrevTask(anchor, next, wheelSkipMinimized, wheelEnabled, ta
     tasks.tasksModel.requestActivate(target);
 }
 
-// Get the model index of the task with the maximum value for `attribute`,
-// or `undefined` if the attribute is undefined for all tasks in the group (for instance LastActivated may be undefined)
-function groupTopTask(childTaskList, attribute, tasks) {
-    let topAttribute = -1;
-    let topTaskIndex = undefined;
-
-    for (let task = 0; task < childTaskList.length; ++task) {
-        const childTaskModelIndex = childTaskList[task];
-        const taskAttribute = tasks.tasksModel.data(childTaskModelIndex, attribute);
-
-        if (taskAttribute !== undefined && taskAttribute > topAttribute) {
-            topAttribute = taskAttribute;
-            topTaskIndex = childTaskModelIndex;
-        }
-    }
-
-    return topTaskIndex;
-}
-
-function activateTask(index, model, modifiers, task, plasmoid, tasks, windowViewAvailable) {
+function activateTask(index, model, modifiers, task, plasmoid, tasks) {
     if (modifiers & Qt.ShiftModifier) {
         tasks.tasksModel.requestNewInstance(index);
         return;
@@ -139,33 +120,6 @@ function activateTask(index, model, modifiers, task, plasmoid, tasks, windowView
             tasks.tasksModel.requestActivate(index);
         }
     }
-}
-
-function taskPrefix(prefix, location) {
-    let effectivePrefix;
-
-    switch (location) {
-    case PlasmaCore.Types.LeftEdge:
-        effectivePrefix = "west-" + prefix;
-        break;
-    case PlasmaCore.Types.TopEdge:
-        effectivePrefix = "north-" + prefix;
-        break;
-    case PlasmaCore.Types.RightEdge:
-        effectivePrefix = "east-" + prefix;
-        break;
-    default:
-        effectivePrefix = "south-" + prefix;
-    }
-    return [effectivePrefix, prefix];
-}
-
-function taskPrefixHovered(prefix, location) {
-    return [
-        ...taskPrefix(prefix + "-hover", location),
-        ...prefix ? taskPrefix("hover", location) : [],
-        ...taskPrefix(prefix, location),
-    ];
 }
 
 function foreachChildTask(callback, modelIndex, tasksModel) {

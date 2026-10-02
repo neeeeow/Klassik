@@ -8,9 +8,6 @@
 
 .import org.kde.kirigami as Kirigami
 
-const iconMargin = Math.round(Kirigami.Units.smallSpacing / 4);
-const labelMargin = Kirigami.Units.smallSpacing;
-
 function preferredMaxWidth() {
     let maxWidth = 200;
     switch (tasks.plasmoid.configuration.taskMaxWidth) {

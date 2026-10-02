@@ -20,8 +20,6 @@ KCMUtils.SimpleKCM {
     id: root
 
     property alias cfg_groupingStrategy: groupingStrategy.currentIndex
-    property alias cfg_groupedTaskVisualization: groupedTaskVisualization.currentIndex
-    property alias cfg_groupPopups: groupPopups.checked
     property alias cfg_onlyGroupWhenFull: onlyGroupWhenFull.checked
     property int cfg_sortingStrategy
     property alias cfg_middleClickAction: middleClickAction.currentIndex
@@ -49,12 +47,6 @@ KCMUtils.SimpleKCM {
         }
     }
 
-    DBus.DBusServiceWatcher {
-        id: effectWatcher
-        busType: DBus.BusType.Session
-        watchedService: "org.kde.KWin.Effect.WindowView1"
-    }
-
     Kirigami.FormLayout {
         anchors.left: parent.left
         anchors.right: parent.right
@@ -70,48 +62,15 @@ KCMUtils.SimpleKCM {
             ]
         }
 
-        QQC2.ComboBox {
-            id: groupedTaskVisualization
-            Kirigami.FormData.label: i18nc("@label:listbox completes sentence like: … cycles through tasks", "Clicking grouped task:")
-            Layout.fillWidth: true
-            Layout.minimumWidth: Kirigami.Units.gridUnit * 14
-
-            enabled: groupingStrategy.currentIndex !== 0
-
-            model: [
-                i18nc("@item:inlistbox Completes the sentence 'Clicking grouped task cycles through tasks' ", "Cycles through tasks"),
-                i18nc("@item:inlistbox Completes the sentence 'Clicking grouped task shows small window previews' ", "Shows small window previews"),
-                i18nc("@item:inlistbox Completes the sentence 'Clicking grouped task shows large window previews' ", "Shows large window previews"),
-                i18nc("@item:inlistbox Completes the sentence 'Clicking grouped task shows textual list' ", "Shows textual list"),
-            ]
-
-            Accessible.name: currentText
-            Accessible.onPressAction: currentIndex = currentIndex === count - 1 ? 0 : (currentIndex + 1)
-        }
-        // "You asked for Window View but Window View is not available" message
-        Kirigami.InlineMessage {
-            Layout.fillWidth: true
-            visible: groupedTaskVisualization.currentIndex === 2 && !effectWatcher.registered
-            type: Kirigami.MessageType.Warning
-            text: i18nc("@info displayed as InlineMessage", "The compositor does not support displaying windows side by side, so a textual list will be displayed instead.")
-        }
-
         Item {
             Kirigami.FormData.isSection: true
-        }
-
-        QQC2.CheckBox {
-            id: groupPopups
-            visible: (Plasmoid.pluginName !== "org.kde.plasma.icontasks")
-            text: i18nc("@option:check grouped task", "Combine into single button")
-            enabled: groupingStrategy.currentIndex > 0
         }
 
         QQC2.CheckBox {
             id: onlyGroupWhenFull
             visible: (Plasmoid.pluginName !== "org.kde.plasma.icontasks")
             text: i18nc("@option:check grouped task","Group only when the Task Manager is full")
-            enabled: groupingStrategy.currentIndex > 0 && groupPopups.checked
+            enabled: groupingStrategy.currentIndex > 0
             Accessible.onPressAction: toggle()
         }
 

@@ -40,9 +40,6 @@ PlasmaCore.ToolTipArea {
     required property int index
     required property /*main.qml*/ Item tasksRoot
 
-    readonly property int pid: model.AppPid
-    readonly property string appName: model.AppName
-    readonly property string appId: model.AppId.replace(/\.desktop/, '')
     property bool isWindow: model.IsWindow
     property int childCount: model.ChildCount
     property int previousChildCount: 0
@@ -148,7 +145,7 @@ PlasmaCore.ToolTipArea {
     }
 
     Keys.onMenuPressed: event => contextMenuTimer.start()
-    Keys.onReturnPressed: event => TaskManagerApplet.TaskTools.activateTask(modelIndex(), model, event.modifiers, task, Plasmoid, tasksRoot, effectWatcher.registered)
+    Keys.onReturnPressed: event => TaskManagerApplet.TaskTools.activateTask(modelIndex(), model, event.modifiers, task, Plasmoid, tasksRoot)
     Keys.onEnterPressed: event => Keys.returnPressed(event);
     Keys.onSpacePressed: event => Keys.returnPressed(event);
     Keys.onUpPressed: event => Keys.leftPressed(event)
@@ -191,18 +188,9 @@ PlasmaCore.ToolTipArea {
         topPadding: 2
         bottomPadding: 2
 
-        anchors {
-            fill: parent
-
-            topMargin: 0
-            bottomMargin: 0
-            leftMargin: 0
-            rightMargin: 0
-        }
+        anchors.fill: parent
 
         focusPolicy: Qt.NoFocus
-        hoverEnabled: true
-        checkable: false
         checked: task.model.IsActive
 
         onClicked: { // logic from leftTapHandler
@@ -211,12 +199,12 @@ PlasmaCore.ToolTipArea {
             if (task.active) {
                 task.hideToolTip();
             }
-            TaskManagerApplet.TaskTools.activateTask(modelIndex(), model, Qt.NoModifier, task, Plasmoid, tasksRoot, effectWatcher.registered);
+            TaskManagerApplet.TaskTools.activateTask(modelIndex(), model, Qt.NoModifier, task, Plasmoid, tasksRoot);
         }
 
         MouseArea {
             anchors.fill: parent
-            acceptedButtons: Qt.RightButton | Qt.MiddleButton | Qt.BackButton | Qt.ForwardButton
+            acceptedButtons: Qt.RightButton | Qt.MiddleButton
             propagateComposedEvents: true
 
             onClicked: (mouse) => {
