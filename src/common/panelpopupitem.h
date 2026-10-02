@@ -14,10 +14,13 @@
 class PanelPopupItem : public QQuickItem
 {
 	Q_OBJECT
+	Q_PROPERTY(bool active READ isActive NOTIFY activeChanged)
 	Q_PROPERTY(Plasma::Types::Location location READ location WRITE setLocation)
 public:
     PanelPopupItem(QQuickItem *parent = nullptr);
 	~PanelPopupItem() override;
+
+	bool isActive() const { return m_frame && m_frame->isVisible(); }
 
 	Plasma::Types::Location location() const { return m_location; }
 	void setLocation(Plasma::Types::Location location) {
@@ -26,6 +29,9 @@ public:
 	}
 
 	Q_INVOKABLE void togglePopup();
+
+Q_SIGNALS:
+	void activeChanged();
 
 protected:
     QFrame* frame() const { return m_frame; }

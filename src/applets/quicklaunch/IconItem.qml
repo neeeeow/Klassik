@@ -111,7 +111,7 @@ Item {
                 source: iconItem.storageId == "quicklaunch:drop" ? "" : iconItem.iconName
                 active: mouseArea.containsMouse
 
-                scale: mouseArea.isDown ? (width - sunkenFrame.lineWidth) / width : 1.0
+                scale: mouseArea.isDown ? (width - 2*sunkenFrame.lineWidth) / width : 1.0
                 transformOrigin: Item.Center
             }
 

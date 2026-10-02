@@ -20,7 +20,7 @@ class Clock : public PaintedItem
 	Q_PROPERTY(KConfigPropertyMap* config READ config WRITE setConfig)
 public:
 	Clock(QQuickItem *parent = nullptr);
-	virtual ~Clock() = default;
+    ~Clock() override = default;
 
 	// Functions for getting/setting config map in QML
 	KConfigPropertyMap* config() const { return m_config; }

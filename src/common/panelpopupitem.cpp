@@ -19,7 +19,7 @@ PanelPopupItem::PanelPopupItem(QQuickItem *parent)
 	m_frame->setFrameStyle(QFrame::Raised | QFrame::StyledPanel);
 	m_frame->installEventFilter(this);
 	m_layout = new QVBoxLayout(m_frame);
-	styleChanged();
+	styleChanged();	
 }
 
 PanelPopupItem::~PanelPopupItem()
@@ -41,8 +41,14 @@ PanelPopupItem::componentComplete()
 bool
 PanelPopupItem::eventFilter(QObject *watched, QEvent *event)
 {
-	if (watched == m_frame && m_initialized && event->type() == QEvent::Show)
-		aboutToShow();
+	if (watched == m_frame) {
+		const auto type = event->type();
+	    if (type == QEvent::Show || type == QEvent::Hide) {
+			Q_EMIT activeChanged();
+			if (m_initialized && type == QEvent::Show)
+				aboutToShow();
+		}
+	}
 	return QQuickItem::eventFilter(watched, event);
 }
 

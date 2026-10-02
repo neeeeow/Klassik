@@ -25,17 +25,12 @@ public:
 	KMenuApplet(QObject *parentObject, const KPluginMetaData &data, const QVariantList &args);
 	~KMenuApplet() override;
 	void init() override;
-	
-	inline bool isMenuActive() const { return m_menuActive; }
+
+	bool isMenuActive() const;
     ContainmentInterface* containmentInterface() const;
 
-	// Show/hide the menu from QML
-	Q_INVOKABLE void toggleMenu(QQuickItem *button, Plasma::Types::Location panelLocation) {
-		if (m_menuActive)
-			hideMenu();
-		else
-			showMenu(button, panelLocation);
-	}
+	// Show/hide the menu from QML, popping it up at the location of button
+	Q_INVOKABLE void toggleMenu(QQuickItem *button);
 
 	// Config getter
 	template <typename T>
@@ -64,9 +59,6 @@ private:
 	QPointer<ContainmentInterface> m_containmentInterface = nullptr;
 	QPointer<KMenu> m_menu = nullptr;
 	QTimer *m_reinitTimer = nullptr;
-	bool m_menuActive = false;
 
-	void showMenu(QQuickItem *button, Plasma::Types::Location panelLocation);
-	void hideMenu();
-	QPoint popupPosition(QQuickItem *item, Plasma::Types::Location panelLocation);
+	QPoint popupPosition(QQuickItem *item);
 };

@@ -25,22 +25,23 @@ PlasmoidItem{
         checkable: true
         checked: Plasmoid.menuActive
 
-        readonly property bool isHorizontal: Plasmoid.formFactor === PlasmaCore.Types.Horizontal
-        readonly property bool isVertical: Plasmoid.formFactor === PlasmaCore.Types.Vertical
+        readonly property bool horizontal: Plasmoid.formFactor === PlasmaCore.Types.Horizontal
+        readonly property bool vertical: Plasmoid.formFactor === PlasmaCore.Types.Vertical
+        readonly property bool floating: (!horizontal) && (!vertical)
 
         // Fill the height of the container
-        Layout.fillWidth: isVertical
-        Layout.fillHeight: isHorizontal
+        Layout.fillWidth: vertical || floating
+        Layout.fillHeight: horizontal || floating
 
         // Make the applet a square
-        Layout.preferredWidth: isHorizontal ? height : -1
-        Layout.preferredHeight: isVertical ? width : -1
+        Layout.preferredWidth: horizontal ? height : -1
+        Layout.preferredHeight: vertical ? width : -1
 
         // Ensure the width/height *never* deviates from our computed values
-        Layout.minimumWidth: isHorizontal ? Layout.preferredWidth : -1
-        Layout.maximumWidth: isHorizontal ? Layout.preferredWidth : -1
-        Layout.minimumHeight: isVertical ? Layout.preferredHeight : -1
-        Layout.maximumHeight: isVertical ? Layout.preferredHeight : -1
+        Layout.minimumWidth: horizontal ? Layout.preferredWidth : -1
+        Layout.maximumWidth: horizontal ? Layout.preferredWidth : -1
+        Layout.minimumHeight: vertical ? Layout.preferredHeight : -1
+        Layout.maximumHeight: vertical ? Layout.preferredHeight : -1
 
         background: SunkenAppletFrame {
             id: sunkenFrame
@@ -53,7 +54,7 @@ PlasmoidItem{
                 source: Plasmoid.icon
                 active: menuButton.hovered
 
-                scale: (menuButton.down || menuButton.checked) ? (width - sunkenFrame.lineWidth) / width : 1.0
+                scale: (menuButton.down || menuButton.checked) ? (width - 2*sunkenFrame.lineWidth) / width : 1.0
                 transformOrigin: Item.Center
             }
 
@@ -75,11 +76,11 @@ PlasmoidItem{
             }
         }
 
-        onClicked: Plasmoid.toggleMenu(menuButton, Plasmoid.location)
+        onClicked: Plasmoid.toggleMenu(menuButton)
         Connections {
             target: Plasmoid
             function onActivated() {
-                Plasmoid.toggleMenu(menuButton, Plasmoid.location)
+                Plasmoid.toggleMenu(menuButton)
             }
         }
     }

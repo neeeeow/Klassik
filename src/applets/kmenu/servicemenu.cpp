@@ -31,8 +31,6 @@
 
 #include <PlasmaActivities/ResourceInstance>
 
-#include <Plasma/Applet>
-
 ServiceMenu::ServiceMenu(KMenuApplet *applet, QWidget *parent)
 : QMenu(parent),
   m_initialized(false),

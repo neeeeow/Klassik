@@ -51,14 +51,8 @@ KMenuApplet::init()
 	m_menu = new KMenu(this);
 
 	// Connect signals
-	connect(m_menu, &QMenu::aboutToShow, this, [this]() {
-		m_menuActive = true;
-		Q_EMIT menuActiveChanged();
-	});
-	connect(m_menu, &QMenu::aboutToHide, this, [this]() {
-		m_menuActive = false;
-		Q_EMIT menuActiveChanged();
-	});
+	connect(m_menu, &QMenu::aboutToShow, this, &KMenuApplet::menuActiveChanged, Qt::QueuedConnection);
+	connect(m_menu, &QMenu::aboutToHide, this, &KMenuApplet::menuActiveChanged, Qt::QueuedConnection);
 
 	// Set up a QTimer to deal with multiple config changes simultaneously
 	// Firing the timer immediately on the next loop is sufficient.
@@ -76,6 +70,12 @@ KMenuApplet::init()
 	});
 }
 
+bool
+KMenuApplet::isMenuActive() const
+{
+	return m_menu && m_menu->isVisible();
+}
+
 ContainmentInterface*
 KMenuApplet::containmentInterface() const
 {
@@ -83,36 +83,29 @@ KMenuApplet::containmentInterface() const
 }
 
 void
-KMenuApplet::showMenu(QQuickItem *button, Plasma::Types::Location panelLocation)
+KMenuApplet::toggleMenu(QQuickItem *button)
 {
-	if (!m_menu)
+	if (!m_menu || !button)
 		return;
-	if (!button)
-		return;
-	
-	if (QQuickWindow *plasmoidWindow = button->window()) {
+
+	if (m_menu->isVisible())
+		m_menu->close();
+	else {
 		m_menu->createWinId();
-		if (QWindow *menuWindow = m_menu->windowHandle()) {
-            menuWindow->setTransientParent(plasmoidWindow);
-        }
+		if (QWindow *menuWindow = m_menu->windowHandle())
+			menuWindow->setTransientParent(button->window());
+		m_menu->popup(popupPosition(button));
 	}
-
-	m_menu->popup(popupPosition(button, panelLocation));
-}
-
-void
-KMenuApplet::hideMenu()
-{
-	if (m_menu) m_menu->close(); 
 }
 
 QPoint
-KMenuApplet::popupPosition(QQuickItem *item, Plasma::Types::Location panelLocation)
+KMenuApplet::popupPosition(QQuickItem *item)
 {
-	if (!m_menu || !item || !item->window()) {
+	if (!m_menu || !item || !item->window())
 		return QPoint();
-	}
 
+	const Plasma::Types::Location panelLocation = location();
+	
 	const QSize size = m_menu->sizeHint();
 	QPoint pos = item->mapToGlobal(QPointF(0, 0)).toPoint();
 	QRect parentGeometryBounds(pos, QSize(item->width(), item->height()));
