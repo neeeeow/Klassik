@@ -1,8 +1,10 @@
 /*
+    SPDX-FileCopyrightText: 2026 neeeeow <https://github.com/neeeeow>
+
     SPDX-FileCopyrightText: 2012-2016 Eike Hein <hein@kde.org>
     SPDX-FileCopyrightText: 2016 Kai Uwe Broulik <kde@privat.broulik.de>
 
-    SPDX-License-Identifier: GPL-2.0-or-later
+    SPDX-License-Identifier: GPL-3.0-or-later
 */
 
 import QtQuick
@@ -13,14 +15,12 @@ import org.kde.plasma.core as PlasmaCore
 import org.kde.plasma.extras as PlasmaExtras
 
 import org.kde.taskmanager as TaskManager
-import org.kde.plasma.private.mpris as Mpris
 import plasma.applet.com.github.neeeeow.klassik.taskmanager as TaskManagerApplet
 
 PlasmaExtras.Menu {
     id: menu
 
     required property TaskManagerApplet.Backend backend
-    required property Mpris.Mpris2Model mpris2Source
     required property /*QModelIndex*/var modelIndex
 
     property bool showAllPlaces: false
@@ -151,107 +151,6 @@ PlasmaExtras.Menu {
                 menu.addMenuItem(item, startNewInstanceItem);
             }
         });
-
-        // Add Media Player control actions
-        const playerData = mpris2Source.playerForLauncherUrl(launcherUrl, get(TaskManager.AbstractTasksModel.AppPid));
-
-        if (playerData && playerData.canControl && !(get(TaskManager.AbstractTasksModel.WinIdList) !== undefined && get(TaskManager.AbstractTasksModel.WinIdList).length > 1)) {
-            const playing = playerData.playbackStatus === Mpris.PlaybackStatus.Playing;
-            let menuItem = menu.newMenuItem(menu);
-            menuItem.text = i18nc("Play previous track", "Previous Track");
-            menuItem.icon = "media-skip-backward";
-            menuItem.enabled = Qt.binding(() => {
-                return playerData.canGoPrevious;
-            });
-            menuItem.clicked.connect(() => {
-                playerData.Previous();
-            });
-            menu.addMenuItem(menuItem, startNewInstanceItem);
-
-            menuItem = menu.newMenuItem(menu);
-            // PlasmaCore Menu doesn't actually handle icons or labels changing at runtime...
-            menuItem.text = Qt.binding(() => {
-                // if CanPause, toggle the menu entry between Play & Pause, otherwise always use Play
-                return playing && playerData.canPause ? i18nc("Pause playback", "Pause") : i18nc("Start playback", "Play");
-            });
-            menuItem.icon = Qt.binding(() => {
-                return playing && playerData.canPause ? "media-playback-pause" : "media-playback-start";
-            });
-            menuItem.enabled = Qt.binding(() => {
-                return playing ? playerData.canPause : playerData.canPlay;
-            });
-            menuItem.clicked.connect(() => {
-                if (playing) {
-                    playerData.Pause();
-                } else {
-                    playerData.Play();
-                }
-            });
-            menu.addMenuItem(menuItem, startNewInstanceItem);
-
-            menuItem = menu.newMenuItem(menu);
-            menuItem.text = i18nc("Play next track", "Next Track");
-            menuItem.icon = "media-skip-forward";
-            menuItem.enabled = Qt.binding(() => {
-                return playerData.canGoNext;
-            });
-            menuItem.clicked.connect(() => {
-                playerData.Next();
-            });
-            menu.addMenuItem(menuItem, startNewInstanceItem);
-
-            menuItem = menu.newMenuItem(menu);
-            menuItem.text = i18nc("Stop playback", "Stop");
-            menuItem.icon = "media-playback-stop";
-            menuItem.enabled = Qt.binding(() => {
-                return playerData.canStop;
-            });
-            menuItem.clicked.connect(() => {
-                playerData.Stop();
-            });
-            menu.addMenuItem(menuItem, startNewInstanceItem);
-
-            // Technically media controls and audio streams are separate but for the user they're
-            // semantically related, don't add a separator in between.
-            if (!(menu.visualParent as Task).hasAudioStream) {
-                menu.addMenuItem(newSeparator(menu), startNewInstanceItem);
-            }
-
-            // If we don't have a window associated with the player but we can quit
-            // it through MPRIS we'll offer a "Quit" option instead of "Close"
-            if (!closeWindowItem.visible && playerData.canQuit) {
-                menuItem = menu.newMenuItem(menu);
-                menuItem.text = i18nc("Quit media player app", "Quit");
-                menuItem.icon = "application-exit";
-                menuItem.visible = Qt.binding(() => {
-                    return !closeWindowItem.visible;
-                });
-                menuItem.clicked.connect(() => {
-                    playerData.Quit();
-                });
-                menu.addMenuItem(menuItem);
-            }
-        }
-
-        // We allow mute/unmute whenever an application has a stream, regardless of whether it
-        // is actually playing sound.
-        // This way you can unmute, e.g. a telephony app, even after the conversation has ended,
-        // so you still have it ringing later on.
-        if ((menu.visualParent as Task).hasAudioStream) {
-            const muteItem = menu.newMenuItem(menu);
-            muteItem.checkable = true;
-            muteItem.checked = Qt.binding(() => {
-                return menu.visualParent && menu.visualParent.muted;
-            });
-            muteItem.clicked.connect(() => {
-                menu.visualParent.toggleMuted();
-            });
-            muteItem.text = i18nc("@option:check inmenu, no separate unmute action", "Mute");
-            muteItem.icon = "audio-volume-muted" + (Application.layoutDirection === Qt.RightToLeft ? "-rtl" : "");
-            menu.addMenuItem(muteItem, startNewInstanceItem);
-
-            menu.addMenuItem(newSeparator(menu), startNewInstanceItem);
-        }
     }
 
     PlasmaExtras.MenuItem {

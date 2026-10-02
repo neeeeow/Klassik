@@ -49,12 +49,7 @@ PlasmaCore.ToolTipArea {
     property QtObject contextMenu: null
     property QtObject groupMenu: null
 
-    property var audioStreams: []
-    property bool delayAudioStreamIndicator: false
     property bool completed: false
-    readonly property bool audioIndicatorsEnabled: Plasmoid.configuration.indicateAudioStreams
-    readonly property bool hasAudioStream: audioStreams.length > 0
-    readonly property bool muted: hasAudioStream && audioStreams.every(item => item.muted)
 
     active: task.groupMenu?.status !== PlasmaExtras.Menu.Open && task.contextMenu?.status !== PlasmaExtras.Menu.Open
     location: Plasmoid.location
@@ -124,47 +119,15 @@ PlasmaCore.ToolTipArea {
         id: translateTransform
     }
 
-    Accessible.name: model.display
-    Accessible.description: {
-        if (!model.display) {
-            return "";
-        }
-
-        if (model.IsGroupParent) {
-            switch (Plasmoid.configuration.groupedTaskVisualization) {
-                case 0:
-                    break; // Use the default description
-                case 1: {
-                    return i18nc("@info:usagetip %1 task name", "Show Task tooltip for %1", model.display);
-                }
-                case 2: {
-                    if (effectWatcher.registered) {
-                        return i18nc("@info:usagetip %1 task name", "Show windows side by side for %1", model.display);
-                    }
-                    // fallthrough
-                }
-                default:
-                    return i18nc("@info:usagetip %1 task name", "Open textual list of windows for %1", model.display);
-            }
-        }
-
-        return i18nc("@info:usagetip %1 task name", "Activate %1", model.display);
-    }
-    Accessible.role: Accessible.Button
-
     onContainsMouseChanged: {
         if (containsMouse) {
             task.forceActiveFocus(Qt.MouseFocusReason);
         }
     }
 
-    onPidChanged: updateAudioStreams({delay: false})
-    onAppNameChanged: updateAudioStreams({delay: false})
-
     onIsWindowChanged: {
         if (model.IsWindow) {
             taskInitComponent.createObject(task);
-            updateAudioStreams({delay: false});
         }
     }
 
@@ -221,57 +184,6 @@ PlasmaCore.ToolTipArea {
         groupMenu.show();
     }
 
-    function updateAudioStreams(args: var): void {
-        if (args) {
-            // When the task just appeared (e.g. virtual desktop switch), show the audio indicator
-            // right away. Only when audio streams change during the lifetime of this task, delay
-            // showing that to avoid distraction.
-            delayAudioStreamIndicator = !!args.delay;
-        }
-
-        var pa = pulseAudio.item;
-        if (!pa || !task.isWindow) {
-            task.audioStreams = [];
-            return;
-        }
-
-        // Check appid first for app using portal
-        // https://docs.pipewire.org/page_portal.html
-        var streams = pa.streamsForAppId(task.appId);
-        if (!streams.length) {
-            streams = pa.streamsForPid(model.AppPid);
-            if (streams.length) {
-                pa.registerPidMatch(model.AppName);
-            } else {
-                // We only want to fall back to appName matching if we never managed to map
-                // a PID to an audio stream window. Otherwise if you have two instances of
-                // an application, one playing and the other not, it will look up appName
-                // for the non-playing instance and erroneously show an indicator on both.
-                if (!pa.hasPidMatch(model.AppName)) {
-                    streams = pa.streamsForAppName(model.AppName);
-                }
-            }
-        }
-
-        task.audioStreams = streams;
-    }
-
-    function toggleMuted(): void {
-        if (muted) {
-            task.audioStreams.forEach(item => item.unmute());
-        } else {
-            task.audioStreams.forEach(item => item.mute());
-        }
-    }
-
-    Connections {
-        target: pulseAudio.item
-        ignoreUnknownSignals: true // Plasma-PA might not be available
-        function onStreamsChanged(): void {
-            task.updateAudioStreams({delay: true})
-        }
-    }
-
     Button {
         id: frame
         leftPadding: 4
@@ -323,17 +235,6 @@ PlasmaCore.ToolTipArea {
                         TaskManagerApplet.TaskTools.foreachChildTask((childIndex) => {
                             tasksModel.requestVirtualDesktops(childIndex, [virtualDesktopInfo.currentDesktopByScreenGeometry(tasksModel.data(childIndex, TaskManager.AbstractTasksModel.ScreenGeometry))]);
                         }, modelIndex(), tasksModel);
-                    }
-                } else if (mouse.button === Qt.BackButton || mouse.button === Qt.ForwardButton) {
-                    const playerData = mpris2Source.playerForLauncherUrl(task.model.LauncherUrlWithoutIcon, task.model.AppPid);
-                    if (playerData) {
-                        if (button === Qt.BackButton) {
-                            playerData.Previous();
-                        } else {
-                            playerData.Next();
-                        }
-                    } else {
-                        eventPoint.accepted = false;
                     }
                 }
             }
@@ -432,36 +333,12 @@ PlasmaCore.ToolTipArea {
                 maximumLineCount: 1
                 font.bold: task.model.IsActive
                 opacity: model.IsMinimized ? 0.5 : 1.0
-
-                // The accessible item of this element is only used for debugging
-                // purposes, and it will never gain focus (thus it won't interfere
-                // with screenreaders).
-                Accessible.ignored: !visible
-                Accessible.name: parent.Accessible.name + "-labelhint"
-            }
-
-            ToolButton {
-                id: audioButton
-                Layout.preferredHeight: Math.min(parent.height, Kirigami.Units.iconSizes.small + 4)
-                Layout.preferredWidth: height
-                Layout.alignment: Qt.AlignVCenter
-                padding: 2
-                focusPolicy: Qt.NoFocus
-
-                visible: task.hasAudioStream && task.audioIndicatorsEnabled
-                onClicked: task.toggleMuted()
-
-                contentItem: Kirigami.Icon {
-                    source: task.muted ? "audio-volume-muted" : "audio-volume-high"
-                }
             }
         }
     }
 
     Component.onCompleted: {
-        if (model.IsWindow) {
-            updateAudioStreams({delay: false});
-        } else {
+        if (!model.IsWindow) {
             taskInitComponent.createObject(task);
         }
         completed = true;

@@ -15,7 +15,6 @@ plasma_add_applet(com.github.neeeeow.klassik.taskmanager
         qml/GroupMenu.qml
         qml/main.qml
         qml/MouseHandler.qml
-        qml/PulseAudio.qml
         qml/TaskList.qml
         qml/Task.qml
         qml/code/LayoutMetrics.js
@@ -33,7 +32,6 @@ plasma_add_applet(com.github.neeeeow.klassik.taskmanager
 
 kconfig_add_kcfg_files(com.github.neeeeow.klassik.taskmanager ${CMAKE_CURRENT_SOURCE_DIR}/kactivitymanagerd_plugins_settings.kcfgc)
 
-# FIXME Cleanup no longer used libs.
 target_link_libraries(com.github.neeeeow.klassik.taskmanager PRIVATE
     klassik_painteditem
     Qt::Core

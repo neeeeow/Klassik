@@ -13,10 +13,7 @@ import QtQuick.Controls
 
 import org.kde.plasma.plasmoid
 import org.kde.plasma.core as PlasmaCore
-import org.kde.plasma.private.mpris as Mpris
 import org.kde.kirigami as Kirigami
-
-import org.kde.plasma.workspace.trianglemousefilter
 
 import org.kde.taskmanager as TaskManager
 import plasma.applet.com.github.neeeeow.klassik.taskmanager as TaskManagerApplet
@@ -39,7 +36,6 @@ PlasmoidItem {
 
     readonly property Component contextMenuComponent: Qt.createComponent("ContextMenu.qml")
     readonly property Component groupMenuComponent: Qt.createComponent("GroupMenu.qml")
-    readonly property Component pulseAudioComponent: Qt.createComponent("PulseAudio.qml")
 
     property alias taskList: taskList
 
@@ -51,13 +47,6 @@ PlasmoidItem {
     property Item dragSource
 
     signal requestLayout
-
-    function activateWindowView(winIds: var): DBus.DBusPendingReply {
-        if (!effectWatcher.registered) {
-            return;
-        }
-        return DBus.SessionBus.asyncCall({service: "org.kde.KWin.Effect.WindowView1", path: "/org/kde/KWin/Effect/WindowView1", iface: "org.kde.KWin.Effect.WindowView1", member: "activate", arguments: [winIds.map(s => String(s))], signature: "(as)"});
-    }
 
     function publishIconGeometries(taskItems: /*list<Item>*/var): void {
         if (TaskManagerApplet.TaskTools.taskManagerInstanceCount >= 2) {
@@ -180,10 +169,6 @@ PlasmoidItem {
         }
     }
 
-    Mpris.Mpris2Model {
-        id: mpris2Source
-    }
-
     Item {
         anchors.fill: parent
 
@@ -201,12 +186,6 @@ PlasmoidItem {
         TaskManager.ActivityInfo {
             id: activityInfo
             readonly property string nullUuid: "00000000-0000-0000-0000-000000000000"
-        }
-
-        Loader {
-            id: pulseAudio
-            sourceComponent: tasks.pulseAudioComponent
-            active: tasks.pulseAudioComponent.status === Component.Ready
         }
 
         Timer {
@@ -249,24 +228,6 @@ PlasmoidItem {
             Drag.supportedActions: Qt.CopyAction | Qt.MoveAction | Qt.LinkAction
             Drag.onDragFinished: dropAction => {
                 tasks.dragSource = null;
-            }
-        }
-
-        MouseHandler {
-            id: mouseHandler
-
-            anchors.fill: parent
-
-            target: taskList
-
-            onUrlsDropped: urls => {
-                if (!hoveredItem) {
-                    return;
-                }
-
-                // Otherwise we'll just start a new instance of the application with the URLs as argument,
-                // as you probably don't expect some of your files to open in the app and others to spawn launchers.
-                tasksModel.requestOpenUrls((hoveredItem as Task).modelIndex(), urls);
             }
         }
 
@@ -337,7 +298,6 @@ PlasmoidItem {
         const initialArgs = Object.assign(args, {
             visualParent: rootTask,
             modelIndex,
-            mpris2Source,
             backend,
         });
         return contextMenuComponent.createObject(rootTask, initialArgs);

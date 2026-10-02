@@ -149,20 +149,6 @@ DropArea {
                 increment--;
             }
             const anchor = dropArea.target.childAt(event.x, event.y);
-            if (Plasmoid.configuration.wheelEnabled === 3) {
-                const loudest = anchor?.audioStreams?.reduce((loudest, stream) => Math.max(loudest, stream.volume), 0)
-                const step = (pulseAudio.item.normalVolume - pulseAudio.item.minimalVolume) * pulseAudio.item.globalConfig.volumeStep / 100;
-                anchor?.audioStreams?.forEach((stream) => {
-                    let delta = step * increment;
-                    if (loudest > 0) {
-                        delta *= stream.volume / loudest;
-                    }
-                    const volume = stream.volume + delta;
-                    stream.model.Volume = Math.max(pulseAudio.item.minimalVolume, Math.min(volume, pulseAudio.item.normalVolume));
-                    stream.model.Muted = volume === 0
-                })
-            return;
-            }
             while (increment !== 0) {
                 TaskManagerApplet.TaskTools.activateNextPrevTask(anchor, increment < 0, Plasmoid.configuration.wheelSkipMinimized, Plasmoid.configuration.wheelEnabled, tasks);
                 increment += (increment < 0) ? 1 : -1;

@@ -15,10 +15,8 @@ import org.kde.plasma.plasmoid
 KCMUtils.SimpleKCM {
     id: root
 
-    readonly property bool plasmaPaAvailable: Qt.createComponent("PulseAudio.qml").status === Component.Ready
     readonly property bool plasmoidVertical: Plasmoid.formFactor === PlasmaCore.Types.Vertical
 
-    property bool cfg_indicateAudioStreams
     property alias cfg_taskMaxWidth: taskMaxWidth.currentIndex
     property alias cfg_taskMaxHeight: taskMaxHeight.currentIndex
 
@@ -26,14 +24,6 @@ KCMUtils.SimpleKCM {
     property alias cfg_taskAppearance: taskAppearance.currentIndex
 
     Kirigami.FormLayout {
-        QQC2.CheckBox {
-            id: indicateAudioStreams
-            text: i18nc("@option:check section General", "Show an indicator when a task is playing audio")
-            checked: root.cfg_indicateAudioStreams && root.plasmaPaAvailable
-            onToggled: root.cfg_indicateAudioStreams = checked
-            enabled: root.plasmaPaAvailable
-        }
-
         QQC2.CheckBox {
             id: drawFrame
             text: i18n("Draw a frame around the task manager")
