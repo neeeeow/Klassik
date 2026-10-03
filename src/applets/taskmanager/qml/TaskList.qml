@@ -14,15 +14,8 @@ import org.kde.plasma.core as PlasmaCore
 import plasma.applet.com.github.neeeeow.klassik.taskmanager as TaskManagerApplet
 
 GridLayout {
-    property bool animating: false
-
     rowSpacing: 0
     columnSpacing: 0
-
-    property int animationsRunning: 0
-    onAnimationsRunningChanged: {
-        animating = animationsRunning > 0;
-    }
 
     required property int count
 

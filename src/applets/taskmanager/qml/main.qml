@@ -247,12 +247,6 @@ PlasmoidItem {
                 return Grid.TopToBottom
             }
 
-            onAnimatingChanged: {
-                if (!animating) {
-                    tasks.publishIconGeometries(children, tasks);
-                }
-            }
-
             Repeater {
                 id: taskRepeater
 
