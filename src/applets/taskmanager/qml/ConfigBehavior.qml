@@ -92,10 +92,6 @@ KCMUtils.SimpleKCM {
                     "value": TaskManager.TasksModel.SortDisabled,
                 },
                 {
-                    "text": i18nc("@item:inlistbox sort tasks in grouped task", "Manually"),
-                    "value": TaskManager.TasksModel.SortManual,
-                },
-                {
                     "text": i18nc("@item:inlistbox sort tasks in grouped task", "Alphabetically"),
                     "value": TaskManager.TasksModel.SortAlpha,
                 },
@@ -113,7 +109,7 @@ KCMUtils.SimpleKCM {
                 },
             ]
             onActivated: root.cfg_sortingStrategy = currentValue
-            Component.onCompleted: currentIndex = indexOfValue(root.cfg_sortingStrategy)
+            Component.onCompleted: currentIndex = Math.max(0, indexOfValue(root.cfg_sortingStrategy))
         }
 
         Item {

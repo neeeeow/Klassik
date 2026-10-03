@@ -70,7 +70,6 @@ PlasmoidItem {
         filterNotMinimized: Plasmoid.configuration.showOnlyMinimized
 
         sortMode: sortModeEnumValue(Plasmoid.configuration.sortingStrategy)
-        launchInPlace: Plasmoid.configuration.sortingStrategy === 1
 
         groupMode: groupModeEnumValue(Plasmoid.configuration.groupingStrategy)
         groupInline: false // KDE 3 never had the option to group inline... follow that convention
@@ -85,8 +84,7 @@ PlasmoidItem {
             switch (index) {
             case 0:
                 return TaskManager.TasksModel.SortDisabled;
-            case 1:
-                return TaskManager.TasksModel.SortManual;
+            // skip 1 (manual sort), since that functionality was not present in KDE 3
             case 2:
                 return TaskManager.TasksModel.SortAlpha;
             case 3:
