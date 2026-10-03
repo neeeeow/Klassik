@@ -42,8 +42,6 @@ PlasmoidItem {
     Layout.fillWidth: true
     Layout.fillHeight: true
 
-    property Item dragSource
-
     signal requestLayout
 
     function publishIconGeometries(taskItems: /*list<Item>*/var): void {
@@ -209,17 +207,6 @@ PlasmoidItem {
         Component {
             id: busyIndicator
             KlassikBusyIndicator {}
-        }
-
-        // Save drag data
-        Item {
-            id: dragHelper
-
-            Drag.dragType: Drag.Automatic
-            Drag.supportedActions: Qt.CopyAction | Qt.MoveAction | Qt.LinkAction
-            Drag.onDragFinished: dropAction => {
-                tasks.dragSource = null;
-            }
         }
 
         MouseHandler {

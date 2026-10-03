@@ -148,22 +148,6 @@ PlasmaCore.ToolTipArea {
     Keys.onReturnPressed: event => TaskManagerApplet.TaskTools.activateTask(modelIndex(), model, event.modifiers, task, Plasmoid, tasksRoot)
     Keys.onEnterPressed: event => Keys.returnPressed(event);
     Keys.onSpacePressed: event => Keys.returnPressed(event);
-    Keys.onUpPressed: event => Keys.leftPressed(event)
-    Keys.onDownPressed: event => Keys.rightPressed(event)
-    Keys.onLeftPressed: event => {
-        if ((event.modifiers & Qt.ControlModifier) && (event.modifiers & Qt.ShiftModifier)) {
-            tasksModel.move(task.index, task.index - 1);
-        } else {
-            event.accepted = false;
-        }
-    }
-    Keys.onRightPressed: event => {
-        if ((event.modifiers & Qt.ControlModifier) && (event.modifiers & Qt.ShiftModifier)) {
-            tasksModel.move(task.index, task.index + 1);
-        } else {
-            event.accepted = false;
-        }
-    }
 
     function modelIndex(): /*QModelIndex*/ var {
         return tasksModel.makeModelIndex(index);
@@ -194,8 +178,6 @@ PlasmaCore.ToolTipArea {
         checked: task.model.IsActive
 
         onClicked: { // logic from leftTapHandler
-            if (dragHandler.dragTriggered)
-                return;
             if (task.active) {
                 task.hideToolTip();
             }
@@ -231,55 +213,6 @@ PlasmaCore.ToolTipArea {
         background: TaskBackground {
             visible: (Plasmoid.configuration.taskAppearance === 1) || frame.hovered
             sunken: frame.down || frame.checked
-        }
-
-        // Avoid repositioning delegate item after dragFinished
-        DragHandler {
-            id: dragHandler
-            grabPermissions: PointerHandler.CanTakeOverFromItems | PointerHandler.CanTakeOverFromHandlersOfDifferentType
-            property bool dragTriggered: false
-
-            function setRequestedInhibitDnd(value: bool): void {
-                // This is modifying the value in the panel containment that
-                // inhibits accepting drag and drop, so that we don't accidentally
-                // drop the task on this panel.
-                let item = this;
-                while (item.parent) {
-                    item = item.parent;
-                    if (item.appletRequestsInhibitDnD !== undefined) {
-                        item.appletRequestsInhibitDnD = value
-                    }
-                }
-            }
-
-            onActiveChanged: {
-                if (active) {
-                    dragTriggered = true
-                    icon.grabToImage(result => {
-                        if (!dragHandler.active) {
-                            // BUG 466675 grabToImage is async, so avoid updating dragSource when active is false
-                            return;
-                        }
-                        setRequestedInhibitDnd(true);
-                        tasksRoot.dragSource = task;
-                        dragHelper.Drag.imageSource = result.url;
-                        dragHelper.Drag.mimeData = {
-                            "text/x-orgkdeplasmataskmanager_taskurl": backend.tryDecodeApplicationsUrl(model.LauncherUrlWithoutIcon).toString(),
-                                     [model.MimeType]: model.MimeData,
-                                     "application/x-orgkdeplasmataskmanager_taskbuttonitem": model.MimeData,
-                        };
-                        dragHelper.Drag.active = dragHandler.active;
-                    });
-                } else {
-                    setRequestedInhibitDnd(false);
-                    dragHelper.Drag.active = false;
-                    dragHelper.Drag.imageSource = "";
-                    if (dragTriggered) {
-                        frame.checked = Qt.binding(() => model.IsActive);
-                        dragTriggered = false;
-                    }
-                }
-            }
         }
 
         contentItem: RowLayout {
