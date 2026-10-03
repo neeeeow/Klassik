@@ -160,13 +160,6 @@ PlasmoidItem {
     Item {
         anchors.fill: parent
 
-        TaskManagerApplet.SunkenAppletFrame {
-            id: sunkenFrame
-            anchors.fill: parent
-            visible: Plasmoid.configuration.drawFrame
-            lineWidth: 1
-        }
-
         TaskManager.VirtualDesktopInfo {
             id: virtualDesktopInfo
         }
@@ -207,15 +200,54 @@ PlasmoidItem {
             KlassikBusyIndicator {}
         }
 
-        MouseHandler {
-            id: mouseHandler
-            anchors.fill: parent
-            target: taskList
+        WheelHandler {
+            id: wheelHandler
+
+            property Item target: taskList
+            property bool handleWheelEvents: true
+
+            acceptedDevices: PointerDevice.Mouse | PointerDevice.TouchPad
+            enabled: handleWheelEvents && Plasmoid.configuration.wheelEnabled !== 0
+
+            onWheel: event => {
+                // magic number 15 for common "one scroll"
+                // See https://doc.qt.io/qt-6/qml-qtquick-wheelhandler.html#rotation-prop
+                let increment = 0;
+                while (rotation >= 15) {
+                    rotation -= 15;
+                    increment++;
+                }
+                while (rotation <= -15) {
+                    rotation += 15;
+                    increment--;
+                }
+                const anchor = wheelHandler.target.childAt(event.x, event.y);
+                while (increment !== 0) {
+                    TaskManagerApplet.TaskTools.activateNextPrevTask(anchor, increment < 0, Plasmoid.configuration.wheelSkipMinimized, Plasmoid.configuration.wheelEnabled, tasks);
+                    increment += (increment < 0) ? 1 : -1;
+                }
+            }
         }
 
-        TaskList {
+        SunkenAppletFrame {
+            id: sunkenFrame
+            anchors.fill: parent
+            visible: Plasmoid.configuration.drawFrame
+            lineWidth: 1
+        }
+
+        GridLayout {
             id: taskList
-            count: tasksModel.count
+
+            property int count: tasksModel.count
+            readonly property bool vertical: Plasmoid.formFactor === PlasmaCore.Types.Vertical
+            readonly property int stripeCount: TaskManagerApplet.LayoutMetrics.stripeCount()
+            readonly property int orthogonalCount: TaskManagerApplet.LayoutMetrics.orthogonalCount(count)
+
+            rowSpacing: 0
+            columnSpacing: 0
+            rows: vertical ? orthogonalCount : stripeCount
+            columns: vertical ? stripeCount : orthogonalCount
 
             LayoutMirroring.enabled: tasks.shouldBeMirrored(Plasmoid.configuration.reverseMode, Application.layoutDirection, tasks.vertical)
             anchors {

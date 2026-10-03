@@ -1,11 +1,11 @@
 /*
-    SPDX-FileCopyrightText: 2026 neeeeow <https://github.com/neeeeow>
+ SPDX-FileCopyrightText: 2026 neeeeow *<https://github.com/neeeeow>
 
-    SPDX-FileCopyrightText: 2012-2013 Eike Hein <hein@kde.org>
-    SPDX-FileCopyrightText: 2024 Nate Graham <nate@kde.org>
+ SPDX-FileCopyrightText: 2012-2013 Eike Hein <hein@kde.org>
+ SPDX-FileCopyrightText: 2024 Nate Graham <nate@kde.org>
 
-    SPDX-License-Identifier: GPL-3.0-or-later
-*/
+ SPDX-License-Identifier: GPL-3.0-or-later
+ */
 
 pragma ComponentBehavior: Bound
 
@@ -21,10 +21,8 @@ import org.kde.plasma.plasmoid
 
 import org.kde.taskmanager as TaskManager
 
-PlasmaCore.ToolTipArea {
+Button {
     id: task
-
-    activeFocusOnTab: true
 
     // To achieve a bottom-to-top layout on vertical panels, the task manager
     // is rotated by 180 degrees(see main.qml). This makes the tasks rotated,
@@ -35,6 +33,14 @@ PlasmaCore.ToolTipArea {
     Layout.fillHeight: true
     Layout.maximumWidth: tasksRoot.vertical ? -1 : TaskManagerApplet.LayoutMetrics.preferredMaxWidth()
     Layout.maximumHeight: tasksRoot.vertical ? TaskManagerApplet.LayoutMetrics.preferredMaxHeight() : -1
+
+    leftPadding: 4
+    rightPadding: 4
+    topPadding: 0
+    bottomPadding: 0
+
+    focusPolicy: Qt.NoFocus
+    checked: task.model.IsActive
 
     required property var model
     required property int index
@@ -48,16 +54,24 @@ PlasmaCore.ToolTipArea {
 
     property bool completed: false
 
-    active: task.groupMenu?.status !== PlasmaExtras.Menu.Open && task.contextMenu?.status !== PlasmaExtras.Menu.Open
-    location: Plasmoid.location
-    mainText: task.model.display
-    icon: task.model.decoration
-
-    onContainsMouseChanged: {
-        if (containsMouse) {
-            task.forceActiveFocus(Qt.MouseFocusReason);
-        }
+    function modelIndex(): /*QModelIndex*/ var {
+        return tasksModel.makeModelIndex(index);
     }
+
+    function showContextMenu(args: var): void {
+        toolTipArea.hideImmediately();
+        contextMenu = tasksRoot.createContextMenu(task, modelIndex(), args) as TaskManagerApplet.ContextMenu;
+        contextMenu.show();
+    }
+
+    function showGroupMenu(args: var): void {
+        toolTipArea.hideImmediately();
+        groupMenu = tasksRoot.createGroupMenu(task, modelIndex(), args) as TaskManagerApplet.GroupMenu;
+        groupMenu.show();
+    }
+
+    onXChanged: if (completed) tasksRoot.requestLayout()
+    onYChanged: if (completed) tasksRoot.requestLayout()
 
     onIsWindowChanged: {
         if (model.IsWindow) {
@@ -74,124 +88,100 @@ PlasmaCore.ToolTipArea {
     }
 
     onIndexChanged: {
-        hideToolTip();
+        toolTipArea.hideToolTip();
 
         if (!tasksRoot.vertical) {
             tasksRoot.requestLayout();
         }
     }
 
-    Keys.onMenuPressed: event => contextMenuTimer.start()
-    Keys.onReturnPressed: event => TaskManagerApplet.TaskTools.activateTask(modelIndex(), model, event.modifiers, task, Plasmoid, tasksRoot)
-    Keys.onEnterPressed: event => Keys.returnPressed(event);
-    Keys.onSpacePressed: event => Keys.returnPressed(event);
-
-    function modelIndex(): /*QModelIndex*/ var {
-        return tasksModel.makeModelIndex(index);
+    onClicked: {
+        if (toolTipArea.active) {
+            toolTipArea.hideToolTip();
+        }
+        TaskManagerApplet.TaskTools.activateTask(modelIndex(), model, Qt.NoModifier, task, Plasmoid, tasksRoot);
     }
 
-    function showContextMenu(args: var): void {
-        task.hideImmediately();
-        contextMenu = tasksRoot.createContextMenu(task, modelIndex(), args) as TaskManagerApplet.ContextMenu;
-        contextMenu.show();
+    MouseArea {
+        anchors.fill: parent
+        acceptedButtons: Qt.RightButton | Qt.MiddleButton
+        propagateComposedEvents: true
+
+        onClicked: (mouse) => {
+            if (mouse.button === Qt.RightButton) {
+                task.showContextMenu();
+            } else if (mouse.button === Qt.MiddleButton) {
+                if (Plasmoid.configuration.middleClickAction === TaskManagerApplet.Backend.NewInstance) {
+                    tasksModel.requestNewInstance(modelIndex());
+                } else if (Plasmoid.configuration.middleClickAction === TaskManagerApplet.Backend.Close) {
+                    tasksModel.requestClose(modelIndex());
+                } else if (Plasmoid.configuration.middleClickAction === TaskManagerApplet.Backend.ToggleMinimized) {
+                    tasksModel.requestToggleMinimized(modelIndex());
+                } else if (Plasmoid.configuration.middleClickAction === TaskManagerApplet.Backend.ToggleGrouping) {
+                    tasksModel.requestToggleGrouping(modelIndex());
+                } else if (Plasmoid.configuration.middleClickAction === TaskManagerApplet.Backend.BringToCurrentDesktop) {
+                    TaskManagerApplet.TaskTools.foreachChildTask((childIndex) => {
+                        tasksModel.requestVirtualDesktops(childIndex, [virtualDesktopInfo.currentDesktopByScreenGeometry(tasksModel.data(childIndex, TaskManager.AbstractTasksModel.ScreenGeometry))]);
+                    }, modelIndex(), tasksModel);
+                }
+            }
+        }
     }
 
-    function showGroupMenu(args: var): void {
-        task.hideImmediately();
-        groupMenu = tasksRoot.createGroupMenu(task, modelIndex(), args) as TaskManagerApplet.GroupMenu;
-        groupMenu.show();
-    }
-
-    Button {
-        id: frame
-        leftPadding: 4
-        rightPadding: 4
-        topPadding: 2
-        bottomPadding: 2
-
+    PlasmaCore.ToolTipArea {
+        id: toolTipArea
         anchors.fill: parent
 
-        focusPolicy: Qt.NoFocus
-        checked: task.model.IsActive
+        active: task.groupMenu?.status !== PlasmaExtras.Menu.Open && task.contextMenu?.status !== PlasmaExtras.Menu.Open
+        location: Plasmoid.location
+        mainText: task.model.display
+        icon: task.model.decoration
+    }
 
-        onClicked: { // logic from leftTapHandler
-            if (task.active) {
-                task.hideToolTip();
+    background: TaskBackground {
+        visible: (Plasmoid.configuration.taskAppearance === 1) || task.hovered
+        sunken: task.down || task.checked
+    }
+
+    contentItem: RowLayout {
+        spacing: Kirigami.Units.smallSpacing
+
+        Item {
+            id: iconBox
+            Layout.preferredHeight: Kirigami.Units.iconSizes.small
+            Layout.preferredWidth: Layout.preferredHeight
+
+            Kirigami.Icon {
+                id: icon
+                anchors.fill: parent
+                source: task.model.decoration
+                opacity: task.model.IsMinimized ? 0.5 : 1.0
             }
-            TaskManagerApplet.TaskTools.activateTask(modelIndex(), model, Qt.NoModifier, task, Plasmoid, tasksRoot);
+
+            Loader {
+                anchors.centerIn: parent
+                width: parent.width
+                height: parent.height
+                active: task.model.IsStartup
+                sourceComponent: busyIndicator
+            }
         }
 
-        MouseArea {
-            anchors.fill: parent
-            acceptedButtons: Qt.RightButton | Qt.MiddleButton
-            propagateComposedEvents: true
+        Label {
+            id: label
 
-            onClicked: (mouse) => {
-                if (mouse.button === Qt.RightButton) {
-                    task.showContextMenu();
-                } else if (mouse.button === Qt.MiddleButton) {
-                    if (Plasmoid.configuration.middleClickAction === TaskManagerApplet.Backend.NewInstance) {
-                        tasksModel.requestNewInstance(modelIndex());
-                    } else if (Plasmoid.configuration.middleClickAction === TaskManagerApplet.Backend.Close) {
-                        tasksModel.requestClose(modelIndex());
-                    } else if (Plasmoid.configuration.middleClickAction === TaskManagerApplet.Backend.ToggleMinimized) {
-                        tasksModel.requestToggleMinimized(modelIndex());
-                    } else if (Plasmoid.configuration.middleClickAction === TaskManagerApplet.Backend.ToggleGrouping) {
-                        tasksModel.requestToggleGrouping(modelIndex());
-                    } else if (Plasmoid.configuration.middleClickAction === TaskManagerApplet.Backend.BringToCurrentDesktop) {
-                        TaskManagerApplet.TaskTools.foreachChildTask((childIndex) => {
-                            tasksModel.requestVirtualDesktops(childIndex, [virtualDesktopInfo.currentDesktopByScreenGeometry(tasksModel.data(childIndex, TaskManager.AbstractTasksModel.ScreenGeometry))]);
-                        }, modelIndex(), tasksModel);
-                    }
-                }
-            }
-        }
+            Layout.fillWidth: true
+            Layout.alignment: Qt.AlignVCenter
 
-        background: TaskBackground {
-            visible: (Plasmoid.configuration.taskAppearance === 1) || frame.hovered
-            sunken: frame.down || frame.checked
-        }
+            visible: (task.width - iconBox.width - Kirigami.Units.smallSpacing) >= TaskManagerApplet.LayoutMetrics.spaceRequiredToShowText()
 
-        contentItem: RowLayout {
-            spacing: Kirigami.Units.smallSpacing
-
-            Item {
-                id: iconBox
-                Layout.preferredHeight: Kirigami.Units.iconSizes.small
-                Layout.preferredWidth: Layout.preferredHeight
-
-                Kirigami.Icon {
-                    id: icon
-                    anchors.fill: parent
-                    source: task.model.decoration
-                    opacity: task.model.IsMinimized ? 0.5 : 1.0
-                }
-
-                Loader {
-                    anchors.centerIn: parent
-                    width: parent.width
-                    height: parent.height
-                    active: task.model.IsStartup
-                    sourceComponent: busyIndicator
-                }
-            }
-
-            Label {
-                id: label
-
-                Layout.fillWidth: true
-                Layout.alignment: Qt.AlignVCenter
-
-                visible: (frame.width - iconBox.width - Kirigami.Units.smallSpacing) >= TaskManagerApplet.LayoutMetrics.spaceRequiredToShowText()
-
-                text: task.model.display
-                elide: Text.ElideRight
-                textFormat: Text.PlainText
-                verticalAlignment: Text.AlignVCenter
-                maximumLineCount: 1
-                font.bold: task.model.IsActive
-                opacity: model.IsMinimized ? 0.5 : 1.0
-            }
+            text: task.model.display
+            elide: Text.ElideRight
+            textFormat: Text.PlainText
+            verticalAlignment: Text.AlignVCenter
+            maximumLineCount: 1
+            font.bold: task.model.IsActive
+            opacity: model.IsMinimized ? 0.5 : 1.0
         }
     }
 

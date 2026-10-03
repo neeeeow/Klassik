@@ -14,8 +14,6 @@ plasma_add_applet(com.github.neeeeow.klassik.taskmanager
         qml/ContextMenu.qml
         qml/GroupMenu.qml
         qml/main.qml
-        qml/MouseHandler.qml
-        qml/TaskList.qml
         qml/Task.qml
         qml/code/LayoutMetrics.js
         qml/code/TaskTools.js
