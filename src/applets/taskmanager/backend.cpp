@@ -8,35 +8,26 @@
 
 #include <KConfigGroup>
 #include <KDesktopFile>
-#include <KFileItem>
 #include <KFilePlacesModel>
 #include <KLocalizedString>
 #include <KNotificationJobUiDelegate>
-#include <KProtocolInfo>
 #include <KService>
 #include <KServiceAction>
 
 #include <KApplicationTrader>
 #include <KIO/ApplicationLauncherJob>
+#include <KIO/Global>
 
 #include <QAction>
 #include <QActionGroup>
-#include <QApplication>
-#include <QJsonArray>
 #include <QMenu>
 #include <QQuickItem>
 #include <QQuickWindow>
 #include <QStandardPaths>
-#include <QTimer>
-#include <QVersionNumber>
 
-#include <PlasmaActivities/Consumer>
 #include <PlasmaActivities/Stats/Cleaning>
 #include <PlasmaActivities/Stats/ResultSet>
 #include <PlasmaActivities/Stats/Terms>
-
-#include <processcore/process.h>
-#include <processcore/processes.h>
 
 namespace KAStats = KActivities::Stats;
 
@@ -466,49 +457,6 @@ QRect Backend::globalRect(QQuickItem *item) const
     iconRect.moveTopLeft(item->window()->mapToGlobal(iconRect.topLeft()));
 
     return iconRect;
-}
-
-bool Backend::isApplication(const QUrl &url) const
-{
-    if (!url.isValid() || !url.isLocalFile()) {
-        return false;
-    }
-
-    const QString &localPath = url.toLocalFile();
-
-    if (!KDesktopFile::isDesktopFile(localPath)) {
-        return false;
-    }
-
-    KDesktopFile desktopFile(localPath);
-    return desktopFile.hasApplicationType();
-}
-
-qint64 Backend::parentPid(qint64 pid) const
-{
-    KSysGuard::Processes procs;
-    procs.updateOrAddProcess(pid);
-
-    KSysGuard::Process *proc = procs.getProcess(pid);
-    if (!proc) {
-        return -1;
-    }
-
-    int parentPid = proc->parentPid();
-    if (parentPid != -1) {
-        procs.updateOrAddProcess(parentPid);
-
-        KSysGuard::Process *parentProc = procs.getProcess(parentPid);
-        if (!parentProc) {
-            return -1;
-        }
-
-        if (!proc->cGroup().isEmpty() && parentProc->cGroup() == proc->cGroup()) {
-            return parentProc->pid();
-        }
-    }
-
-    return -1;
 }
 
 #include "moc_backend.cpp"

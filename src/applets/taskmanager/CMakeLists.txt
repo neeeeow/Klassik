@@ -35,7 +35,6 @@ target_link_libraries(com.github.neeeeow.klassik.taskmanager PRIVATE
     Qt::Core
     Qt::Qml
     Qt::Quick
-    Plasma::Activities
     Plasma::ActivitiesStats
     KF6::ConfigGui
     KF6::I18n
@@ -44,5 +43,4 @@ target_link_libraries(com.github.neeeeow.klassik.taskmanager PRIVATE
     KF6::KIOFileWidgets # KFilePlacesModel
     KF6::Notifications # KNotificationJobUiDelegate
     Plasma::Plasma
-    KSysGuard::ProcessCore
     KF6::Service)

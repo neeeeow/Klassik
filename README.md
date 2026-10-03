@@ -21,7 +21,7 @@ A modern recreation of the classic KDE 3 desktop experience for KDE Plasma 6, bu
 For compilation, the following C++ development libraries are required:
 - **Qt 6:** `Core`, `Widgets`, `Qml`, `Quick`
 - **KDE Frameworks 6:** `I18n`, `Service`, `KIO`, `ColorScheme`, `JobWidgets`, `Config`, `CoreAddons`, `Notifications`, `IconThemes`
-- **KDE Plasma 6:** `Plasma`, `PlasmaQuick`, `PlasmaActivities`, `PlasmaActivitiesStats`, `LibKWorkspace`, `KSysGuard`, `KDecoration3`
+- **KDE Plasma 6:** `Plasma`, `PlasmaQuick`, `PlasmaActivities`, `PlasmaActivitiesStats`, `LibKWorkspace`, `KDecoration3`
 
 ## Installation
 
