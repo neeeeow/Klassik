@@ -297,13 +297,11 @@ PlasmoidItem {
         }
     }
 
-    function createContextMenu(rootTask, modelIndex, args = {}) {
-        const initialArgs = Object.assign(args, {
+    function createContextMenu(rootTask, modelIndex) {
+        return contextMenuComponent.createObject(rootTask, {
             visualParent: rootTask,
-            modelIndex,
-            backend,
+            modelIndex, backend
         });
-        return contextMenuComponent.createObject(rootTask, initialArgs);
     }
 
     function createGroupMenu(rootTask, modelIndex) {

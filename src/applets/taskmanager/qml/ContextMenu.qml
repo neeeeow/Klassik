@@ -23,8 +23,6 @@ PlasmaExtras.Menu {
     required property TaskManagerApplet.Backend backend
     required property /*QModelIndex*/var modelIndex
 
-    property bool showAllPlaces: false
-
     placement: {
         if (Plasmoid.location === PlasmaCore.Types.LeftEdge) {
             return PlasmaExtras.Menu.RightPosedTopAlignedPopup;
@@ -40,25 +38,11 @@ PlasmaExtras.Menu {
     minimumWidth: (visualParent as Item).width
 
     onStatusChanged: {
-        if (visualParent && get(TaskManager.AbstractTasksModel.LauncherUrlWithoutIcon).toString() !== "" && status === PlasmaExtras.Menu.Open) {
+        if (status === PlasmaExtras.Menu.Open) {
             activitiesDesktopsMenu.refresh();
-
         } else if (status === PlasmaExtras.Menu.Closed) {
             menu.destroy();
         }
-    }
-
-    Component.onCompleted: {
-        // Cannot have "Connections" as child of PlasmaExtras.Menu.
-        backend.showAllPlaces.connect(showContextMenuWithAllPlaces);
-    }
-
-    Component.onDestruction: {
-        backend.showAllPlaces.disconnect(showContextMenuWithAllPlaces);
-    }
-
-    function showContextMenuWithAllPlaces(): void {
-        (visualParent as Task).showContextMenu({showAllPlaces: true});
     }
 
     function get(modelProp: int): var {
@@ -68,7 +52,6 @@ PlasmaExtras.Menu {
     function show(): void {
         Plasmoid.contextualActionsAboutToShow();
 
-        loadDynamicLaunchActions(get(TaskManager.AbstractTasksModel.LauncherUrlWithoutIcon));
         openRelative();
     }
 
@@ -86,71 +69,6 @@ PlasmaExtras.Menu {
 
             PlasmaExtras.MenuItem { separator: true }
             `, parent) as PlasmaExtras.MenuItem;
-    }
-
-    function loadDynamicLaunchActions(launcherUrl: url): void {
-        let sections = [];
-
-        const placesActions = backend.placesActions(launcherUrl, showAllPlaces, menu);
-
-        if (placesActions.length > 0) {
-            sections.push({
-                title: i18nc("@title:group for section of menu items", "Places"),
-                group: "places",
-                actions: placesActions
-            });
-        } else {
-            sections.push({
-                title:  i18nc("@title:group for section of menu items", "Recent Files"),
-                group:   "recents",
-                actions: backend.recentDocumentActions(launcherUrl, menu)
-            });
-        }
-
-        // We always have actions category.
-        sections = sections.filter(section => section.actions.length > 0);
-
-        sections.push({
-            title: i18nc("@title:group for section of menu items", "Actions"),
-            group: "actions",
-            actions: backend.jumpListActions(launcherUrl, menu)
-        });
-
-        // C++ can override section heading by returning a QString as first action
-        sections.forEach((section) => {
-            if (typeof section.actions[0] === "string") {
-                section.title = section.actions.shift(); // take first
-            }
-        });
-
-        // QMenu does not limit its width automatically. Even if we set a maximumWidth
-        // it would just cut off text rather than eliding. So we do this manually.
-        const textMetrics = Qt.createQmlObject("import QtQuick; TextMetrics {}", menu);
-        textMetrics.elide = Qt.ElideRight;
-        textMetrics.elideWidth = TaskManagerApplet.LayoutMetrics.maximumContextMenuTextWidth();
-
-        sections.forEach(section => {
-            if (section["actions"].length > 0 || section["group"] === "actions") {
-                // Don't add the "Actions" header if the menu has nothing but actions
-                // in it, because then it's redundant (all menus have actions)
-                if (section.group !== "actions" || sections.length > 1) {
-                    var sectionHeader = newMenuItem(menu);
-                    sectionHeader.text = section["title"];
-                    sectionHeader.section = true;
-                    menu.addMenuItem(sectionHeader, startNewInstanceItem);
-                }
-            }
-
-            for (var i = 0; i < section["actions"].length; ++i) {
-                var item = newMenuItem(menu);
-                item.action = section["actions"][i];
-
-                textMetrics.text = item.action.text.replace("&", "&&");
-                item.action.text = textMetrics.elidedText;
-
-                menu.addMenuItem(item, startNewInstanceItem);
-            }
-        });
     }
 
     PlasmaExtras.MenuItem {

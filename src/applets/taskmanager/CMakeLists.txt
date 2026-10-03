@@ -28,19 +28,9 @@ plasma_add_applet(com.github.neeeeow.klassik.taskmanager
     GENERATE_APPLET_CLASS
 )
 
-kconfig_add_kcfg_files(com.github.neeeeow.klassik.taskmanager ${CMAKE_CURRENT_SOURCE_DIR}/kactivitymanagerd_plugins_settings.kcfgc)
 
 target_link_libraries(com.github.neeeeow.klassik.taskmanager PRIVATE
     klassik_painteditem
     Qt::Core
     Qt::Qml
-    Qt::Quick
-    Plasma::ActivitiesStats
-    KF6::ConfigGui
-    KF6::I18n
-    KF6::KIOCore
-    KF6::KIOGui
-    KF6::KIOFileWidgets # KFilePlacesModel
-    KF6::Notifications # KNotificationJobUiDelegate
-    Plasma::Plasma
-    KF6::Service)
+    Qt::Quick)

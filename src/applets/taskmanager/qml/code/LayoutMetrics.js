@@ -76,7 +76,3 @@ function spaceRequiredToShowText() {
     // text appearing only at excessively high widths.
     return Math.round(Kirigami.Units.gridUnit * 1.5);
 }
-
-function maximumContextMenuTextWidth() {
-    return (Kirigami.Units.iconSizes.sizeForLabels * 28);
-}

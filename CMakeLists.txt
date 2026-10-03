@@ -31,10 +31,8 @@ find_package(KF6 REQUIRED COMPONENTS
   Service
   KIO
   ColorScheme
-  JobWidgets
   Config
   CoreAddons
-  Notifications
   IconThemes
 )
 

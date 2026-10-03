@@ -58,9 +58,9 @@ Button {
         return tasksModel.makeModelIndex(index);
     }
 
-    function showContextMenu(args: var): void {
+    function showContextMenu(): void {
         toolTipArea.hideImmediately();
-        contextMenu = tasksRoot.createContextMenu(task, modelIndex(), args) as TaskManagerApplet.ContextMenu;
+        contextMenu = tasksRoot.createContextMenu(task, modelIndex()) as TaskManagerApplet.ContextMenu;
         contextMenu.show();
     }
 
