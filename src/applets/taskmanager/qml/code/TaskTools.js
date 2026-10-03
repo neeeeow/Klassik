@@ -20,7 +20,7 @@ function activateNextPrevTask(anchor, next, wheelSkipMinimized, wheelEnabled, ta
         // anchor can be undefined if scrolling on an empty area
         if (!anchor) return;
         // Get the number of open windows for the application
-        const anchorModelIndex = anchor.modelIndex(anchor.index);
+        const anchorModelIndex = anchor.modelIndex();
         const winIdList = tasks.tasksModel.data(anchorModelIndex, TaskManager.AbstractTasksModel.WinIdList);
         const windowCount = winIdList ? winIdList.length : 0;
         // No windows
@@ -44,7 +44,7 @@ function activateNextPrevTask(anchor, next, wheelSkipMinimized, wheelEnabled, ta
 
     for (let i = 0; i < tasks.taskList.children.length - 1; ++i) {
         const task = tasks.taskList.children[i];
-        const modelIndex = task.modelIndex(i);
+        const modelIndex = task.modelIndex;
 
         if (!task.model.IsStartup) {
             if (task.model.IsGroupParent) {
@@ -97,11 +97,7 @@ function activateNextPrevTask(anchor, next, wheelSkipMinimized, wheelEnabled, ta
     tasks.tasksModel.requestActivate(target);
 }
 
-function activateTask(index, model, modifiers, task, plasmoid, tasks) {
-    if (modifiers & Qt.ShiftModifier) {
-        tasks.tasksModel.requestNewInstance(index);
-        return;
-    }
+function activateTask(index, model, task, plasmoid, tasks) {
     // Publish delegate geometry again if there are more than one task manager instance
     if (taskManagerInstanceCount >= 2) {
         tasks.tasksModel.requestPublishDelegateGeometry(task.modelIndex(), tasks.backend.globalRect(task), task);

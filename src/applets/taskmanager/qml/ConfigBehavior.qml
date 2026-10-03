@@ -13,7 +13,6 @@ import org.kde.kirigami as Kirigami
 import org.kde.plasma.core as PlasmaCore
 import org.kde.plasma.plasmoid
 
-import org.kde.plasma.workspace.dbus as DBus
 import org.kde.taskmanager as TaskManager
 
 KCMUtils.SimpleKCM {
@@ -68,7 +67,6 @@ KCMUtils.SimpleKCM {
 
         QQC2.CheckBox {
             id: onlyGroupWhenFull
-            visible: (Plasmoid.pluginName !== "org.kde.plasma.icontasks")
             text: i18nc("@option:check grouped task","Group only when the Task Manager is full")
             enabled: groupingStrategy.currentIndex > 0
             Accessible.onPressAction: toggle()
@@ -76,7 +74,6 @@ KCMUtils.SimpleKCM {
 
         Item {
             Kirigami.FormData.isSection: true
-            visible: (Plasmoid.pluginName !== "org.kde.plasma.icontasks")
         }
 
         QQC2.ComboBox {
@@ -114,7 +111,6 @@ KCMUtils.SimpleKCM {
 
         Item {
             Kirigami.FormData.isSection: true
-            visible: (Plasmoid.pluginName !== "org.kde.plasma.icontasks")
         }
 
         QQC2.CheckBox {

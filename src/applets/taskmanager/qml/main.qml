@@ -15,7 +15,6 @@ import org.kde.plasma.core as PlasmaCore
 
 import org.kde.taskmanager as TaskManager
 import plasma.applet.com.github.neeeeow.klassik.taskmanager as TaskManagerApplet
-import org.kde.plasma.workspace.dbus as DBus
 
 PlasmoidItem {
     id: tasks
@@ -175,7 +174,7 @@ PlasmoidItem {
             repeat: false
 
             onTriggered: {
-                tasks.publishIconGeometries(taskList.children, tasks);
+                tasks.publishIconGeometries(taskList.children);
             }
         }
 
@@ -202,12 +201,8 @@ PlasmoidItem {
 
         WheelHandler {
             id: wheelHandler
-
-            property Item target: taskList
-            property bool handleWheelEvents: true
-
             acceptedDevices: PointerDevice.Mouse | PointerDevice.TouchPad
-            enabled: handleWheelEvents && Plasmoid.configuration.wheelEnabled !== 0
+            enabled: Plasmoid.configuration.wheelEnabled !== 0
 
             onWheel: event => {
                 // magic number 15 for common "one scroll"
@@ -221,7 +216,7 @@ PlasmoidItem {
                     rotation += 15;
                     increment--;
                 }
-                const anchor = wheelHandler.target.childAt(event.x, event.y);
+                const anchor = taskList.childAt(event.x, event.y);
                 while (increment !== 0) {
                     TaskManagerApplet.TaskTools.activateNextPrevTask(anchor, increment < 0, Plasmoid.configuration.wheelSkipMinimized, Plasmoid.configuration.wheelEnabled, tasks);
                     increment += (increment < 0) ? 1 : -1;
@@ -240,7 +235,7 @@ PlasmoidItem {
             id: taskList
 
             property int count: tasksModel.count
-            readonly property bool vertical: Plasmoid.formFactor === PlasmaCore.Types.Vertical
+            readonly property bool vertical: tasks.vertical
             readonly property int stripeCount: TaskManagerApplet.LayoutMetrics.stripeCount()
             readonly property int orthogonalCount: TaskManagerApplet.LayoutMetrics.orthogonalCount(count)
 
@@ -298,7 +293,7 @@ PlasmoidItem {
 
         const task = taskRepeater.itemAt(index) as Task;
         if (task) {
-            TaskManagerApplet.TaskTools.activateTask(task.modelIndex(), task.model, null, task, Plasmoid, this);
+            TaskManagerApplet.TaskTools.activateTask(task.modelIndex(), task.model, task, Plasmoid, this);
         }
     }
 
@@ -311,12 +306,11 @@ PlasmoidItem {
         return contextMenuComponent.createObject(rootTask, initialArgs);
     }
 
-    function createGroupMenu(rootTask, modelIndex, args = {}) {
-        const initialArgs = Object.assign(args, {
+    function createGroupMenu(rootTask, modelIndex) {
+        return groupMenuComponent.createObject(rootTask, {
             visualParent: rootTask,
             modelIndex,
         });
-        return groupMenuComponent.createObject(rootTask, initialArgs);
     }
 
     function shouldBeMirrored(reverseMode, layoutDirection, vertical): bool {

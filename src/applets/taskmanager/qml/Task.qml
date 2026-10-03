@@ -64,9 +64,9 @@ Button {
         contextMenu.show();
     }
 
-    function showGroupMenu(args: var): void {
+    function showGroupMenu(): void {
         toolTipArea.hideImmediately();
-        groupMenu = tasksRoot.createGroupMenu(task, modelIndex(), args) as TaskManagerApplet.GroupMenu;
+        groupMenu = tasksRoot.createGroupMenu(task, modelIndex()) as TaskManagerApplet.GroupMenu;
         groupMenu.show();
     }
 
@@ -99,13 +99,12 @@ Button {
         if (toolTipArea.active) {
             toolTipArea.hideToolTip();
         }
-        TaskManagerApplet.TaskTools.activateTask(modelIndex(), model, Qt.NoModifier, task, Plasmoid, tasksRoot);
+        TaskManagerApplet.TaskTools.activateTask(modelIndex(), model, task, Plasmoid, tasksRoot);
     }
 
     MouseArea {
         anchors.fill: parent
         acceptedButtons: Qt.RightButton | Qt.MiddleButton
-        propagateComposedEvents: true
 
         onClicked: (mouse) => {
             if (mouse.button === Qt.RightButton) {
@@ -159,9 +158,7 @@ Button {
             }
 
             Loader {
-                anchors.centerIn: parent
-                width: parent.width
-                height: parent.height
+                anchors.fill: parent
                 active: task.model.IsStartup
                 sourceComponent: busyIndicator
             }
@@ -181,7 +178,7 @@ Button {
             verticalAlignment: Text.AlignVCenter
             maximumLineCount: 1
             font.bold: task.model.IsActive
-            opacity: model.IsMinimized ? 0.5 : 1.0
+            opacity: task.model.IsMinimized ? 0.5 : 1.0
         }
     }
 
