@@ -20,7 +20,6 @@ plasma_add_applet(com.github.neeeeow.klassik.taskmanager
         qml/code/TaskTools.js
         ${KLASSIK_COMMON_DIR}/KlassikBusyIndicator.qml
     CPP_SOURCES
-        backend.cpp
         taskbackground.h
         ${KLASSIK_COMMON_DIR}/sunkenappletframe.cpp
     RESOURCES

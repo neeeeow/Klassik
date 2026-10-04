@@ -100,7 +100,7 @@ function activateNextPrevTask(anchor, next, wheelSkipMinimized, wheelEnabled, ta
 function activateTask(index, model, task, plasmoid, tasks) {
     // Publish delegate geometry again if there are more than one task manager instance
     if (taskManagerInstanceCount >= 2) {
-        tasks.tasksModel.requestPublishDelegateGeometry(task.modelIndex(), tasks.backend.globalRect(task), task);
+        tasks.tasksModel.requestPublishDelegateGeometry(task.modelIndex(), tasks.globalRect(task), task);
     }
 
     if (model.IsGroupParent) {

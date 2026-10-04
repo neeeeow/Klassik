@@ -17,7 +17,6 @@ import plasma.applet.com.github.neeeeow.klassik.taskmanager as TaskManagerApplet
 PlasmaExtras.Menu {
     id: menu
 
-    required property TaskManagerApplet.Backend backend
     required property /*QModelIndex*/var modelIndex
     readonly property Component taskMenuComponent: Qt.createComponent("ContextMenu.qml") // Needed for per-task submenu
 
@@ -89,8 +88,7 @@ PlasmaExtras.Menu {
 
             taskMenuComponent.createObject(menu, {
                 visualParent: item.action,
-                modelIndex: childIndex,
-                backend: menu.backend
+                modelIndex: childIndex
             });
         }, menu.modelIndex, tasksModel);
 
@@ -136,7 +134,6 @@ PlasmaExtras.Menu {
             menuItem.clicked.connect(() => {
                 tasksModel.requestVirtualDesktops(menu.modelIndex, []);
             });
-            menu.backend.setActionGroup(menuItem.action);
 
             menu.newSeparator(virtualDesktopsMenu);
 
@@ -150,7 +147,6 @@ PlasmaExtras.Menu {
                 menuItem.clicked.connect((i => {
                     return () => tasksModel.requestVirtualDesktops(menu.modelIndex, [virtualDesktopInfo.desktopIds[i]]);
                 })(i));
-                menu.backend.setActionGroup(menuItem.action);
             }
         }
 

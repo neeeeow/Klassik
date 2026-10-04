@@ -54,6 +54,15 @@ Button {
 
     property bool completed: false
 
+    enum MiddleClickAction {
+        None = 0,
+        Close,
+        NewInstance,
+        ToggleMinimized,
+        ToggleGrouping,
+        BringToCurrentDesktop
+    }
+
     function modelIndex(): /*QModelIndex*/ var {
         return tasksModel.makeModelIndex(index);
     }
@@ -81,7 +90,7 @@ Button {
 
     onChildCountChanged: {
         if (TaskManagerApplet.TaskTools.taskManagerInstanceCount < 2 && childCount > previousChildCount) {
-            tasksModel.requestPublishDelegateGeometry(modelIndex(), backend.globalRect(task), task);
+            tasksModel.requestPublishDelegateGeometry(modelIndex(), tasksRoot.globalRect(task), task);
         }
 
         previousChildCount = childCount;
@@ -110,18 +119,26 @@ Button {
             if (mouse.button === Qt.RightButton) {
                 task.showContextMenu();
             } else if (mouse.button === Qt.MiddleButton) {
-                if (Plasmoid.configuration.middleClickAction === TaskManagerApplet.Backend.NewInstance) {
-                    tasksModel.requestNewInstance(modelIndex());
-                } else if (Plasmoid.configuration.middleClickAction === TaskManagerApplet.Backend.Close) {
-                    tasksModel.requestClose(modelIndex());
-                } else if (Plasmoid.configuration.middleClickAction === TaskManagerApplet.Backend.ToggleMinimized) {
-                    tasksModel.requestToggleMinimized(modelIndex());
-                } else if (Plasmoid.configuration.middleClickAction === TaskManagerApplet.Backend.ToggleGrouping) {
-                    tasksModel.requestToggleGrouping(modelIndex());
-                } else if (Plasmoid.configuration.middleClickAction === TaskManagerApplet.Backend.BringToCurrentDesktop) {
-                    TaskManagerApplet.TaskTools.foreachChildTask((childIndex) => {
-                        tasksModel.requestVirtualDesktops(childIndex, [virtualDesktopInfo.currentDesktopByScreenGeometry(tasksModel.data(childIndex, TaskManager.AbstractTasksModel.ScreenGeometry))]);
-                    }, modelIndex(), tasksModel);
+                switch (Plasmoid.configuration.middleClickAction) {
+                    case Task.MiddleClickAction.Close:
+                        tasksModel.requestClose(modelIndex());
+                        break;
+                    case Task.MiddleClickAction.NewInstance:
+                        tasksModel.requestNewInstance(modelIndex());
+                        break;
+                    case Task.MiddleClickAction.ToggleMinimized:
+                        tasksModel.requestToggleMinimized(modelIndex());
+                        break;
+                    case Task.MiddleClickAction.ToggleGrouping:
+                        tasksModel.requestToggleGrouping(modelIndex());
+                        break;
+                    case Task.MiddleClickAction.BringToCurrentDesktop:
+                        TaskManagerApplet.TaskTools.foreachChildTask((childIndex) => {
+                            tasksModel.requestVirtualDesktops(childIndex, [virtualDesktopInfo.currentDesktopByScreenGeometry(tasksModel.data(childIndex, TaskManager.AbstractTasksModel.ScreenGeometry))]);
+                        }, modelIndex(), tasksModel);
+                        break;
+                    default:
+                        break;
                 }
             }
         }

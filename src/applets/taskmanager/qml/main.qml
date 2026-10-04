@@ -44,20 +44,6 @@ PlasmoidItem {
 
     signal requestLayout
 
-    function publishIconGeometries(taskItems: /*list<Item>*/var): void {
-        if (TaskManagerApplet.TaskTools.taskManagerInstanceCount >= 2) {
-            return;
-        }
-        for (let i = 0; i < taskItems.length - 1; ++i) {
-            const task = taskItems[i];
-
-            if (!task.model.IsStartup) {
-                tasksModel.requestPublishDelegateGeometry(tasksModel.makeModelIndex(task.index),
-                    backend.globalRect(task), task);
-            }
-        }
-    }
-
     readonly property TaskManager.TasksModel tasksModel: TaskManager.TasksModel {
         id: tasksModel
 
@@ -116,10 +102,6 @@ PlasmoidItem {
         }
     }
 
-    readonly property TaskManagerApplet.Backend backend: TaskManagerApplet.Backend {
-        id: backend
-    }
-
     readonly property Component taskInitComponent: Component {
         Timer {
             interval: 200
@@ -128,7 +110,7 @@ PlasmoidItem {
             onTriggered: {
                 const task = parent as Task;
                 if (task) {
-                    tasks.tasksModel.requestPublishDelegateGeometry(task.modelIndex(), tasks.backend.globalRect(task), task);
+                    tasks.tasksModel.requestPublishDelegateGeometry(task.modelIndex(), tasks.globalRect(task), task);
                 }
                 destroy();
             }
@@ -285,6 +267,20 @@ PlasmoidItem {
         }
     }
 
+    function publishIconGeometries(taskItems: /*list<Item>*/var): void {
+        if (TaskManagerApplet.TaskTools.taskManagerInstanceCount >= 2) {
+            return;
+        }
+        for (let i = 0; i < taskItems.length - 1; ++i) {
+            const task = taskItems[i];
+
+            if (!task.model.IsStartup) {
+                tasksModel.requestPublishDelegateGeometry(tasksModel.makeModelIndex(task.index),
+                                                          tasks.globalRect(task), task);
+            }
+        }
+    }
+
     // This is called by plasmashell in response to a Meta+number shortcut.
     // TODO: Change type to int
     function activateTaskAtIndex(index: var): void {
@@ -303,7 +299,7 @@ PlasmoidItem {
         const component = isGroup ? groupContextMenuComponent : contextMenuComponent;
         return component.createObject(rootTask, {
             visualParent: rootTask,
-            modelIndex, backend
+            modelIndex
         });
     }
 
@@ -324,6 +320,15 @@ PlasmoidItem {
             return reverseMode;
         }
         return !reverseMode;
+    }
+
+    function globalRect(item: Item): rect {
+        if (!item || !item.Window.window) {
+            return Qt.rect(0, 0, 0, 0);
+        }
+        const iconCoords = item.mapToGlobal(0, 0);
+        // apply rounding to follow the original C++ code which returns a QRect.
+        return Qt.rect(Math.round(iconCoords.x), Math.round(iconCoords.y), Math.round(item.width), Math.round(item.height));
     }
 
     Component.onCompleted: {

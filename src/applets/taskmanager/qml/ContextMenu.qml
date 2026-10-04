@@ -20,7 +20,6 @@ import plasma.applet.com.github.neeeeow.klassik.taskmanager as TaskManagerApplet
 PlasmaExtras.Menu {
     id: menu
 
-    required property TaskManagerApplet.Backend backend
     required property /*QModelIndex*/var modelIndex
     readonly property bool isSubMenu: visualParent !== null && !(visualParent as Item) // If the parent is a menu item, we must not destroy it on closure!
 
@@ -36,7 +35,7 @@ PlasmaExtras.Menu {
         }
     }
 
-    minimumWidth: isSubMenu ? (visualParent as Item).width : 0
+    minimumWidth: isSubMenu ? 0 : (visualParent as Item).width
 
     onStatusChanged: {
         if (status === PlasmaExtras.Menu.Open) {
@@ -225,7 +224,6 @@ PlasmaExtras.Menu {
                 menuItem.clicked.connect(() => {
                     tasksModel.requestVirtualDesktops(menu.modelIndex, []);
                 });
-                menu.backend.setActionGroup(menuItem.action);
 
                 menu.newSeparator(virtualDesktopsMenu);
 
@@ -239,7 +237,6 @@ PlasmaExtras.Menu {
                     menuItem.clicked.connect((i => {
                         return () => tasksModel.requestVirtualDesktops(menu.modelIndex, [virtualDesktopInfo.desktopIds[i]]);
                     })(i));
-                    menu.backend.setActionGroup(menuItem.action);
                 }
             }
             Component.onCompleted: refresh()
