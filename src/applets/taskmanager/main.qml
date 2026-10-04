@@ -91,6 +91,8 @@ PlasmoidItem {
                 return TaskManager.TasksModel.GroupDisabled;
             case 1:
                 return TaskManager.TasksModel.GroupApplications;
+            default:
+                return TaskManager.TasksModel.GroupDisabled;
             }
         }
 
@@ -218,14 +220,13 @@ PlasmoidItem {
             id: taskList
 
             property int count: tasksModel.count
-            readonly property bool vertical: tasks.vertical
             readonly property int stripeCount: TaskManagerApplet.LayoutMetrics.stripeCount()
             readonly property int orthogonalCount: TaskManagerApplet.LayoutMetrics.orthogonalCount(count)
 
             rowSpacing: 0
             columnSpacing: 0
-            rows: vertical ? orthogonalCount : stripeCount
-            columns: vertical ? stripeCount : orthogonalCount
+            rows: tasks.vertical ? orthogonalCount : stripeCount
+            columns: tasks.vertical ? stripeCount : orthogonalCount
 
             LayoutMirroring.enabled: tasks.shouldBeMirrored(Plasmoid.configuration.reverseMode, Application.layoutDirection, tasks.vertical)
             anchors {
@@ -235,7 +236,7 @@ PlasmoidItem {
             }
 
             width: {
-                if (vertical) {
+                if (tasks.vertical) {
                     return Math.min(((tasks.taskAreaWidth)/taskList.stripeCount) * count, tasks.taskAreaWidth);
                 } else {
                     return Math.min(taskList.orthogonalCount * TaskManagerApplet.LayoutMetrics.preferredMaxWidth(), tasks.taskAreaWidth);
@@ -243,7 +244,7 @@ PlasmoidItem {
             }
 
             height: {
-                if (vertical) {
+                if (tasks.vertical) {
                     return Math.min(taskList.orthogonalCount * TaskManagerApplet.LayoutMetrics.preferredMaxHeight(), tasks.taskAreaHeight);
                 } else {
                     return Math.min(((tasks.taskAreaHeight)/taskList.stripeCount) * count, tasks.taskAreaHeight);

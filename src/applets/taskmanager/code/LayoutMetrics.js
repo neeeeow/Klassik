@@ -9,37 +9,11 @@
 .import org.kde.kirigami as Kirigami
 
 function preferredMaxWidth() {
-    let maxWidth = 200;
-    switch (tasks.plasmoid.configuration.taskMaxWidth) {
-        case 0: // narrow
-            maxWidth = 150;
-            break;
-        case 1: // medium
-            maxWidth = 200;
-            break;
-        case 2: // wide
-            maxWidth = 250;
-            break;
-    }
-
-    return maxWidth;
+    return [150, 200, 250][tasks.plasmoid.configuration.taskMaxWidth] ?? 200;
 }
 
 function preferredMaxHeight() {
-    let maxHeight = 18;
-    switch (tasks.plasmoid.configuration.taskMaxHeight) {
-        case 0: // short
-            maxHeight = 18;
-            break;
-        case 1: // medium
-            maxHeight = 26;
-            break;
-        case 2: // tall
-            maxHeight = 34;
-            break;
-    }
-
-    return maxHeight;
+    return [18, 26, 34][tasks.plasmoid.configuration.taskMaxHeight] ?? 18;
 }
 
 function stripeCount() {

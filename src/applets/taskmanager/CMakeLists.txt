@@ -8,16 +8,16 @@ configure_file(
 
 plasma_add_applet(com.github.neeeeow.klassik.taskmanager
     QML_SOURCES
-        qml/ConfigAppearance.qml
-        qml/ConfigBehavior.qml
-        qml/config.qml
-        qml/ContextMenu.qml
-        qml/GroupMenu.qml
-        qml/GroupContextMenu.qml
-        qml/main.qml
-        qml/Task.qml
-        qml/code/LayoutMetrics.js
-        qml/code/TaskTools.js
+        ConfigAppearance.qml
+        ConfigBehavior.qml
+        config.qml
+        ContextMenu.qml
+        GroupMenu.qml
+        GroupContextMenu.qml
+        main.qml
+        Task.qml
+        code/LayoutMetrics.js
+        code/TaskTools.js
         ${KLASSIK_COMMON_DIR}/KlassikBusyIndicator.qml
     CPP_SOURCES
         taskbackground.h

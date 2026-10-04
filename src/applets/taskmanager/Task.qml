@@ -98,16 +98,13 @@ Button {
 
     onIndexChanged: {
         toolTipArea.hideToolTip();
-
         if (!tasksRoot.vertical) {
             tasksRoot.requestLayout();
         }
     }
 
     onClicked: {
-        if (toolTipArea.active) {
-            toolTipArea.hideToolTip();
-        }
+        toolTipArea.hideToolTip();
         TaskManagerApplet.TaskTools.activateTask(modelIndex(), model, task, Plasmoid, tasksRoot);
     }
 
@@ -168,7 +165,6 @@ Button {
             Layout.preferredWidth: Layout.preferredHeight
 
             Kirigami.Icon {
-                id: icon
                 anchors.fill: parent
                 source: task.model.decoration
                 opacity: task.model.IsMinimized ? 0.5 : 1.0
@@ -182,8 +178,6 @@ Button {
         }
 
         Label {
-            id: label
-
             Layout.fillWidth: true
             Layout.alignment: Qt.AlignVCenter
 
@@ -192,7 +186,6 @@ Button {
             text: task.model.display
             elide: Text.ElideRight
             textFormat: Text.PlainText
-            verticalAlignment: Text.AlignVCenter
             maximumLineCount: 1
             font.bold: task.model.IsActive
             opacity: task.model.IsMinimized ? 0.5 : 1.0
