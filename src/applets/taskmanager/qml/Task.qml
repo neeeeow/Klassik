@@ -60,7 +60,7 @@ Button {
 
     function showContextMenu(): void {
         toolTipArea.hideImmediately();
-        contextMenu = tasksRoot.createContextMenu(task, modelIndex()) as TaskManagerApplet.ContextMenu;
+        contextMenu = tasksRoot.createContextMenu(task, modelIndex()) as PlasmaExtras.Menu;
         contextMenu.show();
     }
 

@@ -13,6 +13,7 @@ plasma_add_applet(com.github.neeeeow.klassik.taskmanager
         qml/config.qml
         qml/ContextMenu.qml
         qml/GroupMenu.qml
+        qml/GroupContextMenu.qml
         qml/main.qml
         qml/Task.qml
         qml/code/LayoutMetrics.js

@@ -33,6 +33,7 @@ PlasmoidItem {
 
     readonly property Component contextMenuComponent: Qt.createComponent("ContextMenu.qml")
     readonly property Component groupMenuComponent: Qt.createComponent("GroupMenu.qml")
+    readonly property Component groupContextMenuComponent: Qt.createComponent("GroupContextMenu.qml")
 
     property alias taskList: taskList
 
@@ -298,7 +299,9 @@ PlasmoidItem {
     }
 
     function createContextMenu(rootTask, modelIndex) {
-        return contextMenuComponent.createObject(rootTask, {
+        const isGroup = tasksModel.data(modelIndex, TaskManager.AbstractTasksModel.IsGroupParent);
+        const component = isGroup ? groupContextMenuComponent : contextMenuComponent;
+        return component.createObject(rootTask, {
             visualParent: rootTask,
             modelIndex, backend
         });

@@ -22,6 +22,7 @@ PlasmaExtras.Menu {
 
     required property TaskManagerApplet.Backend backend
     required property /*QModelIndex*/var modelIndex
+    readonly property bool isSubMenu: visualParent !== null && !(visualParent as Item) // If the parent is a menu item, we must not destroy it on closure!
 
     placement: {
         if (Plasmoid.location === PlasmaCore.Types.LeftEdge) {
@@ -35,12 +36,12 @@ PlasmaExtras.Menu {
         }
     }
 
-    minimumWidth: (visualParent as Item).width
+    minimumWidth: isSubMenu ? (visualParent as Item).width : 0
 
     onStatusChanged: {
         if (status === PlasmaExtras.Menu.Open) {
             activitiesDesktopsMenu.refresh();
-        } else if (status === PlasmaExtras.Menu.Closed) {
+        } else if (status === PlasmaExtras.Menu.Closed && !isSubMenu) {
             menu.destroy();
         }
     }
@@ -194,7 +195,7 @@ PlasmaExtras.Menu {
                 }
 
                 let menuItem = menu.newMenuItem(virtualDesktopsMenu);
-                menuItem.text = i18n("Move &To Current Desktop");
+                menuItem.text = i18n("&To Current Desktop");
                 menuItem.enabled = Qt.binding(() => {
                     if (!menu.visualParent) {
                         return false;
@@ -277,7 +278,7 @@ PlasmaExtras.Menu {
                 }
 
                 let menuItem = menu.newMenuItem(activitiesDesktopsMenu);
-                menuItem.text = i18n("Add To Current Activity");
+                menuItem.text = i18n("Add to Current Activity");
                 menuItem.enabled = Qt.binding(() => {
                     return menu.visualParent && menu.get(TaskManager.AbstractTasksModel.Activities).length > 0 &&
                     menu.get(TaskManager.AbstractTasksModel.Activities).indexOf(activityInfo.currentActivity) < 0;
@@ -378,6 +379,18 @@ PlasmaExtras.Menu {
         onClicked: tasksModel.requestResize(menu.modelIndex)
     }
 
+    PlasmaExtras.MenuItem {
+        visible: menu.visualParent && !menu.get(TaskManager.AbstractTasksModel.IsStartup)
+        enabled: visible && menu.get(TaskManager.AbstractTasksModel.IsMinimizable)
+
+        checkable: true
+        checked: menu.visualParent && menu.get(TaskManager.AbstractTasksModel.IsMinimized)
+
+        text: i18n("Mi&nimize")
+        icon: "window-minimize"
+
+        onClicked: tasksModel.requestToggleMinimized(menu.modelIndex)
+    }
 
     PlasmaExtras.MenuItem {
         visible: menu.visualParent && !menu.get(TaskManager.AbstractTasksModel.IsStartup)
@@ -392,26 +405,13 @@ PlasmaExtras.Menu {
         onClicked: tasksModel.requestToggleMaximized(menu.modelIndex)
     }
 
-    PlasmaExtras.MenuItem {
-        visible: menu.visualParent && !menu.get(TaskManager.AbstractTasksModel.IsStartup)
-        enabled: visible && menu.get(TaskManager.AbstractTasksModel.IsMinimizable)
-
-        checkable: true
-        checked: menu.visualParent && menu.get(TaskManager.AbstractTasksModel.IsMinimized)
-
-        text: i18n("Mi&nimize")
-        icon: "window-minimize"
-
-        onClicked: tasksModel.requestToggleMinimized(menu.modelIndex)
-    }
-
     PlasmaExtras.MenuItem { separator: true }
 
     PlasmaExtras.MenuItem {
         visible: menu.visualParent && !menu.get(TaskManager.AbstractTasksModel.IsStartup)
         enabled: visible && menu.get(TaskManager.AbstractTasksModel.IsClosable)
 
-        text: menu.get(TaskManager.AbstractTasksModel.IsGroupParent) ? i18n("&Close All") : i18n("&Close")
+        text: i18n("&Close")
         icon: "window-close"
 
         onClicked: tasksModel.requestClose(menu.modelIndex)

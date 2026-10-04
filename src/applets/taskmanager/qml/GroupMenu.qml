@@ -12,7 +12,7 @@ import org.kde.taskmanager as TaskManager
 import plasma.applet.com.github.neeeeow.klassik.taskmanager as TaskManagerApplet
 
 PlasmaExtras.Menu {
-    id: groupMenu
+    id: menu
 
     required property /*QModelIndex*/var modelIndex
 
@@ -33,7 +33,7 @@ PlasmaExtras.Menu {
 
     onStatusChanged: {
         if (status === PlasmaExtras.Menu.Closed) {
-            groupMenu.destroy();
+            menu.destroy();
         }
     }
 
@@ -53,14 +53,8 @@ PlasmaExtras.Menu {
     function populateMenu(): void {
         clearMenuItems();
 
-        const root = visualParent as Task;
-        if (!root)
-            return;
-
-        const tasksModel = root.tasksRoot.tasksModel;
-
         TaskManagerApplet.TaskTools.foreachChildTask((childIndex) => {
-            const item = newMenuItem(groupMenu);
+            const item = newMenuItem(menu);
             const isActive = tasksModel.data(childIndex, TaskManager.AbstractTasksModel.IsActive);
 
             item.text = tasksModel.data(childIndex, Qt.DisplayRole) || "";
@@ -81,6 +75,6 @@ PlasmaExtras.Menu {
             });
 
             addMenuItem(item);
-        }, modelIndex, tasksModel);
+        }, menu.modelIndex, tasksModel);
     }
 }
