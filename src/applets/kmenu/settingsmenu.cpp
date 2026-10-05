@@ -11,6 +11,7 @@
 #include <KAuthorized>
 #include <KFileUtils>
 #include <KDesktopFile>
+#include <KLocalizedString>
 
 SettingsMenu::SettingsMenu(KMenuApplet *applet, QWidget *parent)
 	: ServiceMenu(applet, parent)
@@ -52,6 +53,12 @@ SettingsMenu::initialize()
 		addSeparator();
 		populateMenu(&root, this);
 	}
+
+	// Add the menu editor action at the bottom
+	QAction *editAction = addAction(QIcon::fromTheme(QStringLiteral("kmenuedit")), i18n("Menu Editor"));
+	connect(editAction, &QAction::triggered, this, []() {
+		runMenuEditor();
+	});
 	
 	setInitialized(true);
 }
@@ -151,10 +158,8 @@ SettingsMenu::populateMenu(const SettingsItem *item, ServiceMenu *menu)
 				populateMenu(child, subMenu);
 			}
 		} else {
-			// If it's not a category, then it's a KCM, so just generate a service from the id
-			// and add it to the menu
-			const KService::Ptr service = KService::serviceByStorageId(child->id);
-			if (QAction *action = menu->createActionFromService(service))
+			// If it's not a category, then it's a KCM, so add it to the menu
+			if (QAction *action = menu->createActionFromKCM(child->id, child->name, child->icon))
 				menu->addAction(action);
 		}
 	}

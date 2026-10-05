@@ -43,6 +43,7 @@ public:
 	QAction* createActionFromService(const KService::Ptr &service, const QUrl &url = QUrl());	
 	QAction* createActionFromUrl(const QUrl &url);
 	QAction* createFileExplorerActionFromUrl(const QUrl &url);
+	QAction* createActionFromKCM(const QString &id, const QString &name, const QString &icon);
 	QList<QAction *> createActionsFromServiceActions(const KService::Ptr &service);
 	QList<QAction *> createActionsFromServiceGroup(const KServiceGroup::Ptr &group);
 

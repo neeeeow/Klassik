@@ -171,6 +171,26 @@ ServiceMenu::createFileExplorerActionFromUrl(const QUrl &url)
 	return action;
 }
 
+QAction*
+ServiceMenu::createActionFromKCM(const QString &id, const QString &name, const QString &icon)
+{
+	/* Returns a QAction* which launches a KCM with given id inside of
+	   kcmshell6, with a given name and icon, parented to this. */
+
+	if (id.isEmpty())
+		return nullptr;
+
+	QString actionText = name;
+	auto *action = new QAction(QIcon::fromTheme(icon), actionText.replace(QLatin1Char('&'), QStringLiteral("&&")), this);
+	connect(action, &QAction::triggered, this, [id]() {
+		auto *job = new KIO::CommandLauncherJob(QStringLiteral("kcmshell6"), {id});
+		job->setUiDelegate(new KNotificationJobUiDelegate(KJobUiDelegate::AutoHandlingEnabled));
+		job->start();
+	});
+
+	return action;
+}
+
 QList<QAction *>
 ServiceMenu::createActionsFromServiceActions(const KService::Ptr &service)
 {
