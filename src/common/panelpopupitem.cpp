@@ -15,7 +15,8 @@ PanelPopupItem::PanelPopupItem(QQuickItem *parent)
 {
 	// Set up the menu
 	auto *action = new QWidgetAction(m_menu);
-	m_container = new QWidget(m_menu);	
+	m_container = new QWidget(m_menu);
+	m_container->setAttribute(Qt::WA_NoMousePropagation);
 	m_layout = new QVBoxLayout(m_container);
 	m_layout->setSpacing(0);
 	m_layout->setContentsMargins(0,0,0,0);
