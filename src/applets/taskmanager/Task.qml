@@ -187,7 +187,7 @@ Button {
             elide: Text.ElideRight
             textFormat: Text.PlainText
             maximumLineCount: 1
-            font.bold: task.model.IsActive
+            font.bold: task.model.IsActive || task.model.IsDemandingAttention
             opacity: task.model.IsMinimized ? 0.5 : 1.0
         }
     }
