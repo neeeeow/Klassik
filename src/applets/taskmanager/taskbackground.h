@@ -40,8 +40,12 @@ private:
 
 		QStyleOptionHeader header;
 		header.palette = QGuiApplication::palette();
-		if (m_sunken)
+		if (m_sunken) {
+			// Darkern both the button & window color, since a QStyle might use either one
+			// for drawing a CE_HeaderSection
 			header.palette.setColor(QPalette::Button, header.palette.button().color().darker(110));
+			header.palette.setColor(QPalette::Window, header.palette.window().color().darker(110));
+		}
 	    header.rect = QRect(0,0,width(),height());
 		header.state = m_sunken ? QStyle::State_Sunken : QStyle::State_Raised;
 
