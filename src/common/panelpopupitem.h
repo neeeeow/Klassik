@@ -7,9 +7,11 @@
 #pragma once
 
 #include <QQuickItem>
-#include <QFrame>
+#include <QWidget>
 #include <QVBoxLayout>
 #include <Plasma/Plasma>
+
+class QMenu;
 
 class PanelPopupItem : public QQuickItem
 {
@@ -20,7 +22,7 @@ public:
     PanelPopupItem(QQuickItem *parent = nullptr);
 	~PanelPopupItem() override;
 
-	bool isActive() const { return m_frame && m_frame->isVisible(); }
+	bool isActive() const;
 
 	Plasma::Types::Location location() const { return m_location; }
 	void setLocation(Plasma::Types::Location location) {
@@ -34,31 +36,26 @@ Q_SIGNALS:
 	void activeChanged();
 
 protected:
-    QFrame* frame() const { return m_frame; }
+	QWidget *container() const {return m_container;}
 	
 	void componentComplete() override;
-	bool eventFilter(QObject *watched, QEvent *event) override;
 
 	// Called whenever the popup is about to show. Override this function to set custom behaviour.
 	virtual void aboutToShow() {};
-	
-	// Resets the margins of the layout containing the items
-	void resetMargins();
 
 private:
-	// Whether or not the popup contents have been initialized.
-	bool m_initialized = false;
-	
 	// Stores the location of the panel
 	Plasma::Types::Location m_location = Plasma::Types::Floating;
 	
-	// Points to the QFrame and QLayout objects which holds the popup contents.
-	// m_frame must only ever be accessed out of this class for parenting
-	QPointer<QFrame> m_frame = nullptr;
-	QVBoxLayout *m_layout = nullptr;
+	// Points to the QMenu which stores the contents of our popup. Must *never* be
+	// accessed outside of this class
+	QPointer<QMenu> m_menu = nullptr;
 
-	// Reset margins in case of a QStyle change
-	void styleChanged();
+	// The container widget which holds the layout (used for parenting items)
+	QWidget *m_container = nullptr;
+
+	// The layout to which we add items
+	QVBoxLayout *m_layout = nullptr;
 
 	// Determines the position at which to display the dialog
 	QPoint popupPosition() const;

@@ -18,7 +18,7 @@ CalendarPopup::initContents(QVBoxLayout *layout)
 		m_calendar->close();
 		m_calendar->deleteLater();
 	}
-	m_calendar = new QCalendarWidget(frame());
+	m_calendar = new QCalendarWidget(container());
 	layout->addWidget(m_calendar);
 	setCurrentDate();
 }

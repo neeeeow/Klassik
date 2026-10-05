@@ -6,28 +6,43 @@
 
 #include "panelpopupitem.h"
 
-#include <QGridLayout>
-#include <QApplication>
-#include <QStyle>
+#include <QMenu>
+#include <QWidgetAction>
 #include <QQuickWindow>
 
-#include <Plasma/Plasma>
-
 PanelPopupItem::PanelPopupItem(QQuickItem *parent)
-	: QQuickItem(parent), m_frame(new QFrame(nullptr, Qt::Popup))
+	: QQuickItem(parent), m_menu(new QMenu())
 {
-	m_frame->setFrameStyle(QFrame::Raised | QFrame::StyledPanel);
-	m_frame->installEventFilter(this);
-	m_layout = new QVBoxLayout(m_frame);
-	styleChanged();	
+	// Set up the menu
+	auto *action = new QWidgetAction(m_menu);
+	m_container = new QWidget(m_menu);	
+	m_layout = new QVBoxLayout(m_container);
+	m_layout->setSpacing(0);
+	m_layout->setContentsMargins(0,0,0,0);
+	action->setDefaultWidget(m_container);
+	m_menu->addAction(action);
+
+	// Connect the aboutToShow signal to our function
+	connect(m_menu, &QMenu::aboutToShow, this, &PanelPopupItem::aboutToShow);
+
+	// Emit the activeChanged signal if we hide/show the menu, to allow
+	// QML's state to update
+	connect(m_menu, &QMenu::aboutToShow, this, &PanelPopupItem::activeChanged, Qt::QueuedConnection);
+	connect(m_menu, &QMenu::aboutToHide, this, &PanelPopupItem::activeChanged, Qt::QueuedConnection);
 }
 
 PanelPopupItem::~PanelPopupItem()
 {
-	if (m_frame) {
-		m_frame->close();
-		m_frame->deleteLater();		
+	if (m_menu) {
+		m_menu->close();
+		m_menu->deleteLater();		
 	}
+}
+
+bool
+PanelPopupItem::isActive() const
+{
+	return m_menu && m_menu->isVisible();
 }
 
 void
@@ -35,70 +50,32 @@ PanelPopupItem::componentComplete()
 {
 	QQuickItem::componentComplete();
 	initContents(m_layout);
-	m_initialized = true;
-}
-
-bool
-PanelPopupItem::eventFilter(QObject *watched, QEvent *event)
-{
-	if (watched == m_frame) {
-		const auto type = event->type();
-	    if (type == QEvent::Show || type == QEvent::Hide) {
-			Q_EMIT activeChanged();
-			if (m_initialized && type == QEvent::Show)
-				aboutToShow();
-		}
-	}
-	return QQuickItem::eventFilter(watched, event);
-}
-
-void
-PanelPopupItem::styleChanged()
-{
-	if (QCoreApplication::closingDown())
-		return;
-	resetMargins();
-	if (qApp->style())
-		connect(qApp->style(), &QObject::destroyed, this, &PanelPopupItem::styleChanged, Qt::UniqueConnection);
-}
-
-void
-PanelPopupItem::resetMargins()
-{
-	if (!m_layout || !m_frame)
-		return;
-	const int lineWidth = qApp->style() ? qApp->style()->pixelMetric(QStyle::PM_MenuPanelWidth) : 2;
-	const int hMargin = qApp->style() ? qApp->style()->pixelMetric(QStyle::PM_MenuHMargin) : 0;
-	const int vMargin = qApp->style() ? qApp->style()->pixelMetric(QStyle::PM_MenuVMargin) : 0;
-	m_frame->setLineWidth(lineWidth);
-	m_layout->setContentsMargins(hMargin, vMargin, hMargin, vMargin);
 }
 
 void
 PanelPopupItem::togglePopup()
 {
-	if (!m_frame || !m_initialized)
+	if (!m_menu)
 		return;
 
-	if (m_frame->isVisible())
-		m_frame->close();
+	if (m_menu->isVisible())
+		m_menu->close();
 	else {
-		m_frame->createWinId();
-		if (QWindow *popupWindow = m_frame->windowHandle())
+		m_menu->createWinId();
+		if (QWindow *popupWindow = m_menu->windowHandle())
 			popupWindow->setTransientParent(window());
-		m_frame->move(popupPosition());
-		m_frame->show();
+		m_menu->popup(popupPosition());
 	}
 }
 
 QPoint
 PanelPopupItem::popupPosition() const
 {
-	if (!m_frame || !window()) {
+	if (!m_menu || !window()) {
 		return QPoint();
 	}
 
-	const QSize size = m_frame->sizeHint();
+	const QSize size = m_menu->sizeHint();
 	QPoint pos = mapToGlobal(QPointF(0, 0)).toPoint();
 	QRect parentGeometryBounds(pos, QSize(width(), height()));
 
