@@ -6,40 +6,48 @@
 
 #include "containmentinterface.h"
 
+#include <Plasma/Applet>
+#include <Plasma/Containment>
 #include <Plasma/Corona>
 #include <PlasmaQuick/AppletQuickItem>
 
 ContainmentInterface::ContainmentInterface(Plasma::Applet *applet)
-	: QObject(applet), m_containment(applet ? applet->containment() : nullptr)
+	: QObject(applet), m_applet(applet)
 {
+}
+
+Plasma::Containment *
+ContainmentInterface::containment() const
+{
+	return m_applet ? m_applet->containment() : nullptr;
 }
 
 bool
 ContainmentInterface::mayAddLauncher(ContainmentInterface::Target target) const
 {
-	if (!m_containment)
+	if (!containment())
 		return false;
 	
-	Plasma::Corona *corona = m_containment->corona();
+	Plasma::Corona *corona = containment()->corona();
 	if (!corona)
 		return false;
 
 	switch (target) {
 	case Desktop: {		
-		Plasma::Containment *desktopContainment = corona->containmentForScreen(m_containment->screen(), QString(), QString());
+		Plasma::Containment *desktopContainment = corona->containmentForScreen(containment()->screen(), QString(), QString());
 		if (desktopContainment)
 			return (desktopContainment->immutability() == Plasma::Types::Mutable);       
 
         break;
 	}
 	case Panel: {
-		if (m_containment->pluginMetaData().pluginId() == QLatin1String("com.github.neeeeow.klassik.panel"))
-			return (m_containment->immutability() == Plasma::Types::Mutable);
+		if (containment()->pluginMetaData().pluginId() == QLatin1String("com.github.neeeeow.klassik.panel"))
+			return (containment()->immutability() == Plasma::Types::Mutable);
 
 		break;
     }
 	case Quicklaunch: {
-		if (m_containment->pluginMetaData().pluginId() == QLatin1String("com.github.neeeeow.klassik.panel")) {
+		if (containment()->pluginMetaData().pluginId() == QLatin1String("com.github.neeeeow.klassik.panel")) {
 			auto *quicklaunch = findQuicklaunchApplet();
 			if (!quicklaunch)
 				return false;
@@ -64,10 +72,10 @@ ContainmentInterface::mayAddLauncher(ContainmentInterface::Target target) const
 void
 ContainmentInterface::addLauncher(ContainmentInterface::Target target, const KService::Ptr &service) const
 {
-	if (!m_containment)
+	if (!containment())
 		return;
 	
-	Plasma::Corona *corona = m_containment->corona();
+	Plasma::Corona *corona = containment()->corona();
 	if (!corona)
 		return;
 
@@ -76,7 +84,7 @@ ContainmentInterface::addLauncher(ContainmentInterface::Target target, const KSe
 	switch (target) {
 
 	case Desktop: {
-		Plasma::Containment *desktopContainment = corona->containmentForScreen(m_containment->screen(), QString(), QString());
+		Plasma::Containment *desktopContainment = corona->containmentForScreen(containment()->screen(), QString(), QString());
         if (!desktopContainment)
             return;
 
@@ -95,14 +103,14 @@ ContainmentInterface::addLauncher(ContainmentInterface::Target target, const KSe
 		break;
     }
 	case Panel: {
-		if (m_containment->pluginMetaData().pluginId() == QLatin1String("com.github.neeeeow.klassik.panel")) {
-			m_containment->createApplet(QStringLiteral("org.kde.plasma.icon"), QVariantList() << url);
+		if (containment()->pluginMetaData().pluginId() == QLatin1String("com.github.neeeeow.klassik.panel")) {
+			containment()->createApplet(QStringLiteral("org.kde.plasma.icon"), QVariantList() << url);
 		}
 
 		break;
 	}
 	case Quicklaunch: {
-		if (m_containment->pluginMetaData().pluginId() == QLatin1String("com.github.neeeeow.klassik.panel")) {
+		if (containment()->pluginMetaData().pluginId() == QLatin1String("com.github.neeeeow.klassik.panel")) {
 			auto *quicklaunch = findQuicklaunchApplet();
 			if (!quicklaunch)
 				return;
@@ -125,10 +133,10 @@ ContainmentInterface::addLauncher(ContainmentInterface::Target target, const KSe
 Plasma::Applet
 *ContainmentInterface::findQuicklaunchApplet() const
 {
-	if (!m_containment)
+	if (!containment())
 		return nullptr;
 	
-	const QList<Plasma::Applet *> applets = m_containment->applets();
+	const QList<Plasma::Applet *> applets = containment()->applets();
 	const auto found = std::ranges::find_if(applets, [this](const Plasma::Applet *applet) {
 	    return applet->pluginMetaData().pluginId() == QLatin1String("com.github.neeeeow.klassik.quicklaunch");
 	});

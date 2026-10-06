@@ -102,7 +102,7 @@ SettingsMenu::buildSettingsTree(SettingsItem *parent)
 			(!parentCategory2.isEmpty() && parentCategory2 == parent->id)) {
 
 			const QString id = entry.readEntry("X-KDE-System-Settings-Category");
-			if (id == QStringLiteral("rootcategory"))
+			if (id.isEmpty() || id == QStringLiteral("rootcategory") || id == parent->id)
 				continue; // skip the root category
 
 			// Create category settings item
@@ -151,7 +151,8 @@ SettingsMenu::populateMenu(const SettingsItem *item, ServiceMenu *menu)
 		if (child->isCategory) {
 			// If it's a category, add a sub menu for each child and recurse
 			if (!child->children.isEmpty()) {
-				auto *subMenu = new ServiceMenu(child->name.replace(QLatin1Char('&'), QStringLiteral("&&")), applet(), menu);
+				QString title = child->name;
+				auto *subMenu = new ServiceMenu(title.replace(QLatin1Char('&'), QStringLiteral("&&")), applet(), menu);
 				subMenu->initialize();
 				subMenu->setIcon(QIcon::fromTheme(child->icon));
 				menu->addMenu(subMenu);

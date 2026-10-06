@@ -388,7 +388,7 @@ KMenu::applySearchFilter(const QList<QAction *> &actions, QStringView text)
 {
    	bool anyEnabled = false;
 	for (QAction *action : actions) {
-		if (action->isSeparator())
+		if (action->isSeparator() || action->text() == i18n("No Entries"))
 			continue;
 
 		bool enabled = false; // Whether or not to enable the individual action
@@ -397,7 +397,8 @@ KMenu::applySearchFilter(const QList<QAction *> &actions, QStringView text)
 			enabled = applySearchFilter(subMenu->actions(), text);
 		} else {
 			const QString actionText = action->text().replace(QStringLiteral("&&"), QStringLiteral("&")); // replace to handle mnemonics
-			if (text.isEmpty() || actionText.contains(text, Qt::CaseInsensitive))
+			if (text.isEmpty() ||
+				actionText.contains(text, Qt::CaseInsensitive))
 				// Item must be enabled either if the search string matches the action name, or if the search bar is empty
 				enabled = true;
 		}

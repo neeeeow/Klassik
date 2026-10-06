@@ -8,6 +8,7 @@
 #include "kmenuapplet.h"
 #include "kmenu.h"
 
+#include <QQuickItem>
 #include <QPoint>
 #include <QRect>
 #include <QQuickWindow>
@@ -25,10 +26,7 @@ KMenuApplet::KMenuApplet(QObject *parentObject, const KPluginMetaData &data, con
 
 KMenuApplet::~KMenuApplet()
 {
-	if (m_menu) {
-		m_menu->close();
-		m_menu->deleteLater();
-	}
+	delete m_menu;
 }
 
 void

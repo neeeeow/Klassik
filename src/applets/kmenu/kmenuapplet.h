@@ -6,13 +6,11 @@
 
 #pragma once
 
-#include <QQuickItem>
 #include <QPointer>
-
 #include <KConfigLoader>
-
 #include <Plasma/Applet>
 
+class QQuickItem;
 class ContainmentInterface;
 class KMenu;
 
@@ -41,11 +39,11 @@ public:
 
 		QVariant value = configLoader->property(key);
 		if (value.isNull() || !value.isValid()) {
-			qWarning("KMenuApplet: Key not found!");
+			qWarning() << "key " << key << " not found!";
 			return T();
 		}
 		if (!value.canConvert<T>()) {
-			qWarning("KMenuApplet: Key type mismatch!");
+			qWarning() << "key " << key << " type mismatch!";
 			return T();
 		}
 

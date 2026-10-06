@@ -18,6 +18,7 @@
 #include <QStyle>
 #include <QDBusInterface>
 
+#include <KService>
 #include <KLocalizedString>
 #include <KNotificationJobUiDelegate>
 #include <KFileItem>
@@ -102,8 +103,13 @@ ServiceMenu::createActionFromService(const KService::Ptr &service, const QUrl &u
 	   creates a QAction which launches the service, parented to this. */
 	if (!service || !service->isValid())
 		return nullptr;
+
+	QString title = service->name().replace(QLatin1Char('&'), QStringLiteral("&&"));
+	const QString genericName = service->genericName().replace(QLatin1Char('&'), QStringLiteral("&&"));
+	if (!genericName.isEmpty() && genericName != title)
+		title.append(QStringLiteral(" (%1)").arg(genericName));
 	
-	auto *action = new QAction(QIcon::fromTheme(service->icon()), service->name().replace(QLatin1Char('&'), QStringLiteral("&&")), this);
+	auto *action = new QAction(QIcon::fromTheme(service->icon()), title, this);
 
     action->setData(QVariant::fromValue(service)); // Store the KService
 	action->setToolTip(service->comment()); // Set the action tooltip
@@ -202,7 +208,7 @@ ServiceMenu::createActionsFromServiceActions(const KService::Ptr &service)
 
 	const QList<KServiceAction> serviceActions = service->actions();
 	for (const KServiceAction &serviceAction : serviceActions) {
-		const QString name = serviceAction.text();
+		const QString name = serviceAction.text().replace(QLatin1Char('&'), QStringLiteral("&&"));
 		const QString exec = serviceAction.exec();
 		if (name.isEmpty() || exec.isEmpty()) {
 			continue;
@@ -275,6 +281,7 @@ ServiceMenu::showContextMenu(const QPoint &pos) const
 		return;
 
 	ServiceMenu contextMenu(applet()); // No need for a parent since we're declaring on the stack
+	contextMenu.setContextMenuPolicy(Qt::NoContextMenu); // disallow the contextmenu to spawn additional context menus
 	contextMenu.initialize();
 
 	if (action->data().canConvert<KService::Ptr>()) {
@@ -324,7 +331,7 @@ ServiceMenu::showContextMenu(const QPoint &pos) const
 		// KServiceGroup means sub menu container
 		const KServiceGroup::Ptr serviceGroup = action->data().value<KServiceGroup::Ptr>();
 		QAction *editAction = contextMenu.addAction(QIcon::fromTheme(QStringLiteral("kmenuedit")), i18n("Edit Menu"));
-		connect(editAction, &QAction::triggered, &contextMenu, [this, serviceGroup]() {
+		connect(editAction, &QAction::triggered, &contextMenu, [serviceGroup]() {
 			runMenuEditor(serviceGroup->relPath());
 		});
 	} else if (action->data().canConvert<QUrl>()) {
@@ -339,10 +346,8 @@ ServiceMenu::showContextMenu(const QPoint &pos) const
 				contextMenu.addAction(new PopupMenuTitle(i18n("Open With"), &contextMenu));
 
 			for (const KService::Ptr &service : services) {
-				QAction *action = contextMenu.createActionFromService(service, url);
-				if (!action)
-					continue;
-				contextMenu.addAction(action);
+				if (QAction *action = contextMenu.createActionFromService(service, url))
+					contextMenu.addAction(action);
 			}						
 		}
 
@@ -467,6 +472,5 @@ ServiceMenu::mouseMoveEvent(QMouseEvent *ev)
 	QPointer<ServiceMenu> guard(this); // guard in case the menu destroys itself
 	drag->exec(Qt::CopyAction | Qt::LinkAction);
 	if (!guard) return;
-	if (drag) drag->deleteLater();
 	m_startPos = QPointF(-1.0, -1.0);
 }

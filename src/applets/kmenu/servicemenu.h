@@ -10,12 +10,12 @@
 #include <QPointer>
 #include <QUrl>
 
-#include <KService>
 #include <KServiceGroup>
 
 #include <PlasmaActivities/Stats/ResultModel>
 
 class KMenuApplet;
+class KService;
 
 class ServiceMenu : public QMenu
 {

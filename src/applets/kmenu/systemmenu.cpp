@@ -33,12 +33,12 @@ SystemMenu::initialize()
         if (placesModel.isHidden(idx))
             continue;
 
-		const QString &title = idx.data(Qt::DisplayRole).toString();
+		QString title = idx.data(Qt::DisplayRole).toString();
         const QIcon &icon = idx.data(Qt::DecorationRole).value<QIcon>();
         const QUrl &url = idx.data(KFilePlacesModel::UrlRole).toUrl();
 
 		if (QAction *action = createActionFromUrl(url)) {
-			action->setText(title);
+			action->setText(title.replace(QLatin1Char('&'), QStringLiteral("&&")));
 			action->setIcon(icon);
 			addAction(action);
 		}

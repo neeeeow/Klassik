@@ -10,7 +10,11 @@
 
 #include <KService>
 
-#include <Plasma/Containment>
+namespace Plasma
+{
+    class Containment;
+    class Applet;
+}
 
 class ContainmentInterface : public QObject
 {
@@ -32,7 +36,8 @@ public:
 	void addLauncher(ContainmentInterface::Target target, const KService::Ptr &service) const;
 
 private:
-	Plasma::Containment *m_containment = nullptr;
+	Plasma::Applet *m_applet = nullptr;
 
+	Plasma::Containment *containment() const;
 	Plasma::Applet *findQuicklaunchApplet() const;
 };
