@@ -2087,8 +2087,12 @@ KlassikStyle::styleHint(StyleHint sh, const QStyleOption *opt,
 	case SH_PrintDialog_RightAlignButtons:
 	case SH_FontDialog_SelectAssociatedText:
 	case SH_Menu_MouseTracking:
-	case SH_MenuBar_MouseTracking:
-	case SH_ComboBox_ListMouseTracking_Current: {
+#if QT_VERSION >= QT_VERSION_CHECK(6, 11, 0)
+    case SH_ComboBox_ListMouseTracking_Current:
+#else
+    case SH_ComboBox_ListMouseTracking:
+#endif			
+	case SH_MenuBar_MouseTracking: {
 		ret = true;
 		break;
 	}
