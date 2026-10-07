@@ -49,6 +49,12 @@ PlasmoidItem{
             sunken: true
         }
 
+        PlasmaCore.ToolTipArea {
+            anchors.fill: parent
+            mainText: Plasmoid.title
+            icon: Plasmoid.icon
+        }
+
         contentItem: Item {
             Kirigami.Icon {
                 anchors.fill: parent
