@@ -30,7 +30,6 @@ public:
 	Q_ENUM(Target)
 	
 	explicit ContainmentInterface(Plasma::Applet *applet);
-	~ContainmentInterface() override = default;
 
 	bool mayAddLauncher(ContainmentInterface::Target target) const;
 	void addLauncher(ContainmentInterface::Target target, const KService::Ptr &service) const;

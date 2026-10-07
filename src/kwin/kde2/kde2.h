@@ -42,7 +42,6 @@ class KDE2Decoration : public KDecoration3::Decoration
 	Q_OBJECT
 public:
 	explicit KDE2Decoration(QObject *parent = nullptr, const QVariantList &args = QVariantList());
-	~KDE2Decoration() override = default;
 	
 	bool init() override;
 	void paint(QPainter *p, const QRectF &repaintRegion) override;

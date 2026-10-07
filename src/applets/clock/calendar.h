@@ -8,17 +8,14 @@
 
 #include "panelpopupitem.h"
 
-#include <QCalendarWidget>
-
-class QComboBox;
+class QCalendarWidget;
 
 class CalendarPopup : public PanelPopupItem
 {
 	Q_OBJECT
 	QML_ELEMENT
 public:
-	CalendarPopup(QQuickItem *parent = nullptr);
-	~CalendarPopup() override = default;
+	explicit CalendarPopup(QQuickItem *parent = nullptr);
 
 protected:
 	void aboutToShow() override;

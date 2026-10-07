@@ -19,8 +19,7 @@ class Clock : public PaintedItem
 	Q_OBJECT
 	Q_PROPERTY(KConfigPropertyMap* config READ config WRITE setConfig)
 public:
-	Clock(QQuickItem *parent = nullptr);
-    ~Clock() override = default;
+	explicit Clock(QQuickItem *parent = nullptr);
 
 	// Functions for getting/setting config map in QML
 	KConfigPropertyMap* config() const { return m_config; }
@@ -74,8 +73,7 @@ class DigitalClock : public Clock
 	QML_ELEMENT
 	Q_PROPERTY(QString text READ text WRITE setText)	
 public:
-	DigitalClock(QQuickItem *parent = nullptr);
-	~DigitalClock() override = default;
+	explicit DigitalClock(QQuickItem *parent = nullptr);
 
 	// Functions for getting/setting the internal time string in QML
 	QString text() const { return m_timeString; }
@@ -101,8 +99,7 @@ class AnalogClock : public Clock
 	Q_OBJECT
 	QML_ELEMENT
 public:
-	AnalogClock(QQuickItem *parent = nullptr);
-	~AnalogClock() override = default;
+	explicit AnalogClock(QQuickItem *parent = nullptr);
 
 	Q_INVOKABLE int preferredWidthForHeight(int h) const override;
 	Q_INVOKABLE int preferredHeightForWidth(int w) const override;

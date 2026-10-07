@@ -35,7 +35,11 @@ PanelPopupItem::PanelPopupItem(QQuickItem *parent)
 
 PanelPopupItem::~PanelPopupItem()
 {
-	delete m_menu;
+    if (m_menu) {
+        m_menu->disconnect(this);
+        m_menu->close();
+        m_menu->deleteLater();
+    }
 }
 
 bool
@@ -56,15 +60,15 @@ PanelPopupItem::clearLayout(QLayout *layout)
 {
 	if (!layout)
 		return;
-	QLayoutItem* item;
-    while ((item = layout->takeAt(0)) != nullptr) {
-        if (item->layout()) {
-            clearLayout(item->layout());
-            delete item->layout();
-        } else if (item->widget())
-            item->widget()->deleteLater();
-        delete item;
-    }	
+	while (QLayoutItem *item = layout->takeAt(0)) {
+		if (QLayout *child = item->layout())
+			clearLayout(child);
+		else if (QWidget *widget = item->widget()) {
+			widget->hide();
+			widget->deleteLater();
+		}
+		delete item;
+	}	
 }
 
 void
@@ -86,17 +90,17 @@ PanelPopupItem::togglePopup()
 QPoint
 PanelPopupItem::popupPosition() const
 {
-	if (!m_menu || !window()) {
+	if (!m_menu || !window() || !window()->screen())
 		return QPoint();
-	}
 
-	const QSize size = m_menu->sizeHint();
+	m_menu->ensurePolished();
+	const QSize menuSize = m_menu->sizeHint();
 	QPoint pos = mapToGlobal(QPointF(0, 0)).toPoint();
-	QRect parentGeometryBounds(pos, QSize(width(), height()));
+	QRect parentGeometryBounds(pos, size().toSize());
 
-	const QPoint topPoint(pos.x(), parentGeometryBounds.top() - size.height());
+	const QPoint topPoint(pos.x(), parentGeometryBounds.top() - menuSize.height());
     const QPoint bottomPoint(pos.x(), parentGeometryBounds.bottom());
-    const QPoint leftPoint(parentGeometryBounds.left() - size.width(), pos.y());
+    const QPoint leftPoint(parentGeometryBounds.left() - menuSize.width(), pos.y());
     const QPoint rightPoint(parentGeometryBounds.right(), pos.y());
 
 	QPoint dialogPos;
@@ -130,11 +134,11 @@ PanelPopupItem::popupPosition() const
         }
     }
     // ...at the right edge
-    if (dialogPos.x() + size.width() > avail.right()) {
+    if (dialogPos.x() + menuSize.width() > avail.right()) {
         if (m_location != Plasma::Types::RightEdge) {
             // move it in bounds
             // Note: floating popup goes here.
-            dialogPos.setX(qMax(avail.left(), (avail.right() - size.width() + 1)));
+            dialogPos.setX(qMax(avail.left(), (avail.right() - menuSize.width() + 1)));
         } else {
             // flip it around
             dialogPos.setX(leftPoint.x());
@@ -152,10 +156,10 @@ PanelPopupItem::popupPosition() const
         }
     }
     // ...at the bottom edge
-    if (dialogPos.y() + size.height() > avail.bottom()) {
+    if (dialogPos.y() + menuSize.height() > avail.bottom()) {
         if (m_location == Plasma::Types::LeftEdge || m_location == Plasma::Types::RightEdge) {
             // move it in bounds
-            dialogPos.setY(qMax(avail.top(), (avail.bottom() - size.height() + 1)));
+            dialogPos.setY(qMax(avail.top(), (avail.bottom() - menuSize.height() + 1)));
         } else {
             // flip it around
             // Note: floating popup goes here.

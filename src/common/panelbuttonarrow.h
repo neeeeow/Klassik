@@ -19,8 +19,7 @@ class PanelButtonArrow : public PaintedItem
 	Q_PROPERTY(bool active READ active WRITE setActive)
 	Q_PROPERTY(MenuLocation location READ location WRITE setLocation)
 public:
-	PanelButtonArrow(QQuickItem *parent = nullptr);
-	~PanelButtonArrow() override = default;
+	explicit PanelButtonArrow(QQuickItem *parent = nullptr);
 
 	enum MenuLocation {
 		Above,

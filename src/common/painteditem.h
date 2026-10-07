@@ -17,9 +17,9 @@ class PaintedItem : public QQuickItem
 	/* Template class for painting on to QML items with a QPainter. */
 
 	Q_OBJECT
+	QML_ANONYMOUS
 public:
-	PaintedItem(QQuickItem *parent = nullptr);
-    ~PaintedItem() override = default;	  
+	explicit PaintedItem(QQuickItem *parent = nullptr);  
 
 	Q_INVOKABLE void updateImage();
 

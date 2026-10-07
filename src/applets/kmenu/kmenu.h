@@ -16,7 +16,6 @@ class KMenu final : public ServiceMenu
 	
 public:
 	explicit KMenu(KMenuApplet *applet, QWidget *parent = nullptr);
-	~KMenu() override = default;
 
 	void initialize() override;
 	void reinitialize() override;

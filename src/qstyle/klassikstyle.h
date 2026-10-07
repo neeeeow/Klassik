@@ -26,7 +26,6 @@ public:
 	};	  
 	
 	explicit KlassikStyle(StyleType type = Default);
-	~KlassikStyle() override = default;
 
 	void polish(QWidget *widget) override;
 

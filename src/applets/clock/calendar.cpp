@@ -6,10 +6,10 @@
 
 #include "calendar.h"
 
+#include <QCalendarWidget>
 #include <QToolButton>
 #include <QDate>
 #include <QDateEdit>
-#include <QComboBox>
 
 #include <KLocalizedString>
 
@@ -30,27 +30,28 @@ CalendarPopup::initContents(QVBoxLayout *layout)
 		return;
 	
 	// Initialise the QCalendarWidget
-	m_calendar = new QCalendarWidget();
+    auto *calendar = new QCalendarWidget(parent);
+	m_calendar = calendar;
 	layout->addWidget(m_calendar);
 
 	// Initialise the bottom layout
 	auto *bottomLayout = new QHBoxLayout();
 
 	// Button which sets the calendar to today's date
-	auto *todayButton = new QToolButton();
+	auto *todayButton = new QToolButton(parent);
 	todayButton->setIcon(QIcon::fromTheme(QStringLiteral("go-jump-today")));
 	todayButton->setToolTip(i18n("Select the current day"));
 	connect(todayButton, &QToolButton::clicked, this, &CalendarPopup::setCurrentDate);
 	bottomLayout->addWidget(todayButton);
 
 	// Date edit displaying the date
-	auto *dateEdit = new QDateEdit();
-    dateEdit->setDate(m_calendar->selectedDate());
+	auto *dateEdit = new QDateEdit(parent);
+	dateEdit->setDate(m_calendar->selectedDate());
 	bottomLayout->addWidget(dateEdit);
 
 	// Connect signals between date edit and calendar
-	connect(m_calendar, &QCalendarWidget::selectionChanged, dateEdit, [this, dateEdit]() {
-		dateEdit->setDate(m_calendar->selectedDate());
+	connect(calendar, &QCalendarWidget::selectionChanged, dateEdit, [calendar, dateEdit]() {
+		dateEdit->setDate(calendar->selectedDate());
 	});
 	connect(dateEdit, &QDateEdit::dateChanged, m_calendar, &QCalendarWidget::setSelectedDate);
 	

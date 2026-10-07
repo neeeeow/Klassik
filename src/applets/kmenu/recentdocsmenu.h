@@ -15,7 +15,6 @@ class RecentDocsMenu final : public ServiceMenu
 public:
 	explicit RecentDocsMenu(KMenuApplet *applet, QWidget *parent = nullptr);
 	explicit RecentDocsMenu(const QString &title, KMenuApplet *applet, QWidget *parent = nullptr);
-	~RecentDocsMenu() override = default;
 
 	void initialize() override;
 	

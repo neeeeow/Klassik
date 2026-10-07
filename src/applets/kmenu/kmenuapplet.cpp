@@ -27,7 +27,11 @@ KMenuApplet::KMenuApplet(QObject *parentObject, const KPluginMetaData &data, con
 
 KMenuApplet::~KMenuApplet()
 {
-	delete m_menu;
+    if (m_menu) {
+        m_menu->disconnect(this);
+        m_menu->close();
+        m_menu->deleteLater();
+    }
 }
 
 void
@@ -111,18 +115,19 @@ KMenuApplet::toggleMenu(QQuickItem *button)
 QPoint
 KMenuApplet::popupPosition(QQuickItem *item)
 {
-	if (!m_menu || !item || !item->window())
+	if (!m_menu || !item || !item->window() || !item->window()->screen())
 		return QPoint();
 
 	const Plasma::Types::Location panelLocation = location();
-	
-	const QSize size = m_menu->sizeHint();
-	QPoint pos = item->mapToGlobal(QPointF(0, 0)).toPoint();
-	QRect parentGeometryBounds(pos, QSize(item->width(), item->height()));
 
-	const QPoint topPoint(pos.x(), parentGeometryBounds.top() - size.height());
+	m_menu->ensurePolished();
+	const QSize menuSize = m_menu->sizeHint();
+	QPoint pos = item->mapToGlobal(QPointF(0, 0)).toPoint();
+	QRect parentGeometryBounds(pos, item->size().toSize());
+
+	const QPoint topPoint(pos.x(), parentGeometryBounds.top() - menuSize.height());
     const QPoint bottomPoint(pos.x(), parentGeometryBounds.bottom());
-    const QPoint leftPoint(parentGeometryBounds.left() - size.width(), pos.y());
+    const QPoint leftPoint(parentGeometryBounds.left() - menuSize.width(), pos.y());
     const QPoint rightPoint(parentGeometryBounds.right(), pos.y());
 
 	QPoint dialogPos;
@@ -156,11 +161,11 @@ KMenuApplet::popupPosition(QQuickItem *item)
         }
     }
     // ...at the right edge
-    if (dialogPos.x() + size.width() > avail.right()) {
+    if (dialogPos.x() + menuSize.width() > avail.right()) {
         if (panelLocation != Plasma::Types::RightEdge) {
             // move it in bounds
             // Note: floating popup goes here.
-            dialogPos.setX(qMax(avail.left(), (avail.right() - size.width() + 1)));
+            dialogPos.setX(qMax(avail.left(), (avail.right() - menuSize.width() + 1)));
         } else {
             // flip it around
             dialogPos.setX(leftPoint.x());
@@ -178,10 +183,10 @@ KMenuApplet::popupPosition(QQuickItem *item)
         }
     }
     // ...at the bottom edge
-    if (dialogPos.y() + size.height() > avail.bottom()) {
+    if (dialogPos.y() + menuSize.height() > avail.bottom()) {
         if (panelLocation == Plasma::Types::LeftEdge || panelLocation == Plasma::Types::RightEdge) {
             // move it in bounds
-            dialogPos.setY(qMax(avail.top(), (avail.bottom() - size.height() + 1)));
+            dialogPos.setY(qMax(avail.top(), (avail.bottom() - menuSize.height() + 1)));
         } else {
             // flip it around
             // Note: floating popup goes here.

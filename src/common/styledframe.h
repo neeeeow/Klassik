@@ -19,8 +19,7 @@ class StyledFrame : public PaintedItem
 	Q_PROPERTY(int lineWidth READ lineWidth WRITE setLineWidth NOTIFY lineWidthChanged)
 	Q_PROPERTY(bool sunken READ sunken WRITE setSunken)
 public:
-	StyledFrame(QQuickItem *parent = nullptr);
-	~StyledFrame() override = default;
+	explicit StyledFrame(QQuickItem *parent = nullptr);
 
 	int lineWidth() const { return m_lineWidth; }
 	void setLineWidth(int lineWidth) {

@@ -17,7 +17,6 @@ class SettingsMenu final : public ServiceMenu
 public:
 	explicit SettingsMenu(KMenuApplet *applet, QWidget *parent = nullptr);
 	explicit SettingsMenu(const QString &title, KMenuApplet *applet, QWidget *parent = nullptr);
-	~SettingsMenu() override = default;
 
 	void initialize() override;
 	

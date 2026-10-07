@@ -45,8 +45,10 @@ RecentDocsMenu::initialize()
 		| Url::file()
 		| Limit(numRecentDocs > 0 ? numRecentDocs : 1);
 
-	if (m_fileList)
+	if (m_fileList) {
+		m_fileList->disconnect(this);
 		m_fileList->deleteLater();
+	}
     m_fileList = new ResultModel(query, this);	
 
 	// Whenever an application is launched, update the recent apps list

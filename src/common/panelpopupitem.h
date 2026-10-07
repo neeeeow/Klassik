@@ -15,10 +15,11 @@ class QMenu;
 class PanelPopupItem : public QQuickItem
 {
 	Q_OBJECT
+	QML_ANONYMOUS
 	Q_PROPERTY(bool active READ isActive NOTIFY activeChanged)
 	Q_PROPERTY(Plasma::Types::Location location READ location WRITE setLocation)
 public:
-    PanelPopupItem(QQuickItem *parent = nullptr);
+    explicit PanelPopupItem(QQuickItem *parent = nullptr);
 	~PanelPopupItem() override;
 
 	bool isActive() const;
@@ -41,7 +42,7 @@ protected:
 	void clearLayout(QLayout *layout);
 
 	// Called whenever the popup is about to show. Override this function to set custom behaviour.
-	virtual void aboutToShow() {};
+	virtual void aboutToShow() {}
 
 private:
 	// Stores the location of the panel
@@ -57,6 +58,6 @@ private:
 	// Determines the position at which to display the dialog
 	QPoint popupPosition() const;
 	
-	// Initializes the contents of the popup (within the QFrame/QGridLayout)
+	// Initializes the contents of the popup (within the QWidget/QVBoxLayout)
 	virtual void initContents(QVBoxLayout *layout) = 0;
 };

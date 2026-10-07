@@ -170,6 +170,7 @@ KMenu::reinitialize()
 
 	// Clear out recent apps model
 	if (m_recentApps) {
+		m_recentApps->disconnect(this);
 		m_recentApps->deleteLater();
 		m_recentApps = nullptr;
 	}
@@ -282,8 +283,10 @@ KMenu::createRecentMenuItems()
 		| Activity::current()
 		| Limit(m_config.numRecentApps > 0 ? m_config.numRecentApps : 1);
 
-	if (m_recentApps)
+	if (m_recentApps) {
+		m_recentApps->disconnect(this);
 		m_recentApps->deleteLater();
+	}
 	m_recentApps = new ResultModel(query, this);
 
 	// Whenever an application is launched, update the recent apps list

@@ -15,7 +15,6 @@ class SystemMenu final : public ServiceMenu
 public:
 	explicit SystemMenu(KMenuApplet *applet, QWidget *parent = nullptr);
 	explicit SystemMenu(const QString &title, KMenuApplet *applet, QWidget *parent = nullptr);
-	~SystemMenu() override = default;
 
 	void initialize() override;
 };

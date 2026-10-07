@@ -20,8 +20,7 @@ class TaskBackground : public PaintedItem
 	QML_ELEMENT
 	Q_PROPERTY(bool sunken READ sunken WRITE setSunken)
 public:
-	TaskBackground(QQuickItem *parent = nullptr) : PaintedItem(parent) {}
-	~TaskBackground() override = default;
+	explicit TaskBackground(QQuickItem *parent = nullptr) : PaintedItem(parent) {}
 
 	bool sunken() const { return m_sunken; }
 	void setSunken(bool state) {
