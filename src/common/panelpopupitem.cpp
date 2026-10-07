@@ -52,6 +52,22 @@ PanelPopupItem::componentComplete()
 }
 
 void
+PanelPopupItem::clearLayout(QLayout *layout)
+{
+	if (!layout)
+		return;
+	QLayoutItem* item;
+    while ((item = layout->takeAt(0)) != nullptr) {
+        if (item->layout()) {
+            clearLayout(item->layout());
+            delete item->layout();
+        } else if (item->widget())
+            item->widget()->deleteLater();
+        delete item;
+    }	
+}
+
+void
 PanelPopupItem::togglePopup()
 {
 	if (!m_menu)

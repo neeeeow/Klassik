@@ -10,6 +10,8 @@
 
 #include <QCalendarWidget>
 
+class QComboBox;
+
 class CalendarPopup : public PanelPopupItem
 {
 	Q_OBJECT

@@ -1,3 +1,5 @@
+add_definitions(-DTRANSLATION_DOMAIN=\"plasma_applet_com.github.neeeeow.klassik.clock\")
+
 configure_file(
     ${CMAKE_CURRENT_SOURCE_DIR}/metadata.json.in
     ${CMAKE_CURRENT_BINARY_DIR}/metadata.json
@@ -25,5 +27,6 @@ target_link_libraries(com.github.neeeeow.klassik.clock PRIVATE
     Qt::Widgets
     Qt::Qml
     Qt::Quick
+    KF6::I18n
     KF6::ConfigQml
 )

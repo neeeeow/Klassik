@@ -37,6 +37,9 @@ Q_SIGNALS:
 protected:	
 	void componentComplete() override;
 
+	// Clears all items of a QLayout.
+	void clearLayout(QLayout *layout);
+
 	// Called whenever the popup is about to show. Override this function to set custom behaviour.
 	virtual void aboutToShow() {};
 
