@@ -24,6 +24,10 @@
             <label>Display action tooltips</label>
             <default>false</default>
         </entry>
+        <entry name="showGenericName" type="Bool">
+            <label>Display the generic name of applications</label>
+            <default>true</default>
+        </entry>
 
         <entry name="showRecentApps" type="Bool">
             <label>Display the Most Used Applications section</label>

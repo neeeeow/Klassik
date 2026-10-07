@@ -7,7 +7,6 @@
 #pragma once
 
 #include <QQuickItem>
-#include <QWidget>
 #include <QVBoxLayout>
 #include <Plasma/Plasma>
 
@@ -35,9 +34,7 @@ public:
 Q_SIGNALS:
 	void activeChanged();
 
-protected:
-	QWidget *container() const {return m_container;}
-	
+protected:	
 	void componentComplete() override;
 
 	// Called whenever the popup is about to show. Override this function to set custom behaviour.
@@ -50,9 +47,6 @@ private:
 	// Points to the QMenu which stores the contents of our popup. Must *never* be
 	// accessed outside of this class
 	QPointer<QMenu> m_menu = nullptr;
-
-	// The container widget which holds the layout (used for parenting items)
-	QWidget *m_container = nullptr;
 
 	// The layout to which we add items
 	QVBoxLayout *m_layout = nullptr;

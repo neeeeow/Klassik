@@ -72,7 +72,7 @@ ContainmentInterface::mayAddLauncher(ContainmentInterface::Target target) const
 void
 ContainmentInterface::addLauncher(ContainmentInterface::Target target, const KService::Ptr &service) const
 {
-	if (!containment())
+	if (!containment() || !service)
 		return;
 	
 	Plasma::Corona *corona = containment()->corona();
@@ -130,14 +130,14 @@ ContainmentInterface::addLauncher(ContainmentInterface::Target target, const KSe
 	}
 }
 
-Plasma::Applet
-*ContainmentInterface::findQuicklaunchApplet() const
+Plasma::Applet *
+ContainmentInterface::findQuicklaunchApplet() const
 {
 	if (!containment())
 		return nullptr;
 	
 	const QList<Plasma::Applet *> applets = containment()->applets();
-	const auto found = std::ranges::find_if(applets, [this](const Plasma::Applet *applet) {
+	const auto found = std::ranges::find_if(applets, [](const Plasma::Applet *applet) {
 	    return applet->pluginMetaData().pluginId() == QLatin1String("com.github.neeeeow.klassik.quicklaunch");
 	});
 	return found != applets.cend() ? *found : nullptr;

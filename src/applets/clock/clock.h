@@ -35,19 +35,11 @@ protected:
 	// Config getter
 	template <typename T>
 	T getConfigValue(const char *key) const {
-		if (!m_config)
-			return T();	
-
-		QVariant value = m_config->property(key);
-		if (value.isNull() || !value.isValid()) {
-		    qWarning() << "key " << key << " not found!";
-			return T();
-		}
+		const QVariant value = configValue(key);
 		if (!value.canConvert<T>()) {
-		    qWarning() << "key " << key << " type mismatch!";
+			qWarning() << "key " << key << " type mismatch!";
 			return T();
 		}
-
 		return value.value<T>();				
 	}
 
@@ -64,6 +56,8 @@ private:
 	QPixmap m_lcdPixmap; // Pixmap for the LCD background
 	KConfigPropertyMap *m_config = nullptr; // Applet config map
 
+	QVariant configValue(const char *key) const;
+	
 	void paint(QPainter *p) const override;
 
 	// Function which draws the actual clock contents itself, and must

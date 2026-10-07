@@ -27,6 +27,20 @@ Clock::setConfig(KConfigPropertyMap *config)
 	}
 }
 
+QVariant
+Clock::configValue(const char *key) const
+{
+	if (!m_config)
+		return QVariant();		
+	
+	const QVariant value = m_config->property(key);
+	if (value.isNull() || !value.isValid()) {
+		qWarning() << "key " << key << " not found!";
+		return QVariant();
+	}
+	return value;
+}
+
 void
 Clock::paint(QPainter *p) const
 {

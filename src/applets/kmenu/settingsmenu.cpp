@@ -5,13 +5,13 @@
 */
 
 #include "settingsmenu.h"
-#include "kmenuapplet.h"
 
-#include <KPluginFactory>
+#include <KPluginMetaData>
 #include <KAuthorized>
 #include <KFileUtils>
 #include <KDesktopFile>
 #include <KLocalizedString>
+#include <KConfigGroup>
 
 SettingsMenu::SettingsMenu(KMenuApplet *applet, QWidget *parent)
 	: ServiceMenu(applet, parent)
@@ -33,26 +33,25 @@ SettingsMenu::initialize()
 
 	// Add system settings action at the top of the menu
 	const KService::Ptr systemsettings = KService::serviceByDesktopName(QStringLiteral("systemsettings"));
-	if (QAction *settingsAction = createActionFromService(systemsettings))
+	if (QAction *settingsAction = createActionFromService(systemsettings)) {
 		addAction(settingsAction);
+		addSeparator();
+	}
 
 	// Load KCM meta data
-	m_pluginModules = findKCMsMetaData();
+	const QList<KPluginMetaData> pluginModules = findKCMsMetaData();
 
 	// Load category data
-	const QStringList dirs = QStandardPaths::locateAll(QStandardPaths::GenericDataLocation, QStringLiteral("systemsettings/categories"), QStandardPaths::LocateDirectory);
-	m_categories = KFileUtils::findAllUniqueFiles(dirs, QStringList(QStringLiteral("*.desktop")));
-
+	const QList<CategoryData> categories = parseCategoryFiles();
+	
 	// Populate our settings tree
 	SettingsItem root;
 	root.isCategory = true;
-	buildSettingsTree(&root);
+	buildSettingsTree(&root, pluginModules, categories);
 
 	// Populate the menu itself
-	if (!root.children.isEmpty()) {
-		addSeparator();
+	if (!root.children.isEmpty())		
 		populateMenu(&root, this);
-	}
 
 	// Add the menu editor action at the bottom
 	QAction *editAction = addAction(QIcon::fromTheme(QStringLiteral("kmenuedit")), i18n("Menu Editor"));
@@ -63,8 +62,36 @@ SettingsMenu::initialize()
 	setInitialized(true);
 }
 
+QList<SettingsMenu::CategoryData>
+SettingsMenu::parseCategoryFiles() const
+{
+	const QStringList dirs = QStandardPaths::locateAll(QStandardPaths::GenericDataLocation, QStringLiteral("systemsettings/categories"), QStandardPaths::LocateDirectory);
+    const QStringList categoryFiles = KFileUtils::findAllUniqueFiles(dirs, QStringList(QStringLiteral("*.desktop")));
+
+	QList<CategoryData> categories;
+	for (const QString &categoryFile : categoryFiles) {
+		const KDesktopFile file(categoryFile);
+		const KConfigGroup entry = file.desktopGroup();
+
+		CategoryData category;
+		category.id = entry.readEntry("X-KDE-System-Settings-Category");
+		if (category.id.isEmpty() || category.id == QStringLiteral("rootcategory"))
+			continue;
+
+		category.name = entry.readEntry("Name");
+		category.icon = entry.readEntry("Icon");
+		category.parentCategory = entry.readEntry("X-KDE-System-Settings-Parent-Category");
+		category.parentCategory2 = entry.readEntry("X-KDE-System-Settings-Parent-Category-V2");
+		category.weight = entry.readEntry("X-KDE-Weight", 100);
+
+		categories.append(category);
+	}
+
+	return categories;
+}
+
 QList<KPluginMetaData>
-SettingsMenu::findKCMsMetaData()
+SettingsMenu::findKCMsMetaData() const
 {
 	QList<KPluginMetaData> modules;
 	std::set<QString> uniquePluginIds;
@@ -88,37 +115,33 @@ SettingsMenu::findKCMsMetaData()
 }
 
 void
-SettingsMenu::buildSettingsTree(SettingsItem *parent)
+SettingsMenu::buildSettingsTree(SettingsItem *parent,
+								const QList<KPluginMetaData> &pluginModules,
+							    const QList<CategoryData> &categories)
 {
 	// Look for categories
-	for (const QString &category : std::as_const(m_categories)) {
-		const KDesktopFile file(category);
-		const KConfigGroup entry = file.desktopGroup();
-		const QString parentCategory = entry.readEntry("X-KDE-System-Settings-Parent-Category");
-		const QString parentCategory2 = entry.readEntry("X-KDE-System-Settings-Parent-Category-V2");
+	for (const CategoryData &category : std::as_const(categories)) {
+		if (category.id == parent->id)
+            continue;
 
-		if (parentCategory == parent->id ||
+		if (category.parentCategory == parent->id ||
 			// V2 entries must not be empty if they want to become a proper category.
-			(!parentCategory2.isEmpty() && parentCategory2 == parent->id)) {
-
-			const QString id = entry.readEntry("X-KDE-System-Settings-Category");
-			if (id.isEmpty() || id == QStringLiteral("rootcategory") || id == parent->id)
-				continue; // skip the root category
-
+            (!category.parentCategory2.isEmpty() && category.parentCategory2 == parent->id)) {
+			
 			// Create category settings item
 			auto item = new SettingsItem();
 			item->isCategory = true;
-			item->id = id;
-			item->name = entry.readEntry("Name");
-			item->icon = entry.readEntry("Icon");
-			item->weight = entry.readEntry("X-KDE-Weight", 100);
+			item->id = category.id;
+			item->name = category.name;
+			item->icon = category.icon;
+			item->weight = category.weight;
 			parent->children.append(item);
-			buildSettingsTree(item); // Recurse for the new item
+			buildSettingsTree(item, pluginModules, categories); // Recurse for the new item
 		}
 	}
 
 	// Add KCMs
-	for (const auto &metaData : std::as_const(m_pluginModules)) {
+	for (const auto &metaData : std::as_const(pluginModules)) {
 		const QString parentCategory = metaData.value(QStringLiteral("X-KDE-System-Settings-Parent-Category"));
 		const QString parentCategory2 = metaData.value(QStringLiteral("X-KDE-System-Settings-Parent-Category-V2"));
 

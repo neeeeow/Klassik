@@ -63,9 +63,9 @@ RecentDocsMenu::updateRecentDocs()
 	if (!m_fileList) // sanity check
 		return;
 	
-	clear();
+    clear();	
 	QAction *clearAction = addAction(QIcon::fromTheme(QStringLiteral("edit-clear-history")), i18n("Clear History"));
-	connect(clearAction, &QAction::triggered, m_fileList, &KActivities::Stats::ResultModel::forgetAllResources);
+	connect(clearAction, &QAction::triggered, m_fileList, &KActivities::Stats::ResultModel::forgetAllResources, Qt::QueuedConnection);
 	addSeparator();
 
 	QList<QAction *> actionList;

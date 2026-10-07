@@ -8,7 +8,6 @@
 
 #include <QStyle>
 #include <QWidgetAction>
-#include <QLabel>
 #include <QFont>
 #include <QPainter>
 #include <QFontMetrics>

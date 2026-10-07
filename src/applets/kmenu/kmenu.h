@@ -8,7 +8,7 @@
 
 #include "servicemenu.h"
 
-#include <sessionmanagement.h>
+class SessionManagement;
 
 class KMenu final : public ServiceMenu
 {
@@ -45,14 +45,14 @@ private:
 	Config m_config;	
 		
 	// Session manager
-	SessionManagement m_session;
+	SessionManagement *m_session = nullptr;
 	
 	// Side pixmaps
 	QPixmap m_sidePixmap;
 	QPixmap m_sideTilePixmap;
 	
 	// Action to which we anchor the applications 
-	QAction *m_applicationsAnchor = nullptr;
+	QPointer<QAction> m_applicationsAnchor = nullptr;
 
 	// ResultModels for recent apps
     KActivities::Stats::ResultModel *m_recentApps = nullptr;

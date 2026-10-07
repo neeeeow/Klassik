@@ -8,7 +8,6 @@
 
 #include <QStyle>
 #include <QWidgetAction>
-#include <QFontMetrics>
 #include <QStyleOptionMenuItem>
 #include <QLineEdit>
 #include <QHBoxLayout>

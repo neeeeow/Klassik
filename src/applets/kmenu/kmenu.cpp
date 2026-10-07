@@ -13,12 +13,10 @@
 #include "systemmenu.h"
 
 #include <QPainter>
-#include <QPoint>
 #include <QEvent>
 #include <QAction>
 #include <QLineEdit>
 #include <QRect>
-#include <QToolButton>
 #include <QPaintEvent>
 
 #include <KColorScheme>
@@ -27,12 +25,13 @@
 #include <KServiceGroup>
 #include <KSycoca>
 
-#include <Plasma/Plasma>
 #include <PlasmaActivities/Stats/Query>
+
+#include <sessionmanagement.h>
 
 KMenu::KMenu(KMenuApplet *applet, QWidget *parent)
 	: ServiceMenu(applet, parent),
-	  m_session(this)
+	  m_session(new SessionManagement(this))
 {
 	initialize(); // Populate menu items
 }
@@ -70,6 +69,7 @@ void
 KMenu::initialize()
 {
 	if (initialized()) return;
+	ServiceMenu::initialize();
 
 	// Load the configuration
 	if (applet()) {
@@ -84,9 +84,7 @@ KMenu::initialize()
 	}
 	
 	loadSidePixmap();
-	setMargins();
-		
-	ServiceMenu::initialize();
+	setMargins();	   
 	
 	// Add the section headers
 	if (m_config.showTitles) {
@@ -136,19 +134,19 @@ KMenu::initialize()
 	connect(action, &QAction::triggered, this, [](){invokeKRunner();});
 	
 	// Add the power/session options
-	if (m_session.canSwitchUser() || m_session.canLock() || m_session.canLogout()) {
+	if (m_session && (m_session->canSwitchUser() || m_session->canLock() || m_session->canLogout())) {
 		addSeparator();
-		if (m_session.canSwitchUser()) {
+		if (m_session->canSwitchUser()) {
 			action = addAction(QIcon::fromTheme(QStringLiteral("system-switch-user")), i18n("Switch User"));
-			connect(action, &QAction::triggered, &m_session, &SessionManagement::switchUser);
+			connect(action, &QAction::triggered, m_session, &SessionManagement::switchUser);
 		}
-		if (m_session.canLock()) {
+		if (m_session->canLock()) {
 			action = addAction(QIcon::fromTheme(QStringLiteral("system-lock-screen")), i18n("Lock Session"));
-			connect(action, &QAction::triggered, &m_session, &SessionManagement::lock);
+			connect(action, &QAction::triggered, m_session, &SessionManagement::lock);
 		}
-		if (m_session.canLogout()) {
+		if (m_session->canLogout()) {
 			action = addAction(QIcon::fromTheme(QStringLiteral("system-log-out")), i18n("Log Out..."));
-			connect(action, &QAction::triggered, &m_session, &SessionManagement::requestLogoutPrompt);
+			connect(action, &QAction::triggered, m_session, &SessionManagement::requestLogoutPrompt);
 		}
 	}
 
@@ -371,6 +369,7 @@ KMenu::updateApplications()
 	if (actionList.isEmpty()) {
 	    auto *emptyAction = new QAction(i18n("No Entries"), this);
 		emptyAction->setEnabled(false);
+		emptyAction->setProperty("ignoreSearch", true);
 		m_applicationActions.append(emptyAction);
 	} else {
 		m_applicationActions.append(actionList);		
@@ -388,7 +387,7 @@ KMenu::applySearchFilter(const QList<QAction *> &actions, QStringView text)
 {
    	bool anyEnabled = false;
 	for (QAction *action : actions) {
-		if (action->isSeparator() || action->text() == i18n("No Entries"))
+		if (action->isSeparator() || action->property("ignoreSearch").toBool())
 			continue;
 
 		bool enabled = false; // Whether or not to enable the individual action

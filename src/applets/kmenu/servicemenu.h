@@ -9,13 +9,14 @@
 #include <QMenu>
 #include <QPointer>
 #include <QUrl>
+#include <QTimer>
 
+#include <KService>
 #include <KServiceGroup>
 
 #include <PlasmaActivities/Stats/ResultModel>
 
 class KMenuApplet;
-class KService;
 
 class ServiceMenu : public QMenu
 {
@@ -54,7 +55,7 @@ protected:
 	void setInitialized(bool initialized) { m_initialized = initialized; }
 
 	// Returns a pointer to the Plasma applet attached to our menu
-    KMenuApplet* applet() const { return m_applet; }
+    KMenuApplet* applet() const;
 
 	// Takes a QList of QActions * and removes them from the menu
 	void cleanupActionList(QList<QAction *> &);
@@ -71,15 +72,22 @@ protected:
 	// Template for connecting all of the required signals to a result model
 	template <typename Slot>
 	void connectResultModel(KActivities::Stats::ResultModel *model, Slot slot) {
-		connect(model, &KActivities::Stats::ResultModel::dataChanged, this, slot);
-		connect(model, &KActivities::Stats::ResultModel::modelReset, this, slot);
-		connect(model, &KActivities::Stats::ResultModel::rowsInserted, this, slot);
-		connect(model, &KActivities::Stats::ResultModel::rowsMoved, this, slot);
-		connect(model, &KActivities::Stats::ResultModel::rowsRemoved, this, slot);
+		auto *timer = new QTimer(model); // use a single shot timer to debounce update calls
+		timer->setSingleShot(true);
+		timer->setInterval(0);
+		connect(timer, &QTimer::timeout, this, slot);
+		connect(model, &QAbstractItemModel::dataChanged,  timer,  qOverload<>(&QTimer::start));
+		connect(model, &QAbstractItemModel::modelReset,   timer,  qOverload<>(&QTimer::start));
+		connect(model, &QAbstractItemModel::rowsInserted, timer,  qOverload<>(&QTimer::start));
+		connect(model, &QAbstractItemModel::rowsMoved,    timer,  qOverload<>(&QTimer::start));
+		connect(model, &QAbstractItemModel::rowsRemoved,  timer,  qOverload<>(&QTimer::start));
 	}
 
 private:
 	bool m_initialized; // Initialization state
+
+	// Whether or not to display generic names for applications
+	bool m_displayGenericName = true;
 
 	// Pointer to the plasma applet
 	QPointer<KMenuApplet> m_applet = nullptr;

@@ -47,7 +47,7 @@ private:
 			header.palette.setColor(QPalette::Window, header.palette.window().color().darker(110));
 		}
 	    header.rect = QRect(0,0,width(),height());
-		header.state = m_sunken ? QStyle::State_Sunken : QStyle::State_Raised;
+		header.state = QStyle::State_Enabled | (m_sunken ? QStyle::State_Sunken : QStyle::State_Raised);
 
 	    style()->drawControl(QStyle::CE_HeaderSection, &header, p);
 	}

@@ -6,6 +6,9 @@
 
 #include "calendar.h"
 
+#include <QToolButton>
+#include <QLineEdit>
+
 CalendarPopup::CalendarPopup(QQuickItem *parent)
 	: PanelPopupItem(parent)
 {
@@ -14,12 +17,27 @@ CalendarPopup::CalendarPopup(QQuickItem *parent)
 void
 CalendarPopup::initContents(QVBoxLayout *layout)
 {
+	// Initialise the QCalendarWidget
 	if (m_calendar) {
-		m_calendar->close();
+		layout->removeWidget(m_calendar);
 		m_calendar->deleteLater();
 	}
-	m_calendar = new QCalendarWidget(container());
+	m_calendar = new QCalendarWidget();
 	layout->addWidget(m_calendar);
+
+	// Initialise the bottom layout
+	auto bottomLayout = new QHBoxLayout();
+
+	// Button which sets the calendar to today's date
+	auto todayButton = new QToolButton();
+	todayButton->setIcon(QIcon::fromTheme(QStringLiteral("go-jump-today")));
+	connect(todayButton, &QToolButton::clicked, this, &CalendarPopup::setCurrentDate);
+	bottomLayout->addWidget(todayButton);
+
+	// Line edit displaying the date
+
+	layout->addLayout(bottomLayout);
+
 	setCurrentDate();
 }
 

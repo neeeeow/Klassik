@@ -5,7 +5,6 @@
 */
 
 #include "systemmenu.h"
-#include "kmenuapplet.h"
 
 #include <KFilePlacesModel>
 

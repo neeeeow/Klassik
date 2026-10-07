@@ -9,7 +9,6 @@
 #include "popupmenutitle.h"
 #include "containmentinterface.h"
 
-#include <QList>
 #include <QMimeData>
 #include <QMimeDatabase>
 #include <QMouseEvent>
@@ -54,6 +53,7 @@ void
 ServiceMenu::initialize()
 {
 	if (initialized()) return;
+	m_displayGenericName = applet() ? applet()->getConfigValue<bool>(QStringLiteral("showGenericName")) : true;
 	this->setToolTipsVisible(applet() ? applet()->getConfigValue<bool>(QStringLiteral("showTooltips")) : false);
 	setInitialized(true);
 }
@@ -67,6 +67,12 @@ ServiceMenu::reinitialize()
 
 	clear();
 	initialize();
+}
+
+KMenuApplet*
+ServiceMenu::applet() const
+{
+	return m_applet;
 }
 
 void
@@ -105,9 +111,11 @@ ServiceMenu::createActionFromService(const KService::Ptr &service, const QUrl &u
 		return nullptr;
 
 	QString title = service->name().replace(QLatin1Char('&'), QStringLiteral("&&"));
-	const QString genericName = service->genericName().replace(QLatin1Char('&'), QStringLiteral("&&"));
-	if (!genericName.isEmpty() && genericName != title)
-		title.append(QStringLiteral(" (%1)").arg(genericName));
+	if (m_displayGenericName) {
+		const QString genericName = service->genericName().replace(QLatin1Char('&'), QStringLiteral("&&"));
+		if (!genericName.isEmpty() && genericName != title)
+			title.append(QStringLiteral(" (%1)").arg(genericName));
+	}
 	
 	auto *action = new QAction(QIcon::fromTheme(service->icon()), title, this);
 
@@ -139,7 +147,7 @@ ServiceMenu::createActionFromUrl(const QUrl &url)
     const QString fileName = url.fileName().replace(QLatin1Char('&'), QStringLiteral("&&")); // name to display in the menu
 		
 	const QMimeDatabase db; // use QMimeDatabase to fetch the icon name
-	const QMimeType mime = db.mimeTypeForUrl(url);
+    const QMimeType mime = db.mimeTypeForFile(url.toLocalFile(), QMimeDatabase::MatchExtension);
 	const QIcon icon = QIcon::fromTheme(mime.iconName());
 
 	auto *action = new QAction(icon, fileName, this);
@@ -346,8 +354,8 @@ ServiceMenu::showContextMenu(const QPoint &pos) const
 				contextMenu.addAction(new PopupMenuTitle(i18n("Open With"), &contextMenu));
 
 			for (const KService::Ptr &service : services) {
-				if (QAction *action = contextMenu.createActionFromService(service, url))
-					contextMenu.addAction(action);
+				if (QAction *serviceAction = contextMenu.createActionFromService(service, url))
+					contextMenu.addAction(serviceAction);
 			}						
 		}
 

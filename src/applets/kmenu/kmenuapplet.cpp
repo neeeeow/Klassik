@@ -16,6 +16,7 @@
 
 #include <KPluginFactory>
 #include <KConfigPropertyMap>
+#include <KConfigLoader>
 
 K_PLUGIN_CLASS_WITH_JSON(KMenuApplet, "metadata.json")
 
@@ -54,18 +55,14 @@ KMenuApplet::init()
 
 	// Set up a QTimer to deal with multiple config changes simultaneously
 	// Firing the timer immediately on the next loop is sufficient.
-	if (m_reinitTimer)
-		m_reinitTimer->deleteLater();
-	m_reinitTimer = new QTimer(this);
-	m_reinitTimer->setSingleShot(true);
-	m_reinitTimer->setInterval(0);
-	connect(m_reinitTimer, &QTimer::timeout, this, [this]() {
+	auto timer = new QTimer(this);
+	timer->setSingleShot(true);
+	timer->setInterval(0);
+	connect(timer, &QTimer::timeout, this, [this]() {
 		if (m_menu)
 			m_menu->reinitialize();
 	});	
-	connect(configuration(), &KConfigPropertyMap::valueChanged, this, [this]() {
-		m_reinitTimer->start();
-	});
+	connect(configuration(), &KConfigPropertyMap::valueChanged, timer, qOverload<>(&QTimer::start));
 }
 
 bool
@@ -78,6 +75,21 @@ ContainmentInterface*
 KMenuApplet::containmentInterface() const
 {
 	return m_containmentInterface;
+}
+
+QVariant
+KMenuApplet::configValue(const QString &key) const
+{
+	KConfigLoader *configLoader = configScheme();
+	if (!configLoader)
+		return QVariant();	
+	
+	const QVariant value = configLoader->property(key);
+	if (value.isNull() || !value.isValid()) {
+		qWarning() << "key " << key << " not found!";
+		return QVariant();
+	}
+	return value;
 }
 
 void

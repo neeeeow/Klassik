@@ -7,7 +7,6 @@
 #pragma once
 
 #include <QPointer>
-#include <KConfigLoader>
 #include <Plasma/Applet>
 
 class QQuickItem;
@@ -32,22 +31,13 @@ public:
 
 	// Config getter
 	template <typename T>
-	T getConfigValue(const QString &key) {
-		KConfigLoader *configLoader = configScheme();
-		if (!configLoader)
-			return T();	
-
-		QVariant value = configLoader->property(key);
-		if (value.isNull() || !value.isValid()) {
-			qWarning() << "key " << key << " not found!";
-			return T();
-		}
+	T getConfigValue(const QString &key) const {
+		const QVariant value = configValue(key);
 		if (!value.canConvert<T>()) {
 			qWarning() << "key " << key << " type mismatch!";
 			return T();
 		}
-
-		return value.value<T>();				
+		return value.value<T>();
 	}
 
 Q_SIGNALS:
@@ -56,7 +46,7 @@ Q_SIGNALS:
 private:
 	QPointer<ContainmentInterface> m_containmentInterface = nullptr;
 	QPointer<KMenu> m_menu = nullptr;
-	QTimer *m_reinitTimer = nullptr;
 
-	QPoint popupPosition(QQuickItem *item);
+	QVariant configValue(const QString &key) const;
+	QPoint popupPosition(QQuickItem *item);	
 };

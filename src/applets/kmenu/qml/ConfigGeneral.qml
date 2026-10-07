@@ -25,6 +25,7 @@ KCMUtils.SimpleKCM {
     property alias cfg_showTitles: showTitles.checked
     property alias cfg_showSearch: showSearch.checked
     property alias cfg_showTooltips: showTooltips.checked
+    property alias cfg_showGenericName: showGenericName.checked
 
     property alias cfg_showRecentApps: showRecentApps.checked
     property alias cfg_numRecentApps: numRecentApps.value
@@ -106,6 +107,10 @@ KCMUtils.SimpleKCM {
         CheckBox {
             id: showTooltips
             text: i18n("Display tooltips on menu items")
+        }
+        CheckBox {
+            id: showGenericName
+            text: i18n("Display the generic name of applications (if there is one)")
         }
 
         Item {
