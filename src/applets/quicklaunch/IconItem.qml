@@ -98,10 +98,11 @@ Item {
                 }
             }
 
-            SunkenAppletFrame {
+            StyledFrame {
                 id: sunkenFrame
                 anchors.fill: parent
                 visible: mouseArea.isDown
+                sunken: true
             }
 
             Kirigami.Icon {

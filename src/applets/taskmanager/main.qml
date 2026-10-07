@@ -210,11 +210,12 @@ PlasmoidItem {
             }
         }
 
-        SunkenAppletFrame {
+        StyledFrame {
             id: sunkenFrame
             anchors.fill: parent
             visible: Plasmoid.configuration.drawFrame
             lineWidth: 1
+            sunken: true
         }
 
         GridLayout {

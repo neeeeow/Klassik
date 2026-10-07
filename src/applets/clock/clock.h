@@ -40,11 +40,11 @@ protected:
 
 		QVariant value = m_config->property(key);
 		if (value.isNull() || !value.isValid()) {
-			qWarning("AppletConfig: Key not found!");
+		    qWarning() << "key " << key << " not found!";
 			return T();
 		}
 		if (!value.canConvert<T>()) {
-			qWarning("AppletConfig: Key type mismatch!");
+		    qWarning() << "key " << key << " type mismatch!";
 			return T();
 		}
 

@@ -4,11 +4,11 @@
   SPDX-License-Identifier: GPL-3.0-or-later
 */
 
-#include "sunkenappletframe.h"
+#include "styledframe.h"
 
 #include <QStyleOptionFrame>
 
-SunkenAppletFrame::SunkenAppletFrame(QQuickItem *parent) : PaintedItem(parent)
+StyledFrame::StyledFrame(QQuickItem *parent) : PaintedItem(parent)
 {
 	// Retrieve default panel thickness
 	if (style())
@@ -16,7 +16,7 @@ SunkenAppletFrame::SunkenAppletFrame(QQuickItem *parent) : PaintedItem(parent)
 }
 
 void
-SunkenAppletFrame::paint(QPainter *p) const
+StyledFrame::paint(QPainter *p) const
 {
 	if (!style())
 		return;
@@ -24,7 +24,7 @@ SunkenAppletFrame::paint(QPainter *p) const
 	QStyleOptionFrame frame;
 	frame.palette = QGuiApplication::palette();
 	frame.rect = QRect(0,0,width(),height());
-	frame.state = QStyle::State_Enabled | QStyle::State_Sunken;
+	frame.state = QStyle::State_Enabled | (m_sunken ? QStyle::State_Sunken : QStyle::State_Raised);
 	frame.frameShape = QFrame::StyledPanel;
 	frame.lineWidth = m_lineWidth;
 

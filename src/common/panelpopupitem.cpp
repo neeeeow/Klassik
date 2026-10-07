@@ -34,10 +34,7 @@ PanelPopupItem::PanelPopupItem(QQuickItem *parent)
 
 PanelPopupItem::~PanelPopupItem()
 {
-	if (m_menu) {
-		m_menu->close();
-		m_menu->deleteLater();		
-	}
+	delete m_menu;
 }
 
 bool

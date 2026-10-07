@@ -21,7 +21,7 @@ plasma_add_applet(com.github.neeeeow.klassik.kmenu
         systemmenu.cpp
         popupmenutitle.h
         popupmenusearch.h
-        ${KLASSIK_COMMON_DIR}/sunkenappletframe.cpp
+        ${KLASSIK_COMMON_DIR}/styledframe.cpp
         ${KLASSIK_COMMON_DIR}/panelbuttonarrow.cpp
     RESOURCES
         main.xml

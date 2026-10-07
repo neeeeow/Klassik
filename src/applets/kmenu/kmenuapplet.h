@@ -32,7 +32,7 @@ public:
 
 	// Config getter
 	template <typename T>
-		T getConfigValue(const QString &key) {
+	T getConfigValue(const QString &key) {
 		KConfigLoader *configLoader = configScheme();
 		if (!configLoader)
 			return T();	

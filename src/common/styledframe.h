@@ -8,19 +8,19 @@
 
 #include "painteditem.h"
 
-class SunkenAppletFrame : public PaintedItem
+class StyledFrame : public PaintedItem
 {
 	/*
-	   This class draws a sunken frame which appears on the panel
-	   around various applets and buttons
+	   QML element which draws a frame using QStyle
 	*/
 	  
 	Q_OBJECT
 	QML_ELEMENT
 	Q_PROPERTY(int lineWidth READ lineWidth WRITE setLineWidth NOTIFY lineWidthChanged)
+	Q_PROPERTY(bool sunken READ sunken WRITE setSunken)
 public:
-	SunkenAppletFrame(QQuickItem *parent = nullptr);
-	~SunkenAppletFrame() override = default;
+	StyledFrame(QQuickItem *parent = nullptr);
+	~StyledFrame() override = default;
 
 	int lineWidth() const { return m_lineWidth; }
 	void setLineWidth(int lineWidth) {
@@ -31,6 +31,14 @@ public:
 		}
 	}
 
+	bool sunken() const { return m_sunken; }
+	void setSunken(bool sunken) {
+		if (m_sunken != sunken) {
+			m_sunken = sunken;
+			updateImage();
+		}
+	}
+
 Q_SIGNALS:
 	// We need this signal since lineWidth does get changed internally, and the QML side
 	// must be aware of these changes to update item paddings
@@ -38,6 +46,7 @@ Q_SIGNALS:
 	
 private:
 	int m_lineWidth = 1;
+	bool m_sunken = false;
 	
 	void paint(QPainter *p) const override;
 };

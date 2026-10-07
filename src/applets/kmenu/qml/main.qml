@@ -43,9 +43,10 @@ PlasmoidItem{
         Layout.minimumHeight: vertical ? Layout.preferredHeight : -1
         Layout.maximumHeight: vertical ? Layout.preferredHeight : -1
 
-        background: SunkenAppletFrame {
+        background: StyledFrame {
             id: sunkenFrame
             visible: menuButton.down || menuButton.checked
+            sunken: true
         }
 
         contentItem: Item {
