@@ -7,6 +7,7 @@
 #pragma once
 
 #include <QObject>
+#include <QPointer>
 
 #include <KService>
 
@@ -26,8 +27,6 @@ public:
 		Panel,
 		Quicklaunch
 	};
-
-	Q_ENUM(Target)
 	
 	explicit ContainmentInterface(Plasma::Applet *applet);
 

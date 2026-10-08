@@ -11,7 +11,7 @@
 #include <QFont>
 #include <QPainter>
 #include <QFontMetrics>
-#include <QStyleOptionMenuItem>
+#include <QStyleOptionHeader>
 
 // The header widget that we'll draw within the QWidgetAction
 namespace menuWidgets {
@@ -25,7 +25,7 @@ namespace menuWidgets {
 		}
 
 		QSize sizeHint() const override {
-			QFont f;
+			QFont f(font());
 			f.setBold(true);
 			const QFontMetrics fm(f);
 			const int fw = style()->pixelMetric(QStyle::PM_DefaultFrameWidth);
@@ -46,7 +46,7 @@ namespace menuWidgets {
 
 			// Draw the text
 			if (!m_text.isEmpty()) {
-				QFont f;
+				QFont f(font());
 				f.setBold(true);
 				p.setPen(palette().buttonText().color());
 				p.setFont(f);

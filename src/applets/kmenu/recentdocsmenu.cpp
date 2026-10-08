@@ -13,9 +13,8 @@
 #include <PlasmaActivities/Stats/Query>
 
 RecentDocsMenu::RecentDocsMenu(KMenuApplet *applet, QWidget *parent)
-	: ServiceMenu(applet, parent)
+	: RecentDocsMenu(QString(), applet, parent)
 {
-	initialize();
 }
 
 RecentDocsMenu::RecentDocsMenu(const QString &title, KMenuApplet *applet, QWidget *parent)
@@ -47,12 +46,11 @@ RecentDocsMenu::initialize()
 		| Limit(numRecentDocs > 0 ? numRecentDocs : 1);
 
 	if (m_fileList) {
-		m_fileList->disconnect();
+		m_fileList->disconnect(this);
 		m_fileList->deleteLater();
 	}
     m_fileList = new ResultModel(query, this);	
 
-	// Whenever an application is launched, update the recent apps list
 	connectModel(m_fileList);
 
 	updateRecentDocs();

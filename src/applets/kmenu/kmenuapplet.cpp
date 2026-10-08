@@ -37,17 +37,13 @@ KMenuApplet::~KMenuApplet()
 void
 KMenuApplet::init()
 {
-	// Call the original init function
-	Plasma::Applet::init();
+	// init() should only ever be called once. If these pointers are not null, then something
+	// has gone wrong.
+	Q_ASSERT(!m_menu);
+    Q_ASSERT(!m_containmentInterface);
 	
-	// init() should only ever be called once, but we check to see if
-	// m_menu and m_containmentInterface exist just in case.
-	if (m_menu) {
-		m_menu->close();
-		m_menu->deleteLater();		
-	}
-	if (m_containmentInterface)
-		m_containmentInterface->deleteLater();
+	// Call the original init function
+	Plasma::Applet::init();   
 	
 	// Create the objects
 	m_containmentInterface = new ContainmentInterface(this);
@@ -65,8 +61,9 @@ KMenuApplet::init()
 	connect(timer, &QTimer::timeout, this, [this]() {
 		if (m_menu)
 			m_menu->reinitialize();
-	});	
-	connect(configuration(), &KConfigPropertyMap::valueChanged, timer, qOverload<>(&QTimer::start));
+	});
+	if (configuration())
+		connect(configuration(), &KConfigPropertyMap::valueChanged, timer, qOverload<>(&QTimer::start));
 }
 
 bool
@@ -108,6 +105,7 @@ KMenuApplet::toggleMenu(QQuickItem *button)
 		m_menu->createWinId();
 		if (QWindow *menuWindow = m_menu->windowHandle())
 			menuWindow->setTransientParent(button->window());
+		m_menu->refreshIfDirty();
 		m_menu->popup(popupPosition(button));
 	}
 }

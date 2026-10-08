@@ -19,10 +19,8 @@
 #include <QDBusConnection>
 #include <QAbstractItemModel>
 
-#include <KService>
 #include <KLocalizedString>
 #include <KNotificationJobUiDelegate>
-#include <KFileItem>
 #include <KApplicationTrader>
 #include <KPropertiesDialog>
 
@@ -35,21 +33,16 @@
 #include <PlasmaActivities/ResourceInstance>
 
 ServiceMenu::ServiceMenu(KMenuApplet *applet, QWidget *parent)
-: QMenu(parent),
-  m_initialized(false),
-  m_applet(applet)
+: ServiceMenu(QString(), applet, parent)
 {
-	this->setContextMenuPolicy(Qt::CustomContextMenu);
-	connect(this, &QMenu::customContextMenuRequested, this, &ServiceMenu::showContextMenu, Qt::UniqueConnection);
 }
 
 ServiceMenu::ServiceMenu(const QString &title, KMenuApplet *applet, QWidget *parent)
 	: QMenu(title, parent),
-	  m_initialized(false),
 	  m_applet(applet)
 {
 	this->setContextMenuPolicy(Qt::CustomContextMenu);
-	connect(this, &QMenu::customContextMenuRequested, this, &ServiceMenu::showContextMenu, Qt::UniqueConnection);
+	connect(this, &QMenu::customContextMenuRequested, this, &ServiceMenu::showContextMenu);
 }
 
 void
@@ -88,7 +81,9 @@ void
 ServiceMenu::actionEvent(QActionEvent *e)
 {
 	// If the action has an associated menu, delete the menu if it's
-	// parented by this.
+	// parented by this. NOTE: Removing an action *will* delete its
+	// menu, so the menu would need to be recreated if the action
+	// is re-added.
 	if (e->type() == QEvent::ActionRemoved)
 		if (QAction *action = e->action())
 			if (QMenu *menu = action->menu())
@@ -119,9 +114,9 @@ ServiceMenu::createActionFromService(const KService::Ptr &service, const QUrl &u
 	if (!service || !service->isValid())
 		return nullptr;
 
-	QString title = service->name().replace(QLatin1Char('&'), QStringLiteral("&&"));
+	QString title = escapeMnemonics(service->name());
 	if (m_displayGenericName) {
-		const QString genericName = service->genericName().replace(QLatin1Char('&'), QStringLiteral("&&"));
+		const QString genericName = escapeMnemonics(service->genericName());
 		if (!genericName.isEmpty() && genericName != title)
 			title.append(QStringLiteral(" (%1)").arg(genericName));
 	}
@@ -137,10 +132,7 @@ ServiceMenu::createActionFromService(const KService::Ptr &service, const QUrl &u
 		if (!url.isEmpty())
 			job->setUrls({url});
 		job->start();
-		KActivities::ResourceInstance::notifyAccessed(
-			QUrl(QStringLiteral("applications:") + service->storageId()),
-		    applet() ? applet()->title() : QString()
-			);			
+		notifyAccessed(QUrl(QStringLiteral("applications:") + service->storageId()));
 	});
 
 	return action;
@@ -153,7 +145,7 @@ ServiceMenu::createActionFromUrl(const QUrl &url)
 	if (!url.isValid())
 		return nullptr;
 	
-    const QString fileName = url.fileName().replace(QLatin1Char('&'), QStringLiteral("&&")); // name to display in the menu
+    const QString fileName = escapeMnemonics(url.fileName()); // name to display in the menu
 		
 	const QMimeDatabase db; // use QMimeDatabase to fetch the icon name
     const QMimeType mime = db.mimeTypeForFile(url.toLocalFile(), QMimeDatabase::MatchExtension);
@@ -166,10 +158,7 @@ ServiceMenu::createActionFromUrl(const QUrl &url)
 		auto *job = new KIO::OpenUrlJob(url);
 	    job->setUiDelegate(new KNotificationJobUiDelegate(KJobUiDelegate::AutoHandlingEnabled));
 		job->start();
-		KActivities::ResourceInstance::notifyAccessed(
-			url,
-		    applet() ? applet()->title() : QString()
-			);			
+		notifyAccessed(url);
 	});
 
 	return action;
@@ -204,7 +193,7 @@ ServiceMenu::createActionFromKCM(const QString &id, const QString &name, const Q
 		return nullptr;
 
 	QString actionText = name;
-	auto *action = new QAction(QIcon::fromTheme(icon), actionText.replace(QLatin1Char('&'), QStringLiteral("&&")), this);
+	auto *action = new QAction(QIcon::fromTheme(icon), escapeMnemonics(actionText), this);
 	connect(action, &QAction::triggered, this, [id]() {
 		auto *job = new KIO::CommandLauncherJob(QStringLiteral("kcmshell6"), {id});
 		job->setUiDelegate(new KNotificationJobUiDelegate(KJobUiDelegate::AutoHandlingEnabled));
@@ -225,8 +214,8 @@ ServiceMenu::createActionsFromServiceActions(const KService::Ptr &service)
 
 	const QList<KServiceAction> serviceActions = service->actions();
 	for (const KServiceAction &serviceAction : serviceActions) {
-		const QString name = serviceAction.text().replace(QLatin1Char('&'), QStringLiteral("&&"));
-		if (name.isEmpty() || serviceAction.exec().isEmpty())
+		const QString name = escapeMnemonics(serviceAction.text());
+		if (name.isEmpty() || serviceAction.noDisplay() || serviceAction.exec().isEmpty())
 			continue;
 
 		auto *action = new QAction(QIcon::fromTheme(serviceAction.icon()), name, this);   
@@ -234,10 +223,7 @@ ServiceMenu::createActionsFromServiceActions(const KService::Ptr &service)
 			auto *job = new KIO::ApplicationLauncherJob(serviceAction);
 			job->setUiDelegate(new KNotificationJobUiDelegate(KJobUiDelegate::AutoHandlingEnabled));
 			job->start();
-			KActivities::ResourceInstance::notifyAccessed(
-				QUrl(QStringLiteral("applications:") + service->storageId()),
-			    applet() ? applet()->title() : QString()
-				);			
+			notifyAccessed(QUrl(QStringLiteral("applications:") + service->storageId()));
 		});
 
 		actions.append(action);
@@ -268,7 +254,7 @@ ServiceMenu::createActionsFromServiceGroup(const KServiceGroup::Ptr &group)
 			if (subGroup->childCount() == 0)
 				continue;
 					
-			auto *subMenu = new ServiceMenu(subGroup->caption().replace(QStringLiteral("&"), QStringLiteral("&&")), applet(), this);
+			auto *subMenu = new ServiceMenu(escapeMnemonics(subGroup->caption()), applet(), this);
 			subMenu->initialize();
 			subMenu->setIcon(QIcon::fromTheme(subGroup->icon()));
 			subMenu->addActions(subMenu->createActionsFromServiceGroup(subGroup));
@@ -432,25 +418,40 @@ ServiceMenu::invokeKRunner(const QString &arg)
     bus.send(display);
 }
 
+QString
+ServiceMenu::escapeMnemonics(QString string)
+{
+	return string.replace(QLatin1Char('&'), QStringLiteral("&&"));
+}
+
 void
 ServiceMenu::connectModel(QAbstractItemModel *model, QList<bool *> additionalFlags)
 {
-	// Create the timer for debouncing model updates
-	auto *timer = new QTimer(model);
-	timer->setSingleShot(true);
-	timer->setInterval(0);
-	connect(timer, &QTimer::timeout, this, [this, additionalFlags]() {
+	const auto onChanged = [this, additionalFlags] {
 		markDirty();
-	    for (bool *flag : additionalFlags) {
+		for (bool *flag : additionalFlags) {
 			if (flag)
 				*flag = true;
 		}
-	});
-	connect(model, &QAbstractItemModel::dataChanged,  timer,  qOverload<>(&QTimer::start));
-	connect(model, &QAbstractItemModel::modelReset,   timer,  qOverload<>(&QTimer::start));
-	connect(model, &QAbstractItemModel::rowsInserted, timer,  qOverload<>(&QTimer::start));
-	connect(model, &QAbstractItemModel::rowsMoved,    timer,  qOverload<>(&QTimer::start));
-	connect(model, &QAbstractItemModel::rowsRemoved,  timer,  qOverload<>(&QTimer::start));
+	};
+
+
+	connect(model, &QAbstractItemModel::dataChanged,  this, onChanged);
+	connect(model, &QAbstractItemModel::modelReset,   this, onChanged);
+	connect(model, &QAbstractItemModel::rowsInserted, this, onChanged);
+	connect(model, &QAbstractItemModel::rowsMoved,    this, onChanged);
+	connect(model, &QAbstractItemModel::rowsRemoved,  this, onChanged);
+}
+
+void
+ServiceMenu::notifyAccessed(const QUrl &url) const
+{
+	if (!url.isValid())
+		return;
+	KActivities::ResourceInstance::notifyAccessed(
+		url,
+		applet() ? applet()->pluginName() : QString()
+		);	
 }
 
 /* Mouse events adapted from KDE 3.5 kicker source code.
@@ -484,14 +485,14 @@ ServiceMenu::mouseMoveEvent(QMouseEvent *ev)
 	if (!(ev->buttons() & Qt::LeftButton))		
 		return;
 
-	if (m_startPos == QPointF(-1.0, -1.0))
+	if (!m_startPos)
 		return;
 
-	QPointF p = ev->position() - m_startPos;
+	QPointF p = ev->position() - *m_startPos;
 	if (p.manhattanLength() <= QApplication::startDragDistance() )
         return;
 
-	QAction *action = actionAt(m_startPos.toPoint());
+	QAction *action = actionAt(m_startPos->toPoint());
 	if (!action)
 		return;
 
@@ -518,5 +519,12 @@ ServiceMenu::mouseMoveEvent(QMouseEvent *ev)
 	QPointer<ServiceMenu> guard(this); // guard in case the menu destroys itself
 	drag->exec(Qt::CopyAction | Qt::LinkAction);
 	if (!guard) return;
-	m_startPos = QPointF(-1.0, -1.0);
+	m_startPos.reset();
+}
+
+void
+ServiceMenu::mouseReleaseEvent(QMouseEvent *ev)
+{
+	QMenu::mouseReleaseEvent(ev);
+	m_startPos.reset();
 }

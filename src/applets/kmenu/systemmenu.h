@@ -25,4 +25,5 @@ private:
 
 	// Populates the menu
 	void populate();
+	void refreshContents() override { populate(); }
 };

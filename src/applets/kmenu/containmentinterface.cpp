@@ -25,29 +25,30 @@ ContainmentInterface::containment() const
 bool
 ContainmentInterface::mayAddLauncher(ContainmentInterface::Target target) const
 {
-	if (!containment())
+	Plasma::Containment *appletContainment = containment();
+	if (!appletContainment)
 		return false;
 	
-	Plasma::Corona *corona = containment()->corona();
+	Plasma::Corona *corona = appletContainment->corona();
 	if (!corona)
 		return false;
 
 	switch (target) {
 	case Desktop: {		
-		Plasma::Containment *desktopContainment = corona->containmentForScreen(containment()->screen(), QString(), QString());
+		Plasma::Containment *desktopContainment = corona->containmentForScreen(appletContainment->screen(), QString(), QString());
 		if (desktopContainment)
 			return (desktopContainment->immutability() == Plasma::Types::Mutable);       
 
         break;
 	}
 	case Panel: {
-		if (containment()->pluginMetaData().pluginId() == QLatin1String("com.github.neeeeow.klassik.panel"))
-			return (containment()->immutability() == Plasma::Types::Mutable);
+		if (appletContainment->pluginMetaData().pluginId() == QLatin1String("com.github.neeeeow.klassik.panel"))
+			return (appletContainment->immutability() == Plasma::Types::Mutable);
 
 		break;
     }
 	case Quicklaunch: {
-		if (containment()->pluginMetaData().pluginId() == QLatin1String("com.github.neeeeow.klassik.panel")) {
+		if (appletContainment->pluginMetaData().pluginId() == QLatin1String("com.github.neeeeow.klassik.panel")) {
 			auto *quicklaunch = findQuicklaunchApplet();
 			if (!quicklaunch)
 				return false;
@@ -72,10 +73,11 @@ ContainmentInterface::mayAddLauncher(ContainmentInterface::Target target) const
 void
 ContainmentInterface::addLauncher(ContainmentInterface::Target target, const KService::Ptr &service) const
 {
-	if (!containment() || !service)
+	Plasma::Containment *appletContainment = containment();
+	if (!appletContainment || !service)
 		return;
 	
-	Plasma::Corona *corona = containment()->corona();
+	Plasma::Corona *corona = appletContainment->corona();
 	if (!corona)
 		return;
 
@@ -84,7 +86,7 @@ ContainmentInterface::addLauncher(ContainmentInterface::Target target, const KSe
 	switch (target) {
 
 	case Desktop: {
-		Plasma::Containment *desktopContainment = corona->containmentForScreen(containment()->screen(), QString(), QString());
+		Plasma::Containment *desktopContainment = corona->containmentForScreen(appletContainment->screen(), QString(), QString());
         if (!desktopContainment)
             return;
 
@@ -103,14 +105,14 @@ ContainmentInterface::addLauncher(ContainmentInterface::Target target, const KSe
 		break;
     }
 	case Panel: {
-		if (containment()->pluginMetaData().pluginId() == QLatin1String("com.github.neeeeow.klassik.panel")) {
-			containment()->createApplet(QStringLiteral("org.kde.plasma.icon"), QVariantList() << url);
+		if (appletContainment->pluginMetaData().pluginId() == QLatin1String("com.github.neeeeow.klassik.panel")) {
+			appletContainment->createApplet(QStringLiteral("org.kde.plasma.icon"), QVariantList() << url);
 		}
 
 		break;
 	}
 	case Quicklaunch: {
-		if (containment()->pluginMetaData().pluginId() == QLatin1String("com.github.neeeeow.klassik.panel")) {
+		if (appletContainment->pluginMetaData().pluginId() == QLatin1String("com.github.neeeeow.klassik.panel")) {
 			auto *quicklaunch = findQuicklaunchApplet();
 			if (!quicklaunch)
 				return;

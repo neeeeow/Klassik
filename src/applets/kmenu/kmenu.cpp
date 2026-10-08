@@ -21,8 +21,6 @@
 
 #include <KColorScheme>
 #include <KLocalizedString>
-#include <KService>
-#include <KServiceGroup>
 #include <KSycoca>
 
 #include <PlasmaActivities/Stats/ResultModel>
@@ -41,22 +39,11 @@ KMenu::KMenu(KMenuApplet *applet, QWidget *parent)
 		markDirty();
 		m_applicationDirty = true;
 	});
-	connect(m_session, &SessionManagement::canSwitchUserChanged, this, [this]() {
-		markDirty();
-		m_sessionDirty = true;
-	});
-	connect(m_session, &SessionManagement::canLockChanged, this, [this]() {
-		markDirty();
-		m_sessionDirty = true;
-	});
-	connect(m_session, &SessionManagement::canLogoutChanged, this, [this]() {
-		markDirty();
-		m_sessionDirty = true;
-	});
-	connect(m_session, &SessionManagement::stateChanged, this, [this]() {
-		markDirty();
-		m_sessionDirty = true;
-	});
+	const auto markSessionDirty = [this] { markDirty(); m_sessionDirty = true; };
+	connect(m_session, &SessionManagement::canSwitchUserChanged, this, markSessionDirty);
+	connect(m_session, &SessionManagement::canLockChanged, this, markSessionDirty);
+	connect(m_session, &SessionManagement::canLogoutChanged, this, markSessionDirty);
+	connect(m_session, &SessionManagement::stateChanged, this, markSessionDirty);	
 }
 
 void
@@ -88,7 +75,7 @@ KMenu::paintEvent(QPaintEvent *e)
 	p.drawTiledPixmap(r, m_sideTilePixmap );
 
 	r = sideImageRect();
-	r.setTop( r.bottom() - m_sidePixmap.height() );
+	r.setTop( r.bottom() - m_sidePixmap.height() + 1 );
 	p.drawPixmap(r, m_sidePixmap);
 }
 
@@ -97,6 +84,9 @@ KMenu::initialize()
 {
 	if (initialized()) return;
 	ServiceMenu::initialize();
+
+	// Reset dirty flags
+	m_recentDirty = m_applicationDirty = m_sessionDirty = false;
 
 	// Load the configuration
 	if (applet()) {
@@ -176,13 +166,14 @@ KMenu::reinitialize()
 	// Clear action lists
 	m_recentActions.clear();
 	m_applicationActions.clear();
+	m_sessionActions.clear();
 	
 	// Clear out the menu
 	clear();
 
 	// Clear out recent apps model
 	if (m_recentApps) {
-		m_recentApps->disconnect();
+		m_recentApps->disconnect(this);
 		m_recentApps->deleteLater();
 		m_recentApps = nullptr;
 	}
@@ -236,10 +227,10 @@ KMenu::loadSidePixmap()
 
 	// TODO: use better images (perhaps in SVG format?)
 	QImage sideImage(QStringLiteral(":/qt/qml/plasma/applet/com/github/neeeeow/klassik/kmenu/kside.png"));
-	if (sideImage.isNull() || sideImage.width() == 0 || sideImage.height() == 0)
+	if (sideImage.isNull())
 		return;
 	QImage sideTileImage(QStringLiteral(":/qt/qml/plasma/applet/com/github/neeeeow/klassik/kmenu/kside_tile.png"));
-	if (sideTileImage.isNull() || sideTileImage.width() == 0 || sideTileImage.height() == 0)
+	if (sideTileImage.isNull())
 		return;	
 
 	// Colorize images and load in to pixmaps
@@ -309,7 +300,7 @@ KMenu::createRecentMenuItems()
 		| Limit(qMax(m_config.numRecentApps, 1));
 
 	if (m_recentApps) {
-		m_recentApps->disconnect();
+		m_recentApps->disconnect(this);
 		m_recentApps->deleteLater();
 	}
 	m_recentApps = new ResultModel(query, this);
@@ -362,10 +353,7 @@ KMenu::updateRecent()
 	}
 
 	// Append the actions to the top of the menu (recent applications *always* go first)
-	if (actions().isEmpty())
-		addActions(m_recentActions);
-	else
-		insertActions(actions().constFirst(), m_recentActions);
+	insertActions(actions().value(0), m_recentActions);
 }
 
 void
@@ -376,8 +364,8 @@ KMenu::createApplicationsItems()
 	    auto *search = new PopupMenuSearch(i18n("Press '/' to search..."), Qt::Key_Slash, this);
 		insertAction(m_applicationsAnchor, search);				
 		if (QLineEdit *lineEdit = search->lineEdit()) {
-			connect(this, &QMenu::aboutToHide, lineEdit, &QLineEdit::clear, Qt::UniqueConnection);
-			connect(this, &QMenu::aboutToHide, lineEdit, &QLineEdit::clearFocus, Qt::UniqueConnection);
+			connect(this, &QMenu::aboutToHide, lineEdit, &QLineEdit::clear);
+			connect(this, &QMenu::aboutToHide, lineEdit, &QLineEdit::clearFocus);
 			connect(lineEdit, &QLineEdit::textChanged, this, [this](QStringView text) {
 			    applySearchFilter(m_applicationActions, text.trimmed());
 			});
@@ -419,19 +407,22 @@ KMenu::updateSessionActions()
 		return;
 	
 	if (m_session->canSwitchUser() || m_session->canLock() || m_session->canLogout()) {
-		addSeparator();
+		m_sessionActions.append(addSeparator());
 		QAction *action;
 		if (m_session->canSwitchUser()) {
 			action = addAction(QIcon::fromTheme(QStringLiteral("system-switch-user")), i18n("Switch User"));
 			connect(action, &QAction::triggered, m_session, &SessionManagement::switchUser);
+			m_sessionActions.append(action);
 		}
 		if (m_session->canLock()) {
 			action = addAction(QIcon::fromTheme(QStringLiteral("system-lock-screen")), i18n("Lock Session"));
 			connect(action, &QAction::triggered, m_session, &SessionManagement::lock);
+			m_sessionActions.append(action);
 		}
 		if (m_session->canLogout()) {
 			action = addAction(QIcon::fromTheme(QStringLiteral("system-log-out")), i18n("Log Out..."));
 			connect(action, &QAction::triggered, m_session, &SessionManagement::requestLogoutPrompt);
+			m_sessionActions.append(action);
 		}
 	}
 }
@@ -449,9 +440,8 @@ KMenu::applySearchFilter(const QList<QAction *> &actions, QStringView text)
 		if (QMenu *subMenu = action->menu()) {
 			enabled = applySearchFilter(subMenu->actions(), text);
 		} else {
-			const QString actionText = action->text().replace(QStringLiteral("&&"), QStringLiteral("&")); // replace to handle mnemonics
 			if (text.isEmpty() ||
-				actionText.contains(text, Qt::CaseInsensitive))
+				action->text().contains(text, Qt::CaseInsensitive))
 				// Item must be enabled either if the search string matches the action name, or if the search bar is empty
 				enabled = true;
 		}

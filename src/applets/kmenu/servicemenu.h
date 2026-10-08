@@ -9,7 +9,6 @@
 #include <QMenu>
 #include <QPointer>
 #include <QUrl>
-#include <QTimer>
 
 #include <KService>
 #include <KServiceGroup>
@@ -27,7 +26,7 @@ public:
 
 	// Initializes the menu (not called automatically!)
 	// This must be called by any subclass, as it enables/disables tooltips
-	// depending on the config
+	// depending on the config.
 	virtual void initialize();
 	
 	// Reinitializes the menu (usually after a config change)
@@ -37,8 +36,16 @@ public:
 	// initialize() again.
 	virtual void reinitialize();
 
+	// Manually refresh the menu contents if dirty. Used primarily for computing popup positions
+	// which depend on the menu contents.
+	void refreshIfDirty() {
+		if (!initialized() || !m_dirty) return;
+		m_dirty = false;
+		refreshContents();
+	}
+
 	// Mark the menu as dirty, and request contents to be refreshed.
-	void markDirty() { if (!m_dirty) m_dirty = true; }
+	void markDirty() { m_dirty = true; }
 
 	// Functions for creating QActions, from either a service, a url, or an action which launches a
 	// url in the file explorer. All QActions are parented to the menu
@@ -65,7 +72,10 @@ protected:
 	static void runMenuEditor(QString arg = QString());
 	static void invokeKRunner(const QString &arg = QString());
 
-	// Connects to a QAbstraceItemModel, and marks the menu as dirty whenever the
+	// Cleans up mnemonics from a string
+	static QString escapeMnemonics(QString string);
+
+	// Connects to a QAbstractItemModel, and marks the menu as dirty whenever the
 	// model is updated. additionalFlags contains a QList of additional flags that
 	// must be marked as dirty, to be used by various subclasses as necessary.
 	void connectModel(QAbstractItemModel *model, QList<bool *> additionalFlags = {});
@@ -74,6 +84,7 @@ protected:
 	void actionEvent(QActionEvent *e) override;
 	void mousePressEvent(QMouseEvent *ev) override;
 	void mouseMoveEvent(QMouseEvent *ev) override;
+	void mouseReleaseEvent(QMouseEvent *ev) override;
 
 private:
 	bool m_initialized = false; // Initialization state
@@ -86,8 +97,10 @@ private:
 
 	// Pointer to the plasma applet
 	QPointer<KMenuApplet> m_applet = nullptr;
-	
-	QPointF m_startPos{-1.0,-1.0}; // Initial drag position
+
+	// Initial drag position. We use std::optional here since it only needs to contain
+	// data whenever a drag operation is occuring.
+    std::optional<QPointF> m_startPos;
 
 	// Refreshes contents before the menu is shown, if it is dirty.
 	// NOTE: This is not the same as a full reinitialization, which will clear the
@@ -100,9 +113,12 @@ private:
 	// Called when the menu is about to show. Calls refreshContents above
 	void onAboutToShow() {
 		if (!initialized()) return;
-		refreshContents();
+		if (m_dirty) refreshContents();
 		m_dirty = false;
 	}
+
+	// Notifies KActivities that a QUrl has been accessed by the K Menu
+    void notifyAccessed(const QUrl &url) const;
 	
 	// Creates and displays the context menu
 	void showContextMenu(const QPoint &pos) const;

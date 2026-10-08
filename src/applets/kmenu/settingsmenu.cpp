@@ -14,9 +14,8 @@
 #include <KConfigGroup>
 
 SettingsMenu::SettingsMenu(KMenuApplet *applet, QWidget *parent)
-	: ServiceMenu(applet, parent)
+	: SettingsMenu(QString(), applet, parent)
 {
-	initialize();
 }
 
 SettingsMenu::SettingsMenu(const QString &title, KMenuApplet *applet, QWidget *parent)
@@ -161,8 +160,6 @@ SettingsMenu::buildSettingsTree(SettingsItem *parent,
 
 	// Sort children by weight
 	std::stable_sort(parent->children.begin(), parent->children.end(), [](const SettingsItem *i1, const SettingsItem *i2) {
-		if (!i1 || !i2)
-			return i1 < i2;
 		return i1->weight < i2->weight;
 	});
 }
@@ -174,8 +171,7 @@ SettingsMenu::populateMenu(const SettingsItem *item, ServiceMenu *menu)
 		if (child->isCategory) {
 			// If it's a category, add a sub menu for each child and recurse
 			if (!child->children.isEmpty()) {
-				QString title = child->name;
-				auto *subMenu = new ServiceMenu(title.replace(QLatin1Char('&'), QStringLiteral("&&")), applet(), menu);
+				auto *subMenu = new ServiceMenu(escapeMnemonics(child->name), applet(), menu);
 				subMenu->initialize();
 				subMenu->setIcon(QIcon::fromTheme(child->icon));
 				menu->addMenu(subMenu);
