@@ -54,7 +54,6 @@ namespace menuWidgets {
 
 		QLineEdit* lineEdit() const { return m_searchLineEdit; }
 
-	protected:
 		QSize sizeHint() const override {
 			QSize size = QWidget::sizeHint();
 			const int iconSize = style()->pixelMetric(QStyle::PM_SmallIconSize); // The size of menu item icons (by default)
@@ -65,6 +64,7 @@ namespace menuWidgets {
 			return size;
 		}
 
+	protected:
 		bool eventFilter(QObject *object, QEvent *e) override {
 			// Give the search bar focus as soon as the mouse enters it
 			if (object == m_searchLineEdit) {

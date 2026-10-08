@@ -63,7 +63,7 @@ SettingsMenu::initialize()
 }
 
 QList<SettingsMenu::CategoryData>
-SettingsMenu::parseCategoryFiles() const
+SettingsMenu::parseCategoryFiles()
 {
 	const QStringList dirs = QStandardPaths::locateAll(QStandardPaths::GenericDataLocation, QStringLiteral("systemsettings/categories"), QStandardPaths::LocateDirectory);
     const QStringList categoryFiles = KFileUtils::findAllUniqueFiles(dirs, QStringList(QStringLiteral("*.desktop")));
@@ -91,7 +91,7 @@ SettingsMenu::parseCategoryFiles() const
 }
 
 QList<KPluginMetaData>
-SettingsMenu::findKCMsMetaData() const
+SettingsMenu::findKCMsMetaData()
 {
 	QList<KPluginMetaData> modules;
 	std::set<QString> uniquePluginIds;

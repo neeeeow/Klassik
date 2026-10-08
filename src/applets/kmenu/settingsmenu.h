@@ -53,13 +53,13 @@ private:
 	};   
 
 	// Parses each .desktop file to retrieve the category data.
-	QList<CategoryData> parseCategoryFiles() const;
+	static QList<CategoryData> parseCategoryFiles();
 	
 	// Fetches the metadata for each KCM
-	QList<KPluginMetaData> findKCMsMetaData() const;
+	static QList<KPluginMetaData> findKCMsMetaData();
 
 	// Builds the settings item hierarchy from a starting item
-	void buildSettingsTree(SettingsItem *parent, const QList<KPluginMetaData> &pluginModules, const QList<CategoryData> &categories);
+	static void buildSettingsTree(SettingsItem *parent, const QList<KPluginMetaData> &pluginModules, const QList<CategoryData> &categories);
 
 	// Adds a settingsitem (and all of its children) to a given menu
 	void populateMenu(const SettingsItem *item, ServiceMenu *menu);

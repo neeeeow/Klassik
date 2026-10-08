@@ -25,6 +25,7 @@
 #include <KServiceGroup>
 #include <KSycoca>
 
+#include <PlasmaActivities/Stats/ResultModel>
 #include <PlasmaActivities/Stats/Query>
 
 #include <sessionmanagement.h>
@@ -34,6 +35,28 @@ KMenu::KMenu(KMenuApplet *applet, QWidget *parent)
 	  m_session(new SessionManagement(this))
 {
 	initialize(); // Populate menu items
+	// Connect the signal in the constructor since this connection has no dependance
+	// on any object which are created during initialization
+	connect(KSycoca::self(), &KSycoca::databaseChanged, this, [this]() {
+		markDirty();
+		m_applicationDirty = true;
+	});
+	connect(m_session, &SessionManagement::canSwitchUserChanged, this, [this]() {
+		markDirty();
+		m_sessionDirty = true;
+	});
+	connect(m_session, &SessionManagement::canLockChanged, this, [this]() {
+		markDirty();
+		m_sessionDirty = true;
+	});
+	connect(m_session, &SessionManagement::canLogoutChanged, this, [this]() {
+		markDirty();
+		m_sessionDirty = true;
+	});
+	connect(m_session, &SessionManagement::stateChanged, this, [this]() {
+		markDirty();
+		m_sessionDirty = true;
+	});
 }
 
 void
@@ -41,6 +64,10 @@ KMenu::changeEvent(QEvent *e)
 {
 	if (e->type() == QEvent::PaletteChange && !m_sidePixmap.isNull() && !m_sideTilePixmap.isNull()) {
 		loadSidePixmap();
+		update();
+	}
+	if (e->type() == QEvent::LayoutDirectionChange) {
+		setMargins();
 		update();
 	}
 	ServiceMenu::changeEvent(e);
@@ -84,7 +111,7 @@ KMenu::initialize()
 	}
 	
 	loadSidePixmap();
-	setMargins();	   
+	setMargins();
 	
 	// Add the section headers
 	if (m_config.showTitles) {
@@ -131,24 +158,9 @@ KMenu::initialize()
 
 	// Add the run command option
 	QAction *action = addAction(QIcon::fromTheme(QStringLiteral("system-run")), i18n("Run Command..."));
-	connect(action, &QAction::triggered, this, [](){invokeKRunner();});
-	
-	// Add the power/session options
-	if (m_session && (m_session->canSwitchUser() || m_session->canLock() || m_session->canLogout())) {
-		addSeparator();
-		if (m_session->canSwitchUser()) {
-			action = addAction(QIcon::fromTheme(QStringLiteral("system-switch-user")), i18n("Switch User"));
-			connect(action, &QAction::triggered, m_session, &SessionManagement::switchUser);
-		}
-		if (m_session->canLock()) {
-			action = addAction(QIcon::fromTheme(QStringLiteral("system-lock-screen")), i18n("Lock Session"));
-			connect(action, &QAction::triggered, m_session, &SessionManagement::lock);
-		}
-		if (m_session->canLogout()) {
-			action = addAction(QIcon::fromTheme(QStringLiteral("system-log-out")), i18n("Log Out..."));
-			connect(action, &QAction::triggered, m_session, &SessionManagement::requestLogoutPrompt);
-		}
-	}
+	connect(action, &QAction::triggered, this, [](){invokeKRunner();});   
+
+	updateSessionActions();
 
 	setInitialized(true);
 }
@@ -170,7 +182,7 @@ KMenu::reinitialize()
 
 	// Clear out recent apps model
 	if (m_recentApps) {
-		m_recentApps->disconnect(this);
+		m_recentApps->disconnect();
 		m_recentApps->deleteLater();
 		m_recentApps = nullptr;
 	}
@@ -183,6 +195,19 @@ KMenu::reinitialize()
 
 	// Finally, call initialize() again
 	initialize();
+}
+
+void
+KMenu::refreshContents()
+{
+	if (m_recentDirty)
+		updateRecent();
+	if (m_applicationDirty)
+		updateApplications();
+	if (m_sessionDirty)
+		updateSessionActions();
+
+	m_recentDirty = m_applicationDirty = m_sessionDirty = false;
 }
 
 void
@@ -281,16 +306,16 @@ KMenu::createRecentMenuItems()
 		| Type::any()
 		| Url::startsWith(QStringLiteral("applications:"))
 		| Activity::current()
-		| Limit(m_config.numRecentApps > 0 ? m_config.numRecentApps : 1);
+		| Limit(qMax(m_config.numRecentApps, 1));
 
 	if (m_recentApps) {
-		m_recentApps->disconnect(this);
+		m_recentApps->disconnect();
 		m_recentApps->deleteLater();
 	}
 	m_recentApps = new ResultModel(query, this);
 
 	// Whenever an application is launched, update the recent apps list
-	connectResultModel(m_recentApps, &KMenu::updateRecent);
+	connectModel(m_recentApps, {&m_recentDirty});
 
 	// Update the list once to initially populate it
 	updateRecent();
@@ -321,7 +346,9 @@ KMenu::updateRecent()
 		if (resourceUrl.scheme() != QStringLiteral("applications"))
 			continue; // The resource url should always point to an application, but just to be safe
 		const QString storageId = resourceUrl.path();
-		const KService::Ptr service = KService::serviceByStorageId(storageId);		
+		// really we should filter out service->noDisplay(), but plasma does not do this in its own applications
+		// menu, so we just follow convention.
+		const KService::Ptr service = KService::serviceByStorageId(storageId);
 		if (QAction *action = createActionFromService(service))
 			actionList.append(action);
 	}
@@ -356,8 +383,7 @@ KMenu::createApplicationsItems()
 			});
 		}
 	}
-	
-	connect(KSycoca::self(), &KSycoca::databaseChanged, this, &KMenu::updateApplications, Qt::UniqueConnection);
+   
 	updateApplications(); // Call the function to populate the menu itself
 }
 
@@ -383,6 +409,31 @@ KMenu::updateApplications()
 	// it should never really be null when updateApplications
 	// is called).
 	insertActions(m_applicationsAnchor, m_applicationActions);	
+}
+
+void
+KMenu::updateSessionActions()
+{
+	cleanupActionList(m_sessionActions);
+	if (!m_session || (m_session->state() != SessionManagement::State::Ready))
+		return;
+	
+	if (m_session->canSwitchUser() || m_session->canLock() || m_session->canLogout()) {
+		addSeparator();
+		QAction *action;
+		if (m_session->canSwitchUser()) {
+			action = addAction(QIcon::fromTheme(QStringLiteral("system-switch-user")), i18n("Switch User"));
+			connect(action, &QAction::triggered, m_session, &SessionManagement::switchUser);
+		}
+		if (m_session->canLock()) {
+			action = addAction(QIcon::fromTheme(QStringLiteral("system-lock-screen")), i18n("Lock Session"));
+			connect(action, &QAction::triggered, m_session, &SessionManagement::lock);
+		}
+		if (m_session->canLogout()) {
+			action = addAction(QIcon::fromTheme(QStringLiteral("system-log-out")), i18n("Log Out..."));
+			connect(action, &QAction::triggered, m_session, &SessionManagement::requestLogoutPrompt);
+		}
+	}
 }
 
 bool
@@ -411,7 +462,6 @@ KMenu::applySearchFilter(const QList<QAction *> &actions, QStringView text)
 
 	return anyEnabled;
 }
-
 
 /* Mouse events adapted from KDE 3.5 kicker source code.
    Copyright (c) 1996-2000 the KDE 3 kicker authors.

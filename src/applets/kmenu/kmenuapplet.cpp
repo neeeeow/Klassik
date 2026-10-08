@@ -89,7 +89,7 @@ KMenuApplet::configValue(const QString &key) const
 		return QVariant();	
 	
 	const QVariant value = configLoader->property(key);
-	if (value.isNull() || !value.isValid()) {
+	if (!value.isValid()) {
 		qWarning() << "key " << key << " not found!";
 		return QVariant();
 	}

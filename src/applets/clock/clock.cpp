@@ -34,7 +34,7 @@ Clock::configValue(const char *key) const
 		return QVariant();		
 	
 	const QVariant value = m_config->property(key);
-	if (value.isNull() || !value.isValid()) {
+	if (!value.isValid()) {
 		qWarning() << "key " << key << " not found!";
 		return QVariant();
 	}

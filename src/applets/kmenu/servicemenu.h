@@ -14,8 +14,7 @@
 #include <KService>
 #include <KServiceGroup>
 
-#include <PlasmaActivities/Stats/ResultModel>
-
+class QAbstractItemModel;
 class KMenuApplet;
 
 class ServiceMenu : public QMenu
@@ -37,6 +36,9 @@ public:
 	// The base reinitialize() simply clears out the menu and calls
 	// initialize() again.
 	virtual void reinitialize();
+
+	// Mark the menu as dirty, and request contents to be refreshed.
+	void markDirty() { if (!m_dirty) m_dirty = true; }
 
 	// Functions for creating QActions, from either a service, a url, or an action which launches a
 	// url in the file explorer. All QActions are parented to the menu
@@ -61,29 +63,23 @@ protected:
 
 	// Launches the menu editor and KRunner
 	static void runMenuEditor(QString arg = QString());
-	static void invokeKRunner(QString arg = QString());
+	static void invokeKRunner(const QString &arg = QString());
+
+	// Connects to a QAbstraceItemModel, and marks the menu as dirty whenever the
+	// model is updated. additionalFlags contains a QList of additional flags that
+	// must be marked as dirty, to be used by various subclasses as necessary.
+	void connectModel(QAbstractItemModel *model, QList<bool *> additionalFlags = {});
 
 	// QMenu overrides
 	void actionEvent(QActionEvent *e) override;
 	void mousePressEvent(QMouseEvent *ev) override;
 	void mouseMoveEvent(QMouseEvent *ev) override;
 
-	// Template for connecting all of the required signals to a result model
-	template <typename Slot>
-	void connectResultModel(KActivities::Stats::ResultModel *model, Slot slot) {
-		auto *timer = new QTimer(model); // use a single shot timer to debounce update calls
-		timer->setSingleShot(true);
-		timer->setInterval(0);
-		connect(timer, &QTimer::timeout, this, slot);
-		connect(model, &QAbstractItemModel::dataChanged,  timer,  qOverload<>(&QTimer::start));
-		connect(model, &QAbstractItemModel::modelReset,   timer,  qOverload<>(&QTimer::start));
-		connect(model, &QAbstractItemModel::rowsInserted, timer,  qOverload<>(&QTimer::start));
-		connect(model, &QAbstractItemModel::rowsMoved,    timer,  qOverload<>(&QTimer::start));
-		connect(model, &QAbstractItemModel::rowsRemoved,  timer,  qOverload<>(&QTimer::start));
-	}
-
 private:
-	bool m_initialized; // Initialization state
+	bool m_initialized = false; // Initialization state
+
+	// Whether or not contents need to be refreshed when the menu is about to be shown
+	bool m_dirty = false;
 
 	// Whether or not to display generic names for applications
 	bool m_displayGenericName = true;
@@ -93,6 +89,21 @@ private:
 	
 	QPointF m_startPos{-1.0,-1.0}; // Initial drag position
 
+	// Refreshes contents before the menu is shown, if it is dirty.
+	// NOTE: This is not the same as a full reinitialization, which will clear the
+	// entire menu and initialize every element again. This function can be used to
+	// reinitialize certain elements which need to be updated frequently (such as
+	// recent files). This must only be called when the menu is about to be shown.
+	// Perform the initial population in initialize().
+	virtual void refreshContents() {}
+
+	// Called when the menu is about to show. Calls refreshContents above
+	void onAboutToShow() {
+		if (!initialized()) return;
+		refreshContents();
+		m_dirty = false;
+	}
+	
 	// Creates and displays the context menu
 	void showContextMenu(const QPoint &pos) const;
 };

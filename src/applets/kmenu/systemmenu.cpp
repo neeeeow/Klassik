@@ -26,10 +26,29 @@ SystemMenu::initialize()
 	if (initialized()) return;
 	ServiceMenu::initialize();
 
-	const KFilePlacesModel placesModel;
-	for (int i = 0; i < placesModel.rowCount(); ++i) {
-		const QModelIndex idx = placesModel.index(i, 0);
-        if (placesModel.isHidden(idx))
+	if (m_placesModel) {
+		m_placesModel->disconnect();
+		m_placesModel->deleteLater();
+	}
+	m_placesModel = new KFilePlacesModel(this);
+
+	// We must connect to aboutToShow and populate the menu just before displaying it.
+	// We avoid connectng the KFilePlacesModel, since its signals fire many times per
+	// second, and thus markDirty() would be called very often - which is unnecessary
+	connect(this, &QMenu::aboutToShow, this, &SystemMenu::populate);
+	
+	setInitialized(true);
+}
+
+void
+SystemMenu::populate()
+{
+	clear();
+	if (!m_placesModel)
+		return;
+	for (int i = 0; i < m_placesModel->rowCount(); ++i) {
+		const QModelIndex idx = m_placesModel->index(i, 0);
+        if (m_placesModel->isHidden(idx))
             continue;
 
 		QString title = idx.data(Qt::DisplayRole).toString();
@@ -42,6 +61,4 @@ SystemMenu::initialize()
 			addAction(action);
 		}
 	}
-	
-	setInitialized(true);
 }

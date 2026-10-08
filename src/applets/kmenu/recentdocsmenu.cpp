@@ -9,6 +9,7 @@
 
 #include <KLocalizedString>
 
+#include <PlasmaActivities/Stats/ResultModel>
 #include <PlasmaActivities/Stats/Query>
 
 RecentDocsMenu::RecentDocsMenu(KMenuApplet *applet, QWidget *parent)
@@ -46,13 +47,13 @@ RecentDocsMenu::initialize()
 		| Limit(numRecentDocs > 0 ? numRecentDocs : 1);
 
 	if (m_fileList) {
-		m_fileList->disconnect(this);
+		m_fileList->disconnect();
 		m_fileList->deleteLater();
 	}
     m_fileList = new ResultModel(query, this);	
 
 	// Whenever an application is launched, update the recent apps list
-	connectResultModel(m_fileList, &RecentDocsMenu::updateRecentDocs);
+	connectModel(m_fileList);
 
 	updateRecentDocs();
 
@@ -83,6 +84,7 @@ RecentDocsMenu::updateRecentDocs()
 	if (actionList.isEmpty()) {
 		QAction *emptyAction = addAction(i18n("No Entries"));
 		emptyAction->setEnabled(false);
+		clearAction->setEnabled(false);
 	} else {
 		addActions(actionList);
 	}

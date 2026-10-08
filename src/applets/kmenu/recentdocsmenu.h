@@ -8,6 +8,10 @@
 
 #include "servicemenu.h"
 
+namespace KActivities::Stats {
+    class ResultModel;
+}
+
 class RecentDocsMenu final : public ServiceMenu
 {
 	Q_OBJECT
@@ -19,6 +23,7 @@ public:
 	void initialize() override;
 	
 private:
+	void refreshContents() override {updateRecentDocs();}
 	void updateRecentDocs();
 
 	KActivities::Stats::ResultModel *m_fileList = nullptr;

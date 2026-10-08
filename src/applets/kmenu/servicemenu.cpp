@@ -15,7 +15,9 @@
 #include <QApplication>
 #include <QDrag>
 #include <QStyle>
-#include <QDBusInterface>
+#include <QDBusMessage>
+#include <QDBusConnection>
+#include <QAbstractItemModel>
 
 #include <KService>
 #include <KLocalizedString>
@@ -28,6 +30,7 @@
 #include <KIO/CommandLauncherJob>
 #include <KIO/OpenUrlJob>
 #include <KIO/OpenFileManagerWindowJob>
+#include <KIO/DesktopExecParser>
 
 #include <PlasmaActivities/ResourceInstance>
 
@@ -55,6 +58,12 @@ ServiceMenu::initialize()
 	if (initialized()) return;
 	m_displayGenericName = applet() ? applet()->getConfigValue<bool>(QStringLiteral("showGenericName")) : true;
 	this->setToolTipsVisible(applet() ? applet()->getConfigValue<bool>(QStringLiteral("showTooltips")) : false);
+
+	// m_dirty should be false here since we *should* do the initial population in initialize(), and
+	// having m_dirty = true would be wasteful
+	m_dirty = false;
+	connect(this, &QMenu::aboutToShow, this, &ServiceMenu::onAboutToShow, Qt::UniqueConnection);
+	
 	setInitialized(true);
 }
 
@@ -121,8 +130,8 @@ ServiceMenu::createActionFromService(const KService::Ptr &service, const QUrl &u
 
     action->setData(QVariant::fromValue(service)); // Store the KService
 	action->setToolTip(service->comment()); // Set the action tooltip
-	
-	connect(action, &QAction::triggered, this, [service, url]() {
+    
+	connect(action, &QAction::triggered, this, [this, service, url]() {
 		auto *job = new KIO::ApplicationLauncherJob(service);
 		job->setUiDelegate(new KNotificationJobUiDelegate(KJobUiDelegate::AutoHandlingEnabled));
 		if (!url.isEmpty())
@@ -130,7 +139,7 @@ ServiceMenu::createActionFromService(const KService::Ptr &service, const QUrl &u
 		job->start();
 		KActivities::ResourceInstance::notifyAccessed(
 			QUrl(QStringLiteral("applications:") + service->storageId()),
-			QStringLiteral("com.github.neeeeow.klassik.kmenu")
+		    applet() ? applet()->title() : QString()
 			);			
 	});
 
@@ -153,13 +162,13 @@ ServiceMenu::createActionFromUrl(const QUrl &url)
 	auto *action = new QAction(icon, fileName, this);
 	action->setData(url);
 	
-	connect(action, &QAction::triggered, this, [url]() {
+	connect(action, &QAction::triggered, this, [this, url]() {
 		auto *job = new KIO::OpenUrlJob(url);
 	    job->setUiDelegate(new KNotificationJobUiDelegate(KJobUiDelegate::AutoHandlingEnabled));
 		job->start();
 		KActivities::ResourceInstance::notifyAccessed(
 			url,
-			QStringLiteral("com.github.neeeeow.klassik.kmenu")
+		    applet() ? applet()->title() : QString()
 			);			
 	});
 
@@ -217,19 +226,17 @@ ServiceMenu::createActionsFromServiceActions(const KService::Ptr &service)
 	const QList<KServiceAction> serviceActions = service->actions();
 	for (const KServiceAction &serviceAction : serviceActions) {
 		const QString name = serviceAction.text().replace(QLatin1Char('&'), QStringLiteral("&&"));
-		const QString exec = serviceAction.exec();
-		if (name.isEmpty() || exec.isEmpty()) {
+		if (name.isEmpty() || serviceAction.exec().isEmpty())
 			continue;
-		}
 
 		auto *action = new QAction(QIcon::fromTheme(serviceAction.icon()), name, this);   
-		connect(action, &QAction::triggered, this, [service, exec]() {
-			auto *job = new KIO::CommandLauncherJob(exec);
+		connect(action, &QAction::triggered, this, [this, service, serviceAction]() {
+			auto *job = new KIO::ApplicationLauncherJob(serviceAction);
 			job->setUiDelegate(new KNotificationJobUiDelegate(KJobUiDelegate::AutoHandlingEnabled));
-			job->start();				
+			job->start();
 			KActivities::ResourceInstance::notifyAccessed(
 				QUrl(QStringLiteral("applications:") + service->storageId()),
-				QStringLiteral("com.github.neeeeow.klassik.kmenu")
+			    applet() ? applet()->title() : QString()
 				);			
 		});
 
@@ -265,6 +272,11 @@ ServiceMenu::createActionsFromServiceGroup(const KServiceGroup::Ptr &group)
 			subMenu->initialize();
 			subMenu->setIcon(QIcon::fromTheme(subGroup->icon()));
 			subMenu->addActions(subMenu->createActionsFromServiceGroup(subGroup));
+
+			if (subMenu->isEmpty()) {
+				delete subMenu;
+				continue;
+			}
 
 			auto *action = new QAction(subMenu->icon(), subMenu->title(), this);
 			action->setMenu(subMenu);
@@ -332,8 +344,8 @@ ServiceMenu::showContextMenu(const QPoint &pos) const
 		connect(editAction, &QAction::triggered, &contextMenu, [service]() {runMenuEditor(service->menuId());});
 
 		// Action to put the action's exec command in krunner
-		QAction *runAction = contextMenu.addAction(QIcon::fromTheme(QStringLiteral("run")), i18n("Put Into Run Dialog"));
-	    connect(runAction, &QAction::triggered, &contextMenu, [service](){invokeKRunner(service->exec());});
+		QAction *runAction = contextMenu.addAction(QIcon::fromTheme(QStringLiteral("system-run")), i18n("Put Into Run Dialog"));
+	    connect(runAction, &QAction::triggered, &contextMenu, [service](){invokeKRunner(KIO::DesktopExecParser::executablePath(service->exec()));});
 		
 	} else if (action->data().canConvert<KServiceGroup::Ptr>()) {
 		// KServiceGroup means sub menu container
@@ -400,18 +412,45 @@ ServiceMenu::runMenuEditor(QString arg)
 }
 
 void
-ServiceMenu::invokeKRunner(QString arg)
+ServiceMenu::invokeKRunner(const QString &arg)
 {
-	QDBusInterface krunner(QStringLiteral("org.kde.krunner"), QStringLiteral("/App"), QStringLiteral("org.kde.krunner.App"));
-	if (!krunner.isValid())
-		return;
+	QDBusMessage query = QDBusMessage::createMethodCall(
+		QStringLiteral("org.kde.krunner"),
+		QStringLiteral("/App"),
+		QStringLiteral("org.kde.krunner.App"),
+		QStringLiteral("query"));
+	query.setArguments({arg});
 
-	if (arg.isEmpty())
-		arg = QStringLiteral("");
+	QDBusMessage display = QDBusMessage::createMethodCall(
+		QStringLiteral("org.kde.krunner"),
+		QStringLiteral("/App"),
+		QStringLiteral("org.kde.krunner.App"),
+		QStringLiteral("display"));
 
-	krunner.call(QStringLiteral("query"), arg);
+	QDBusConnection bus = QDBusConnection::sessionBus();
+    bus.send(query);
+    bus.send(display);
+}
 
-	krunner.call(QStringLiteral("display"));
+void
+ServiceMenu::connectModel(QAbstractItemModel *model, QList<bool *> additionalFlags)
+{
+	// Create the timer for debouncing model updates
+	auto *timer = new QTimer(model);
+	timer->setSingleShot(true);
+	timer->setInterval(0);
+	connect(timer, &QTimer::timeout, this, [this, additionalFlags]() {
+		markDirty();
+	    for (bool *flag : additionalFlags) {
+			if (flag)
+				*flag = true;
+		}
+	});
+	connect(model, &QAbstractItemModel::dataChanged,  timer,  qOverload<>(&QTimer::start));
+	connect(model, &QAbstractItemModel::modelReset,   timer,  qOverload<>(&QTimer::start));
+	connect(model, &QAbstractItemModel::rowsInserted, timer,  qOverload<>(&QTimer::start));
+	connect(model, &QAbstractItemModel::rowsMoved,    timer,  qOverload<>(&QTimer::start));
+	connect(model, &QAbstractItemModel::rowsRemoved,  timer,  qOverload<>(&QTimer::start));
 }
 
 /* Mouse events adapted from KDE 3.5 kicker source code.
@@ -441,10 +480,9 @@ ServiceMenu::mousePressEvent(QMouseEvent *ev)
 void
 ServiceMenu::mouseMoveEvent(QMouseEvent *ev)
 {
-	if (!(ev->buttons() & Qt::LeftButton)) {
-		QMenu::mouseMoveEvent(ev);
+	QMenu::mouseMoveEvent(ev);
+	if (!(ev->buttons() & Qt::LeftButton))		
 		return;
-    }
 
 	if (m_startPos == QPointF(-1.0, -1.0))
 		return;

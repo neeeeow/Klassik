@@ -8,6 +8,8 @@
 
 #include "servicemenu.h"
 
+class KFilePlacesModel;
+
 class SystemMenu final : public ServiceMenu
 {
 	Q_OBJECT
@@ -17,4 +19,10 @@ public:
 	explicit SystemMenu(const QString &title, KMenuApplet *applet, QWidget *parent = nullptr);
 
 	void initialize() override;
+
+private:
+	KFilePlacesModel *m_placesModel = nullptr;
+
+	// Populates the menu
+	void populate();
 };

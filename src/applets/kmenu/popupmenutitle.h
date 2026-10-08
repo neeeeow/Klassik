@@ -21,9 +21,16 @@ namespace menuWidgets {
 	public:
 		TitleWidget(const QString &text, QWidget *parent)
 			: QWidget(parent), m_text(text) {
-			m_font = font();
-			m_font.setBold(true);
 			setEnabled(false);
+		}
+
+		QSize sizeHint() const override {
+			QFont f;
+			f.setBold(true);
+			const QFontMetrics fm(f);
+			const int fw = style()->pixelMetric(QStyle::PM_DefaultFrameWidth);
+			const QSize size = fm.size(Qt::TextSingleLine, m_text) + QSize(2*fw + 2, 2*fw + 2);
+			return size;
 		}
 
 	protected:
@@ -39,22 +46,16 @@ namespace menuWidgets {
 
 			// Draw the text
 			if (!m_text.isEmpty()) {
+				QFont f;
+				f.setBold(true);
 				p.setPen(palette().buttonText().color());
-				p.setFont(m_font);
+				p.setFont(f);
 				p.drawText(rect(), Qt::AlignCenter | Qt::TextSingleLine, m_text);
 			}
-		}
-		
-		QSize sizeHint() const override {
-			const QFontMetrics fm(m_font);
-			QSize size = fm.size(Qt::TextSingleLine, m_text);
-			size.setHeight(fm.height() + (style()->pixelMetric(QStyle::PM_DefaultFrameWidth) * 2) + 2);
-			return size;
-		}
+		}	   
 
 	private:
 		QString m_text;
-		QFont m_font;
 	};
 }
 	

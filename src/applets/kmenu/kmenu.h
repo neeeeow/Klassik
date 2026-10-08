@@ -9,6 +9,9 @@
 #include "servicemenu.h"
 
 class SessionManagement;
+namespace KActivities::Stats {
+    class ResultModel;
+}
 
 class KMenu final : public ServiceMenu
 {
@@ -28,7 +31,7 @@ protected:
 	void mouseReleaseEvent(QMouseEvent *e) override;
 	void mouseMoveEvent(QMouseEvent *e) override;
 
-private:
+private:	
 	// Struct holding the config keys used in the KMenu class,
 	// to avoid loading them many times unnecessarily.
 	struct Config {
@@ -59,6 +62,14 @@ private:
 	// Action lists
 	QList<QAction *> m_recentActions; // List of actions linking to recent applications
 	QList<QAction *> m_applicationActions; // List of actions in the root of the applications list
+	QList<QAction *> m_sessionActions; // List of actions for the session
+
+	// Flags which mark whether any of our action list actions are dirty
+	bool m_recentDirty = false;
+	bool m_applicationDirty = false;
+	bool m_sessionDirty = false;
+
+	void refreshContents() override;
 	
 	// Sets the margin dependant on the side pixmap setting
 	void setMargins();
@@ -72,6 +83,7 @@ private:
 	void updateRecent();
 	void createApplicationsItems();   
 	void updateApplications();
+	void updateSessionActions();
 
 	// Enables/disables actions based on a search filter. If the search filter text
 	// is empty, all actions are enabled. Returns a bool corresponding to whether or
