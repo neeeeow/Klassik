@@ -24,11 +24,8 @@ RecentDocsMenu::RecentDocsMenu(const QString &title, KMenuApplet *applet, QWidge
 }
 
 void
-RecentDocsMenu::initialize()
+RecentDocsMenu::populate()
 {
-	if (initialized()) return;
-	ServiceMenu::initialize();
-
 	// Setup the recent documents query
 	// NB: we deviate from the KDE 3 era code here, since using KRecentDocument doesn't
 	// work very well.
@@ -49,13 +46,11 @@ RecentDocsMenu::initialize()
 		m_fileList->disconnect(this);
 		m_fileList->deleteLater();
 	}
-    m_fileList = new ResultModel(query, this);	
+	m_fileList = new ResultModel(query, this);	
 
 	connectModel(m_fileList);
 
 	updateRecentDocs();
-
-	setInitialized(true);
 }
 
 void
@@ -64,7 +59,7 @@ RecentDocsMenu::updateRecentDocs()
 	if (!m_fileList) // sanity check
 		return;
 	
-    clear();	
+	clear();	
 	QAction *clearAction = addAction(QIcon::fromTheme(QStringLiteral("edit-clear-history")), i18n("Clear History"));
 	connect(clearAction, &QAction::triggered, m_fileList, &KActivities::Stats::ResultModel::forgetAllResources, Qt::QueuedConnection);
 	addSeparator();

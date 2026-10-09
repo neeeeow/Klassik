@@ -17,8 +17,6 @@ class SettingsMenu final : public ServiceMenu
 public:
 	explicit SettingsMenu(KMenuApplet *applet, QWidget *parent = nullptr);
 	explicit SettingsMenu(const QString &title, KMenuApplet *applet, QWidget *parent = nullptr);
-
-	void initialize() override;
 	
 private:
 	// Struct containing the data from a .desktop file
@@ -52,6 +50,8 @@ private:
 		}
 	};   
 
+	void populate() override;
+	
 	// Parses each .desktop file to retrieve the category data.
 	static QList<CategoryData> parseCategoryFiles();
 	

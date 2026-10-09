@@ -42,20 +42,23 @@ ServiceMenu::ServiceMenu(const QString &title, KMenuApplet *applet, QWidget *par
 	  m_applet(applet)
 {
 	this->setContextMenuPolicy(Qt::CustomContextMenu);
-	connect(this, &QMenu::customContextMenuRequested, this, &ServiceMenu::showContextMenu);
+	connect(this, &QMenu::customContextMenuRequested, this, &ServiceMenu::showContextMenu, Qt::UniqueConnection);
 }
 
 void
 ServiceMenu::initialize()
 {
-	if (initialized()) return;
+	if (m_initialized) return;
 	m_displayGenericName = applet() ? applet()->getConfigValue<bool>(QStringLiteral("showGenericName")) : true;
-	this->setToolTipsVisible(applet() ? applet()->getConfigValue<bool>(QStringLiteral("showTooltips")) : false);
+    setToolTipsVisible(applet() ? applet()->getConfigValue<bool>(QStringLiteral("showTooltips")) : false);
 
 	// m_dirty should be false here since we *should* do the initial population in initialize(), and
 	// having m_dirty = true would be wasteful
 	m_dirty = false;
-	connect(this, &QMenu::aboutToShow, this, &ServiceMenu::onAboutToShow, Qt::UniqueConnection);
+	connect(this, &QMenu::aboutToShow, this, &ServiceMenu::refreshIfDirty, Qt::UniqueConnection);
+
+	// Populate the menu
+	populate();
 	
 	setInitialized(true);
 }
@@ -121,11 +124,14 @@ ServiceMenu::createActionFromService(const KService::Ptr &service, const QUrl &u
 			title.append(QStringLiteral(" (%1)").arg(genericName));
 	}
 	
-	auto *action = new QAction(QIcon::fromTheme(service->icon()), title, this);
+	auto *action = new QAction(
+		QIcon::fromTheme(service->icon(),
+						 QIcon::fromTheme(QStringLiteral("application-x-executable"))),
+		title, this);
 
-    action->setData(QVariant::fromValue(service)); // Store the KService
+	action->setData(QVariant::fromValue(service)); // Store the KService
 	action->setToolTip(service->comment()); // Set the action tooltip
-    
+	
 	connect(action, &QAction::triggered, this, [this, service, url]() {
 		auto *job = new KIO::ApplicationLauncherJob(service);
 		job->setUiDelegate(new KNotificationJobUiDelegate(KJobUiDelegate::AutoHandlingEnabled));
@@ -145,18 +151,19 @@ ServiceMenu::createActionFromUrl(const QUrl &url)
 	if (!url.isValid())
 		return nullptr;
 	
-    const QString fileName = escapeMnemonics(url.fileName()); // name to display in the menu
+	const QString fileName = escapeMnemonics(url.fileName()); // name to display in the menu
 		
 	const QMimeDatabase db; // use QMimeDatabase to fetch the icon name
-    const QMimeType mime = db.mimeTypeForFile(url.toLocalFile(), QMimeDatabase::MatchExtension);
-	const QIcon icon = QIcon::fromTheme(mime.iconName());
+	const QMimeType mime = db.mimeTypeForUrl(url);
+	const QIcon icon = QIcon::fromTheme(mime.iconName(), QIcon::fromTheme(QStringLiteral("text-x-generic")));
 
 	auto *action = new QAction(icon, fileName, this);
 	action->setData(url);
+	action->setToolTip(url.toDisplayString(QUrl::PreferLocalFile));
 	
 	connect(action, &QAction::triggered, this, [this, url]() {
 		auto *job = new KIO::OpenUrlJob(url);
-	    job->setUiDelegate(new KNotificationJobUiDelegate(KJobUiDelegate::AutoHandlingEnabled));
+		job->setUiDelegate(new KNotificationJobUiDelegate(KJobUiDelegate::AutoHandlingEnabled));
 		job->start();
 		notifyAccessed(url);
 	});
@@ -172,7 +179,7 @@ ServiceMenu::createFileExplorerActionFromUrl(const QUrl &url)
 	if (!url.isValid())
 		return nullptr;
 	
-    auto *action = new QAction(QIcon::fromTheme(QStringLiteral("system-file-manager")), i18n("Open in File Explorer"), this);
+	auto *action = new QAction(QIcon::fromTheme(QStringLiteral("system-file-manager")), i18n("Open in File Explorer"), this);
 	connect(action, &QAction::triggered, this, [url]() {
 		auto *job = new KIO::OpenFileManagerWindowJob();
 		job->setUiDelegate(new KNotificationJobUiDelegate(KJobUiDelegate::AutoHandlingEnabled));
@@ -192,8 +199,7 @@ ServiceMenu::createActionFromKCM(const QString &id, const QString &name, const Q
 	if (id.isEmpty())
 		return nullptr;
 
-	QString actionText = name;
-	auto *action = new QAction(QIcon::fromTheme(icon), escapeMnemonics(actionText), this);
+	auto *action = new QAction(QIcon::fromTheme(icon), escapeMnemonics(name), this);
 	connect(action, &QAction::triggered, this, [id]() {
 		auto *job = new KIO::CommandLauncherJob(QStringLiteral("kcmshell6"), {id});
 		job->setUiDelegate(new KNotificationJobUiDelegate(KJobUiDelegate::AutoHandlingEnabled));
@@ -214,11 +220,18 @@ ServiceMenu::createActionsFromServiceActions(const KService::Ptr &service)
 
 	const QList<KServiceAction> serviceActions = service->actions();
 	for (const KServiceAction &serviceAction : serviceActions) {
+		if (serviceAction.isSeparator()) {
+		    auto *action = new QAction(this);
+			action->setSeparator(true);
+			actions.append(action);
+			continue;
+		}
+		
 		const QString name = escapeMnemonics(serviceAction.text());
 		if (name.isEmpty() || serviceAction.noDisplay() || serviceAction.exec().isEmpty())
 			continue;
 
-		auto *action = new QAction(QIcon::fromTheme(serviceAction.icon()), name, this);   
+		auto *action = new QAction(QIcon::fromTheme(serviceAction.icon()), name, this);	  
 		connect(action, &QAction::triggered, this, [this, service, serviceAction]() {
 			auto *job = new KIO::ApplicationLauncherJob(serviceAction);
 			job->setUiDelegate(new KNotificationJobUiDelegate(KJobUiDelegate::AutoHandlingEnabled));
@@ -256,7 +269,7 @@ ServiceMenu::createActionsFromServiceGroup(const KServiceGroup::Ptr &group)
 					
 			auto *subMenu = new ServiceMenu(escapeMnemonics(subGroup->caption()), applet(), this);
 			subMenu->initialize();
-			subMenu->setIcon(QIcon::fromTheme(subGroup->icon()));
+			subMenu->setIcon(QIcon::fromTheme(subGroup->icon(), QIcon::fromTheme(QStringLiteral("applications-other"))));
 			subMenu->addActions(subMenu->createActionsFromServiceGroup(subGroup));
 
 			if (subMenu->isEmpty()) {
@@ -331,7 +344,7 @@ ServiceMenu::showContextMenu(const QPoint &pos) const
 
 		// Action to put the action's exec command in krunner
 		QAction *runAction = contextMenu.addAction(QIcon::fromTheme(QStringLiteral("system-run")), i18n("Put Into Run Dialog"));
-	    connect(runAction, &QAction::triggered, &contextMenu, [service](){invokeKRunner(KIO::DesktopExecParser::executablePath(service->exec()));});
+		connect(runAction, &QAction::triggered, &contextMenu, [service](){invokeKRunner(KIO::DesktopExecParser::executablePath(service->exec()));});
 		
 	} else if (action->data().canConvert<KServiceGroup::Ptr>()) {
 		// KServiceGroup means sub menu container
@@ -375,7 +388,8 @@ ServiceMenu::showContextMenu(const QPoint &pos) const
 		return;
 
 	// Display the menu
-	contextMenu.exec(mapToGlobal(pos));
+	if (!contextMenu.isEmpty())
+		contextMenu.exec(mapToGlobal(pos));
 }
 
 void
@@ -391,7 +405,7 @@ ServiceMenu::runMenuEditor(QString arg)
 		arg = QStringLiteral("/"); // If already open, will collapse editor tree
 	}
 
-    auto *job = new KIO::CommandLauncherJob(service->exec(), {arg});
+	auto *job = new KIO::CommandLauncherJob(service->exec(), {arg});
 	job->setDesktopName(service->desktopEntryName());
 	job->setUiDelegate(new KNotificationJobUiDelegate(KJobUiDelegate::AutoErrorHandlingEnabled));
 	job->start();
@@ -414,8 +428,8 @@ ServiceMenu::invokeKRunner(const QString &arg)
 		QStringLiteral("display"));
 
 	QDBusConnection bus = QDBusConnection::sessionBus();
-    bus.send(query);
-    bus.send(display);
+	bus.send(query);
+	bus.send(display);
 }
 
 QString
@@ -425,8 +439,11 @@ ServiceMenu::escapeMnemonics(QString string)
 }
 
 void
-ServiceMenu::connectModel(QAbstractItemModel *model, QList<bool *> additionalFlags)
+ServiceMenu::connectModel(QAbstractItemModel *model, const QList<bool *> &additionalFlags)
 {
+	if (!model)
+		return;
+	
 	const auto onChanged = [this, additionalFlags] {
 		markDirty();
 		for (bool *flag : additionalFlags) {
@@ -435,11 +452,10 @@ ServiceMenu::connectModel(QAbstractItemModel *model, QList<bool *> additionalFla
 		}
 	};
 
-
 	connect(model, &QAbstractItemModel::dataChanged,  this, onChanged);
-	connect(model, &QAbstractItemModel::modelReset,   this, onChanged);
+	connect(model, &QAbstractItemModel::modelReset,	  this, onChanged);
 	connect(model, &QAbstractItemModel::rowsInserted, this, onChanged);
-	connect(model, &QAbstractItemModel::rowsMoved,    this, onChanged);
+	connect(model, &QAbstractItemModel::rowsMoved,	  this, onChanged);
 	connect(model, &QAbstractItemModel::rowsRemoved,  this, onChanged);
 }
 
@@ -463,16 +479,16 @@ ServiceMenu::mousePressEvent(QMouseEvent *ev)
 {
 	if (ev->button() == Qt::LeftButton)
 		m_startPos = ev->position();
-
-	// If the right-clicked action has a submenu, we must
-	// close it before displaying the context menu
-	if (ev->button() == Qt::RightButton) {
+	
+	// We need to separately handle when a QAction with a sub menu is right clicked
+	// since by default Qt does not allow context menus for these items
+	if (ev->button() == Qt::RightButton && contextMenuPolicy() != Qt::NoContextMenu) {
 		QAction *action = actionAt(ev->position().toPoint());
 		if (action && action->menu()) {
 			action->menu()->close();
 			showContextMenu(ev->position().toPoint());
 			return;
-		}		
+		}	
 	}
 	
 	QMenu::mousePressEvent(ev);
@@ -482,18 +498,15 @@ void
 ServiceMenu::mouseMoveEvent(QMouseEvent *ev)
 {
 	QMenu::mouseMoveEvent(ev);
-	if (!(ev->buttons() & Qt::LeftButton))		
-		return;
-
-	if (!m_startPos)
+	if (!(ev->buttons() & Qt::LeftButton) || !m_startPos)		
 		return;
 
 	QPointF p = ev->position() - *m_startPos;
 	if (p.manhattanLength() <= QApplication::startDragDistance() )
-        return;
+		return;
 
 	QAction *action = actionAt(m_startPos->toPoint());
-	if (!action)
+	if (!action || !action->isEnabled())
 		return;
 
 	QUrl url = action->data().toUrl();
@@ -512,8 +525,8 @@ ServiceMenu::mouseMoveEvent(QMouseEvent *ev)
 	drag->setMimeData(mimeData);
 
 	if (!action->icon().isNull()) {
-		int iconSize = style()->pixelMetric(QStyle::PM_SmallIconSize);
-		drag->setPixmap(action->icon().pixmap(iconSize, iconSize));
+		const int iconSize = style()->pixelMetric(QStyle::PM_SmallIconSize);
+		drag->setPixmap(action->icon().pixmap(QSize(iconSize, iconSize), devicePixelRatio()));
 	}
 
 	QPointer<ServiceMenu> guard(this); // guard in case the menu destroys itself

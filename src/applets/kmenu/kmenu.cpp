@@ -68,7 +68,6 @@ KMenu::paintEvent(QPaintEvent *e)
 		return;
 
 	QPainter p(this);
-	p.setRenderHint(QPainter::Antialiasing, true);
 
 	QRect r = sideImageRect();
 	r.setBottom( r.bottom() - m_sidePixmap.height() );
@@ -80,24 +79,21 @@ KMenu::paintEvent(QPaintEvent *e)
 }
 
 void
-KMenu::initialize()
+KMenu::populate()
 {
-	if (initialized()) return;
-	ServiceMenu::initialize();
-
 	// Reset dirty flags
 	m_recentDirty = m_applicationDirty = m_sessionDirty = false;
 
 	// Load the configuration
 	if (applet()) {
-		m_config.drawSideImage  = applet()->getConfigValue<bool>(QStringLiteral("drawSideImage"));
-		m_config.showTitles     = applet()->getConfigValue<bool>(QStringLiteral("showTitles"));
-		m_config.showSearch     = applet()->getConfigValue<bool>(QStringLiteral("showSearch"));
+		m_config.drawSideImage	= applet()->getConfigValue<bool>(QStringLiteral("drawSideImage"));
+		m_config.showTitles		= applet()->getConfigValue<bool>(QStringLiteral("showTitles"));
+		m_config.showSearch		= applet()->getConfigValue<bool>(QStringLiteral("showSearch"));
 		m_config.showRecentApps = applet()->getConfigValue<bool>(QStringLiteral("showRecentApps"));
-		m_config.numRecentApps  = applet()->getConfigValue<int>(QStringLiteral("numRecentApps"));
+		m_config.numRecentApps	= applet()->getConfigValue<int>(QStringLiteral("numRecentApps"));
 		m_config.showRecentDocs = applet()->getConfigValue<bool>(QStringLiteral("showRecentDocs"));
-		m_config.showSystem     = applet()->getConfigValue<bool>(QStringLiteral("showSystem"));	
-		m_config.showSettings   = applet()->getConfigValue<bool>(QStringLiteral("showSettings"));
+		m_config.showSystem		= applet()->getConfigValue<bool>(QStringLiteral("showSystem"));	
+		m_config.showSettings	= applet()->getConfigValue<bool>(QStringLiteral("showSettings"));
 	}
 	
 	loadSidePixmap();
@@ -138,7 +134,7 @@ KMenu::initialize()
 	}
 	if (m_config.showSettings) {
 		// Settings submenu
-	    auto *settingsMenu = new SettingsMenu(i18n("Settings"), applet(), this);
+		auto *settingsMenu = new SettingsMenu(i18n("Settings"), applet(), this);
 		settingsMenu->setIcon(QIcon::fromTheme(QStringLiteral("preferences-desktop")));
 		addMenu(settingsMenu);
 	}
@@ -147,12 +143,10 @@ KMenu::initialize()
 		addSeparator();
 
 	// Add the run command option
-	QAction *action = addAction(QIcon::fromTheme(QStringLiteral("system-run")), i18n("Run Command..."));
-	connect(action, &QAction::triggered, this, [](){invokeKRunner();});   
+	QAction *action = addAction(QIcon::fromTheme(QStringLiteral("system-run")), i18n("Run Command…"));
+	connect(action, &QAction::triggered, this, [](){invokeKRunner();});	  
 
 	updateSessionActions();
-
-	setInitialized(true);
 }
 
 void
@@ -257,24 +251,24 @@ KMenu::loadSidePixmap()
 	sidePainter.drawText(textRect, Qt::AlignVCenter | Qt::AlignLeft, sideText);
 
 	// pretile the pixmap to a height of at least 100 pixels
-    if (m_sideTilePixmap.height() < 100)
-    {
-		int tiles = (int)(100 / m_sideTilePixmap.height()) + 1;
+	if (m_sideTilePixmap.height() < 100)
+	{
+		const int tiles = (int)(100 / m_sideTilePixmap.height()) + 1;
 		QPixmap preTiledPixmap(m_sideTilePixmap.width(), m_sideTilePixmap.height() * tiles);
 		preTiledPixmap.fill(Qt::transparent);
 		QPainter tilePainter(&preTiledPixmap);
 		tilePainter.drawTiledPixmap(preTiledPixmap.rect(), m_sideTilePixmap);
 		tilePainter.end();
 		m_sideTilePixmap = preTiledPixmap;
-    }
+	}
 }
 
 QRect
 KMenu::sideImageRect() const
 {
 	const int panelWidth = style()->pixelMetric(QStyle::PM_MenuPanelWidth, nullptr, this);
-    const int hMargin = style()->pixelMetric(QStyle::PM_MenuHMargin, nullptr, this);
-    const int vMargin = style()->pixelMetric(QStyle::PM_MenuVMargin, nullptr, this);
+	const int hMargin = style()->pixelMetric(QStyle::PM_MenuHMargin, nullptr, this);
+	const int vMargin = style()->pixelMetric(QStyle::PM_MenuVMargin, nullptr, this);
 
 	// Rectangle containing our side pixmap
 	const QRect pixRect(panelWidth + hMargin, panelWidth + vMargin,
@@ -325,7 +319,7 @@ KMenu::updateRecent()
 
 	// Add the section header here so we can clear it if necessary
 	if (m_config.showTitles) {
-	    auto *recentHeader = new PopupMenuTitle(i18n("Most Used Applications"), this);
+		auto *recentHeader = new PopupMenuTitle(i18n("Most Used Applications"), this);
 		m_recentActions.append(recentHeader);
 	}
 
@@ -345,7 +339,7 @@ KMenu::updateRecent()
 	}
 
 	if (actionList.isEmpty()) {
-	    auto *emptyAction = new QAction(i18n("No Entries"), this);
+		auto *emptyAction = new QAction(i18n("No Entries"), this);
 		emptyAction->setEnabled(false);
 		m_recentActions.append(emptyAction);	
 	} else {	
@@ -361,13 +355,13 @@ KMenu::createApplicationsItems()
 {	
 	// Create the search bar container
 	if (m_config.showSearch) {
-	    auto *search = new PopupMenuSearch(i18n("Press '/' to search..."), Qt::Key_Slash, this);
+		auto *search = new PopupMenuSearch(i18n("Press '/' to search..."), Qt::Key_Slash, this);
 		insertAction(m_applicationsAnchor, search);				
 		if (QLineEdit *lineEdit = search->lineEdit()) {
 			connect(this, &QMenu::aboutToHide, lineEdit, &QLineEdit::clear);
 			connect(this, &QMenu::aboutToHide, lineEdit, &QLineEdit::clearFocus);
 			connect(lineEdit, &QLineEdit::textChanged, this, [this](QStringView text) {
-			    applySearchFilter(m_applicationActions, text.trimmed());
+				applySearchFilter(m_applicationActions, text.trimmed());
 			});
 		}
 	}
@@ -384,7 +378,7 @@ KMenu::updateApplications()
 	// Construct our new list of actions
 	const QList<QAction *> actionList = createActionsFromServiceGroup(KServiceGroup::root());
 	if (actionList.isEmpty()) {
-	    auto *emptyAction = new QAction(i18n("No Entries"), this);
+		auto *emptyAction = new QAction(i18n("No Entries"), this);
 		emptyAction->setEnabled(false);
 		emptyAction->setProperty("ignoreSearch", true);
 		m_applicationActions.append(emptyAction);
@@ -420,7 +414,7 @@ KMenu::updateSessionActions()
 			m_sessionActions.append(action);
 		}
 		if (m_session->canLogout()) {
-			action = addAction(QIcon::fromTheme(QStringLiteral("system-log-out")), i18n("Log Out..."));
+			action = addAction(QIcon::fromTheme(QStringLiteral("system-log-out")), i18n("Log Out…"));
 			connect(action, &QAction::triggered, m_session, &SessionManagement::requestLogoutPrompt);
 			m_sessionActions.append(action);
 		}
@@ -430,7 +424,7 @@ KMenu::updateSessionActions()
 bool
 KMenu::applySearchFilter(const QList<QAction *> &actions, QStringView text)
 {
-   	bool anyEnabled = false;
+	bool anyEnabled = false;
 	for (QAction *action : actions) {
 		if (action->isSeparator() || action->property("ignoreSearch").toBool())
 			continue;
@@ -441,12 +435,12 @@ KMenu::applySearchFilter(const QList<QAction *> &actions, QStringView text)
 			enabled = applySearchFilter(subMenu->actions(), text);
 		} else {
 			if (text.isEmpty() ||
-				action->text().contains(text, Qt::CaseInsensitive))
+				action->text().replace(QStringLiteral("&&"), QStringLiteral("&")).contains(text, Qt::CaseInsensitive))
 				// Item must be enabled either if the search string matches the action name, or if the search bar is empty
 				enabled = true;
 		}
 
-	    anyEnabled |= enabled;
+		anyEnabled |= enabled;
 		action->setEnabled(enabled);
 	}
 
@@ -463,7 +457,7 @@ KMenu::translateMouseEvent( QMouseEvent* e )
 	if (!m_config.drawSideImage)
 		return nullptr;
 	
-    const QRect side = sideImageRect();
+	const QRect side = sideImageRect();
 
 	if (!side.contains(e->position().toPoint()))
 		return nullptr;
@@ -484,22 +478,22 @@ KMenu::translateMouseEvent( QMouseEvent* e )
 void
 KMenu::mousePressEvent(QMouseEvent * e)
 {
-    auto newEvent(translateMouseEvent(e));
-    ServiceMenu::mousePressEvent( newEvent ? newEvent.get() : e );
+	auto newEvent(translateMouseEvent(e));
+	ServiceMenu::mousePressEvent( newEvent ? newEvent.get() : e );
 }
 
 void
 KMenu::mouseReleaseEvent(QMouseEvent *e)
 {
-    auto newEvent(translateMouseEvent(e));
-    ServiceMenu::mouseReleaseEvent( newEvent ? newEvent.get() : e );
+	auto newEvent(translateMouseEvent(e));
+	ServiceMenu::mouseReleaseEvent( newEvent ? newEvent.get() : e );
 }
 
 void
 KMenu::mouseMoveEvent(QMouseEvent *e)
 {
-    auto newEvent(translateMouseEvent(e));
-    ServiceMenu::mouseMoveEvent( newEvent ? newEvent.get() : e );
+	auto newEvent(translateMouseEvent(e));
+	ServiceMenu::mouseMoveEvent( newEvent ? newEvent.get() : e );
 }
 
 /* Colorize code adapted from KDE 3 code.
@@ -518,10 +512,10 @@ KMenu::colorize(QImage &image) const
 	QColor inactiveTitle = inactiveScheme.background().color();
 
 	// figure out which color is most suitable for recoloring to
-    int h1, s1, v1, h2, s2, v2, h3, s3, v3;
-    activeTitle.getHsv(&h1, &s1, &v1);
-    inactiveTitle.getHsv(&h2, &s2, &v2);
-    palette().color(QPalette::Active, QPalette::Window).getHsv(&h3, &s3, &v3);
+	int h1, s1, v1, h2, s2, v2, h3, s3, v3;
+	activeTitle.getHsv(&h1, &s1, &v1);
+	inactiveTitle.getHsv(&h2, &s2, &v2);
+	palette().color(QPalette::Active, QPalette::Window).getHsv(&h3, &s3, &v3);
 
 	if ( (qAbs(h1-h3)+qAbs(s1-s3)+qAbs(v1-v3) < qAbs(h2-h3)+qAbs(s2-s3)+qAbs(v2-v3)) &&
 		 ((qAbs(h1-h3)+qAbs(s1-s3)+qAbs(v1-v3) < 32) || (s1 < 32)) && (s2 > s1))
@@ -539,7 +533,7 @@ KMenu::colorize(QImage &image) const
 	} else if (gray < 76) {
 		r = (r + (76 - gray) > 255 ? 255 : r + (76 - gray));
 		g = (g + (76 - gray) > 255 ? 255 : g + (76 - gray));
-        b = (b + (76 - gray) > 255 ? 255 : b + (76 - gray));
+		b = (b + (76 - gray) > 255 ? 255 : b + (76 - gray));
 	}
 	color.setRgb(r, g, b);
 
@@ -549,7 +543,7 @@ KMenu::colorize(QImage &image) const
 	}
 
 	int rval, gval, bval, val, alpha;
-    float rcol = color.red(), gcol = color.green(), bcol = color.blue();
+	float rcol = color.red(), gcol = color.green(), bcol = color.blue();
 
 	for (int y = 0; y < image.height(); ++y) {
 		QRgb *line = reinterpret_cast<QRgb*>(image.scanLine(y));

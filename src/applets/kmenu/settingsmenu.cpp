@@ -25,11 +25,8 @@ SettingsMenu::SettingsMenu(const QString &title, KMenuApplet *applet, QWidget *p
 }
 
 void
-SettingsMenu::initialize()
+SettingsMenu::populate()
 {
-	if (initialized()) return;
-	ServiceMenu::initialize();
-
 	// Add system settings action at the top of the menu
 	const KService::Ptr systemsettings = KService::serviceByDesktopName(QStringLiteral("systemsettings"));
 	if (QAction *settingsAction = createActionFromService(systemsettings)) {
@@ -57,15 +54,13 @@ SettingsMenu::initialize()
 	connect(editAction, &QAction::triggered, this, []() {
 		runMenuEditor();
 	});
-	
-	setInitialized(true);
 }
 
 QList<SettingsMenu::CategoryData>
 SettingsMenu::parseCategoryFiles()
 {
 	const QStringList dirs = QStandardPaths::locateAll(QStandardPaths::GenericDataLocation, QStringLiteral("systemsettings/categories"), QStandardPaths::LocateDirectory);
-    const QStringList categoryFiles = KFileUtils::findAllUniqueFiles(dirs, QStringList(QStringLiteral("*.desktop")));
+	const QStringList categoryFiles = KFileUtils::findAllUniqueFiles(dirs, QStringList(QStringLiteral("*.desktop")));
 
 	QList<CategoryData> categories;
 	for (const QString &categoryFile : categoryFiles) {
@@ -100,15 +95,16 @@ SettingsMenu::findKCMsMetaData()
 	metaDataList << KPluginMetaData::findPlugins(QStringLiteral("plasma/kcms/systemsettings_qwidgets"));
 	for (const auto &m : std::as_const(metaDataList)) {
 		if (!KAuthorized::authorizeControlModule(m.pluginId()))
-            continue;
-		modules << m;
-		const bool inserted = uniquePluginIds.insert(m.pluginId()).second;
-		if (!inserted)
-            qWarning() << "the plugin" << m.pluginId() << " was found in multiple namespaces";
+			continue;		
+		const bool insert = uniquePluginIds.insert(m.pluginId()).second;
+		if (insert)
+			modules << m;
+		else
+			qWarning() << "the plugin" << m.pluginId() << " was found in multiple namespaces";
 	}
 	std::stable_sort(modules.begin(), modules.end(), [](const KPluginMetaData &m1, const KPluginMetaData &m2) {
-        return QString::compare(m1.pluginId(), m2.pluginId(), Qt::CaseInsensitive) < 0;
-    });
+		return QString::compare(m1.pluginId(), m2.pluginId(), Qt::CaseInsensitive) < 0;
+	});
 
 	return modules;
 }
@@ -116,16 +112,16 @@ SettingsMenu::findKCMsMetaData()
 void
 SettingsMenu::buildSettingsTree(SettingsItem *parent,
 								const QList<KPluginMetaData> &pluginModules,
-							    const QList<CategoryData> &categories)
+								const QList<CategoryData> &categories)
 {
 	// Look for categories
-	for (const CategoryData &category : std::as_const(categories)) {
+	for (const CategoryData &category : categories) {
 		if (category.id == parent->id)
-            continue;
+			continue;
 
 		if (category.parentCategory == parent->id ||
 			// V2 entries must not be empty if they want to become a proper category.
-            (!category.parentCategory2.isEmpty() && category.parentCategory2 == parent->id)) {
+			(!category.parentCategory2.isEmpty() && category.parentCategory2 == parent->id)) {
 			
 			// Create category settings item
 			auto item = new SettingsItem();

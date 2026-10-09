@@ -18,12 +18,11 @@ public:
 	explicit SystemMenu(KMenuApplet *applet, QWidget *parent = nullptr);
 	explicit SystemMenu(const QString &title, KMenuApplet *applet, QWidget *parent = nullptr);
 
-	void initialize() override;
-
 private:
 	KFilePlacesModel *m_placesModel = nullptr;
 
-	// Populates the menu
-	void populate();
-	void refreshContents() override { populate(); }
+	void populate() override;
+	void refreshContents() override { updatePlaces(); }
+
+	void updatePlaces();
 };

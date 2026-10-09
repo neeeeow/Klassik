@@ -45,7 +45,7 @@ namespace menuWidgets {
 			if (!key.isEmpty()) {
 				QShortcut *searchShortcut = new QShortcut(key, this);
 				connect(searchShortcut, &QShortcut::activated, m_searchLineEdit, qOverload<>(&QLineEdit::setFocus));
-			}		  						
+			}								
 			connect(clearBtn, &QToolButton::clicked, m_searchLineEdit, &QLineEdit::clear);
 
 			layout->addWidget(clearBtn);
@@ -58,7 +58,7 @@ namespace menuWidgets {
 			QSize size = QWidget::sizeHint();
 			const int iconSize = style()->pixelMetric(QStyle::PM_SmallIconSize); // The size of menu item icons (by default)
 			QStyleOptionMenuItem opt; // Call sizeFromContents to get the height of a menu item in the current QStyle,
-			opt.initFrom(this);       // ensuring the search bar is the same height as a menu item, giving a more consistent look
+			opt.initFrom(this);		  // ensuring the search bar is the same height as a menu item, giving a more consistent look
 			const int menuHeight = style()->sizeFromContents(QStyle::CT_MenuItem, &opt, QSize(0, qMax(opt.fontMetrics.height(), iconSize))).height();
 			size.setHeight(menuHeight);
 			return size;
@@ -94,7 +94,7 @@ public:
 		setDefaultWidget(widget); // each PopupMenuSearch should only be created once, so avoid createWidget
 	}
 
-    QLineEdit* lineEdit() const {
+	QLineEdit* lineEdit() const {
 		if (menuWidgets::SearchWidget *widget = qobject_cast<menuWidgets::SearchWidget *>(defaultWidget()))
 			return widget->lineEdit();
 		else

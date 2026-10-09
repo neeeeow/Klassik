@@ -27,11 +27,11 @@ KMenuApplet::KMenuApplet(QObject *parentObject, const KPluginMetaData &data, con
 
 KMenuApplet::~KMenuApplet()
 {
-    if (m_menu) {
-        m_menu->disconnect(this);
-        m_menu->close();
-        m_menu->deleteLater();
-    }
+	if (m_menu) {
+		m_menu->disconnect(this);
+		m_menu->close();
+		m_menu->deleteLater();
+	}
 }
 
 void
@@ -40,10 +40,10 @@ KMenuApplet::init()
 	// init() should only ever be called once. If these pointers are not null, then something
 	// has gone wrong.
 	Q_ASSERT(!m_menu);
-    Q_ASSERT(!m_containmentInterface);
+	Q_ASSERT(!m_containmentInterface);
 	
 	// Call the original init function
-	Plasma::Applet::init();   
+	Plasma::Applet::init();	  
 	
 	// Create the objects
 	m_containmentInterface = new ContainmentInterface(this);
@@ -111,7 +111,7 @@ KMenuApplet::toggleMenu(QQuickItem *button)
 }
 
 QPoint
-KMenuApplet::popupPosition(QQuickItem *item)
+KMenuApplet::popupPosition(QQuickItem *item) const
 {
 	if (!m_menu || !item || !item->window() || !item->window()->screen())
 		return QPoint();
@@ -124,73 +124,73 @@ KMenuApplet::popupPosition(QQuickItem *item)
 	QRect parentGeometryBounds(pos, item->size().toSize());
 
 	const QPoint topPoint(pos.x(), parentGeometryBounds.top() - menuSize.height());
-    const QPoint bottomPoint(pos.x(), parentGeometryBounds.bottom());
-    const QPoint leftPoint(parentGeometryBounds.left() - menuSize.width(), pos.y());
-    const QPoint rightPoint(parentGeometryBounds.right(), pos.y());
+	const QPoint bottomPoint(pos.x(), parentGeometryBounds.bottom());
+	const QPoint leftPoint(parentGeometryBounds.left() - menuSize.width(), pos.y());
+	const QPoint rightPoint(parentGeometryBounds.right(), pos.y());
 
 	QPoint dialogPos;
 	switch (panelLocation) {
 	case Plasma::Types::TopEdge:
-	    dialogPos = bottomPoint;
+		dialogPos = bottomPoint;
 		break;
 	case Plasma::Types::LeftEdge:
-	    dialogPos = rightPoint;
+		dialogPos = rightPoint;
 		break;
 	case Plasma::Types::RightEdge:
-	    dialogPos = leftPoint;
+		dialogPos = leftPoint;
 		break;
 	default:
-	    dialogPos = topPoint;
+		dialogPos = topPoint;
 		break;
 	}
 
 	QRect avail = item->window()->screen()->availableGeometry();
 
-    // If popup goes out of bounds...
-    // ...at the left edge
-    if (dialogPos.x() < avail.left()) {
-        if (panelLocation != Plasma::Types::LeftEdge) {
-            // move it in bounds
-            // Note: floating popup goes here.
-            dialogPos.setX(avail.left());
-        } else {
-            // flip it around
-            dialogPos.setX(rightPoint.x());
-        }
-    }
-    // ...at the right edge
-    if (dialogPos.x() + menuSize.width() > avail.right()) {
-        if (panelLocation != Plasma::Types::RightEdge) {
-            // move it in bounds
-            // Note: floating popup goes here.
-            dialogPos.setX(qMax(avail.left(), (avail.right() - menuSize.width() + 1)));
-        } else {
-            // flip it around
-            dialogPos.setX(leftPoint.x());
-        }
-    }
-    // ...at the top edge
-    if (dialogPos.y() < avail.top()) {
-        if (panelLocation == Plasma::Types::LeftEdge || panelLocation == Plasma::Types::RightEdge) {
-            // move it in bounds
-            dialogPos.setY(avail.top());
-        } else {
-            // flip it around
-            // Note: floating popup goes here.
-            dialogPos.setY(bottomPoint.y());
-        }
-    }
-    // ...at the bottom edge
-    if (dialogPos.y() + menuSize.height() > avail.bottom()) {
-        if (panelLocation == Plasma::Types::LeftEdge || panelLocation == Plasma::Types::RightEdge) {
-            // move it in bounds
-            dialogPos.setY(qMax(avail.top(), (avail.bottom() - menuSize.height() + 1)));
-        } else {
-            // flip it around
-            // Note: floating popup goes here.
-            dialogPos.setY(topPoint.y());
-        }
-    }
+	// If popup goes out of bounds...
+	// ...at the left edge
+	if (dialogPos.x() < avail.left()) {
+		if (panelLocation != Plasma::Types::LeftEdge) {
+			// move it in bounds
+			// Note: floating popup goes here.
+			dialogPos.setX(avail.left());
+		} else {
+			// flip it around
+			dialogPos.setX(rightPoint.x());
+		}
+	}
+	// ...at the right edge
+	if (dialogPos.x() + menuSize.width() > avail.right()) {
+		if (panelLocation != Plasma::Types::RightEdge) {
+			// move it in bounds
+			// Note: floating popup goes here.
+			dialogPos.setX(qMax(avail.left(), (avail.right() - menuSize.width() + 1)));
+		} else {
+			// flip it around
+			dialogPos.setX(leftPoint.x());
+		}
+	}
+	// ...at the top edge
+	if (dialogPos.y() < avail.top()) {
+		if (panelLocation == Plasma::Types::LeftEdge || panelLocation == Plasma::Types::RightEdge) {
+			// move it in bounds
+			dialogPos.setY(avail.top());
+		} else {
+			// flip it around
+			// Note: floating popup goes here.
+			dialogPos.setY(bottomPoint.y());
+		}
+	}
+	// ...at the bottom edge
+	if (dialogPos.y() + menuSize.height() > avail.bottom()) {
+		if (panelLocation == Plasma::Types::LeftEdge || panelLocation == Plasma::Types::RightEdge) {
+			// move it in bounds
+			dialogPos.setY(qMax(avail.top(), (avail.bottom() - menuSize.height() + 1)));
+		} else {
+			// flip it around
+			// Note: floating popup goes here.
+			dialogPos.setY(topPoint.y());
+		}
+	}
 	
 	return dialogPos;
 }

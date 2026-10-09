@@ -37,16 +37,16 @@ ContainmentInterface::mayAddLauncher(ContainmentInterface::Target target) const
 	case Desktop: {		
 		Plasma::Containment *desktopContainment = corona->containmentForScreen(appletContainment->screen(), QString(), QString());
 		if (desktopContainment)
-			return (desktopContainment->immutability() == Plasma::Types::Mutable);       
+			return (desktopContainment->immutability() == Plasma::Types::Mutable);		 
 
-        break;
+		break;
 	}
 	case Panel: {
 		if (appletContainment->pluginMetaData().pluginId() == QLatin1String("com.github.neeeeow.klassik.panel"))
 			return (appletContainment->immutability() == Plasma::Types::Mutable);
 
 		break;
-    }
+	}
 	case Quicklaunch: {
 		if (appletContainment->pluginMetaData().pluginId() == QLatin1String("com.github.neeeeow.klassik.panel")) {
 			auto *quicklaunch = findQuicklaunchApplet();
@@ -87,15 +87,15 @@ ContainmentInterface::addLauncher(ContainmentInterface::Target target, const KSe
 
 	case Desktop: {
 		Plasma::Containment *desktopContainment = corona->containmentForScreen(appletContainment->screen(), QString(), QString());
-        if (!desktopContainment)
-            return;
+		if (!desktopContainment)
+			return;
 
 		const QStringList &containmentProvides = desktopContainment->pluginMetaData().value(u"X-Plasma-Provides", QStringList());
 
 		if (containmentProvides.contains(QLatin1String("org.kde.plasma.filemanagement"))) {
 			auto *folderQuickItem = PlasmaQuick::AppletQuickItem::itemForApplet(desktopContainment);
 			if (!folderQuickItem)
-                return;
+				return;
 
 			QMetaObject::invokeMethod(folderQuickItem, "addLauncher", Q_ARG(QVariant, url));
 		} else {
@@ -103,7 +103,7 @@ ContainmentInterface::addLauncher(ContainmentInterface::Target target, const KSe
 		}
 
 		break;
-    }
+	}
 	case Panel: {
 		if (appletContainment->pluginMetaData().pluginId() == QLatin1String("com.github.neeeeow.klassik.panel")) {
 			appletContainment->createApplet(QStringLiteral("org.kde.plasma.icon"), QVariantList() << url);
@@ -128,7 +128,7 @@ ContainmentInterface::addLauncher(ContainmentInterface::Target target, const KSe
 	}
 	default: {
 		break;
-    }		
+	}		
 	}
 }
 
@@ -140,7 +140,7 @@ ContainmentInterface::findQuicklaunchApplet() const
 	
 	const QList<Plasma::Applet *> applets = containment()->applets();
 	const auto found = std::ranges::find_if(applets, [](const Plasma::Applet *applet) {
-	    return applet->pluginMetaData().pluginId() == QLatin1String("com.github.neeeeow.klassik.quicklaunch");
+		return applet->pluginMetaData().pluginId() == QLatin1String("com.github.neeeeow.klassik.quicklaunch");
 	});
 	return found != applets.cend() ? *found : nullptr;
 }

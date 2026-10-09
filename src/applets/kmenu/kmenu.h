@@ -10,7 +10,7 @@
 
 class SessionManagement;
 namespace KActivities::Stats {
-    class ResultModel;
+	class ResultModel;
 }
 
 class KMenu final : public ServiceMenu
@@ -20,7 +20,6 @@ class KMenu final : public ServiceMenu
 public:
 	explicit KMenu(KMenuApplet *applet, QWidget *parent = nullptr);
 
-	void initialize() override;
 	void reinitialize() override;
 
 protected:	
@@ -53,11 +52,12 @@ private:
 	QPixmap m_sidePixmap;
 	QPixmap m_sideTilePixmap;
 	
-	// Action to which we anchor the applications 
+	// Action to which we anchor the applications. Declare as QPointer as the menu can
+	// be cleared externally, which might destroy the anchor.
 	QPointer<QAction> m_applicationsAnchor = nullptr;
 
 	// ResultModels for recent apps
-    KActivities::Stats::ResultModel *m_recentApps = nullptr;
+	KActivities::Stats::ResultModel *m_recentApps = nullptr;
 
 	// Action lists
 	QList<QAction *> m_recentActions; // List of actions linking to recent applications
@@ -69,6 +69,7 @@ private:
 	bool m_applicationDirty = false;
 	bool m_sessionDirty = false;
 
+	void populate() override;
 	void refreshContents() override;
 	
 	// Sets the margin dependant on the side pixmap setting
@@ -81,7 +82,7 @@ private:
 	// Functions for populating the menu
 	void createRecentMenuItems();
 	void updateRecent();
-	void createApplicationsItems();   
+	void createApplicationsItems();	  
 	void updateApplications();
 	void updateSessionActions();
 

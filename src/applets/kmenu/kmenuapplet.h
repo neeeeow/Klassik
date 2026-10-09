@@ -24,7 +24,7 @@ public:
 	void init() override;
 
 	bool isMenuActive() const;
-    ContainmentInterface* containmentInterface() const;
+	ContainmentInterface* containmentInterface() const;
 
 	// Show/hide the menu from QML, popping it up at the location of button
 	Q_INVOKABLE void toggleMenu(QQuickItem *button);
@@ -48,5 +48,5 @@ private:
 	QPointer<KMenu> m_menu = nullptr;
 
 	QVariant configValue(const QString &key) const;
-	QPoint popupPosition(QQuickItem *item);	
+	QPoint popupPosition(QQuickItem *item) const;	
 };
