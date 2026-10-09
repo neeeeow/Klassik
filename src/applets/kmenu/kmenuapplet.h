@@ -34,7 +34,7 @@ public:
 	T getConfigValue(const QString &key) const {
 		const QVariant value = configValue(key);
 		if (!value.canConvert<T>()) {
-			qWarning() << "key " << key << " type mismatch!";
+			qWarning() << "key" << key << "type mismatch!";
 			return T();
 		}
 		return value.value<T>();

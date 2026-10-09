@@ -8,11 +8,10 @@
 
 #include <QStyleOptionFrame>
 
-StyledFrame::StyledFrame(QQuickItem *parent) : PaintedItem(parent)
+StyledFrame::StyledFrame(QQuickItem *parent)
+	: PaintedItem(parent),
+	  m_lineWidth(style() ? style()->pixelMetric(QStyle::PM_DefaultFrameWidth) : 1)
 {
-	// Retrieve default panel thickness
-	if (style())
-		m_lineWidth = style()->pixelMetric(QStyle::PM_DefaultFrameWidth);
 }
 
 void
@@ -23,7 +22,7 @@ StyledFrame::paint(QPainter *p) const
 
 	QStyleOptionFrame frame;
 	frame.palette = QGuiApplication::palette();
-	frame.rect = QRect(0,0,width(),height());
+	frame.rect = rect();
 	frame.state = QStyle::State_Enabled | (m_sunken ? QStyle::State_Sunken : QStyle::State_Raised);
 	frame.frameShape = QFrame::StyledPanel;
 	frame.lineWidth = m_lineWidth;

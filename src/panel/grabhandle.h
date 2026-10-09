@@ -25,7 +25,7 @@ public:
 	void setHorizontal(bool state) {
 		if (m_horizontal != state) {
 			m_horizontal = state;
-			updateImage();
+		    requestRepaint();
 		}
 	}
 
@@ -38,7 +38,7 @@ private:
 
 		QStyleOption handle;
 		handle.palette = QGuiApplication::palette();
-		handle.rect = QRect(0,0,width(),height());
+		handle.rect = rect();
 		handle.state = QStyle::State_Enabled;
 		if (m_horizontal)
 			handle.state |= QStyle::State_Horizontal;

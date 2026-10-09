@@ -38,7 +38,7 @@ PanelPopupItem::~PanelPopupItem()
     if (m_menu) {
         m_menu->disconnect(this);
         m_menu->close();
-        m_menu->deleteLater();
+        m_menu->deleteLater(); // NB: we *must* use deleteLater here, calling delete m_menu can cause segfaults!
     }
 }
 

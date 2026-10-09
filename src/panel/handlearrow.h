@@ -27,7 +27,7 @@ public:
 	void setPanelLocation(Plasma::Types::Location location) {
 		if (m_panelLocation != location) {
 			m_panelLocation = location;
-			updateImage();
+		    requestRepaint();
 		}
 	}
 
@@ -40,7 +40,7 @@ private:
 
 		QStyleOption arrow;
 		arrow.palette = QGuiApplication::palette();
-		arrow.rect = QRect(0,0,width(),height());
+		arrow.rect = rect();
 		arrow.state = QStyle::State_Enabled;
 
 		QStyle::PrimitiveElement pe;

@@ -22,10 +22,10 @@ PaintedItem::PaintedItem(QQuickItem *parent) : QQuickItem(parent)
 void
 PaintedItem::loadStyle()
 {	
-	m_style = qApp->style();
+	m_style = QApplication::style();
 	// We cannot connect to QEvent::StyleChange, so we do it this way instead
 	if (m_style)
-		connect(m_style, &QObject::destroyed, this, &PaintedItem::styleChanged, Qt::UniqueConnection);
+	  connect(m_style, &QObject::destroyed, this, &PaintedItem::styleChanged, Qt::UniqueConnection);
 }	
 void
 PaintedItem::styleChanged()
@@ -34,28 +34,22 @@ PaintedItem::styleChanged()
 		return;
 	loadStyle();
 	if (m_style)
-		updateImage();
+		requestRepaint();
 }
 
 void
 PaintedItem::componentComplete()
 {
 	QQuickItem::componentComplete();
-    polish();
-}
-
-void
-PaintedItem::updateImage()
-{
-	if (isComponentComplete())
-		polish();
+	polish();
 }
 
 bool
 PaintedItem::event(QEvent *event)
-{
-	if (event->type() == QEvent::ApplicationPaletteChange)
-	    updateImage();
+{	
+	if (event->type() == QEvent::ApplicationPaletteChange ||
+		event->type() == QEvent::DevicePixelRatioChange)
+		requestRepaint();
 
 	return QQuickItem::event(event);
 }
@@ -63,14 +57,21 @@ PaintedItem::event(QEvent *event)
 void
 PaintedItem::geometryChange(const QRectF &newGeometry, const QRectF &oldGeometry)
 {
-    QQuickItem::geometryChange(newGeometry, oldGeometry);
-	updateImage();
+	QQuickItem::geometryChange(newGeometry, oldGeometry);
+
+	// We only need to repaint the image if the geometry size changes ...
+	if (newGeometry.size() != oldGeometry.size())
+		requestRepaint();
+	// ... however, we will need to update the paint node if
+	// position changes, since our HiDPI corrections depend on position
+	else if (newGeometry.topLeft() != oldGeometry.topLeft())
+		update();
 }
 
 void
 PaintedItem::updatePolish()
 {
-	QQuickItem::updatePolish();
+	QQuickItem::updatePolish();		
 	paintControlToImage();
 }
 
@@ -79,50 +80,53 @@ QSGNode *
 PaintedItem::updatePaintNode(QSGNode *oldNode, QQuickItem::UpdatePaintNodeData *updatePaintNodeData)
 {
 	Q_UNUSED(updatePaintNodeData);
-    QSGSimpleTextureNode *node = static_cast<QSGSimpleTextureNode *>(oldNode);
+	
+	if (m_paintedImage.isNull() || !window())
+		// If we cannot create a texture or there is no window to draw on,
+		// the node should not exist.
+		return nullptr;
+	
+	QSGSimpleTextureNode *node = static_cast<QSGSimpleTextureNode *>(oldNode);
 	if (!node) {
 		node = new QSGSimpleTextureNode();
 		node->setOwnsTexture(true);
 	}
 
-	if (m_paintedImage.isNull()) {
-        // If we cannot create a texture, the node should not exist either
-        // because its material requires a texture.
-        delete node;
-        return nullptr;
-    }
-
-	const auto texture = window()->createTextureFromImage(m_paintedImage, QQuickWindow::TextureCanUseAtlas);
+    auto *texture = window()->createTextureFromImage(m_paintedImage, QQuickWindow::TextureCanUseAtlas);
+	if (!texture) {
+		delete node;
+		return nullptr;
+	}
 
 	// Bounding rect for texture
 	QRectF bounds = boundingRect();
 
-	// Correct bounds for fractional scaling
+	// Snap the top left corner to the nearest pixel
 	const qreal dpr = window()->effectiveDevicePixelRatio();
-	if (!qFuzzyCompare(dpr, qreal(1))) {
-		const QPointF windowPos = mapToScene(QPointF(0, 0));
-		const qreal physX = windowPos.x() * dpr;
-		const qreal physY = windowPos.y() * dpr;
-		const qreal fractionalX = physX - qFloor(physX);
-		const qreal fractionalY = physY - qFloor(physY);
-		bounds.adjust(-fractionalX / dpr, -fractionalY / dpr, -fractionalX / dpr, -fractionalY / dpr);
-	}
+	const QPointF scenePos = mapToScene(QPointF(0,0)); // Top left of the window
+	const QPointF adjustedScenePos( // Top left pixel in the window
+		qRound(scenePos.x() * dpr) / dpr,
+		qRound(scenePos.y() * dpr) / dpr
+		);   
+	bounds.translate(adjustedScenePos - scenePos);
 
-    node->setRect(bounds);
-    node->setTexture(texture);
+	node->setRect(bounds);
+	node->setTexture(texture);
 	
 	return node;
 }
 
 void
 PaintedItem::paintControlToImage()
-{
-	QSize imgSize = size().toSize();
-	if (imgSize.isEmpty())    
+{			
+	if (size().isEmpty() || !window() || !m_style) {
+		m_paintedImage = QImage(); // Clear out the QImage if invalid
+		update();
 		return;
+	}
 
 	const qreal dpr = window()->effectiveDevicePixelRatio();
-	imgSize *= dpr;
+    const QSize imgSize(qRound(width() * dpr), qRound(height() * dpr));
 
 	if (m_paintedImage.size() != imgSize) {
 		m_paintedImage = QImage(imgSize, QImage::Format_ARGB32_Premultiplied);

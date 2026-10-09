@@ -49,7 +49,8 @@ private:
 	Plasma::Types::Location m_location = Plasma::Types::Floating;
 	
 	// Points to the QMenu which stores the contents of our popup. Must *never* be
-	// accessed outside of this class
+	// accessed outside of this class. Use a QPointer in case something else
+	// destroys the menu
 	QPointer<QMenu> m_menu = nullptr;
 
 	// The layout to which we add items

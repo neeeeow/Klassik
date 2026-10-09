@@ -26,7 +26,7 @@ public:
 	void setSunken(bool state) {
 		if (m_sunken != state) {
 			m_sunken = state;
-			updateImage();
+		    requestRepaint();
 		}
 	}
 
@@ -45,7 +45,7 @@ private:
 			header.palette.setColor(QPalette::Button, header.palette.button().color().darker(110));
 			header.palette.setColor(QPalette::Window, header.palette.window().color().darker(110));
 		}
-	    header.rect = QRect(0,0,width(),height());
+	    header.rect = rect();
 		header.state = QStyle::State_Enabled | (m_sunken ? QStyle::State_Sunken : QStyle::State_Raised);
 
 	    style()->drawControl(QStyle::CE_HeaderSection, &header, p);

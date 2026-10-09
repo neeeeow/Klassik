@@ -131,7 +131,7 @@ PlasmoidItem {
                         Connections {
                             target: clock
                             function onDateTimeChanged() {
-                                analogClock.updateImage()
+                                analogClock.requestRepaint()
                             }
                         }
                     }

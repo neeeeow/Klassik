@@ -36,7 +36,7 @@ public:
 	void setDrawFrame(bool state) {
 		if (m_drawFrame != state) {
 			m_drawFrame = state;
-			updateImage();
+			requestRepaint();
 		}
 	}
 	
@@ -45,7 +45,7 @@ public:
 		if (m_colorizePanel != state) {
 			m_colorizePanel = state;
 			loadBackground();
-			updateImage();
+			requestRepaint();
 		}
 	}
 
@@ -54,7 +54,7 @@ public:
 		if (m_useBackground != state) {
 			m_useBackground = state;
 			loadBackground();
-			updateImage();
+			requestRepaint();
 		}
 	}
 
@@ -62,7 +62,7 @@ public:
 	void setPanelLocation(Plasma::Types::Location location) {
 		if (m_panelLocation != location) {
 			m_panelLocation = location;
-			updateImage();
+			requestRepaint();
 		}
 	}
 
@@ -71,7 +71,7 @@ public:
 		if (m_useCustomBackground != state) {
 			m_useCustomBackground = state;
 			loadBackground();
-			updateImage();
+			requestRepaint();
 		}
 	}
 	
@@ -80,7 +80,7 @@ public:
 		if (m_customBackgroundUrl != url) {
 			m_customBackgroundUrl = url;
 			loadBackground();
-			updateImage();
+			requestRepaint();
 		}
 	}	
 

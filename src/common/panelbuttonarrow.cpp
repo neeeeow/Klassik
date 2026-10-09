@@ -27,11 +27,11 @@ PanelButtonArrow::paint(QPainter *p) const
 		break;
 	case Below:
 		e = QStyle::PE_IndicatorArrowDown;
-		r.translate(0, height() - arrowSize);
+		r.translate(0, rect().height() - arrowSize);
 		break;
 	case Right:
 		e = QStyle::PE_IndicatorArrowRight;
-		r.translate(width() - arrowSize, 0);
+		r.translate(rect().width() - arrowSize, 0);
 		break;
 	case Left:
 		e = QStyle::PE_IndicatorArrowLeft;

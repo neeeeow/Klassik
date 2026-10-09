@@ -33,7 +33,7 @@ public:
 	void setActive(bool state) {
 		if (m_active != state) {
 			m_active = state;
-			updateImage();
+		    requestRepaint();
 		}
 	}
 
@@ -41,7 +41,7 @@ public:
 	void setLocation(MenuLocation location) {
 		if (m_location != location) {
 			m_location = location;
-			updateImage();
+		    requestRepaint();
 		}
 	}
 

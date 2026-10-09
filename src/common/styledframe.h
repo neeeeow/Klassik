@@ -25,7 +25,7 @@ public:
 	void setLineWidth(int lineWidth) {
 		if (m_lineWidth != lineWidth) {
 			m_lineWidth = lineWidth;
-			updateImage();
+		    requestRepaint();
 			Q_EMIT lineWidthChanged();
 		}
 	}
@@ -34,7 +34,7 @@ public:
 	void setSunken(bool sunken) {
 		if (m_sunken != sunken) {
 			m_sunken = sunken;
-			updateImage();
+		    requestRepaint();
 		}
 	}
 
