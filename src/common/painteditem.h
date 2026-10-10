@@ -57,6 +57,8 @@ protected Q_SLOTS:
 	
 private:
 	QPointer<QStyle> m_style = nullptr; // Declare this a QPointer, since the QStyle might get destroyed by something else
+
+	// QImage to which contents are painted on
 	QImage m_paintedImage;
 
 	// Loads the current QStyle

@@ -60,8 +60,7 @@ PaintedItem::componentComplete()
 bool
 PaintedItem::event(QEvent *event)
 {	
-	if (event->type() == QEvent::ApplicationPaletteChange ||
-		event->type() == QEvent::DevicePixelRatioChange)
+	if (event->type() == QEvent::ApplicationPaletteChange)
 		requestRepaint();
 
 	return QQuickItem::event(event);
@@ -92,23 +91,25 @@ PaintedItem::updatePolish()
 QSGNode *
 PaintedItem::updatePaintNode(QSGNode *oldNode, QQuickItem::UpdatePaintNodeData *updatePaintNodeData)
 {
-	Q_UNUSED(updatePaintNodeData);
-	
-	if (m_paintedImage.isNull() || !window())
+	Q_UNUSED(updatePaintNodeData);   	
+    auto *node = static_cast<QSGSimpleTextureNode *>(oldNode);
+
+	if (m_paintedImage.isNull() || !window()) {
 		// If we cannot create a texture or there is no window to draw on,
 		// the node should not exist.
+		delete node;
 		return nullptr;
-	
-	QSGSimpleTextureNode *node = static_cast<QSGSimpleTextureNode *>(oldNode);
-	if (!node) {
-		node = new QSGSimpleTextureNode();
-		node->setOwnsTexture(true);
 	}
 
 	auto *texture = window()->createTextureFromImage(m_paintedImage, QQuickWindow::TextureCanUseAtlas);
 	if (!texture) {
 		delete node;
 		return nullptr;
+	}
+
+	if (!node) {
+		node = new QSGSimpleTextureNode();
+		node->setOwnsTexture(true);
 	}
 
 	// Bounding rect for texture
