@@ -16,6 +16,7 @@
 PaintedItem::PaintedItem(QQuickItem *parent) : QQuickItem(parent)
 {
 	setFlag(QQuickItem::ItemHasContents, true);
+	setAcceptHoverEvents(m_hoverEnabled);
 	loadStyle();
 	connect(this, &PaintedItem::propertyChanged, this, &PaintedItem::requestRepaint);
 }
@@ -46,9 +47,11 @@ PaintedItem::baseStyleOption() const
 	opt.rect = rect();
 	if (isEnabled())
 		opt.state |= QStyle::State_Enabled;
+	if (hasActiveFocus())
+		opt.state |= QStyle::State_HasFocus;
 	if (isSunken())
 		opt.state |= QStyle::State_Sunken;
-	if (isMouseOver())
+	if (isHovered())
 		opt.state |= QStyle::State_MouseOver;
 	return opt;
 }
@@ -72,29 +75,6 @@ PaintedItem::componentComplete()
 	polish();
 }
 
-bool
-PaintedItem::event(QEvent *event)
-{	
-	if (event->type() == QEvent::ApplicationPaletteChange)
-		requestRepaint();
-
-	return QQuickItem::event(event);
-}
-
-void
-PaintedItem::geometryChange(const QRectF &newGeometry, const QRectF &oldGeometry)
-{
-	QQuickItem::geometryChange(newGeometry, oldGeometry);
-
-	// We only need to repaint the image if the geometry size changes ...
-	if (newGeometry.size() != oldGeometry.size())
-		requestRepaint();
-	// ... however, we will need to update the paint node if
-	// position changes, since our HiDPI corrections depend on position
-	else if (newGeometry.topLeft() != oldGeometry.topLeft())
-		update();
-}
-
 void
 PaintedItem::updatePolish()
 {
@@ -106,8 +86,8 @@ PaintedItem::updatePolish()
 QSGNode *
 PaintedItem::updatePaintNode(QSGNode *oldNode, QQuickItem::UpdatePaintNodeData *updatePaintNodeData)
 {
-	Q_UNUSED(updatePaintNodeData);   	
-    auto *node = static_cast<QSGSimpleTextureNode *>(oldNode);
+	Q_UNUSED(updatePaintNodeData);		
+	auto *node = static_cast<QSGSimpleTextureNode *>(oldNode);
 
 	if (m_paintedImage.isNull() || !window()) {
 		// If we cannot create a texture or there is no window to draw on,
@@ -168,4 +148,63 @@ PaintedItem::paintControlToImage()
 	paint(&painter);
 	
 	update();
+}
+
+bool
+PaintedItem::event(QEvent *event)
+{	
+	if (event->type() == QEvent::ApplicationPaletteChange)
+		requestRepaint();
+
+	return QQuickItem::event(event);
+}
+
+void
+PaintedItem::itemChange(QQuickItem::ItemChange change, const QQuickItem::ItemChangeData &value)
+{
+	QQuickItem::itemChange(change, value);
+	switch (change) {
+	case ItemEnabledHasChanged:
+	case ItemActiveFocusHasChanged:
+	case ItemDevicePixelRatioHasChanged:
+	case ItemSceneChange:
+		requestRepaint();
+		break;
+	default:
+		break;
+	}
+}
+
+void
+PaintedItem::geometryChange(const QRectF &newGeometry, const QRectF &oldGeometry)
+{
+	QQuickItem::geometryChange(newGeometry, oldGeometry);
+
+	// We only need to repaint the image if the geometry size changes ...
+	if (newGeometry.size() != oldGeometry.size())
+		requestRepaint();
+	// ... however, we will need to update the paint node if
+	// position changes, since our HiDPI corrections depend on position
+	else if (newGeometry.topLeft() != oldGeometry.topLeft())
+		update();
+}
+
+void
+PaintedItem::hoverEnterEvent(QHoverEvent *event)
+{
+	QQuickItem::hoverEnterEvent(event);
+	if (!m_hovered) {
+		m_hovered = true;	
+		Q_EMIT propertyChanged();
+	}
+}
+
+void
+PaintedItem::hoverLeaveEvent(QHoverEvent *event)
+{
+	QQuickItem::hoverLeaveEvent(event);
+	if (m_hovered) {
+		m_hovered = false;	
+		Q_EMIT propertyChanged();
+	}
 }

@@ -298,7 +298,7 @@ ContainmentItem {
                             contentItem: HandleArrow {
                                 panelLocation: Plasmoid.location
                                 sunken: menuButton.down || menuButton.checked
-                                mouseOver: menuButton.hovered
+                                hoverEnabled: menuButton.hoverEnabled
                             }
 
                             onClicked:appletMenu.open()
@@ -350,8 +350,8 @@ ContainmentItem {
                             Layout.row: root.isHorizontal ? (appletHandle.reverse ? 1 : 0) : 0
                             Layout.column: root.isHorizontal ? 0 : (appletHandle.reverse ? 1 : 0)
                             horizontal: root.isHorizontal
-                            mouseOver: handleMouseArea.containsMouse
                             sunken: handleMouseArea.pressed
+                            hoverEnabled: true
 
                             MouseArea {
                                 id: handleMouseArea

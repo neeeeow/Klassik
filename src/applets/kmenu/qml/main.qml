@@ -77,7 +77,7 @@ PlasmoidItem{
                 anchors.fill: parent
                 location: Plasmoid.location
                 sunken: menuButton.down || menuButton.checked
-                mouseOver: menuButton.hovered
+                hoverEnabled: menuButton.hoverEnabled
             }
         }
 

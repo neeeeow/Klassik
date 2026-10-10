@@ -22,12 +22,26 @@ class PaintedItem : public QQuickItem
 	QML_ANONYMOUS
 
 	// Custom state flags which correspond to QStyle::State_Sunken and
-	// QStyle::State_MouseOver. By default, both flags are off.
-	Q_PROPERTY(bool sunken MEMBER m_sunken NOTIFY propertyChanged)
-	Q_PROPERTY(bool mouseOver MEMBER m_mouseOver NOTIFY propertyChanged)	
+	// QStyle::State_MouseOver. By default, both flags are off. Note: we
+	// make hovered read only since it must never be set outside of our C++ code
+	Q_PROPERTY(bool sunken MEMBER m_sunken NOTIFY propertyChanged FINAL)
+	Q_PROPERTY(bool hovered READ isHovered NOTIFY propertyChanged FINAL)
+	Q_PROPERTY(bool hoverEnabled READ isHoverEnabled WRITE setHoverEnabled NOTIFY propertyChanged FINAL)
 	
 public:
-	explicit PaintedItem(QQuickItem *parent = nullptr);	 
+	explicit PaintedItem(QQuickItem *parent = nullptr);
+
+	bool isHovered() const { return m_hovered; }
+	bool isHoverEnabled() const { return m_hoverEnabled; }
+	void setHoverEnabled(bool hoverEnabled) {
+		if (hoverEnabled != m_hoverEnabled) {
+			m_hoverEnabled = hoverEnabled;
+			if (!m_hoverEnabled)
+				m_hovered = false;			
+			setAcceptHoverEvents(m_hoverEnabled);
+			Q_EMIT propertyChanged();
+		}
+	}
 	
 Q_SIGNALS:
 	void propertyChanged();
@@ -43,7 +57,6 @@ protected:
 
 	// Returns state flags used by QStyle
 	bool isSunken() const { return m_sunken; }
-	bool isMouseOver() const { return m_mouseOver; }
 	
 	// Returns the QRect which represents the area to which the QQuickItem is painted on.
 	// Only call from within paint(), m_paintedImage is only guaranteed to be non-null there.
@@ -58,14 +71,19 @@ protected:
 	
 	// Overrides for painting logic
 	void componentComplete() override;
-	bool event(QEvent *event) override;
-	void geometryChange(const QRectF &newGeometry, const QRectF &oldGeometry) override;
 	void updatePolish() override;
 	QSGNode *updatePaintNode(QSGNode *oldNode, QQuickItem::UpdatePaintNodeData *updatePaintNodeData) override;
 
+	// Event handling overrides
+	bool event(QEvent *event) override;
+	void itemChange(QQuickItem::ItemChange change, const QQuickItem::ItemChangeData &value) override;
+	void geometryChange(const QRectF &newGeometry, const QRectF &oldGeometry) override;
+	void hoverEnterEvent(QHoverEvent *event) override;
+	void hoverLeaveEvent(QHoverEvent *event) override;
+														
 protected Q_SLOTS:	
 	// Triggers a repaint of the QQuickItem
-    void requestRepaint() {if (isComponentComplete()) polish();}
+	void requestRepaint() {if (isComponentComplete()) polish();}
 	
 private:
 	QPointer<QStyle> m_style = nullptr; // Declare this a QPointer, since the QStyle might get destroyed by something else
@@ -81,7 +99,10 @@ private:
 
 	// State flags used by QStyle
 	bool m_sunken = false;
-	bool m_mouseOver = false;
+	bool m_hovered = false;
+
+	// Whether or not to accept hover events (default false!)
+	bool m_hoverEnabled = false;
 	
 	// Function used for painting to the QQuickItem. This function must be implemented
 	// by subclasses, and must *never* be called directly outside of paintControlToImage(),
