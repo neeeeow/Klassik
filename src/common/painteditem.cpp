@@ -17,6 +17,7 @@ PaintedItem::PaintedItem(QQuickItem *parent) : QQuickItem(parent)
 {
 	setFlag(QQuickItem::ItemHasContents, true);
 	loadStyle();
+	connect(this, &PaintedItem::propertyChanged, this, &PaintedItem::requestRepaint);
 }
 
 void
@@ -35,6 +36,18 @@ PaintedItem::styleChanged()
 	loadStyle();
 	if (m_style)
 		requestRepaint();
+}
+
+void
+PaintedItem::scalePainter(QPainter *painter)
+{
+	if (!painter)
+		return;
+	const qreal dpr = painter->device() ? painter->device()->devicePixelRatio() : 1.0;
+	if (!qFuzzyCompare(dpr, qreal(1))) {
+		const qreal inverseScale = qreal(1) / dpr;
+		painter->scale(inverseScale, inverseScale);
+	}
 }
 
 void
@@ -92,7 +105,7 @@ PaintedItem::updatePaintNode(QSGNode *oldNode, QQuickItem::UpdatePaintNodeData *
 		node->setOwnsTexture(true);
 	}
 
-    auto *texture = window()->createTextureFromImage(m_paintedImage, QQuickWindow::TextureCanUseAtlas);
+	auto *texture = window()->createTextureFromImage(m_paintedImage, QQuickWindow::TextureCanUseAtlas);
 	if (!texture) {
 		delete node;
 		return nullptr;
@@ -107,7 +120,7 @@ PaintedItem::updatePaintNode(QSGNode *oldNode, QQuickItem::UpdatePaintNodeData *
 	const QPointF adjustedScenePos( // Top left pixel in the window
 		qRound(scenePos.x() * dpr) / dpr,
 		qRound(scenePos.y() * dpr) / dpr
-		);   
+		);	 
 	bounds.translate(adjustedScenePos - scenePos);
 
 	node->setRect(bounds);
@@ -126,7 +139,7 @@ PaintedItem::paintControlToImage()
 	}
 
 	const qreal dpr = window()->effectiveDevicePixelRatio();
-    const QSize imgSize(qRound(width() * dpr), qRound(height() * dpr));
+	const QSize imgSize(qRound(width() * dpr), qRound(height() * dpr));
 
 	if (m_paintedImage.size() != imgSize) {
 		m_paintedImage = QImage(imgSize, QImage::Format_ARGB32_Premultiplied);

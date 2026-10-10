@@ -28,22 +28,7 @@ public:
 	// This must be called by any subclass, as it enables/disables tooltips
 	// depending on the config. Override populate() to add contents to the menu
 	// during initialization
-	void initialize();
-	
-	// Reinitializes the menu (usually after a config change)
-	// NOTE: it's a wise idea to reimplement this in a subclass
-	// in case there any member variables, etc, you need to clear.
-	// The base reinitialize() simply clears out the menu and calls
-	// initialize() again.
-	virtual void reinitialize();
-
-	// Manually refresh the menu contents if dirty. Used primarily for computing popup positions
-	// which depend on the menu contents.
-	void refreshIfDirty() {
-		if (!initialized() || !m_dirty) return;
-		m_dirty = false;
-		refreshContents();
-	}
+	void initialize();   
 
 	// Functions for creating QActions, from either a service, a url, or an action which launches a
 	// url in the file explorer. All QActions are parented to the menu
@@ -53,6 +38,22 @@ public:
 	QAction* createActionFromKCM(const QString &id, const QString &name, const QString &icon);
 	QList<QAction *> createActionsFromServiceActions(const KService::Ptr &service);
 	QList<QAction *> createActionsFromServiceGroup(const KServiceGroup::Ptr &group);
+
+public Q_SLOTS:
+	// Reinitializes the menu (usually after a config change)
+	// NOTE: it's a wise idea to reimplement this in a subclass
+	// in case there any member variables, etc, you need to clear.
+	// The base reinitialize() simply clears out the menu and calls
+	// initialize() again.
+	virtual void reinitialize();
+	
+	// Manually refresh the menu contents if dirty. Used primarily for computing popup positions
+	// which depend on the menu contents.
+	void refreshIfDirty() {
+		if (!initialized() || !m_dirty) return;
+		m_dirty = false;
+		refreshContents();
+	}
 
 protected:	 
 	// Returns and sets the initialized flag (in general, this should only ever

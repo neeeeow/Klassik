@@ -19,48 +19,18 @@ Clock::Clock(QQuickItem *parent)
 }
 
 void
-Clock::setConfig(KConfigPropertyMap *config)
-{
-	if (m_config != config) {
-		m_config = config;
-		polish();
-	}
-}
-
-QVariant
-Clock::configValue(const char *key) const
-{
-	if (!m_config)
-		return QVariant();		
-	
-	const QVariant value = m_config->property(key);
-	if (!value.isValid()) {
-		qWarning() << "key " << key << " not found!";
-		return QVariant();
-	}
-	return value;
-}
-
-void
 Clock::paint(QPainter *p) const
 {
-	QRect r = getRect();
+	const QRect r = rect();
 	
 	// background
-	const int colorTheme = getConfigValue<int>("colorTheme");
-	if ((colorTheme == 1) && !m_lcdPixmap.isNull()) { // LCD style
+	if ((m_colorTheme == LCD) && !m_lcdPixmap.isNull()) { // LCD style
 		p->save();
-		const qreal dpr = getDpr(p);
-		if (!qFuzzyCompare(dpr, qreal(1))) {
-			const qreal inverseScale = qreal(1) / dpr;
-			p->scale(inverseScale, inverseScale);
-			p->drawTiledPixmap(getScaledRect(r, dpr), m_lcdPixmap);
-		} else		
-			p->drawTiledPixmap(r, m_lcdPixmap);
+		scalePainter(p);
+		p->drawTiledPixmap(scaledRect(), m_lcdPixmap);		
 		p->restore();
-	} else if (colorTheme == 2) { // Custom colors
-		QColor bgColor = getConfigValue<QColor>("bgColor");
-		p->fillRect(r, bgColor);
+	} else if (m_colorTheme == Custom) { // Custom colors
+		p->fillRect(r, m_bgColor);
 	}
 	
 	p->save();
@@ -68,10 +38,10 @@ Clock::paint(QPainter *p) const
 	p->restore();
 
 	// frame
-	if (style() && getConfigValue<bool>("showFrame")) {
+	if (style() && m_showFrame) {
 		QStyleOptionFrame frame;
 		frame.palette = QGuiApplication::palette();
-		frame.rect = QRect(0,0,width(),height());
+		frame.rect = r;
 		frame.state = QStyle::State_Enabled | QStyle::State_Sunken;
 		frame.frameShape = QFrame::Panel;
 		frame.lineWidth = 1;
@@ -85,29 +55,21 @@ DigitalClock::DigitalClock(QQuickItem *parent)
 {
 }
 
-
-void
-DigitalClock::setText(const QString &newText)
-{
-	if (m_timeString != newText) {
-		m_timeString = newText;
-		polish();
-	}
-}
-
 int
 DigitalClock::preferredWidthForHeight(int h) const
 {
 	if (h > 29) h = 29;
 	if (h < 0) h = 0;
-	return (m_timeString.length()*h*5/11)+2;
+	const int length = qMax(m_timeString.length(), 1);
+	return (length*h*5/11)+2;
 }
 
 int
 DigitalClock::preferredHeightForWidth(int w) const
 {
 	if (w < 0) w = 0;
-	return((w / m_timeString.length() * 2) + 6);
+	const int length = qMax(m_timeString.length(), 1);
+	return((w / length * 2) + 6);
 }
 
 void
@@ -117,18 +79,18 @@ DigitalClock::drawContents(QPainter *p) const
 		QColor fgColor;
 		QColor shadowColor;
 
-		switch (getConfigValue<int>("colorTheme")) {
-		case 1: { // LCD look
+		switch (m_colorTheme) {
+		case LCD: { // LCD look
 			fgColor = Qt::black;
 			shadowColor = QColor(128, 128, 128);
 			break;
 		}
-		case 2: { // Custom colors
-			fgColor = getConfigValue<QColor>("fgColor");
-			shadowColor = getConfigValue<QColor>("shadowColor");
+		case Custom: { // Custom colors
+			fgColor = m_fgColor;
+			shadowColor = m_shadowColor;
 			break;
 		}
-		case 0:
+		case System:
 		default: { // system colors
 			QPalette pal = QGuiApplication::palette();
 			fgColor = pal.color(QPalette::WindowText);
@@ -137,16 +99,10 @@ DigitalClock::drawContents(QPainter *p) const
 		}	
 		}
 
+		const QRect clockRect = scaledRect();
+		
 		p->save();
-		QRect clockRect;
-		const qreal dpr = getDpr(p);
-		if (!qFuzzyCompare(dpr, qreal(1))) {
-			const qreal inverseScale = qreal(1) / dpr;
-			p->scale(inverseScale, inverseScale);
-			p->translate(0.5, 0.5);
-			clockRect = getScaledRect(getRect(), dpr);
-		} else
-			clockRect = getRect();
+		scalePainter(p);
 		
 		p->translate(1, 1);
 		drawString(m_timeString, clockRect, shadowColor, *p);
@@ -158,90 +114,90 @@ DigitalClock::drawContents(QPainter *p) const
 }
 
 static const char
-*getSegments(char ch)               // gets list of segments for ch
+*getSegments(char ch)				// gets list of segments for ch
 {
-    static const char segments[30][8] =
-       { { 0, 1, 2, 4, 5, 6,99, 0},             // 0    0 / O
-         { 2, 5,99, 0, 0, 0, 0, 0},             // 1    1
-         { 0, 2, 3, 4, 6,99, 0, 0},             // 2    2
-         { 0, 2, 3, 5, 6,99, 0, 0},             // 3    3
-         { 1, 2, 3, 5,99, 0, 0, 0},             // 4    4
-         { 0, 1, 3, 5, 6,99, 0, 0},             // 5    5 / S
-         { 0, 1, 3, 4, 5, 6,99, 0},             // 6    6
-         { 0, 2, 5,99, 0, 0, 0, 0},             // 7    7
-         { 0, 1, 2, 3, 4, 5, 6,99},             // 8    8
-         { 0, 1, 2, 3, 5, 6,99, 0},             // 9    9 / g
-         { 3,99, 0, 0, 0, 0, 0, 0},             // 10   -
-         { 7,99, 0, 0, 0, 0, 0, 0},             // 11   .
-         { 0, 1, 2, 3, 4, 5,99, 0},             // 12   A
-         { 1, 3, 4, 5, 6,99, 0, 0},             // 13   B
-         { 0, 1, 4, 6,99, 0, 0, 0},             // 14   C
-         { 2, 3, 4, 5, 6,99, 0, 0},             // 15   D
-         { 0, 1, 3, 4, 6,99, 0, 0},             // 16   E
-         { 0, 1, 3, 4,99, 0, 0, 0},             // 17   F
-         { 1, 3, 4, 5,99, 0, 0, 0},             // 18   h
-         { 1, 2, 3, 4, 5,99, 0, 0},             // 19   H
-         { 1, 4, 6,99, 0, 0, 0, 0},             // 20   L
-         { 3, 4, 5, 6,99, 0, 0, 0},             // 21   o
-         { 0, 1, 2, 3, 4,99, 0, 0},             // 22   P
-         { 3, 4,99, 0, 0, 0, 0, 0},             // 23   r
-         { 4, 5, 6,99, 0, 0, 0, 0},             // 24   u
-         { 1, 2, 4, 5, 6,99, 0, 0},             // 25   U
-         { 1, 2, 3, 5, 6,99, 0, 0},             // 26   Y
-         { 8, 9,99, 0, 0, 0, 0, 0},             // 27   :
-         { 0, 1, 2, 3,99, 0, 0, 0},             // 28   '
-         {99, 0, 0, 0, 0, 0, 0, 0} };           // 29   empty
+	static const char segments[30][8] =
+	   { { 0, 1, 2, 4, 5, 6,99, 0},				// 0	0 / O
+		 { 2, 5,99, 0, 0, 0, 0, 0},				// 1	1
+		 { 0, 2, 3, 4, 6,99, 0, 0},				// 2	2
+		 { 0, 2, 3, 5, 6,99, 0, 0},				// 3	3
+		 { 1, 2, 3, 5,99, 0, 0, 0},				// 4	4
+		 { 0, 1, 3, 5, 6,99, 0, 0},				// 5	5 / S
+		 { 0, 1, 3, 4, 5, 6,99, 0},				// 6	6
+		 { 0, 2, 5,99, 0, 0, 0, 0},				// 7	7
+		 { 0, 1, 2, 3, 4, 5, 6,99},				// 8	8
+		 { 0, 1, 2, 3, 5, 6,99, 0},				// 9	9 / g
+		 { 3,99, 0, 0, 0, 0, 0, 0},				// 10	-
+		 { 7,99, 0, 0, 0, 0, 0, 0},				// 11	.
+		 { 0, 1, 2, 3, 4, 5,99, 0},				// 12	A
+		 { 1, 3, 4, 5, 6,99, 0, 0},				// 13	B
+		 { 0, 1, 4, 6,99, 0, 0, 0},				// 14	C
+		 { 2, 3, 4, 5, 6,99, 0, 0},				// 15	D
+		 { 0, 1, 3, 4, 6,99, 0, 0},				// 16	E
+		 { 0, 1, 3, 4,99, 0, 0, 0},				// 17	F
+		 { 1, 3, 4, 5,99, 0, 0, 0},				// 18	h
+		 { 1, 2, 3, 4, 5,99, 0, 0},				// 19	H
+		 { 1, 4, 6,99, 0, 0, 0, 0},				// 20	L
+		 { 3, 4, 5, 6,99, 0, 0, 0},				// 21	o
+		 { 0, 1, 2, 3, 4,99, 0, 0},				// 22	P
+		 { 3, 4,99, 0, 0, 0, 0, 0},				// 23	r
+		 { 4, 5, 6,99, 0, 0, 0, 0},				// 24	u
+		 { 1, 2, 4, 5, 6,99, 0, 0},				// 25	U
+		 { 1, 2, 3, 5, 6,99, 0, 0},				// 26	Y
+		 { 8, 9,99, 0, 0, 0, 0, 0},				// 27	:
+		 { 0, 1, 2, 3,99, 0, 0, 0},				// 28	'
+		 {99, 0, 0, 0, 0, 0, 0, 0} };			// 29	empty
 
-    if (ch >= '0' && ch <= '9')
-        return segments[ch - '0'];
-    if (ch >= 'A' && ch <= 'F')
-        return segments[ch - 'A' + 12];
-    if (ch >= 'a' && ch <= 'f')
-        return segments[ch - 'a' + 12];
+	if (ch >= '0' && ch <= '9')
+		return segments[ch - '0'];
+	if (ch >= 'A' && ch <= 'F')
+		return segments[ch - 'A' + 12];
+	if (ch >= 'a' && ch <= 'f')
+		return segments[ch - 'a' + 12];
 
-    int n;
-    switch (ch) {
-        case '-':
-            n = 10;  break;
-        case 'O':
-            n = 0;   break;
-        case 'g':
-            n = 9;   break;
-        case '.':
-            n = 11;  break;
-        case 'h':
-            n = 18;  break;
-        case 'H':
-            n = 19;  break;
-        case 'l':
-        case 'L':
-            n = 20;  break;
-        case 'o':
-            n = 21;  break;
-        case 'p':
-        case 'P':
-            n = 22;  break;
-        case 'r':
-        case 'R':
-            n = 23;  break;
-        case 's':
-        case 'S':
-            n = 5;   break;
-        case 'u':
-            n = 24;  break;
-        case 'U':
-            n = 25;  break;
-        case 'y':
-        case 'Y':
-            n = 26;  break;
-        case ':':
-            n = 27;  break;
-        case '\'':
-            n = 28;  break;
-        default:
-            n = 29;  break;
-    }
-    return segments[n];
+	int n;
+	switch (ch) {
+		case '-':
+			n = 10;	 break;
+		case 'O':
+			n = 0;	 break;
+		case 'g':
+			n = 9;	 break;
+		case '.':
+			n = 11;	 break;
+		case 'h':
+			n = 18;	 break;
+		case 'H':
+			n = 19;	 break;
+		case 'l':
+		case 'L':
+			n = 20;	 break;
+		case 'o':
+			n = 21;	 break;
+		case 'p':
+		case 'P':
+			n = 22;	 break;
+		case 'r':
+		case 'R':
+			n = 23;	 break;
+		case 's':
+		case 'S':
+			n = 5;	 break;
+		case 'u':
+			n = 24;	 break;
+		case 'U':
+			n = 25;	 break;
+		case 'y':
+		case 'Y':
+			n = 26;	 break;
+		case ':':
+			n = 27;	 break;
+		case '\'':
+			n = 28;	 break;
+		default:
+			n = 29;	 break;
+	}
+	return segments[n];
 }
 
 void
@@ -252,12 +208,12 @@ DigitalClock::drawString(const QString &s, const QRect &rect, const QColor &colo
 
 	int ndigits = s.length();
 	int digitSpace = 1; // we make smallPoint *always* false in our case
-	int xSegLen    = rect.width()*5/(ndigits*(5 + digitSpace) + digitSpace);
-	int ySegLen    = rect.height()*5/12;
-	int segLen     = ySegLen > xSegLen ? xSegLen : ySegLen;
+	int xSegLen	   = rect.width()*5/(ndigits*(5 + digitSpace) + digitSpace);
+	int ySegLen	   = rect.height()*5/12;
+	int segLen	   = ySegLen > xSegLen ? xSegLen : ySegLen;
 	int xAdvance   = segLen*(5 + digitSpace)/5;
-	int xOffset    = (rect.width() - ndigits*xAdvance + segLen/5)/2;
-	int yOffset    = (rect.height() - segLen*2)/2;
+	int xOffset	   = (rect.width() - ndigits*xAdvance + segLen/5)/2;
+	int yOffset	   = (rect.height() - segLen*2)/2;
 
 	for (int i=0; i<ndigits; i++) {
 		QPoint pos(xOffset + xAdvance*i, yOffset);
@@ -292,9 +248,9 @@ void
 DigitalClock::drawSegment(const QPoint &pos, const QColor &color, char segmentNo,
 						  QPainter &p, int segLen) const
 {
-    QPoint ppt;
-    QPoint pt = pos;
-    const int width = segLen/5; 
+	QPoint ppt;
+	QPoint pt = pos;
+	const int width = segLen/5; 
 
 #define LINETO(X,Y) addPoint(a, QPoint(pt.x() + (X),pt.y() + (Y)))
 #define LIGHT
@@ -342,7 +298,7 @@ DigitalClock::drawSegment(const QPoint &pos, const QColor &color, char segmentNo
 		LINETO(segLen - width - 1,-width/2);
 		LINETO(segLen - 1,0);
 		DARK;
-		if (width & 1) {            // adjust for integer division error
+		if (width & 1) {			// adjust for integer division error
 			LINETO(segLen - width - 3,width/2 + 1);
 			LINETO(width + 2,width/2 + 1);
 		} else {
@@ -454,22 +410,22 @@ AnalogClock::drawContents(QPainter *p) const
 {	
 	QTime time = QDateTime::currentDateTime().time();
 
-	p->setRenderHint(QPainter::Antialiasing, getConfigValue<bool>("antialiasing"));
+	p->setRenderHint(QPainter::Antialiasing, m_antialiasing);
 
 	QColor fgColor;
 	QColor shadowColor;
-	switch (getConfigValue<int>("colorTheme")) {
-	case 1: { // LCD look
+	switch (m_colorTheme) {
+	case LCD: { // LCD look
 		fgColor = Qt::black;
 		shadowColor = QColor(128, 128, 128);
 		break;
 	}
-	case 2: { // Custom colors
-		fgColor = getConfigValue<QColor>("fgColor");
-		shadowColor = getConfigValue<QColor>("shadowColor");
+	case Custom: { // Custom colors
+		fgColor = m_fgColor;
+		shadowColor = m_shadowColor;
 		break;
 	}
-	case 0:
+	case System:
 	default: { // system colors
 		QPalette pal = QGuiApplication::palette();
 		fgColor = pal.color(QPalette::WindowText);
@@ -478,59 +434,59 @@ AnalogClock::drawContents(QPainter *p) const
 	}	
 	}
 
-	const int spWidth = width();
-	const int spHeight = height();	   
+	const int spWidth = rect().width();
+	const int spHeight = rect().height();	   
 
 	QPolygon pts;
-    const QPoint cp(spWidth / 2, spHeight / 2);
+	const QPoint cp(spWidth / 2, spHeight / 2);
 	const int d = qMin(spWidth,spHeight) - 10;
 
 	QPen shadowPen(shadowColor);
 	shadowPen.setCosmetic(true);
 	p->setPen(shadowPen);
 	p->setBrush(shadowColor);
-    int offset = 2;
+	int offset = 2;
 	
 	for ( int c=0 ; c < 2 ; c++ ) {
 		QTransform matrix; // keep the variable name matrix for convenience
-        matrix.translate(cp.x() + offset, cp.y() + offset);
-        matrix.scale( d/1000.0F, d/1000.0F );
+		matrix.translate(cp.x() + offset, cp.y() + offset);
+		matrix.scale( d/1000.0F, d/1000.0F );
 
 		// hour
-        const float h_angle = 30*(time.hour()%12-3) + time.minute()/2;
-        matrix.rotate( h_angle );
-        p->setTransform( matrix );
-        pts.setPoints( 4, -20,0,  0,-20, 300,0, 0,20 );
-        p->drawPolygon( pts );
-        matrix.rotate( -h_angle );
+		const float h_angle = 30*(time.hour()%12-3) + time.minute()/2;
+		matrix.rotate( h_angle );
+		p->setTransform( matrix );
+		pts.setPoints( 4, -20,0,  0,-20, 300,0, 0,20 );
+		p->drawPolygon( pts );
+		matrix.rotate( -h_angle );
 
 		// minute
-        const float m_angle = (time.minute()-15)*6;
-        matrix.rotate( m_angle );
-        p->setTransform( matrix );
-        pts.setPoints( 4, -10,0, 0,-10, 400,0, 0,10 );
-        p->drawPolygon( pts );
-        matrix.rotate( -m_angle );
+		const float m_angle = (time.minute()-15)*6;
+		matrix.rotate( m_angle );
+		p->setTransform( matrix );
+		pts.setPoints( 4, -10,0, 0,-10, 400,0, 0,10 );
+		p->drawPolygon( pts );
+		matrix.rotate( -m_angle );
 
-		if (getConfigValue<bool>("showSeconds")) {   // second
-            const float s_angle = (time.second()-15)*6;
-            matrix.rotate( s_angle );
-            p->setTransform( matrix );
-            pts.setPoints(4,0,0,0,0,400,0,0,0);
-            p->drawPolygon( pts );
-            matrix.rotate( -s_angle );
-        }
+		if (m_showSeconds) {	 // second
+			const float s_angle = (time.second()-15)*6;
+			matrix.rotate( s_angle );
+			p->setTransform( matrix );
+			pts.setPoints(4,0,0,0,0,400,0,0,0);
+			p->drawPolygon( pts );
+			matrix.rotate( -s_angle );
+		}
 
 		QTransform matrix2;
-        matrix2.translate(cp.x() + offset, cp.y() + offset);
-        matrix2.scale( d/1000.0F, d/1000.0F );
+		matrix2.translate(cp.x() + offset, cp.y() + offset);
+		matrix2.scale( d/1000.0F, d/1000.0F );
 
-        // quadrante
-        for ( int i=0 ; i < 12 ; i++ ) {
-            p->setTransform( matrix2 );
-            p->drawLine( 460,0, 500,0 ); // draw hour lines
-            matrix2.rotate( 30 );
-        }
+		// quadrante
+		for ( int i=0 ; i < 12 ; i++ ) {
+			p->setTransform( matrix2 );
+			p->drawLine( 460,0, 500,0 ); // draw hour lines
+			matrix2.rotate( 30 );
+		}
 
 		QPen fgPen(fgColor);
 		fgPen.setCosmetic(true);

@@ -58,10 +58,7 @@ KMenuApplet::init()
 	auto timer = new QTimer(this);
 	timer->setSingleShot(true);
 	timer->setInterval(0);
-	connect(timer, &QTimer::timeout, this, [this]() {
-		if (m_menu)
-			m_menu->reinitialize();
-	});
+	connect(timer, &QTimer::timeout, m_menu, &KMenu::reinitialize);
 	if (configuration())
 		connect(configuration(), &KConfigPropertyMap::valueChanged, timer, qOverload<>(&QTimer::start));
 }

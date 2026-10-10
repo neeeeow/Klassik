@@ -30,7 +30,7 @@ CalendarPopup::initContents(QVBoxLayout *layout)
 		return;
 	
 	// Initialise the QCalendarWidget
-    auto *calendar = new QCalendarWidget(parent);
+	auto *calendar = new QCalendarWidget(parent);
 	m_calendar = calendar;
 	layout->addWidget(m_calendar);
 
@@ -64,7 +64,7 @@ CalendarPopup::initContents(QVBoxLayout *layout)
 void
 CalendarPopup::aboutToShow()
 {
-    setCurrentDate();
+	setCurrentDate();
 }
 
 void

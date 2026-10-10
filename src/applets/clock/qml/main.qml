@@ -79,17 +79,16 @@ PlasmoidItem {
 
                 sourceComponent: Plasmoid.configuration.useDigitalClock ? digitalComponent : analogComponent
 
-                Binding {
-                    target: clockLoader.item
-                    property: "config"
-                    value: Plasmoid.configuration
-                    when: clockLoader.item
-                }
-
                 Component {
                     id: digitalComponent
                     DigitalClock {
                         id: digitalClock
+                        showFrame: Plasmoid.configuration.showFrame
+                        colorTheme: Plasmoid.configuration.colorTheme
+                        fgColor: Plasmoid.configuration.fgColor
+                        shadowColor: Plasmoid.configuration.shadowColor
+                        bgColor: Plasmoid.configuration.bgColor
+
                         readonly property bool blinkingDots: Plasmoid.configuration.blinkingDots
                         property bool dotsVisible: true // whether or not the dots are visible *if* blinkingDots is enabled
 
@@ -128,6 +127,13 @@ PlasmoidItem {
                     id: analogComponent
                     AnalogClock {
                         id: analogClock
+                        showSeconds: Plasmoid.configuration.showSeconds
+                        showFrame: Plasmoid.configuration.showFrame
+                        antialiasing: Plasmoid.configuration.antialiasing
+                        colorTheme: Plasmoid.configuration.colorTheme
+                        fgColor: Plasmoid.configuration.fgColor
+                        shadowColor: Plasmoid.configuration.shadowColor
+                        bgColor: Plasmoid.configuration.bgColor
                         Connections {
                             target: clock
                             function onDateTimeChanged() {

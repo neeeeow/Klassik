@@ -20,12 +20,16 @@ class PaintedItem : public QQuickItem
 
 	Q_OBJECT
 	QML_ANONYMOUS
+	
 public:
 	explicit PaintedItem(QQuickItem *parent = nullptr);	 
 
 	// Triggers a repaint of the QQuickItem
 	Q_INVOKABLE void requestRepaint() {if (isComponentComplete()) polish();}
-
+	
+Q_SIGNALS:
+	void propertyChanged();
+	
 protected:
 	// Getter for the active QStyle. Whilst we do guard against it prior to painting
 	// on to the internal QImage, it still might end up returning nullptr if the
@@ -34,8 +38,15 @@ protected:
 	
 	// Returns the QRect which represents the area to which the QQuickItem is painted on.
 	// Only call from within paint(), m_paintedImage is only guaranteed to be non-null there.
-    QRect rect() const { return QRect(QPoint(0, 0), m_paintedImage.deviceIndependentSize().toSize()); }
+	QRect rect() const { return QRect(QPoint(0, 0), m_paintedImage.deviceIndependentSize().toSize()); }
 
+	// Returns the QRect which represents the pixel area to which the QQuickItem is painted on.
+	// Only call from within paint(), m_paintedImage is only guaranteed to be non-null there.
+	QRect scaledRect() const { return m_paintedImage.rect(); }
+
+	// Scales a QPainter to allow for pixel perfect drawing
+	static void scalePainter(QPainter *painter);
+	
 	// Overrides for painting logic
 	void componentComplete() override;
 	bool event(QEvent *event) override;
@@ -49,7 +60,6 @@ private:
 
 	// Loads the current QStyle
 	void loadStyle();
-	void styleChanged();
 
 	// Paints the internal QImage used for drawing the control
 	void paintControlToImage();
@@ -58,4 +68,7 @@ private:
 	// by subclasses, and must *never* be called directly outside of paintControlToImage(),
 	// otherwise things will break;
 	virtual void paint(QPainter *painter) const = 0;
+
+private Q_SLOTS:
+	void styleChanged();
 };

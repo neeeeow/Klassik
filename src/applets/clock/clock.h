@@ -11,52 +11,43 @@
 #include <QQuickPaintedItem>
 #include <QQuickWindow>
 #include <QPainter>
-
-#include <KConfigPropertyMap>
+#include <QPointer>
+#include <QColor>
 
 class Clock : public PaintedItem
 {
 	Q_OBJECT
-	Q_PROPERTY(KConfigPropertyMap* config READ config WRITE setConfig)
+	Q_PROPERTY(bool showFrame MEMBER m_showFrame NOTIFY propertyChanged)
+	Q_PROPERTY(ColorTheme colorTheme MEMBER m_colorTheme NOTIFY propertyChanged)
+	Q_PROPERTY(QColor fgColor MEMBER m_fgColor NOTIFY propertyChanged)
+	Q_PROPERTY(QColor shadowColor MEMBER m_shadowColor NOTIFY propertyChanged)
+	Q_PROPERTY(QColor bgColor MEMBER m_bgColor NOTIFY propertyChanged)
 public:
 	explicit Clock(QQuickItem *parent = nullptr);
 
-	// Functions for getting/setting config map in QML
-	KConfigPropertyMap* config() const { return m_config; }
-	void setConfig(KConfigPropertyMap* config);
+	enum ColorTheme {
+		System = 0,
+		LCD = 1,
+		Custom = 2
+	};
+	Q_ENUM(ColorTheme)
 
 	// Functions for calculating the preferred clock geometry. Must
 	// be implemented by subclasses
 	Q_INVOKABLE virtual int preferredWidthForHeight(int h) const = 0;
-	Q_INVOKABLE virtual int preferredHeightForWidth(int w) const = 0;	
+	Q_INVOKABLE virtual int preferredHeightForWidth(int w) const = 0;
 
 protected:	
-	// Config getter
-	template <typename T>
-	T getConfigValue(const char *key) const {
-		const QVariant value = configValue(key);
-		if (!value.canConvert<T>()) {
-			qWarning() << "key" << key << "type mismatch!";
-			return T();
-		}
-		return value.value<T>();				
-	}
-
-	// Helper functions
-	inline QRect getRect() const { return QRect(0,0,width(),height()); }	
-	static inline qreal getDpr(const QPainter *p) {
-		return p->device() ? p->device()->devicePixelRatio() : 1.0;
-	}
-    static inline QRect getScaledRect(const QRect &rect, const qreal dpr) {
-		return QRect(qRound(rect.x() * dpr), qRound(rect.y() * dpr), rect.width() * dpr, rect.height() * dpr);
-	}
+	// Clock properties
+	bool m_showFrame = true;
+	ColorTheme m_colorTheme = System;
+	QColor m_fgColor = QColor("#000000");
+	QColor m_shadowColor = QColor("#808080");
+	QColor m_bgColor = QColor("#ffffff");
 	
 private:
 	QPixmap m_lcdPixmap; // Pixmap for the LCD background
-	KConfigPropertyMap *m_config = nullptr; // Applet config map
 
-	QVariant configValue(const char *key) const;
-	
 	void paint(QPainter *p) const override;
 
 	// Function which draws the actual clock contents itself, and must
@@ -71,19 +62,15 @@ class DigitalClock : public Clock
 {
 	Q_OBJECT
 	QML_ELEMENT
-	Q_PROPERTY(QString text READ text WRITE setText)	
+	Q_PROPERTY(QString text MEMBER m_timeString NOTIFY propertyChanged)	
 public:
 	explicit DigitalClock(QQuickItem *parent = nullptr);
-
-	// Functions for getting/setting the internal time string in QML
-	QString text() const { return m_timeString; }
-	void setText(const QString &newText);
 	
 	Q_INVOKABLE int preferredWidthForHeight(int h) const override;
 	Q_INVOKABLE int preferredHeightForWidth(int w) const override; 
 
 private:
-	QString m_timeString; // Contains the time we paint  	
+	QString m_timeString; // Contains the time we paint		
 	
 	// Drawing logic of QLCDNumber.cpp
 	void drawContents(QPainter *p) const override;
@@ -98,12 +85,18 @@ class AnalogClock : public Clock
 {
 	Q_OBJECT
 	QML_ELEMENT
+	Q_PROPERTY(bool showSeconds MEMBER m_showSeconds NOTIFY propertyChanged)
+	Q_PROPERTY(bool antialiasing MEMBER m_antialiasing NOTIFY propertyChanged)
 public:
 	explicit AnalogClock(QQuickItem *parent = nullptr);
 
 	Q_INVOKABLE int preferredWidthForHeight(int h) const override;
 	Q_INVOKABLE int preferredHeightForWidth(int w) const override;
 	
-private:	
+private:
+	// Clock properties
+	bool m_showSeconds = false;
+	bool m_antialiasing = false;
+	
 	void drawContents(QPainter *p) const override;
 };

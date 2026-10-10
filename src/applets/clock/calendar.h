@@ -23,6 +23,6 @@ protected:
 private:
 	QCalendarWidget *m_calendar = nullptr;
 	
-    void initContents(QVBoxLayout *layout) override;
+	void initContents(QVBoxLayout *layout) override;
 	void setCurrentDate();
 };
