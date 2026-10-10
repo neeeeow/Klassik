@@ -25,6 +25,13 @@ PlasmoidItem {
         location: Plasmoid.location
     }
 
+    Connections {
+        target: Plasmoid
+        function onActivated() {
+            calendar.togglePopup();
+        }
+    }
+
     preferredRepresentation: fullRepresentation
     fullRepresentation: Item {
         // Copy all sizing logic from mainLayout
@@ -53,7 +60,7 @@ PlasmoidItem {
                 Layout.fillWidth: vertical || floating
                 Layout.fillHeight: horizontal || floating
 
-                readonly property int numDigits: item?.timeString?.length ?? 0
+                readonly property int numDigits: item?.text?.length ?? 0
                 Layout.preferredWidth: {
                     numDigits;
                     if (horizontal) {
@@ -92,14 +99,13 @@ PlasmoidItem {
                         readonly property bool blinkingDots: Plasmoid.configuration.blinkingDots
                         property bool dotsVisible: true // whether or not the dots are visible *if* blinkingDots is enabled
 
-                        property string timeString: { // String containing the digits for the clock
+                        text: { // String containing the digits for the clock
                             if (dotsVisible || (!blinkingDots)) {
                                 return Qt.formatTime(clock.dateTime, Plasmoid.configuration.showSeconds ? "HH:mm:ss" : "HH:mm");
                             } else {
                                 return Qt.formatTime(clock.dateTime, Plasmoid.configuration.showSeconds ? "HH mm ss" : "HH mm");
                             }
                         }
-                        text: timeString
 
                         Timer {
                             id: blinkingDotsTimer
@@ -134,12 +140,8 @@ PlasmoidItem {
                         fgColor: Plasmoid.configuration.fgColor
                         shadowColor: Plasmoid.configuration.shadowColor
                         bgColor: Plasmoid.configuration.bgColor
-                        Connections {
-                            target: clock
-                            function onDateTimeChanged() {
-                                analogClock.requestRepaint()
-                            }
-                        }
+
+                        dateTime: clock.dateTime
                     }
                 }
             }
@@ -161,9 +163,7 @@ PlasmoidItem {
             acceptedButtons: Qt.LeftButton
 
             onClicked: mouse => {
-                if (mouse.button == Qt.LeftButton) {
-                    calendar.togglePopup();
-                }
+                calendar.togglePopup();
             }
 
             PlasmaCore.ToolTipArea {

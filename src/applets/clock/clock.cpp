@@ -8,7 +8,6 @@
 
 #include <QPalette>
 #include <QColor>
-#include <QDateTime>
 #include <QPolygon>
 #include <QStyleOptionFrame>
 
@@ -16,6 +15,22 @@ Clock::Clock(QQuickItem *parent)
 	: PaintedItem(parent),
 	  m_lcdPixmap(QStringLiteral(":/qt/qml/plasma/applet/com/github/neeeeow/klassik/clock/lcd.png"))
 {
+}
+
+Clock::Colors
+Clock::getColors() const
+{
+	switch (m_colorTheme) {
+	case LCD: // LCD look
+		return { Qt::black, QColor(128,128,128) };
+	case Custom: // Custom colors
+		return { m_fgColor, m_shadowColor };
+	case System:
+	default:// system colors
+		QPalette pal = QGuiApplication::palette();
+		return { pal.color(QPalette::WindowText),
+			pal.color(QPalette::Mid) };
+	}
 }
 
 void
@@ -76,38 +91,16 @@ void
 DigitalClock::drawContents(QPainter *p) const
 {	
 	if (!m_timeString.isEmpty()) {
-		QColor fgColor;
-		QColor shadowColor;
-
-		switch (m_colorTheme) {
-		case LCD: { // LCD look
-			fgColor = Qt::black;
-			shadowColor = QColor(128, 128, 128);
-			break;
-		}
-		case Custom: { // Custom colors
-			fgColor = m_fgColor;
-			shadowColor = m_shadowColor;
-			break;
-		}
-		case System:
-		default: { // system colors
-			QPalette pal = QGuiApplication::palette();
-			fgColor = pal.color(QPalette::WindowText);
-			shadowColor = pal.color(QPalette::Mid);
-			break;
-		}	
-		}
-
+		const Colors colors = getColors();
 		const QRect clockRect = scaledRect();
 		
 		p->save();
 		scalePainter(p);
 		
 		p->translate(1, 1);
-		drawString(m_timeString, clockRect, shadowColor, *p);
+		drawString(m_timeString, clockRect, colors.shadow, *p);
 		p->translate(-2, -2);
-		drawString(m_timeString, clockRect, fgColor, *p);
+		drawString(m_timeString, clockRect, colors.fg, *p);
 
 		p->restore();
 	}
@@ -408,31 +401,11 @@ AnalogClock::preferredHeightForWidth(int w) const
 void
 AnalogClock::drawContents(QPainter *p) const
 {	
-	QTime time = QDateTime::currentDateTime().time();
+	const QTime time = m_dateTime.time();
 
 	p->setRenderHint(QPainter::Antialiasing, m_antialiasing);
 
-	QColor fgColor;
-	QColor shadowColor;
-	switch (m_colorTheme) {
-	case LCD: { // LCD look
-		fgColor = Qt::black;
-		shadowColor = QColor(128, 128, 128);
-		break;
-	}
-	case Custom: { // Custom colors
-		fgColor = m_fgColor;
-		shadowColor = m_shadowColor;
-		break;
-	}
-	case System:
-	default: { // system colors
-		QPalette pal = QGuiApplication::palette();
-		fgColor = pal.color(QPalette::WindowText);
-		shadowColor = pal.color(QPalette::Mid);
-		break;
-	}	
-	}
+	const Colors colors = getColors();
 
 	const int spWidth = rect().width();
 	const int spHeight = rect().height();	   
@@ -441,10 +414,10 @@ AnalogClock::drawContents(QPainter *p) const
 	const QPoint cp(spWidth / 2, spHeight / 2);
 	const int d = qMin(spWidth,spHeight) - 10;
 
-	QPen shadowPen(shadowColor);
+	QPen shadowPen(colors.shadow);
 	shadowPen.setCosmetic(true);
 	p->setPen(shadowPen);
-	p->setBrush(shadowColor);
+	p->setBrush(colors.shadow);
 	int offset = 2;
 	
 	for ( int c=0 ; c < 2 ; c++ ) {
@@ -453,7 +426,7 @@ AnalogClock::drawContents(QPainter *p) const
 		matrix.scale( d/1000.0F, d/1000.0F );
 
 		// hour
-		const float h_angle = 30*(time.hour()%12-3) + time.minute()/2;
+		const qreal h_angle = 30*(time.hour()%12-3) + time.minute()/2;
 		matrix.rotate( h_angle );
 		p->setTransform( matrix );
 		pts.setPoints( 4, -20,0,  0,-20, 300,0, 0,20 );
@@ -461,7 +434,7 @@ AnalogClock::drawContents(QPainter *p) const
 		matrix.rotate( -h_angle );
 
 		// minute
-		const float m_angle = (time.minute()-15)*6;
+		const qreal m_angle = (time.minute()-15)*6;
 		matrix.rotate( m_angle );
 		p->setTransform( matrix );
 		pts.setPoints( 4, -10,0, 0,-10, 400,0, 0,10 );
@@ -469,7 +442,7 @@ AnalogClock::drawContents(QPainter *p) const
 		matrix.rotate( -m_angle );
 
 		if (m_showSeconds) {	 // second
-			const float s_angle = (time.second()-15)*6;
+			const qreal s_angle = (time.second()-15)*6;
 			matrix.rotate( s_angle );
 			p->setTransform( matrix );
 			pts.setPoints(4,0,0,0,0,400,0,0,0);
@@ -488,10 +461,10 @@ AnalogClock::drawContents(QPainter *p) const
 			matrix2.rotate( 30 );
 		}
 
-		QPen fgPen(fgColor);
+		QPen fgPen(colors.fg);
 		fgPen.setCosmetic(true);
 		p->setPen(fgPen);
-		p->setBrush(fgColor);
+		p->setBrush(colors.fg);
 
 		offset = 0;
 	}	

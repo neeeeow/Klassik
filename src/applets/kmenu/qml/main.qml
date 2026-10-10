@@ -17,6 +17,13 @@ PlasmoidItem{
 
     Plasmoid.icon: Plasmoid.configuration.icon
 
+    Connections {
+        target: Plasmoid
+        function onActivated() {
+            Plasmoid.toggleMenu(menuButton)
+        }
+    }
+
     preferredRepresentation: fullRepresentation
     fullRepresentation: Button { // We can build the menu button in qml, since Qt Quick hands off buttons to Qt.
         id: menuButton
@@ -84,11 +91,5 @@ PlasmoidItem{
         }
 
         onClicked: Plasmoid.toggleMenu(menuButton)
-        Connections {
-            target: Plasmoid
-            function onActivated() {
-                Plasmoid.toggleMenu(menuButton)
-            }
-        }
     }
 }

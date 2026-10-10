@@ -23,9 +23,6 @@ class PaintedItem : public QQuickItem
 	
 public:
 	explicit PaintedItem(QQuickItem *parent = nullptr);	 
-
-	// Triggers a repaint of the QQuickItem
-	Q_INVOKABLE void requestRepaint() {if (isComponentComplete()) polish();}
 	
 Q_SIGNALS:
 	void propertyChanged();
@@ -54,6 +51,10 @@ protected:
 	void updatePolish() override;
 	QSGNode *updatePaintNode(QSGNode *oldNode, QQuickItem::UpdatePaintNodeData *updatePaintNodeData) override;
 
+protected Q_SLOTS:	
+	// Triggers a repaint of the QQuickItem
+    void requestRepaint() {if (isComponentComplete()) polish();}
+	
 private:
 	QPointer<QStyle> m_style = nullptr; // Declare this a QPointer, since the QStyle might get destroyed by something else
 	QImage m_paintedImage;

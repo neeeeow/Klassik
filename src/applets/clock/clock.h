@@ -8,15 +8,14 @@
 
 #include "painteditem.h"
 
-#include <QQuickPaintedItem>
-#include <QQuickWindow>
 #include <QPainter>
-#include <QPointer>
 #include <QColor>
+#include <QDateTime>
 
 class Clock : public PaintedItem
 {
 	Q_OBJECT
+	QML_ANONYMOUS
 	Q_PROPERTY(bool showFrame MEMBER m_showFrame NOTIFY propertyChanged)
 	Q_PROPERTY(ColorTheme colorTheme MEMBER m_colorTheme NOTIFY propertyChanged)
 	Q_PROPERTY(QColor fgColor MEMBER m_fgColor NOTIFY propertyChanged)
@@ -25,6 +24,7 @@ class Clock : public PaintedItem
 public:
 	explicit Clock(QQuickItem *parent = nullptr);
 
+	// Enum mirroring the color options in main.xml
 	enum ColorTheme {
 		System = 0,
 		LCD = 1,
@@ -37,13 +37,20 @@ public:
 	Q_INVOKABLE virtual int preferredWidthForHeight(int h) const = 0;
 	Q_INVOKABLE virtual int preferredHeightForWidth(int w) const = 0;
 
-protected:	
+protected:
 	// Clock properties
 	bool m_showFrame = true;
 	ColorTheme m_colorTheme = System;
 	QColor m_fgColor = QColor("#000000");
 	QColor m_shadowColor = QColor("#808080");
 	QColor m_bgColor = QColor("#ffffff");
+
+	// Colors for drawing the clock
+	struct Colors {
+		QColor fg;
+		QColor shadow;
+	};
+	Colors getColors() const;
 	
 private:
 	QPixmap m_lcdPixmap; // Pixmap for the LCD background
@@ -66,8 +73,8 @@ class DigitalClock : public Clock
 public:
 	explicit DigitalClock(QQuickItem *parent = nullptr);
 	
-	Q_INVOKABLE int preferredWidthForHeight(int h) const override;
-	Q_INVOKABLE int preferredHeightForWidth(int w) const override; 
+    int preferredWidthForHeight(int h) const override;
+    int preferredHeightForWidth(int w) const override; 
 
 private:
 	QString m_timeString; // Contains the time we paint		
@@ -85,16 +92,18 @@ class AnalogClock : public Clock
 {
 	Q_OBJECT
 	QML_ELEMENT
+	Q_PROPERTY(QDateTime dateTime MEMBER m_dateTime NOTIFY propertyChanged)
 	Q_PROPERTY(bool showSeconds MEMBER m_showSeconds NOTIFY propertyChanged)
 	Q_PROPERTY(bool antialiasing MEMBER m_antialiasing NOTIFY propertyChanged)
 public:
 	explicit AnalogClock(QQuickItem *parent = nullptr);
 
-	Q_INVOKABLE int preferredWidthForHeight(int h) const override;
-	Q_INVOKABLE int preferredHeightForWidth(int w) const override;
+    int preferredWidthForHeight(int h) const override;
+    int preferredHeightForWidth(int w) const override;
 	
 private:
 	// Clock properties
+	QDateTime m_dateTime = QDateTime::currentDateTime();
 	bool m_showSeconds = false;
 	bool m_antialiasing = false;
 	
