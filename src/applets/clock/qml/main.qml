@@ -133,9 +133,10 @@ PlasmoidItem {
                     id: analogComponent
                     AnalogClock {
                         id: analogClock
+                        antialiasing: Plasmoid.configuration.antialiasing
+
                         showSeconds: Plasmoid.configuration.showSeconds
                         showFrame: Plasmoid.configuration.showFrame
-                        antialiasing: Plasmoid.configuration.antialiasing
                         colorTheme: Plasmoid.configuration.colorTheme
                         fgColor: Plasmoid.configuration.fgColor
                         shadowColor: Plasmoid.configuration.shadowColor

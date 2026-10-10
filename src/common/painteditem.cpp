@@ -166,6 +166,7 @@ PaintedItem::itemChange(QQuickItem::ItemChange change, const QQuickItem::ItemCha
 	switch (change) {
 	case ItemEnabledHasChanged:
 	case ItemActiveFocusHasChanged:
+	case ItemAntialiasingHasChanged:
 	case ItemDevicePixelRatioHasChanged:
 	case ItemSceneChange:
 		requestRepaint();

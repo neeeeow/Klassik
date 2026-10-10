@@ -94,7 +94,6 @@ class AnalogClock : public Clock
 	QML_ELEMENT
 	Q_PROPERTY(QDateTime dateTime MEMBER m_dateTime NOTIFY propertyChanged)
 	Q_PROPERTY(bool showSeconds MEMBER m_showSeconds NOTIFY propertyChanged)
-	Q_PROPERTY(bool antialiasing MEMBER m_antialiasing NOTIFY propertyChanged)
 public:
 	explicit AnalogClock(QQuickItem *parent = nullptr);
 
@@ -105,7 +104,6 @@ private:
 	// Clock properties
 	QDateTime m_dateTime = QDateTime::currentDateTime();
 	bool m_showSeconds = false;
-	bool m_antialiasing = false;
 	
 	void drawContents(QPainter *p) const override;
 };

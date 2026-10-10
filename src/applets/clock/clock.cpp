@@ -401,7 +401,7 @@ AnalogClock::drawContents(QPainter *p) const
 {	
 	const QTime time = m_dateTime.time();
 
-	p->setRenderHint(QPainter::Antialiasing, m_antialiasing);
+	p->setRenderHint(QPainter::Antialiasing, antialiasing());
 
 	const Colors colors = getColors();
 
