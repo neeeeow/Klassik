@@ -39,13 +39,7 @@ PanelButtonArrow::paint(QPainter *p) const
 		break;
 	}
 
-	QStyleOption arrow;
+	QStyleOption arrow = baseStyleOption();
 	arrow.rect = r;
-	arrow.palette = QGuiApplication::palette();
-	arrow.state = QStyle::State_Enabled;
-	if (m_active)
-		arrow.state |= QStyle::State_Sunken;
-	if (m_mouseOver)
-		arrow.state |= QStyle::State_MouseOver;
 	style()->drawPrimitive(e, &arrow, p);
 }

@@ -38,10 +38,7 @@ private:
 		if (!style())
 			return;
 
-		QStyleOption arrow;
-		arrow.palette = QGuiApplication::palette();
-		arrow.rect = rect();
-		arrow.state = QStyle::State_Enabled;
+		QStyleOption arrow = baseStyleOption();
 
 		QStyle::PrimitiveElement pe;
 		switch (m_panelLocation) {

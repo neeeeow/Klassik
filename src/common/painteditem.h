@@ -20,6 +20,11 @@ class PaintedItem : public QQuickItem
 
 	Q_OBJECT
 	QML_ANONYMOUS
+
+	// Custom state flags which correspond to QStyle::State_Sunken and
+	// QStyle::State_MouseOver. By default, both flags are off.
+	Q_PROPERTY(bool sunken MEMBER m_sunken NOTIFY propertyChanged)
+	Q_PROPERTY(bool mouseOver MEMBER m_mouseOver NOTIFY propertyChanged)	
 	
 public:
 	explicit PaintedItem(QQuickItem *parent = nullptr);	 
@@ -32,6 +37,13 @@ protected:
 	// on to the internal QImage, it still might end up returning nullptr if the
 	// style isn't loaded or has been destroyed before our signal fires, so be careful !
 	QStyle* style() const { return m_style; }
+
+	// Returns a basic QStyleOption with state flags already set, for convenience.
+	QStyleOption baseStyleOption() const; 
+
+	// Returns state flags used by QStyle
+	bool isSunken() const { return m_sunken; }
+	bool isMouseOver() const { return m_mouseOver; }
 	
 	// Returns the QRect which represents the area to which the QQuickItem is painted on.
 	// Only call from within paint(), m_paintedImage is only guaranteed to be non-null there.
@@ -67,6 +79,10 @@ private:
 	// Paints the internal QImage used for drawing the control
 	void paintControlToImage();
 
+	// State flags used by QStyle
+	bool m_sunken = false;
+	bool m_mouseOver = false;
+	
 	// Function used for painting to the QQuickItem. This function must be implemented
 	// by subclasses, and must *never* be called directly outside of paintControlToImage(),
 	// otherwise things will break;

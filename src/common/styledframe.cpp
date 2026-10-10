@@ -21,11 +21,11 @@ StyledFrame::paint(QPainter *p) const
 		return;
 
 	QStyleOptionFrame frame;
-	frame.palette = QGuiApplication::palette();
-	frame.rect = rect();
-	frame.state = QStyle::State_Enabled | (m_sunken ? QStyle::State_Sunken : QStyle::State_Raised);
+    frame.QStyleOption::operator=(baseStyleOption());
 	frame.frameShape = QFrame::StyledPanel;
 	frame.lineWidth = m_lineWidth;
+	if (!isSunken())
+		frame.state |= QStyle::State_Raised;	
 
 	style()->drawControl(QStyle::CE_ShapedFrame, &frame, p);
 }

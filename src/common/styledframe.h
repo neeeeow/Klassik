@@ -17,13 +17,11 @@ class StyledFrame : public PaintedItem
 	Q_OBJECT
 	QML_ELEMENT
 	Q_PROPERTY(int lineWidth MEMBER m_lineWidth NOTIFY propertyChanged)
-	Q_PROPERTY(bool sunken MEMBER m_sunken NOTIFY propertyChanged)
 public:
 	explicit StyledFrame(QQuickItem *parent = nullptr);
 	
 private:
 	int m_lineWidth = 1;
-	bool m_sunken = false;
 	
 	void paint(QPainter *p) const override;
 };

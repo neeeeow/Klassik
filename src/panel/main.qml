@@ -285,6 +285,7 @@ ContainmentItem {
                         visible: Plasmoid.configuration.showAppletHandle || hoverHandler.hovered || isMenuOpen
 
                         ToolButton {
+                            id: menuButton
                             Layout.preferredWidth: container.appletHandleWidth
                             Layout.preferredHeight: container.appletHandleHeight
                             Layout.row: root.isHorizontal ? (appletHandle.reverse ? 0 : 1) : 0
@@ -292,9 +293,12 @@ ContainmentItem {
 
                             checkable: true
                             checked: isMenuOpen
+                            hoverEnabled: true
 
                             contentItem: HandleArrow {
                                 panelLocation: Plasmoid.location
+                                sunken: menuButton.down || menuButton.checked
+                                mouseOver: menuButton.hovered
                             }
 
                             onClicked:appletMenu.open()
@@ -346,9 +350,13 @@ ContainmentItem {
                             Layout.row: root.isHorizontal ? (appletHandle.reverse ? 1 : 0) : 0
                             Layout.column: root.isHorizontal ? 0 : (appletHandle.reverse ? 1 : 0)
                             horizontal: root.isHorizontal
+                            mouseOver: handleMouseArea.containsMouse
+                            sunken: handleMouseArea.pressed
 
                             MouseArea {
+                                id: handleMouseArea
                                 anchors.fill: parent
+                                hoverEnabled: true
                                 cursorShape: pressed ? Qt.SizeAllCursor : Qt.ArrowCursor
                                 onPressed: {
                                     cursorOverlay.visible = true;

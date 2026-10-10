@@ -31,6 +31,7 @@ PlasmoidItem{
         flat: true
         checkable: true
         checked: Plasmoid.menuActive
+        hoverEnabled: true
 
         readonly property bool horizontal: Plasmoid.formFactor === PlasmaCore.Types.Horizontal
         readonly property bool vertical: Plasmoid.formFactor === PlasmaCore.Types.Vertical
@@ -75,7 +76,7 @@ PlasmoidItem{
             PanelButtonArrow {
                 anchors.fill: parent
                 location: Plasmoid.location
-                active: menuButton.down || menuButton.checked
+                sunken: menuButton.down || menuButton.checked
                 mouseOver: menuButton.hovered
             }
         }

@@ -35,9 +35,7 @@ Clock::getColors() const
 
 void
 Clock::paint(QPainter *p) const
-{
-	const QRect r = rect();
-	
+{	
 	// background
 	if ((m_colorTheme == LCD) && !m_lcdPixmap.isNull()) { // LCD style
 		p->save();
@@ -45,7 +43,7 @@ Clock::paint(QPainter *p) const
 		p->drawTiledPixmap(scaledRect(), m_lcdPixmap);		
 		p->restore();
 	} else if (m_colorTheme == Custom) { // Custom colors
-		p->fillRect(r, m_bgColor);
+		p->fillRect(rect(), m_bgColor);
 	}
 	
 	p->save();
@@ -56,7 +54,7 @@ Clock::paint(QPainter *p) const
 	if (style() && m_showFrame) {
 		QStyleOptionFrame frame;
 		frame.palette = QGuiApplication::palette();
-		frame.rect = r;
+		frame.rect = rect();
 		frame.state = QStyle::State_Enabled | QStyle::State_Sunken;
 		frame.frameShape = QFrame::Panel;
 		frame.lineWidth = 1;

@@ -16,18 +16,10 @@ class GrabHandle : public PaintedItem
 	  
 	Q_OBJECT
 	QML_ELEMENT
-	Q_PROPERTY(bool horizontal READ horizontal WRITE setHorizontal)
+	Q_PROPERTY(bool horizontal MEMBER m_horizontal NOTIFY propertyChanged)
 public:
     GrabHandle(QQuickItem *parent = nullptr) : PaintedItem(parent) {}
     ~GrabHandle() override = default;
-
-	bool horizontal() const { return m_horizontal; }
-	void setHorizontal(bool state) {
-		if (m_horizontal != state) {
-			m_horizontal = state;
-		    requestRepaint();
-		}
-	}
 
 private:
 	bool m_horizontal = true;
@@ -36,10 +28,7 @@ private:
 		if (!style())
 			return;
 
-		QStyleOption handle;
-		handle.palette = QGuiApplication::palette();
-		handle.rect = rect();
-		handle.state = QStyle::State_Enabled;
+		QStyleOption handle = baseStyleOption();
 		if (m_horizontal)
 			handle.state |= QStyle::State_Horizontal;
 		style()->drawPrimitive(QStyle::PE_IndicatorToolBarHandle, &handle, p);

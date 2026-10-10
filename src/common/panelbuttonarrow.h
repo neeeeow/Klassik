@@ -19,15 +19,11 @@ class PanelButtonArrow : public PaintedItem
 	Q_OBJECT
 	QML_ELEMENT
 	Q_PROPERTY(Plasma::Types::Location location MEMBER m_location NOTIFY propertyChanged)
-	Q_PROPERTY(bool active MEMBER m_active NOTIFY propertyChanged)
-	Q_PROPERTY(bool mouseOver MEMBER m_mouseOver NOTIFY propertyChanged)	
 public:
 	explicit PanelButtonArrow(QQuickItem *parent = nullptr);
 
 private:
 	Plasma::Types::Location m_location = Plasma::Types::Floating;
-	bool m_active = false;
-	bool m_mouseOver = false;
 
 	void paint(QPainter *p) const override;
 };

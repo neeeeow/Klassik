@@ -38,6 +38,21 @@ PaintedItem::styleChanged()
 		requestRepaint();
 }
 
+QStyleOption
+PaintedItem::baseStyleOption() const
+{
+	QStyleOption opt;
+	opt.palette = QGuiApplication::palette();
+	opt.rect = rect();
+	if (isEnabled())
+		opt.state |= QStyle::State_Enabled;
+	if (isSunken())
+		opt.state |= QStyle::State_Sunken;
+	if (isMouseOver())
+		opt.state |= QStyle::State_MouseOver;
+	return opt;
+}
+
 void
 PaintedItem::scalePainter(QPainter *painter)
 {
