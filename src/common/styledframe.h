@@ -16,32 +16,10 @@ class StyledFrame : public PaintedItem
 	  
 	Q_OBJECT
 	QML_ELEMENT
-	Q_PROPERTY(int lineWidth READ lineWidth WRITE setLineWidth NOTIFY lineWidthChanged)
-	Q_PROPERTY(bool sunken READ sunken WRITE setSunken)
+	Q_PROPERTY(int lineWidth MEMBER m_lineWidth NOTIFY propertyChanged)
+	Q_PROPERTY(bool sunken MEMBER m_sunken NOTIFY propertyChanged)
 public:
 	explicit StyledFrame(QQuickItem *parent = nullptr);
-
-	int lineWidth() const { return m_lineWidth; }
-	void setLineWidth(int lineWidth) {
-		if (m_lineWidth != lineWidth) {
-			m_lineWidth = lineWidth;
-		    requestRepaint();
-			Q_EMIT lineWidthChanged();
-		}
-	}
-
-	bool sunken() const { return m_sunken; }
-	void setSunken(bool sunken) {
-		if (m_sunken != sunken) {
-			m_sunken = sunken;
-		    requestRepaint();
-		}
-	}
-
-Q_SIGNALS:
-	// We need this signal since lineWidth does get changed internally, and the QML side
-	// must be aware of these changes to update item paddings
-	void lineWidthChanged();
 	
 private:
 	int m_lineWidth = 1;

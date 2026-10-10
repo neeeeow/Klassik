@@ -14,27 +14,28 @@ void
 PanelButtonArrow::paint(QPainter *p) const
 {
 	if (!style())
-		return;  
+		return;	 
 		
 	// Here we use the slightly older KDE 3 panel button arrow logic, it
 	// looks better than the new style adopted later in 3.5's life.
-	QStyle::PrimitiveElement e = QStyle::PE_IndicatorArrowUp;
+	QStyle::PrimitiveElement e;
 	const int arrowSize = style()->pixelMetric(QStyle::PM_MenuButtonIndicator);
 	QRect r(0, 0, arrowSize, arrowSize);
 	switch (m_location) {
-	case Above:
-		e = QStyle::PE_IndicatorArrowUp;
-		break;
-	case Below:
+	case Plasma::Types::TopEdge:
 		e = QStyle::PE_IndicatorArrowDown;
 		r.translate(0, rect().height() - arrowSize);
 		break;
-	case Right:
+	case Plasma::Types::LeftEdge:
 		e = QStyle::PE_IndicatorArrowRight;
 		r.translate(rect().width() - arrowSize, 0);
 		break;
-	case Left:
+	case Plasma::Types::RightEdge:
 		e = QStyle::PE_IndicatorArrowLeft;
+		break;
+	case Plasma::Types::BottomEdge:
+	default:
+		e = QStyle::PE_IndicatorArrowUp;
 		break;
 	}
 
@@ -44,5 +45,7 @@ PanelButtonArrow::paint(QPainter *p) const
 	arrow.state = QStyle::State_Enabled;
 	if (m_active)
 		arrow.state |= QStyle::State_Sunken;
+	if (m_mouseOver)
+		arrow.state |= QStyle::State_MouseOver;
 	style()->drawPrimitive(e, &arrow, p);
 }

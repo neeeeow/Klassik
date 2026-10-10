@@ -18,17 +18,9 @@ class TaskBackground : public PaintedItem
 	  
 	Q_OBJECT
 	QML_ELEMENT
-	Q_PROPERTY(bool sunken READ sunken WRITE setSunken)
+	Q_PROPERTY(bool sunken MEMBER m_sunken NOTIFY propertyChanged)
 public:
 	explicit TaskBackground(QQuickItem *parent = nullptr) : PaintedItem(parent) {}
-
-	bool sunken() const { return m_sunken; }
-	void setSunken(bool state) {
-		if (m_sunken != state) {
-			m_sunken = state;
-		    requestRepaint();
-		}
-	}
 
 private:
 	bool m_sunken;
@@ -40,14 +32,14 @@ private:
 		QStyleOptionHeader header;
 		header.palette = QGuiApplication::palette();
 		if (m_sunken) {
-			// Darkern both the button & window color, since a QStyle might use either one
+			// Darken both the button & window color, since a QStyle might use either one
 			// for drawing a CE_HeaderSection
 			header.palette.setColor(QPalette::Button, header.palette.button().color().darker(110));
 			header.palette.setColor(QPalette::Window, header.palette.window().color().darker(110));
 		}
-	    header.rect = rect();
+		header.rect = rect();
 		header.state = QStyle::State_Enabled | (m_sunken ? QStyle::State_Sunken : QStyle::State_Raised);
 
-	    style()->drawControl(QStyle::CE_HeaderSection, &header, p);
+		style()->drawControl(QStyle::CE_HeaderSection, &header, p);
 	}
 };

@@ -74,19 +74,9 @@ PlasmoidItem{
 
             PanelButtonArrow {
                 anchors.fill: parent
+                location: Plasmoid.location
                 active: menuButton.down || menuButton.checked
-                location: {
-                    switch (Plasmoid.location) {
-                        case PlasmaCore.Types.TopEdge:
-                            return PanelButtonArrow.Below;
-                        case PlasmaCore.Types.LeftEdge:
-                            return PanelButtonArrow.Right;
-                        case PlasmaCore.Types.RightEdge:
-                            return PanelButtonArrow.Left;
-                        default:
-                            return PanelButtonArrow.Above;
-                    }
-                }
+                mouseOver: menuButton.hovered
             }
         }
 

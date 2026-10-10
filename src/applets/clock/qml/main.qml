@@ -158,20 +158,19 @@ PlasmoidItem {
         }
 
         MouseArea {
-            id: mouseArea
             anchors.fill: parent
             acceptedButtons: Qt.LeftButton
 
             onClicked: mouse => {
                 calendar.togglePopup();
             }
+        }
 
-            PlasmaCore.ToolTipArea {
-                anchors.fill: parent
-                mainText: Qt.formatTime(clock.dateTime, "HH:mm");
-                subText: Qt.formatDate(clock.dateTime, Qt.locale().dateFormat(Locale.LongFormat))
-                icon: Plasmoid.icon
-            }
+        PlasmaCore.ToolTipArea {
+            anchors.fill: parent
+            mainText: Qt.formatTime(clock.dateTime, "HH:mm");
+            subText: Qt.formatDate(clock.dateTime, Qt.locale().dateFormat(Locale.LongFormat))
+            icon: Plasmoid.icon
         }
     }
 }
