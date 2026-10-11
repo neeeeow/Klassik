@@ -18,7 +18,7 @@ class PanelButtonArrow : public PaintedItem
 	  
 	Q_OBJECT
 	QML_ELEMENT
-	Q_PROPERTY(Plasma::Types::Location location MEMBER m_location NOTIFY propertyChanged)
+	Q_PROPERTY(Plasma::Types::Location location MEMBER m_location NOTIFY propertyChanged REQUIRED)
 public:
 	explicit PanelButtonArrow(QQuickItem *parent = nullptr);
 

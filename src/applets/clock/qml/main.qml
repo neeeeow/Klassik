@@ -100,11 +100,12 @@ PlasmoidItem {
                         property bool dotsVisible: true // whether or not the dots are visible *if* blinkingDots is enabled
 
                         text: { // String containing the digits for the clock
-                            if (dotsVisible || (!blinkingDots)) {
-                                return Qt.formatTime(clock.dateTime, Plasmoid.configuration.showSeconds ? "HH:mm:ss" : "HH:mm");
-                            } else {
-                                return Qt.formatTime(clock.dateTime, Plasmoid.configuration.showSeconds ? "HH mm ss" : "HH mm");
-                            }
+                            const separator = (dotsVisible || !blinkingDots) ? ":" : " ";
+                            const seconds = Plasmoid.configuration.showSeconds ? separator + "ss" : "";
+                            const format = Plasmoid.configuration.use24hFormat
+                                ? "HH" + separator + "mm" + seconds
+                                : "h" + separator+ "mm" + seconds + "|AP";
+                            return Qt.formatTime(clock.dateTime, format).split("|")[0];
                         }
 
                         Timer {
@@ -169,7 +170,7 @@ PlasmoidItem {
 
         PlasmaCore.ToolTipArea {
             anchors.fill: parent
-            mainText: Qt.formatTime(clock.dateTime, "HH:mm");
+            mainText: Plasmoid.configuration.use24hFormat ? Qt.formatTime(clock.dateTime, "HH:mm") : Qt.formatTime(clock.dateTime, "h:mm ap")
             subText: Qt.formatDate(clock.dateTime, Qt.locale().dateFormat(Locale.LongFormat))
             icon: Plasmoid.icon
         }

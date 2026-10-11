@@ -23,6 +23,7 @@ KCMUtils.SimpleKCM {
     property alias cfg_showSeconds: showSeconds.checked
     property alias cfg_showFrame: showFrame.checked
     property alias cfg_blinkingDots: blinkingDots.checked
+    property alias cfg_use24hFormat: use24hFormat.checked
     property alias cfg_antialiasing: antialiasing.checked
 
     property int cfg_colorTheme: 0
@@ -60,6 +61,10 @@ KCMUtils.SimpleKCM {
                 CheckBox {
                     id: showFrame
                     text: i18n("Frame")
+                }
+                CheckBox {
+                    id: use24hFormat
+                    text: i18n("24H format")
                 }
                 CheckBox {
                     visible: useDigitalClock.checked
