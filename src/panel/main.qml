@@ -26,8 +26,8 @@ ContainmentItem {
     height: 48
 
 //BEGIN properties
-    Layout.preferredWidth: fixedWidth || currentLayout.implicitWidth + currentLayout.horizontalDisplacement
-    Layout.preferredHeight: fixedHeight || currentLayout.implicitHeight + currentLayout.verticalDisplacement
+    Layout.preferredWidth: fixedWidth || currentLayout.implicitWidth
+    Layout.preferredHeight: fixedHeight || currentLayout.implicitHeight
     Layout.fillWidth: {
         return currentLayout.children
             .filter(child => child?.applet?.plasmoid?.pluginName === "org.kde.plasma.panelspacer")
@@ -40,9 +40,7 @@ ContainmentItem {
     property int fixedHeight: 0
     property bool hasSpacer
 
-    property bool reverse: Application.layoutDirection === Qt.RightToLeft
-
-    readonly property int panelMargin: 2
+    readonly property int panelMargin: Plasmoid.configuration.drawFrame ? panelFrame.lineWidth : 2
 
 //END properties
 
@@ -50,7 +48,7 @@ ContainmentItem {
     function checkLastSpacer() {
         for (var i = 0; i < appletsModel.count; ++i) {
             const applet = appletsModel.get(i).applet;
-            if (!applet || !applet.visible || !applet.Layout || applet.isPlaceholder) {
+            if (!applet || !applet.visible || !applet.Layout) {
                 continue;
             }
             if ((isHorizontal && applet.Layout.fillWidth) ||
@@ -60,20 +58,6 @@ ContainmentItem {
             }
         }
         hasSpacer = false;
-    }
-
-    function plasmoidLocationString(): string {
-        switch (Plasmoid.location) {
-        case PlasmaCore.Types.LeftEdge:
-            return "west";
-        case PlasmaCore.Types.TopEdge:
-            return "north";
-        case PlasmaCore.Types.RightEdge:
-            return "east";
-        case PlasmaCore.Types.BottomEdge:
-            return "south";
-        }
-        return "";
     }
 //END functions
 
@@ -131,30 +115,52 @@ ContainmentItem {
 
 //BEGIN background
 
-    PanelBackground {
+    Rectangle {
         anchors.fill: parent
-        drawFrame: Plasmoid.configuration.drawFrame
-        colorizePanel: Plasmoid.configuration.colorizePanel
-        useBackground: Plasmoid.configuration.useBackground
-        panelLocation: Plasmoid.location
-        useCustomBackground: Plasmoid.configuration.useCustomBackground
-        customBackgroundUrl: Plasmoid.configuration.customBackgroundUrl
+        color: palette.window
+    }
+
+    Image {
+        anchors.centerIn: parent
+        width: isHorizontal ? parent.width : parent.height
+        height: isHorizontal ? parent.height : parent.width
+
+        visible: Plasmoid.configuration.useBackground
+        source: Plasmoid.configuration.useCustomBackground ? Plasmoid.configuration.customBackgroundUrl : "defaultBackground.png"
+
+        fillMode: Image.TileHorizontally
+        horizontalAlignment: Image.AlignLeft
+        sourceSize.height: height
+        sourceSize.width: 0
+
+        rotation: {
+            switch (Plasmoid.location) {
+                case PlasmaCore.Types.LeftEdge:
+                    return 90
+                case PlasmaCore.Types.TopEdge:
+                    return 180
+                case PlasmaCore.Types.RightEdge:
+                    return 270
+                default:
+                    return 0
+            }
+        }
+    }
+
+    StyledFrame {
+        id: panelFrame
+        anchors.fill: parent
+        visible: Plasmoid.configuration.drawFrame
+        lineWidth: 2
     }
 
 //END background
-
-    TapHandler {
-        acceptedButtons: Qt.LeftButton
-        acceptedDevices: PointerDevice.TouchScreen | PointerDevice.Stylus
-        onLongPressed: Plasmoid.internalAction("configure").trigger()
-    }
 
     DragDrop.DropArea {
         id: dropArea
         anchors.fill: parent
 
         Component.onCompleted: {
-            LayoutManager.plasmoid = root.Plasmoid;
             LayoutManager.root = root;
             LayoutManager.layout = currentLayout;
             LayoutManager.appletsModel = appletsModel;
@@ -184,20 +190,15 @@ ContainmentItem {
         }
 
         onDragLeave: event => {
-            /*
-            * When reordering task items, dragLeave signal will be emitted directly
-            * without dragEnter, and in this case parent.index is undefined, so also
-            * check if dndSpacer is in appletsModel.
-            */
-            const spacerContainer = dndSpacer.parent as AppletContainer
-            if (typeof(spacerContainer?.index) === "number" && spacerContainer.index > -1) {
-                appletsModel.remove(spacerContainer.index);
+            const index = dndSpacer.parent.index
+            if (typeof index === "number" && index > -1) {
+                appletsModel.remove(index);
                 root.fixedWidth = root.fixedHeight = 0;
             }
         }
 
         onDrop: event => {
-            appletsModel.remove((dndSpacer.parent as AppletContainer).index);
+            appletsModel.remove(dndSpacer.parent.index);
             root.processMimeData(event.mimeData, event.x, event.y);
             event.accept(event.proposedAction);
             root.fixedWidth = root.fixedHeight = 0;
@@ -208,27 +209,26 @@ ContainmentItem {
 
         Component {
             id: appletContainerComponent
-            // This loader conditionally manages the BusyIndicator, it's not
-            // loading the applet. The applet becomes a regular child item.
-            AppletContainer {
+            Item {
                 id: container
 
-                function getMargins(side, returnAllMargins = false, overrideFillArea = null, overrideThickArea = null): real {
-                    if (!applet || !applet.Plasmoid) {
-                        return 0;
-                    }
-                    let fillArea = overrideFillArea === null ? applet && (applet.Plasmoid.constraintHints & Plasmoid.CanFillArea) : overrideFillArea
-                    var layout = {
-                        top: root.isHorizontal, bottom: root.isHorizontal,
-                        right: !root.isHorizontal, left: !root.isHorizontal
-                    };
-                    return ((layout[side] || returnAllMargins) && !fillArea) ? root.panelMargin : 0;
-                }
+                required property Item applet
+                required property int index
+                visible: applet.Plasmoid?.status !== PlasmaCore.Types.HiddenStatus || (!Plasmoid.immutable && Plasmoid.userConfiguring) || Containment.corona.editMode;
 
-                Layout.topMargin: getMargins('top')
-                Layout.bottomMargin: getMargins('bottom')
-                Layout.leftMargin: getMargins('left')
-                Layout.rightMargin: getMargins('right')
+                property bool wantsToFillWidth: applet?.Layout.fillWidth
+                property bool wantsToFillHeight: applet?.Layout.fillHeight
+
+                property int availWidth
+                property int availHeight
+
+                readonly property real margin:
+                    applet?.Plasmoid && !(applet.Plasmoid.constraintHints & Plasmoid.CanFillArea) ? root.panelMargin : 0
+
+                Layout.topMargin:    root.isHorizontal ? margin : 0
+                Layout.bottomMargin: root.isHorizontal ? margin : 0
+                Layout.leftMargin:   root.isHorizontal ? 0 : margin
+                Layout.rightMargin:  root.isHorizontal ? 0 : margin
 
                 // Always fill width/height, in order to still shrink the applet when there is not enough space.
                 // When the applet doesn't want to expand set a Layout.maximumWidth accordingly
@@ -308,8 +308,6 @@ ContainmentItem {
                                     icon: "edit-delete-remove"
                                     text: i18nc("@action:inmenu removes widget", "Remove")
                                     onClicked: {
-                                        if (!applet)
-                                            return;
                                         applet.Plasmoid.internalAction("remove").trigger();
                                     }
                                 }
@@ -318,8 +316,6 @@ ContainmentItem {
                                     text: i18nc("@action:inmenu opens widget config dialog", "Configure…")
                                     visible: applet.Plasmoid.internalAction("configure")?.enabled ?? false
                                     onClicked: {
-                                        if (!applet)
-                                            return;
                                         applet.Plasmoid.internalAction("configure").trigger();
                                     }
                                 }
@@ -328,8 +324,6 @@ ContainmentItem {
                                     text: i18nc("@action:inmenu opens widget alternatives explorer", "Show Alternatives…")
                                     visible: applet.Plasmoid.internalAction("alternatives")?.enabled ?? false
                                     onClicked: {
-                                        if (!applet)
-                                            return;
                                         applet.Plasmoid.internalAction("alternatives").trigger();
                                     }
                                 }
@@ -415,31 +409,6 @@ ContainmentItem {
                         appletsModel.remove(index)
                     }
                 }
-
-                active: applet && applet.Plasmoid.busy
-                sourceComponent: KlassikBusyIndicator {
-                    z: 999
-                }
-
-                property int oldX: 0
-                property int oldY: 0
-                onXChanged: if (oldX) animateFrom(oldX, y)
-                onYChanged: if (oldY) animateFrom(x, oldY)
-                transform: Translate{id: translation}
-                function animateFrom(xa, ya) {
-                    if (root.isHorizontal) translation.x = xa - x
-                    else translation.y = ya - y
-                    oldX = oldY = 0
-                    translAnim.running = true
-                }
-                NumberAnimation {
-                    id: translAnim
-                    duration: Kirigami.Units.shortDuration
-                    easing.type: Easing.OutCubic
-                    target: translation
-                    properties: "x,y"
-                    to: 0
-                }
             }
         }
 //END components
@@ -473,18 +442,11 @@ ContainmentItem {
                 delegate: appletContainerComponent
             }
 
+            anchors.fill: parent
             rowSpacing: 0
             columnSpacing: 0
 
-            x: 0
-
-            property int horizontalDisplacement: dropArea.anchors.leftMargin + dropArea.anchors.rightMargin
-            property int verticalDisplacement: dropArea.anchors.topMargin + dropArea.anchors.bottomMargin
-
     // BEGIN BUG 454095: use lastSpacer to left align applets, as implicitWidth is updated too late
-            width: root.width - horizontalDisplacement
-            height: root.height - verticalDisplacement
-
             Item {
                 id: lastSpacer
                 visible: !root.hasSpacer
@@ -505,40 +467,6 @@ ContainmentItem {
             flow: root.isHorizontal ? GridLayout.LeftToRight : GridLayout.TopToBottom
             layoutDirection: Application.layoutDirection
         }
-    }
-    MouseArea {
-        anchors.fill: parent
-        visible: Containment.corona.editMode && !Plasmoid.userConfiguring
-        hoverEnabled: true
-        onClicked: Plasmoid.internalAction("configure").trigger()
-        Rectangle {
-            anchors.fill: parent
-            color: Kirigami.Theme.highlightColor
-            opacity: 0.5
-            visible: parent.containsMouse
-        }
-        PlasmaCore.ToolTipArea {
-            id: toolTipArea
-            anchors.fill: parent
-            // This is to avoid the presence of mnemonics, that would
-            // show the text as "&Show Panel Configuration"
-            // Strip out ampersands right before non-whitespace characters, i.e.
-            // those used to determine the alt key shortcut
-            // (except when the word ends in ; (HTML entities))
-            mainText: Plasmoid.internalAction("configure").text.replace(/(&)(?!;)\S+(?>\s)/g, "")
-            icon: "configure"
-        }
-        Accessible.name: toolTipArea.mainText
-        Accessible.description: i18ndc("plasma_shell_org.kde.plasma.desktop", "@info:whatsthis Accessible description for entering Panel edit mode click area", "Open Panel configuration ui")
-        Accessible.role: Accessible.Button
-    }
-    ToolButton {
-        id: addWidgetsButton
-        anchors.centerIn: parent
-        visible: appletsModel.count === 0
-        text: root.isHorizontal ? i18ndc("plasma_shell_org.kde.plasma.desktop", "@action:button opens widget explorer", "Add Widgets…") : undefined
-        icon.name: "list-add-symbolic"
-        onClicked: Plasmoid.internalAction("add widgets").trigger()
     }
 //END UI elements
 

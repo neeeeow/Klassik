@@ -6,15 +6,13 @@ configure_file(
 
 plasma_add_applet(com.github.neeeeow.klassik.panel
     QML_SOURCES
-        AppletContainer.qml
         ConfigDialog.qml
         main.qml
         LayoutManager.js
-        ${KLASSIK_COMMON_DIR}/KlassikBusyIndicator.qml
     CPP_SOURCES
-        panelbackground.cpp
         grabhandle.h
         handlearrow.h
+        ${KLASSIK_COMMON_DIR}/styledframe.cpp
     RESOURCES
         main.xml
         defaultBackground.png

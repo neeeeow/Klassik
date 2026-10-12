@@ -7,7 +7,6 @@
 
 var layout;
 var root;
-var plasmoid;
 var appletsModel;
 
 function addApplet(applet, x, y) {
@@ -20,32 +19,17 @@ function addApplet(applet, x, y) {
     // happen that an applet erroneously thinks it's visible, or suddenly
     // starts thinking that way on teardown (virtual desktop pager)
     // leading to crashes
-    var middle, new_element = {applet: appletItem}
+    const new_element = {applet: appletItem};
 
     appletItem.visible = Qt.binding(function() {
         return applet.status !== PlasmaCore.Types.HiddenStatus || (!root.plasmoid.immutable && root.plasmoid.userConfiguring) || root.plasmoid.corona.editMode;
     });
 
-    // Insert icons to the left of whatever is at the center (usually a Task Manager),
-    // if it exists.
-    // FIXME TODO: This is a real-world fix to produce a sensible initial position for
-    // launcher icons added by launcher menu applets. The basic approach has been used
-    // since Plasma 1. However, "add launcher to X" is a generic-enough concept and
-    // frequent-enough occurrence that we'd like to abstract it further in the future
-    // and get rid of the ugliness of parties external to the containment adding applets
-    // of a specific type, and the containment caring about the applet type. In a better
-    // system the containment would be informed of requested launchers, and determine by
-    // itself what it wants to do with that information.
-    if (applet.pluginName === "org.kde.plasma.icon" && x === 0 && y === 0 &&
-            (middle = currentLayout.childAt(root.width / 2, root.height / 2))) {
-        appletsModel.insert(middle.index, new_element);
-    // Fall through to determining an appropriate insert position.
-    } else if (x >= 0 && y >= 0) {
+    if (x >= 0 && y >= 0) {
         appletsModel.insert(indexAtCoordinates(x, y), new_element)
     } else {
         appletsModel.append(new_element);
     }
-    updateMargins();
 }
 
 function restore() {
@@ -89,7 +73,6 @@ function save() {
 
     root.plasmoid.configuration.AppletOrder = ids.join(';');
     root.plasmoid.configuration.writeConfig();
-    updateMargins();
 }
 
 function childAtCoordinates(x, y) {
@@ -129,27 +112,9 @@ function indexAtCoordinates(x, y) {
     }
 }
 
-function updateMargins() {
-    var inThickArea = false;
-    for (var i = 0; i < appletsModel.count; ++i) {
-        var child = appletsModel.get(i).applet.parent
-        if (child.dragging) {child = child.dragging}
-        child.inThickArea = inThickArea
-        if (child.isMarginSeparator) {
-            inThickArea = !inThickArea
-        }
-    }
-}
-
 function move(applet, end) {
     var start = applet.index
     var target = end - (start < end)
     if (start == target) return;
-    // Setting oldX,oldY allows for position animations
-    for (let i = Math.min(start, end); i <= Math.max(start, end-1); i++) {
-        let el = layout.children[i]
-        el.oldX = el.x, el.oldY = el.y
-    }
     appletsModel.move(start, target, 1)
-    save()
 }

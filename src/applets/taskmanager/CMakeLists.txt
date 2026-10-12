@@ -18,13 +18,13 @@ plasma_add_applet(com.github.neeeeow.klassik.taskmanager
         Task.qml
         code/LayoutMetrics.js
         code/TaskTools.js
-        ${KLASSIK_COMMON_DIR}/KlassikBusyIndicator.qml
+        KlassikBusyIndicator.qml
     CPP_SOURCES
         taskbackground.h
         ${KLASSIK_COMMON_DIR}/styledframe.cpp
     RESOURCES
         main.xml
-        ${KLASSIK_COMMON_DIR}/busyindicator.png
+        busyindicator.png
     GENERATE_APPLET_CLASS
 )
 
