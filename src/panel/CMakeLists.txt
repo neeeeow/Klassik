@@ -6,17 +6,17 @@ configure_file(
 
 plasma_add_applet(com.github.neeeeow.klassik.panel
     QML_SOURCES
-        ConfigDialog.qml
-        main.qml
-        LayoutManager.js
+        qml/ConfigDialog.qml
+        qml/main.qml
+        qml/LayoutManager.js
     CPP_SOURCES
+        panelcontainment.cpp
         grabhandle.h
         handlearrow.h
         ${KLASSIK_COMMON_DIR}/styledframe.cpp
     RESOURCES
         main.xml
         defaultBackground.png
-    GENERATE_CONTAINMENT_CLASS
 )
 
 target_link_libraries(com.github.neeeeow.klassik.panel PRIVATE
