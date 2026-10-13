@@ -31,7 +31,7 @@ private:
 	// Properties
 	QUrl m_source;	
 	bool m_colorize = false;	
-	Plasma::Types::Location m_location;
+	Plasma::Types::Location m_location = Plasma::Types::Floating;
 	
 	// The background image itself
 	QImage m_background;

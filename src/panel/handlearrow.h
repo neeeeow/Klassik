@@ -13,49 +13,30 @@
 class HandleArrow : public PaintedItem
 {
 	/*
-	  This class draws the arrow used in the panel handle
+	  This class draws an arrow using QStyle
 	*/
 	  
 	Q_OBJECT
 	QML_ELEMENT
-    Q_PROPERTY(Plasma::Types::Location panelLocation READ panelLocation WRITE setPanelLocation)
+	Q_PROPERTY(HandleArrow::Direction direction MEMBER m_direction NOTIFY propertyChanged REQUIRED)
 public:
-    HandleArrow(QQuickItem *parent = nullptr) : PaintedItem(parent) {}
-    ~HandleArrow() override = default;
-
-    Plasma::Types::Location panelLocation() const { return m_panelLocation; }
-	void setPanelLocation(Plasma::Types::Location location) {
-		if (m_panelLocation != location) {
-			m_panelLocation = location;
-		    requestRepaint();
-		}
-	}
+	HandleArrow(QQuickItem *parent = nullptr) : PaintedItem(parent) {}
+	
+	enum Direction {
+        Up = QStyle::PE_IndicatorArrowUp,
+        Down = QStyle::PE_IndicatorArrowDown,
+        Left = QStyle::PE_IndicatorArrowLeft,
+        Right = QStyle::PE_IndicatorArrowRight
+    };
+    Q_ENUM(Direction)		
 
 private:
-    Plasma::Types::Location m_panelLocation = Plasma::Types::BottomEdge;
+	Direction m_direction = Up;
 
 	void paint(QPainter *p) const override {		
 		if (!style())
 			return;
-
 		QStyleOption arrow = baseStyleOption();
-
-		QStyle::PrimitiveElement pe;
-		switch (m_panelLocation) {
-		case Plasma::Types::LeftEdge:
-			pe = QStyle::PE_IndicatorArrowRight;
-			break;	 
-		case Plasma::Types::TopEdge:
-			pe = QStyle::PE_IndicatorArrowDown;
-			break;
-		case Plasma::Types::RightEdge:
-			pe = QStyle::PE_IndicatorArrowLeft;
-			break;
-		default:
-			pe = QStyle::PE_IndicatorArrowUp;
-			break;
-		}
-		
-		style()->drawPrimitive(pe, &arrow, p);
+		style()->drawPrimitive(static_cast<QStyle::PrimitiveElement>(m_direction), &arrow, p);
 	}
 };

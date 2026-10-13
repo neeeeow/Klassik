@@ -639,6 +639,52 @@ KlassikStyle::drawPrimitive(QStyle::PrimitiveElement pe, const QStyleOption *opt
 		break;
 	}
 
+	// TOOLBAR HANDLE
+	// -------------------------------------------------------------------
+	case PE_IndicatorToolBarHandle: {
+		int x = r.x(); int y = r.y();
+		int x2 = r.x() + r.width()-1;
+		int y2 = r.y() + r.height()-1;
+
+		p->save();
+		if (isScaled)
+			p->scale(inverseScale, inverseScale);
+
+		if (opt->state & State_Horizontal) {
+
+			renderGradient( p, r, opt->palette.button().color(), false);
+			if (isScaled)
+				p->translate(0.5, 0.5);
+			p->setPen(opt->palette.light().color());
+			p->drawLine(x+1, y+4, x+1, y2-4);
+			p->drawLine(x+3, y+4, x+3, y2-4);
+			p->drawLine(x+5, y+4, x+5, y2-4);
+
+			p->setPen(opt->palette.mid().color());
+			p->drawLine(x+2, y+4, x+2, y2-4);
+			p->drawLine(x+4, y+4, x+4, y2-4);
+			p->drawLine(x+6, y+4, x+6, y2-4);
+
+		} else {
+				
+			renderGradient( p, r, opt->palette.button().color(), true);
+			if (isScaled)
+				p->translate(0.5, 0.5);
+			p->setPen(opt->palette.light().color());
+			p->drawLine(x+4, y+1, x2-4, y+1);
+			p->drawLine(x+4, y+3, x2-4, y+3);
+			p->drawLine(x+4, y+5, x2-4, y+5);
+
+			p->setPen(opt->palette.mid().color());
+			p->drawLine(x+4, y+2, x2-4, y+2);
+			p->drawLine(x+4, y+4, x2-4, y+4);
+			p->drawLine(x+4, y+6, x2-4, y+6);
+
+		}
+		p->restore();
+		break;
+	}
+
 	// ARROWS
 	// -------------------------------------------------------------------
 	case PE_IndicatorArrowUp:
@@ -709,52 +755,6 @@ KlassikStyle::drawPrimitive(QStyle::PrimitiveElement pe, const QStyleOption *opt
 			p->drawPolygon( a );
 		}
 		p->restore();		
-		break;
-	}
-
-	// TOOLBAR HANDLE
-	// -------------------------------------------------------------------
-	case PE_IndicatorToolBarHandle: {
-		int x = r.x(); int y = r.y();
-		int x2 = r.x() + r.width()-1;
-		int y2 = r.y() + r.height()-1;
-
-		p->save();
-		if (isScaled)
-			p->scale(inverseScale, inverseScale);
-
-		if (opt->state & State_Horizontal) {
-
-			renderGradient( p, r, opt->palette.button().color(), false);
-			if (isScaled)
-				p->translate(0.5, 0.5);
-			p->setPen(opt->palette.light().color());
-			p->drawLine(x+1, y+4, x+1, y2-4);
-			p->drawLine(x+3, y+4, x+3, y2-4);
-			p->drawLine(x+5, y+4, x+5, y2-4);
-
-			p->setPen(opt->palette.mid().color());
-			p->drawLine(x+2, y+4, x+2, y2-4);
-			p->drawLine(x+4, y+4, x+4, y2-4);
-			p->drawLine(x+6, y+4, x+6, y2-4);
-
-		} else {
-				
-			renderGradient( p, r, opt->palette.button().color(), true);
-			if (isScaled)
-				p->translate(0.5, 0.5);
-			p->setPen(opt->palette.light().color());
-			p->drawLine(x+4, y+1, x2-4, y+1);
-			p->drawLine(x+4, y+3, x2-4, y+3);
-			p->drawLine(x+4, y+5, x2-4, y+5);
-
-			p->setPen(opt->palette.mid().color());
-			p->drawLine(x+4, y+2, x2-4, y+2);
-			p->drawLine(x+4, y+4, x2-4, y+4);
-			p->drawLine(x+4, y+6, x2-4, y+6);
-
-		}
-		p->restore();
 		break;
 	}
 		
@@ -1972,6 +1972,7 @@ KlassikStyle::pixelMetric(PixelMetric metric, const QStyleOption *opt,
 
 	// SPLITTER
 	// ------------------------------------------------------------------------
+	case PM_DockWidgetSeparatorExtent:
 	case PM_SplitterWidth:
 		ret = 6;
 		break;

@@ -225,26 +225,25 @@ ContainmentItem {
                 function findPositive(first, second) {return first > 0 ? first : second}
 
                 readonly property bool showHandle: applet?.Plasmoid.metaData.category !== "Application Launchers" && applet?.Plasmoid.pluginName !== "org.kde.plasma.icon"
-                readonly property real appletHandleWidth: showHandle ? 10 : 0
-                readonly property real appletHandleHeight: showHandle ? 10 : 0
+                readonly property int handleExtent: handleLoader.item?.handleExtent ?? 0
 
 
     // BEGIN BUG 454095: do not combine these expressions to a function or the bindings won't work
-                Layout.minimumWidth: root.isHorizontal ? findPositive(applet?.Layout.minimumWidth, availHeight) + appletHandleWidth : availWidth
-                Layout.minimumHeight: !root.isHorizontal ? findPositive(applet?.Layout.minimumHeight, availWidth) + appletHandleHeight : availHeight
+                Layout.minimumWidth: root.isHorizontal ? findPositive(applet?.Layout.minimumWidth, availHeight) + handleExtent : availWidth
+                Layout.minimumHeight: !root.isHorizontal ? findPositive(applet?.Layout.minimumHeight, availWidth) + handleExtent : availHeight
 
                 Layout.preferredWidth: root.isHorizontal ? findPositive(applet?.Layout.preferredWidth, Layout.minimumWidth) : availWidth
                 Layout.preferredHeight: !root.isHorizontal ? findPositive(applet?.Layout.preferredHeight, Layout.minimumHeight) : availHeight
 
-                Layout.maximumWidth: root.isHorizontal ? (wantsToFillWidth ? findPositive(applet?.Layout.maximumWidth, root.width) : Math.min(applet?.Layout.maximumWidth, Layout.preferredWidth)) + appletHandleWidth : availWidth
-                Layout.maximumHeight: !root.isHorizontal ? (wantsToFillHeight ? findPositive(applet?.Layout.maximumHeight, root.height) : Math.min(applet?.Layout.maximumHeight, Layout.preferredHeight)) + appletHandleHeight : availHeight
+                Layout.maximumWidth: root.isHorizontal ? (wantsToFillWidth ? findPositive(applet?.Layout.maximumWidth, root.width) : Math.min(applet?.Layout.maximumWidth, Layout.preferredWidth)) + handleExtent : availWidth
+                Layout.maximumHeight: !root.isHorizontal ? (wantsToFillHeight ? findPositive(applet?.Layout.maximumHeight, root.height) : Math.min(applet?.Layout.maximumHeight, Layout.preferredHeight)) + handleExtent : availHeight
     // END BUG 454095
 
                 Loader {
                     id: handleLoader
                     active: container.showHandle
-                    width: root.isHorizontal ? container.appletHandleWidth : parent.width
-                    height: root.isHorizontal ? parent.height : container.appletHandleHeight
+                    width: root.isHorizontal ? handleLoader.item?.handleExtent ?? 0 : parent.width
+                    height: root.isHorizontal ? parent.height : handleLoader.item?.handleExtent ?? 0
                     anchors.top: parent.top
                     anchors.left: parent.left
 
@@ -262,13 +261,16 @@ ContainmentItem {
                         // if the panel is on the bottom or the left, the handle goes first
                         readonly property bool reverse: Plasmoid.location === PlasmaCore.Types.BottomEdge || Plasmoid.location === PlasmaCore.Types.RightEdge
                         readonly property bool isMenuOpen: appletMenu.status === PlasmaExtras.Menu.Open
+                        readonly property int handleExtent: grabHandle.handleExtent
 
                         visible: Plasmoid.configuration.showAppletHandle || hoverHandler.hovered || isMenuOpen
 
                         ToolButton {
                             id: menuButton
-                            Layout.preferredWidth: container.appletHandleWidth
-                            Layout.preferredHeight: container.appletHandleHeight
+                            Layout.fillWidth: isHorizontal ? true : false
+                            Layout.fillHeight: isHorizontal ? false : true
+                            Layout.preferredWidth: isHorizontal ? -1 : height
+                            Layout.preferredHeight: isHorizontal ? width : -1
                             Layout.row: root.isHorizontal ? (appletHandle.reverse ? 0 : 1) : 0
                             Layout.column: root.isHorizontal ? 0 : (appletHandle.reverse ? 0 : 1)
 
@@ -277,9 +279,20 @@ ContainmentItem {
                             hoverEnabled: true
 
                             contentItem: HandleArrow {
-                                panelLocation: Plasmoid.location
                                 sunken: menuButton.down || menuButton.checked
                                 hoverEnabled: menuButton.hoverEnabled
+                                direction: {
+                                    switch (Plasmoid.location) {
+                                        case PlasmaCore.Types.TopEdge:
+                                            return HandleArrow.Down;
+                                        case PlasmaCore.Types.LeftEdge:
+                                            return HandleArrow.Right;
+                                        case PlasmaCore.Types.RightEdge:
+                                            return HandleArrow.Left;
+                                        default:
+                                            return HandleArrow.Up;
+                                    }
+                                }
                             }
 
                             onClicked:appletMenu.open()
@@ -319,6 +332,8 @@ ContainmentItem {
                         }
 
                         GrabHandle {
+                            // NB: here we use a PE_IndicatorToolBarHandle here - KDE 3 used a PE_DockWindowHandle, but no such
+                            // equivalent exists in Qt6.
                             id: grabHandle
                             Layout.fillWidth: true
                             Layout.fillHeight: true
