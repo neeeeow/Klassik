@@ -38,7 +38,6 @@ target_link_libraries(com.github.neeeeow.klassik.kmenu PRIVATE
     KF6::I18n
     KF6::Service
     KF6::KIOGui
-    KF6::ColorScheme
     KF6::JobWidgets
     KF6::KIOWidgets
     KF6::ConfigGui

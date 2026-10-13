@@ -36,7 +36,7 @@ PaintedItem::styleChanged()
 		return;
 	loadStyle();
 	if (m_style)
-		requestRepaint();
+	    Q_EMIT propertyChanged();
 }
 
 QStyleOption
@@ -72,14 +72,35 @@ void
 PaintedItem::componentComplete()
 {
 	QQuickItem::componentComplete();
-	polish();
+    requestRepaint();
 }
 
 void
 PaintedItem::updatePolish()
 {
-	QQuickItem::updatePolish();		
-	paintControlToImage();
+	QQuickItem::updatePolish();
+
+	// Here we paint the control to the internal QImage
+	if (size().isEmpty() || !window() || !m_style) {
+		m_paintedImage = QImage(); // Clear out the QImage if invalid
+		update();
+		return;
+	}
+
+	const qreal dpr = window()->effectiveDevicePixelRatio();
+	const QSize imgSize(qRound(width() * dpr), qRound(height() * dpr));
+
+	if (m_paintedImage.size() != imgSize) {
+		m_paintedImage = QImage(imgSize, QImage::Format_ARGB32_Premultiplied);
+		m_paintedImage.setDevicePixelRatio(dpr);
+	}
+
+	m_paintedImage.fill(Qt::transparent);
+
+	QPainter painter(&m_paintedImage);
+	paint(&painter);
+	
+	update();
 }
 
 
@@ -125,36 +146,11 @@ PaintedItem::updatePaintNode(QSGNode *oldNode, QQuickItem::UpdatePaintNodeData *
 	return node;
 }
 
-void
-PaintedItem::paintControlToImage()
-{			
-	if (size().isEmpty() || !window() || !m_style) {
-		m_paintedImage = QImage(); // Clear out the QImage if invalid
-		update();
-		return;
-	}
-
-	const qreal dpr = window()->effectiveDevicePixelRatio();
-	const QSize imgSize(qRound(width() * dpr), qRound(height() * dpr));
-
-	if (m_paintedImage.size() != imgSize) {
-		m_paintedImage = QImage(imgSize, QImage::Format_ARGB32_Premultiplied);
-		m_paintedImage.setDevicePixelRatio(dpr);
-	}
-
-	m_paintedImage.fill(Qt::transparent);
-
-	QPainter painter(&m_paintedImage);
-	paint(&painter);
-	
-	update();
-}
-
 bool
 PaintedItem::event(QEvent *event)
 {	
 	if (event->type() == QEvent::ApplicationPaletteChange)
-		requestRepaint();
+		Q_EMIT propertyChanged();
 
 	return QQuickItem::event(event);
 }
@@ -169,7 +165,7 @@ PaintedItem::itemChange(QQuickItem::ItemChange change, const QQuickItem::ItemCha
 	case ItemAntialiasingHasChanged:
 	case ItemDevicePixelRatioHasChanged:
 	case ItemSceneChange:
-		requestRepaint();
+	    Q_EMIT propertyChanged();
 		break;
 	default:
 		break;
@@ -183,7 +179,7 @@ PaintedItem::geometryChange(const QRectF &newGeometry, const QRectF &oldGeometry
 
 	// We only need to repaint the image if the geometry size changes ...
 	if (newGeometry.size() != oldGeometry.size())
-		requestRepaint();
+		Q_EMIT propertyChanged();
 	// ... however, we will need to update the paint node if
 	// position changes, since our HiDPI corrections depend on position
 	else if (newGeometry.topLeft() != oldGeometry.topLeft())

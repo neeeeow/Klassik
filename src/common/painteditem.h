@@ -44,6 +44,9 @@ public:
 	}
 	
 Q_SIGNALS:
+	// Signal emitted whenever an internal property (both exposed and hidden from QML, such as
+	// state flags, or palette, or active QStyle) is changed. By default, this signal is connected
+	// to requestRepaint().
 	void propertyChanged();
 	
 protected:
@@ -94,9 +97,6 @@ private:
 	// Loads the current QStyle
 	void loadStyle();
 
-	// Paints the internal QImage used for drawing the control
-	void paintControlToImage();
-
 	// State flags used by QStyle
 	bool m_sunken = false;
 	bool m_hovered = false;
@@ -105,7 +105,7 @@ private:
 	bool m_hoverEnabled = false;
 	
 	// Function used for painting to the QQuickItem. This function must be implemented
-	// by subclasses, and must *never* be called directly outside of paintControlToImage(),
+	// by subclasses, and must *never* be called directly outside of updatePolish(),
 	// otherwise things will break;
 	virtual void paint(QPainter *painter) const = 0;
 

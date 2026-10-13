@@ -11,6 +11,7 @@ plasma_add_applet(com.github.neeeeow.klassik.panel
         qml/LayoutManager.js
     CPP_SOURCES
         panelcontainment.cpp
+        panelbackgroundimage.cpp
         grabhandle.h
         handlearrow.h
         ${KLASSIK_COMMON_DIR}/styledframe.cpp
@@ -25,7 +26,6 @@ target_link_libraries(com.github.neeeeow.klassik.panel PRIVATE
     Qt::Widgets
     Qt::Qml
     Qt::Quick
-    KF6::ColorScheme
     Plasma::Plasma
 )
 

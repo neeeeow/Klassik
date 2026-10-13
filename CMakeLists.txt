@@ -30,7 +30,6 @@ find_package(KF6 REQUIRED COMPONENTS
   I18n
   Service
   KIO
-  ColorScheme
   Config
   CoreAddons
   IconThemes

@@ -16,11 +16,11 @@ class Clock : public PaintedItem
 {
 	Q_OBJECT
 	QML_ANONYMOUS
-	Q_PROPERTY(bool showFrame MEMBER m_showFrame NOTIFY propertyChanged)
-	Q_PROPERTY(ColorTheme colorTheme MEMBER m_colorTheme NOTIFY propertyChanged)
-	Q_PROPERTY(QColor fgColor MEMBER m_fgColor NOTIFY propertyChanged)
-	Q_PROPERTY(QColor shadowColor MEMBER m_shadowColor NOTIFY propertyChanged)
-	Q_PROPERTY(QColor bgColor MEMBER m_bgColor NOTIFY propertyChanged)
+	Q_PROPERTY(bool showFrame MEMBER m_showFrame NOTIFY propertyChanged FINAL)
+	Q_PROPERTY(ColorTheme colorTheme MEMBER m_colorTheme NOTIFY propertyChanged FINAL)
+	Q_PROPERTY(QColor fgColor MEMBER m_fgColor NOTIFY propertyChanged FINAL)
+	Q_PROPERTY(QColor shadowColor MEMBER m_shadowColor NOTIFY propertyChanged FINAL)
+	Q_PROPERTY(QColor bgColor MEMBER m_bgColor NOTIFY propertyChanged FINAL)
 public:
 	explicit Clock(QQuickItem *parent = nullptr);
 
@@ -69,7 +69,7 @@ class DigitalClock : public Clock
 {
 	Q_OBJECT
 	QML_ELEMENT
-	Q_PROPERTY(QString text MEMBER m_timeString NOTIFY propertyChanged)	
+	Q_PROPERTY(QString text MEMBER m_timeString NOTIFY propertyChanged REQUIRED)	
 public:
 	explicit DigitalClock(QQuickItem *parent = nullptr);
 	
@@ -92,7 +92,7 @@ class AnalogClock : public Clock
 {
 	Q_OBJECT
 	QML_ELEMENT
-	Q_PROPERTY(QDateTime dateTime MEMBER m_dateTime NOTIFY propertyChanged)
+	Q_PROPERTY(QDateTime dateTime MEMBER m_dateTime NOTIFY propertyChanged REQUIRED)
 	Q_PROPERTY(bool showSeconds MEMBER m_showSeconds NOTIFY propertyChanged)
 public:
 	explicit AnalogClock(QQuickItem *parent = nullptr);
@@ -102,7 +102,7 @@ public:
 	
 private:
 	// Clock properties
-	QDateTime m_dateTime = QDateTime::currentDateTime();
+	QDateTime m_dateTime;
 	bool m_showSeconds = false;
 	
 	void drawContents(QPainter *p) const override;

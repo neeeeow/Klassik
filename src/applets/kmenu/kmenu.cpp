@@ -19,7 +19,6 @@
 #include <QRect>
 #include <QPaintEvent>
 
-#include <KColorScheme>
 #include <KLocalizedString>
 #include <KSycoca>
 
@@ -505,11 +504,8 @@ KMenu::colorize(QImage &image) const
 {
 	QColor color;
 	
-	KColorScheme activeScheme(QPalette::Active, KColorScheme::Selection);
-	QColor activeTitle = activeScheme.background().color();
-
-	KColorScheme inactiveScheme(QPalette::Inactive, KColorScheme::Selection);
-	QColor inactiveTitle = inactiveScheme.background().color();
+	QColor activeTitle = palette().color(QPalette::Active, QPalette::Highlight);
+	QColor inactiveTitle = palette().color(QPalette::Inactive, QPalette::Highlight);
 
 	// figure out which color is most suitable for recoloring to
 	int h1, s1, v1, h2, s2, v2, h3, s3, v3;

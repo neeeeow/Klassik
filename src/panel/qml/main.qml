@@ -120,31 +120,13 @@ ContainmentItem {
         color: palette.window
     }
 
-    Image {
-        anchors.centerIn: parent
-        width: isHorizontal ? parent.width : parent.height
-        height: isHorizontal ? parent.height : parent.width
-
+    PanelBackgroundImage {
+        anchors.fill: parent
         visible: Plasmoid.configuration.useBackground
-        source: Plasmoid.configuration.useCustomBackground ? Plasmoid.configuration.customBackgroundUrl : "defaultBackground.png"
-
-        fillMode: Image.TileHorizontally
-        horizontalAlignment: Image.AlignLeft
-        sourceSize.height: height
-        sourceSize.width: 0
-
-        rotation: {
-            switch (Plasmoid.location) {
-                case PlasmaCore.Types.LeftEdge:
-                    return 90
-                case PlasmaCore.Types.TopEdge:
-                    return 180
-                case PlasmaCore.Types.RightEdge:
-                    return 270
-                default:
-                    return 0
-            }
-        }
+        source: Plasmoid.configuration.useCustomBackground ? Plasmoid.configuration.customBackgroundUrl
+            : Qt.resolvedUrl("defaultBackground.png")
+        location: Plasmoid.location
+        colorize: Plasmoid.configuration.colorize
     }
 
     StyledFrame {
@@ -205,7 +187,6 @@ ContainmentItem {
         }
 
 //BEGIN components
-
 
         Component {
             id: appletContainerComponent
@@ -380,7 +361,7 @@ ContainmentItem {
                     id: contextMenuRemoveAction
                     text: i18nc("@action:inmenu removes widget", "Remove")
                     icon.name: "edit-delete-remove"
-                    visible: !container.showHandle && applet?.Plasmoid.pluginName !== "org.kde.plasma.icon"
+                    visible: !container.showHandle
                     onTriggered: applet.Plasmoid.internalAction("remove").trigger()
                 }
 

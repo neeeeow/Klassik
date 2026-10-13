@@ -25,7 +25,7 @@ Window {
     function save() {
         Plasmoid.configuration.drawFrame = drawFrame.checked;
         Plasmoid.configuration.showAppletHandle = showAppletHandle.checked;
-        Plasmoid.configuration.colorizePanel = colorizePanel.checked;
+        Plasmoid.configuration.colorize = colorize.checked;
         Plasmoid.configuration.useBackground = useBackground.checked;
         Plasmoid.configuration.useCustomBackground = useCustomBackground.checked;
         Plasmoid.configuration.customBackgroundUrl = root.customBackgroundUrl;
@@ -35,7 +35,7 @@ Window {
         if (visible) {
             drawFrame.checked = Plasmoid.configuration.drawFrame;
             showAppletHandle.checked = Plasmoid.configuration.showAppletHandle;
-            colorizePanel.checked = Plasmoid.configuration.colorizePanel;
+            colorize.checked = Plasmoid.configuration.colorize;
             useBackground.checked = Plasmoid.configuration.useBackground;
             useCustomBackground.checked = Plasmoid.configuration.useCustomBackground;
             root.customBackgroundUrl = Plasmoid.configuration.customBackgroundUrl;
@@ -73,7 +73,7 @@ Window {
                 text: i18n("Always display applet handle")
             }
             CheckBox {
-                id: colorizePanel
+                id: colorize
                 text: i18n("Colorize the panel to match the desktop color scheme")
             }
             CheckBox {
