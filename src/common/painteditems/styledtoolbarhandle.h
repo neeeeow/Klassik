@@ -8,7 +8,7 @@
 
 #include "painteditem.h"
 
-class GrabHandle : public PaintedItem
+class StyledToolBarHandle : public PaintedItem
 {
 	/*
 	  This class draws a QStyle toolbar handle
@@ -21,7 +21,7 @@ class GrabHandle : public PaintedItem
 	// The width of the handle
 	Q_PROPERTY(int handleExtent READ handleExtent NOTIFY propertyChanged)
 public:
-    GrabHandle(QQuickItem *parent = nullptr) : PaintedItem(parent) {}
+    StyledToolBarHandle(QQuickItem *parent = nullptr) : PaintedItem(parent) {}
 	int handleExtent() const {
 		if (!style()) return 0;
 		return style()->pixelMetric(QStyle::PM_ToolBarHandleExtent);

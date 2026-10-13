@@ -10,18 +10,20 @@
 
 #include <Plasma/Plasma>
 
-class HandleArrow : public PaintedItem
+class StyledArrow : public PaintedItem
 {
 	/*
 	  This class draws an arrow using QStyle
 	*/
 	  
 	Q_OBJECT
-	QML_ELEMENT
-	Q_PROPERTY(HandleArrow::Direction direction MEMBER m_direction NOTIFY propertyChanged REQUIRED)
+	QML_ELEMENT	
+	// Direction in which the arrow should be facing. Directly corresponds to
+	// QStyle arrow primitive elements
+	Q_PROPERTY(StyledArrow::Direction direction MEMBER m_direction NOTIFY propertyChanged REQUIRED)
 public:
-	HandleArrow(QQuickItem *parent = nullptr) : PaintedItem(parent) {}
-	
+	StyledArrow(QQuickItem *parent = nullptr) : PaintedItem(parent) {}
+
 	enum Direction {
         Up = QStyle::PE_IndicatorArrowUp,
         Down = QStyle::PE_IndicatorArrowDown,

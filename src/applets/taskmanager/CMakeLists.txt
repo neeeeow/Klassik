@@ -21,7 +21,7 @@ plasma_add_applet(com.github.neeeeow.klassik.taskmanager
         KlassikBusyIndicator.qml
     CPP_SOURCES
         taskbackground.h
-        ${KLASSIK_COMMON_DIR}/styledframe.cpp
+        ${KLASSIK_COMMON_DIR}/painteditems/styledframe.cpp
     RESOURCES
         main.xml
         busyindicator.png

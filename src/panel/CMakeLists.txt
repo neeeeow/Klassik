@@ -12,9 +12,9 @@ plasma_add_applet(com.github.neeeeow.klassik.panel
     CPP_SOURCES
         panelcontainment.cpp
         panelbackgroundimage.cpp
-        grabhandle.h
-        handlearrow.h
-        ${KLASSIK_COMMON_DIR}/styledframe.cpp
+        ${KLASSIK_COMMON_DIR}/painteditems/styledtoolbarhandle.h
+        ${KLASSIK_COMMON_DIR}/painteditems/styledarrow.h
+        ${KLASSIK_COMMON_DIR}/painteditems/styledframe.cpp
     RESOURCES
         main.xml
         defaultBackground.png

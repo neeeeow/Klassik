@@ -278,19 +278,19 @@ ContainmentItem {
                             checked: isMenuOpen
                             hoverEnabled: true
 
-                            contentItem: HandleArrow {
+                            contentItem: StyledArrow {
                                 sunken: menuButton.down || menuButton.checked
                                 hoverEnabled: menuButton.hoverEnabled
                                 direction: {
                                     switch (Plasmoid.location) {
                                         case PlasmaCore.Types.TopEdge:
-                                            return HandleArrow.Down;
+                                            return StyledArrow.Down;
                                         case PlasmaCore.Types.LeftEdge:
-                                            return HandleArrow.Right;
+                                            return StyledArrow.Right;
                                         case PlasmaCore.Types.RightEdge:
-                                            return HandleArrow.Left;
+                                            return StyledArrow.Left;
                                         default:
-                                            return HandleArrow.Up;
+                                            return StyledArrow.Up;
                                     }
                                 }
                             }
@@ -331,7 +331,7 @@ ContainmentItem {
                             }
                         }
 
-                        GrabHandle {
+                        StyledToolBarHandle {
                             // NB: here we use a PE_IndicatorToolBarHandle here - KDE 3 used a PE_DockWindowHandle, but no such
                             // equivalent exists in Qt6.
                             id: grabHandle

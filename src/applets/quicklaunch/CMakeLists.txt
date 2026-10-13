@@ -14,7 +14,7 @@ plasma_add_applet(com.github.neeeeow.klassik.quicklaunch
         layout.js
     CPP_SOURCES
         quicklaunch_p.cpp
-        ${KLASSIK_COMMON_DIR}/styledframe.cpp
+        ${KLASSIK_COMMON_DIR}/painteditems/styledframe.cpp
     RESOURCES
         main.xml
     GENERATE_APPLET_CLASS
