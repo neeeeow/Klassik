@@ -40,7 +40,7 @@ ContainmentItem {
     property int fixedHeight: 0
     property bool hasSpacer
 
-    readonly property int panelMargin: Plasmoid.configuration.drawFrame ? panelFrame.lineWidth : 2
+    readonly property int panelMargin: 2
 
 //END properties
 
@@ -133,7 +133,7 @@ ContainmentItem {
         id: panelFrame
         anchors.fill: parent
         visible: Plasmoid.configuration.drawFrame
-        lineWidth: 2
+        lineWidth: root.panelMargin
     }
 
 //END background
@@ -224,20 +224,21 @@ ContainmentItem {
                 availHeight: root.height - Layout.topMargin - Layout.bottomMargin
                 function findPositive(first, second) {return first > 0 ? first : second}
 
+                // Handle geometry
                 readonly property bool showHandle: applet?.Plasmoid.metaData.category !== "Application Launchers" && applet?.Plasmoid.pluginName !== "org.kde.plasma.icon"
                 readonly property int handleExtent: handleLoader.item?.handleExtent ?? 0
 
-
-    // BEGIN BUG 454095: do not combine these expressions to a function or the bindings won't work
-                Layout.minimumWidth: root.isHorizontal ? findPositive(applet?.Layout.minimumWidth, availHeight) + handleExtent : availWidth
-                Layout.minimumHeight: !root.isHorizontal ? findPositive(applet?.Layout.minimumHeight, availWidth) + handleExtent : availHeight
-
-                Layout.preferredWidth: root.isHorizontal ? findPositive(applet?.Layout.preferredWidth, Layout.minimumWidth) : availWidth
-                Layout.preferredHeight: !root.isHorizontal ? findPositive(applet?.Layout.preferredHeight, Layout.minimumHeight) : availHeight
-
-                Layout.maximumWidth: root.isHorizontal ? (wantsToFillWidth ? findPositive(applet?.Layout.maximumWidth, root.width) : Math.min(applet?.Layout.maximumWidth, Layout.preferredWidth)) + handleExtent : availWidth
-                Layout.maximumHeight: !root.isHorizontal ? (wantsToFillHeight ? findPositive(applet?.Layout.maximumHeight, root.height) : Math.min(applet?.Layout.maximumHeight, Layout.preferredHeight)) + handleExtent : availHeight
-    // END BUG 454095
+                // Compute applet geometry
+                readonly property real appletMinW: findPositive(applet?.Layout.minimumWidth, availHeight)
+                readonly property real appletMinH: findPositive(applet?.Layout.minimumHeight, availWidth)
+                readonly property real appletPrefW: findPositive(applet?.Layout.preferredWidth, appletMinW)
+                readonly property real appletPrefH: findPositive(applet?.Layout.preferredHeight, appletMinH)
+                Layout.minimumWidth: root.isHorizontal ? appletMinW + handleExtent : availWidth
+                Layout.minimumHeight: !root.isHorizontal ? appletMinH + handleExtent : availHeight
+                Layout.preferredWidth: root.isHorizontal ? appletPrefW + handleExtent : availWidth
+                Layout.preferredHeight: !root.isHorizontal ? appletPrefH + handleExtent : availHeight
+                Layout.maximumWidth: root.isHorizontal ? (wantsToFillWidth ? findPositive(applet?.Layout.maximumWidth, root.width) : Math.min(applet?.Layout.maximumWidth, appletPrefW)) + handleExtent : availWidth
+                Layout.maximumHeight: !root.isHorizontal ? (wantsToFillHeight ? findPositive(applet?.Layout.maximumHeight, root.height) : Math.min(applet?.Layout.maximumHeight, appletPrefH)) + handleExtent : availHeight
 
                 Loader {
                     id: handleLoader
@@ -267,10 +268,10 @@ ContainmentItem {
 
                         ToolButton {
                             id: menuButton
-                            Layout.fillWidth: isHorizontal ? true : false
-                            Layout.fillHeight: isHorizontal ? false : true
-                            Layout.preferredWidth: isHorizontal ? -1 : height
-                            Layout.preferredHeight: isHorizontal ? width : -1
+                            Layout.fillWidth: root.isHorizontal ? true : false
+                            Layout.fillHeight: root.isHorizontal ? false : true
+                            Layout.preferredWidth: root.isHorizontal ? -1 : height
+                            Layout.preferredHeight: root.isHorizontal ? width : -1
                             Layout.row: root.isHorizontal ? (appletHandle.reverse ? 0 : 1) : 0
                             Layout.column: root.isHorizontal ? 0 : (appletHandle.reverse ? 0 : 1)
 
