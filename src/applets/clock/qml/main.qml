@@ -15,6 +15,8 @@ import org.kde.plasma.clock
 PlasmoidItem {
     id: root
 
+    Plasmoid.onActivated: calendar.togglePopup()
+
     Clock {
         id: clock
         trackSeconds: Plasmoid.configuration.showSeconds
@@ -23,13 +25,6 @@ PlasmoidItem {
     CalendarPopup {
         id: calendar
         location: Plasmoid.location
-    }
-
-    Connections {
-        target: Plasmoid
-        function onActivated() {
-            calendar.togglePopup();
-        }
     }
 
     preferredRepresentation: fullRepresentation

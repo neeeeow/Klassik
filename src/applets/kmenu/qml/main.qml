@@ -16,13 +16,7 @@ PlasmoidItem{
     id: root
 
     Plasmoid.icon: Plasmoid.configuration.icon
-
-    Connections {
-        target: Plasmoid
-        function onActivated() {
-            Plasmoid.toggleMenu(menuButton)
-        }
-    }
+    Plasmoid.onActivated: Plasmoid.toggleMenu(root.fullRepresentationItem)
 
     preferredRepresentation: fullRepresentation
     fullRepresentation: Button { // We can build the menu button in qml, since Qt Quick hands off buttons to Qt.
