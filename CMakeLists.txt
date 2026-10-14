@@ -24,6 +24,7 @@ find_package(Qt6 REQUIRED COMPONENTS
   Widgets
   Qml
   Quick
+  QuickPrivate
 )
 
 find_package(KF6 REQUIRED COMPONENTS

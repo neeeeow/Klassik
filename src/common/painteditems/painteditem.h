@@ -14,6 +14,8 @@
 #include <QStyle>
 #include <QStyleOption>
 
+class QQuickPalette;
+
 class PaintedItem : public QQuickItem
 {
 	/* Template class for painting on to QML items with a QPainter. */
@@ -55,6 +57,9 @@ protected:
 	// style isn't loaded or has been destroyed before our signal fires, so be careful !
 	QStyle* style() const { return m_style; }
 
+	// Returns a QPalette constructed from the QML Item palette
+	QPalette palette() const;
+
 	// Returns a basic QStyleOption with state flags already set, for convenience.
 	QStyleOption baseStyleOption() const; 
 
@@ -71,14 +76,15 @@ protected:
 
 	// Scales a QPainter to allow for pixel perfect drawing
 	static void scalePainter(QPainter *painter);
-	
-	// Overrides for painting logic
+
+	// Component complete override
 	void componentComplete() override;
+	
+	// Overrides for painting logic	
 	void updatePolish() override;
 	QSGNode *updatePaintNode(QSGNode *oldNode, QQuickItem::UpdatePaintNodeData *updatePaintNodeData) override;
 
 	// Event handling overrides
-	bool event(QEvent *event) override;
 	void itemChange(QQuickItem::ItemChange change, const QQuickItem::ItemChangeData &value) override;
 	void geometryChange(const QRectF &newGeometry, const QRectF &oldGeometry) override;
 	void hoverEnterEvent(QHoverEvent *event) override;
@@ -91,11 +97,11 @@ protected Q_SLOTS:
 private:
 	QPointer<QStyle> m_style = nullptr; // Declare this a QPointer, since the QStyle might get destroyed by something else
 
+	// QPointer to the internal QML item palette
+	QPointer<QQuickPalette> m_quickPalette = nullptr;
+
 	// QImage to which contents are painted on
 	QImage m_paintedImage;
-
-	// Loads the current QStyle
-	void loadStyle();
 
 	// State flags used by QStyle
 	bool m_sunken = false;
@@ -103,6 +109,12 @@ private:
 
 	// Whether or not to accept hover events (default false!)
 	bool m_hoverEnabled = false;
+
+	// Loads the current QStyle
+	void loadStyle();
+
+	// Loads the QML objects QQuickPalette
+	void loadPalette();
 	
 	// Function used for painting to the QQuickItem. This function must be implemented
 	// by subclasses, and must *never* be called directly outside of updatePolish(),

@@ -9,4 +9,5 @@ target_link_libraries(klassik_painteditem PUBLIC
     Qt::Core
     Qt::Widgets
     Qt::Quick
+    Qt::QuickPrivate
 )

@@ -74,11 +74,11 @@ PanelBackgroundImage::loadImage()
 }
 
 void
-PanelBackgroundImage::colorize(QImage &image)
+PanelBackgroundImage::colorize(QImage &image) const
 {
 	QColor color;
 	
-	const QPalette pal = QGuiApplication::palette();
+	const QPalette pal = palette();
 	const QColor activeTitle = pal.color(QPalette::Active, QPalette::Highlight);
 	const QColor inactiveTitle = pal.color(QPalette::Inactive, QPalette::Highlight);
 

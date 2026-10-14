@@ -38,5 +38,5 @@ private:
 
 	void paint(QPainter *p) const override;
 	void loadImage();
-	static void colorize(QImage &image);
+	void colorize(QImage &image) const;
 };

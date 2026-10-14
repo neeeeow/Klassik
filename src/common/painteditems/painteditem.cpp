@@ -13,12 +13,22 @@
 #include <QApplication>
 #include <QImage>
 
+#include <QtQuick/private/qquickpalette_p.h>
+
 PaintedItem::PaintedItem(QQuickItem *parent) : QQuickItem(parent)
 {
-	setFlag(QQuickItem::ItemHasContents, true);
+	setFlag(QQuickItem::ItemHasContents, true);			
+}
+
+void
+PaintedItem::componentComplete()
+{
+	QQuickItem::componentComplete();
 	setAcceptHoverEvents(m_hoverEnabled);
 	loadStyle();
+	loadPalette();
 	connect(this, &PaintedItem::propertyChanged, this, &PaintedItem::requestRepaint);
+    requestRepaint();
 }
 
 void
@@ -39,11 +49,25 @@ PaintedItem::styleChanged()
 	    Q_EMIT propertyChanged();
 }
 
+void
+PaintedItem::loadPalette()
+{
+    m_quickPalette = qvariant_cast<QQuickPalette *>(property("palette"));
+	if (m_quickPalette)
+		connect(m_quickPalette, &QQuickColorGroup::changed, this, &PaintedItem::propertyChanged, Qt::UniqueConnection);
+}
+
+QPalette
+PaintedItem::palette() const
+{
+	return m_quickPalette ? m_quickPalette->toQPalette() : QPalette();
+}
+
 QStyleOption
 PaintedItem::baseStyleOption() const
 {
 	QStyleOption opt;
-	opt.palette = QGuiApplication::palette();
+	opt.palette = palette();
 	opt.rect = rect();
 	if (isEnabled())
 		opt.state |= QStyle::State_Enabled;
@@ -66,13 +90,6 @@ PaintedItem::scalePainter(QPainter *painter)
 		const qreal inverseScale = qreal(1) / dpr;
 		painter->scale(inverseScale, inverseScale);
 	}
-}
-
-void
-PaintedItem::componentComplete()
-{
-	QQuickItem::componentComplete();
-    requestRepaint();
 }
 
 void
@@ -144,15 +161,6 @@ PaintedItem::updatePaintNode(QSGNode *oldNode, QQuickItem::UpdatePaintNodeData *
 	node->setTexture(texture);
 	
 	return node;
-}
-
-bool
-PaintedItem::event(QEvent *event)
-{	
-	if (event->type() == QEvent::ApplicationPaletteChange)
-		Q_EMIT propertyChanged();
-
-	return QQuickItem::event(event);
 }
 
 void

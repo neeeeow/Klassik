@@ -27,7 +27,7 @@ Clock::getColors() const
 		return { m_fgColor, m_shadowColor };
 	case System:
 	default:// system colors
-		QPalette pal = QGuiApplication::palette();
+		QPalette pal = palette();
 		return { pal.color(QPalette::WindowText),
 			pal.color(QPalette::Mid) };
 	}
@@ -53,7 +53,7 @@ Clock::paint(QPainter *p) const
 	// frame
 	if (style() && m_showFrame) {
 		QStyleOptionFrame frame;
-		frame.palette = QGuiApplication::palette();
+		frame.palette = palette();
 		frame.rect = rect();
 		frame.state = QStyle::State_Enabled | QStyle::State_Sunken;
 		frame.frameShape = QFrame::Panel;
