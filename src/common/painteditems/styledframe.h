@@ -16,14 +16,31 @@ class StyledFrame : public PaintedItem
 	  
 	Q_OBJECT
 	QML_ELEMENT
-	// Line width to be used by the frame. Set -1 (default value) to have the line
-	// width set by the active QStyle
-	Q_PROPERTY(int lineWidth MEMBER m_lineWidth NOTIFY propertyChanged)
+	// Line width to be used by the frame. Leave unset to use the default value assigned
+	// by the active QStyle
+	Q_PROPERTY(int lineWidth READ lineWidth WRITE setLineWidth RESET resetLineWidth NOTIFY propertyChanged)
 public:
 	explicit StyledFrame(QQuickItem *parent = nullptr) : PaintedItem(parent) {}
+	int lineWidth() const {
+		if (m_lineWidth)
+			return *m_lineWidth;
+		return style() ? style()->pixelMetric(QStyle::PM_DefaultFrameWidth) : 0;
+	}
+	void setLineWidth(int lineWidth) {
+		if (m_lineWidth != lineWidth) {
+			m_lineWidth = lineWidth;
+			Q_EMIT propertyChanged();
+		}
+	}
+	void resetLineWidth() {
+		if (!m_lineWidth)
+			return;
+		m_lineWidth.reset();
+		Q_EMIT propertyChanged();
+	}
 	
 private:
-	int m_lineWidth = -1;
+    std::optional<int> m_lineWidth;
 	
     void paint(QPainter *p) const override {
 		if (!style())
@@ -32,10 +49,7 @@ private:
 		QStyleOptionFrame frame;
 		frame.QStyleOption::operator=(baseStyleOption());
 		frame.frameShape = QFrame::StyledPanel;
-		if (m_lineWidth >= 0)
-			frame.lineWidth = m_lineWidth;
-		else
-			frame.lineWidth = style()->pixelMetric(QStyle::PM_DefaultFrameWidth);
+		frame.lineWidth = lineWidth();
 		if (!isSunken())
 			frame.state |= QStyle::State_Raised;	
 
