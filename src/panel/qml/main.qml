@@ -26,8 +26,8 @@ ContainmentItem {
     height: 48
 
 //BEGIN properties
-    Layout.preferredWidth: fixedWidth || currentLayout.implicitWidth
-    Layout.preferredHeight: fixedHeight || currentLayout.implicitHeight
+    Layout.preferredWidth:  fixedWidth  || currentLayout.implicitWidth  + (isHorizontal ? 2 * panelMargin : 0) // Add width/height for the margin
+    Layout.preferredHeight: fixedHeight || currentLayout.implicitHeight + (isHorizontal ? 0 : 2 * panelMargin)
     Layout.fillWidth: {
         return currentLayout.children
             .filter(child => child?.applet?.plasmoid?.pluginName === "org.kde.plasma.panelspacer")
@@ -197,11 +197,11 @@ ContainmentItem {
                 required property int index
                 visible: applet.Plasmoid?.status !== PlasmaCore.Types.HiddenStatus || (!Plasmoid.immutable && Plasmoid.userConfiguring) || Containment.corona.editMode;
 
-                property bool wantsToFillWidth: applet?.Layout.fillWidth
-                property bool wantsToFillHeight: applet?.Layout.fillHeight
+                readonly property bool wantsToFillWidth: applet?.Layout.fillWidth
+                readonly property bool wantsToFillHeight: applet?.Layout.fillHeight
 
-                property int availWidth
-                property int availHeight
+                readonly property int availWidth: root.width - Layout.leftMargin - Layout.rightMargin
+                readonly property int availHeight: root.height - Layout.topMargin - Layout.bottomMargin
 
                 readonly property real margin:
                     applet?.Plasmoid && !(applet.Plasmoid.constraintHints & Plasmoid.CanFillArea) ? root.panelMargin : 0
@@ -220,8 +220,6 @@ ContainmentItem {
                 onWantsToFillWidthChanged: root.checkLastSpacer()
                 onWantsToFillHeightChanged: root.checkLastSpacer()
 
-                availWidth: root.width - Layout.leftMargin - Layout.rightMargin
-                availHeight: root.height - Layout.topMargin - Layout.bottomMargin
                 function findPositive(first, second) {return first > 0 ? first : second}
 
                 // Handle geometry
@@ -243,8 +241,8 @@ ContainmentItem {
                 Loader {
                     id: handleLoader
                     active: container.showHandle
-                    width: root.isHorizontal ? handleLoader.item?.handleExtent ?? 0 : parent.width
-                    height: root.isHorizontal ? parent.height : handleLoader.item?.handleExtent ?? 0
+                    width: root.isHorizontal ? container.handleExtent ?? 0 : parent.width
+                    height: root.isHorizontal ? parent.height : container.handleExtent ?? 0
                     anchors.top: parent.top
                     anchors.left: parent.left
 
@@ -276,7 +274,7 @@ ContainmentItem {
                             Layout.column: root.isHorizontal ? 0 : (appletHandle.reverse ? 0 : 1)
 
                             checkable: true
-                            checked: isMenuOpen
+                            checked: appletHandle.isMenuOpen
                             hoverEnabled: true
 
                             contentItem: StyledArrow {
@@ -301,14 +299,14 @@ ContainmentItem {
                                 id: appletMenu
                                 PlasmaExtras.MenuItem {
                                     icon: "edit-delete-remove"
-                                    text: i18nc("@action:inmenu removes widget", "Remove")
+                                    text: i18n("Remove")
                                     onClicked: {
                                         applet.Plasmoid.internalAction("remove").trigger();
                                     }
                                 }
                                 PlasmaExtras.MenuItem {
                                     icon: "configure"
-                                    text: i18nc("@action:inmenu opens widget config dialog", "Configure…")
+                                    text: i18n("Configure…")
                                     visible: applet.Plasmoid.internalAction("configure")?.enabled ?? false
                                     onClicked: {
                                         applet.Plasmoid.internalAction("configure").trigger();
@@ -316,14 +314,14 @@ ContainmentItem {
                                 }
                                 PlasmaExtras.MenuItem {
                                     icon: "widget-alternatives"
-                                    text: i18nc("@action:inmenu opens widget alternatives explorer", "Show Alternatives…")
+                                    text: i18n("Show Alternatives…")
                                     visible: applet.Plasmoid.internalAction("alternatives")?.enabled ?? false
                                     onClicked: {
                                         applet.Plasmoid.internalAction("alternatives").trigger();
                                     }
                                 }
                                 PlasmaExtras.MenuItem {
-                                    text: i18nc("@action:inmenu moves widget", "Move")
+                                    text: i18n("Move")
                                     icon: "transform-move"
                                     onClicked: {
                                         globalMove.startDrag(container);
@@ -375,7 +373,7 @@ ContainmentItem {
 
                 PlasmaCore.Action {
                     id: contextMenuRemoveAction
-                    text: i18nc("@action:inmenu removes widget", "Remove")
+                    text: i18n("Remove")
                     icon.name: "edit-delete-remove"
                     visible: !container.showHandle
                     onTriggered: applet.Plasmoid.internalAction("remove").trigger()
@@ -383,7 +381,7 @@ ContainmentItem {
 
                 PlasmaCore.Action {
                     id: contextMenuMoveAction
-                    text: i18nc("@action:inmenu moves widget", "Move")
+                    text: i18n("Move")
                     icon.name: "transform-move"
                     visible: !container.showHandle
                     onTriggered: globalMove.startDrag(container)
@@ -392,10 +390,9 @@ ContainmentItem {
                 onAppletChanged: {
                     if (applet) {
                         applet.parent = container
-                        applet.anchors.top = Qt.binding(() => root.isHorizontal ? container.top : handleLoader.bottom);
-                        applet.anchors.bottom = Qt.binding(() => container.bottom);
-                        applet.anchors.left = Qt.binding(() => root.isHorizontal ? handleLoader.right : container.left);
-                        applet.anchors.right = Qt.binding(() => container.right);
+                        applet.anchors.fill = container
+                        applet.anchors.leftMargin = Qt.binding(() => root.isHorizontal ? container.handleExtent : 0)
+                        applet.anchors.topMargin  = Qt.binding(() => root.isHorizontal ? 0 : container.handleExtent)
 
                         if (!container.showHandle) {
                             applet.Plasmoid.contextualActions.push(contextMenuRemoveAction);

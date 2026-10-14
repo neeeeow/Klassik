@@ -8,6 +8,8 @@
 
 #include <Plasma/Containment>
 
+#include <QPalette>
+
 class PanelContainment : public Plasma::Containment
 {
 	Q_OBJECT

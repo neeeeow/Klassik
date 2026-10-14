@@ -89,7 +89,7 @@ Window {
                 }
                 RadioButton {
                     id: useCustomBackground
-                    text: i18n("Custom background...")
+                    text: i18n("Custom background…")
                 }
             }
 
@@ -119,7 +119,7 @@ Window {
                     readOnly: true
                     Layout.fillWidth: true
                     text: root.customBackgroundUrl.toString()
-                    placeholderText: i18n("No image selected...")
+                    placeholderText: i18n("No image selected…")
                 }
             }
         }
@@ -129,6 +129,7 @@ Window {
 
             Text {
                 text: "Klassik " + Plasmoid.metaData.version
+                color: Kirigami.Theme.textColor
                 font.italic: true
                 font.bold: true
                 font.pointSize: 16
