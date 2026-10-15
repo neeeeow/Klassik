@@ -17,7 +17,7 @@
 
 PaintedItem::PaintedItem(QQuickItem *parent) : QQuickItem(parent)
 {
-	setFlag(QQuickItem::ItemHasContents, true);			
+	setFlag(QQuickItem::ItemHasContents, true);
 }
 
 void
@@ -26,9 +26,9 @@ PaintedItem::componentComplete()
 	QQuickItem::componentComplete();
 	setAcceptHoverEvents(m_hoverEnabled);
 	loadStyle();
-	loadPalette();
-	connect(this, &PaintedItem::propertyChanged, this, &PaintedItem::requestRepaint);
+	loadPalette();	
     requestRepaint();
+	connect(this, &PaintedItem::propertyChanged, this, &PaintedItem::requestRepaint);
 }
 
 void

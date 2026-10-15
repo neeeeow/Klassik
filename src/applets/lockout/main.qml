@@ -16,10 +16,13 @@ import org.kde.kirigami as Kirigami
 PlasmoidItem {
     id: root
 
+    SessionManagement {
+        id: session
+    }
+
     preferredRepresentation: fullRepresentation
     fullRepresentation: GridLayout {
         id: grid
-        anchors.fill: parent
 
         readonly property bool horizontal: Plasmoid.formFactor === PlasmaCore.Types.Horizontal
         readonly property int iconSize: Kirigami.Units.iconSizes.small
@@ -34,15 +37,18 @@ PlasmoidItem {
             }
         }
 
-        SessionManagement {
-            id: session
-        }
-
         ToolButton {
             id: lock
             flat: false
             Layout.fillWidth: grid.horizontal ? false : true
             Layout.fillHeight: grid.horizontal ? true : false
+            implicitWidth: grid.iconSize + 14
+            implicitHeight: grid.iconSize + 14
+
+            background: StyledToolButton {
+                hoverEnabled: lock.hoverEnabled
+                sunken: lock.down || lock.checked
+            }
 
             onClicked: session["lock"]()
             Kirigami.Icon {
@@ -58,6 +64,13 @@ PlasmoidItem {
             flat: false
             Layout.fillWidth: grid.horizontal ? false : true
             Layout.fillHeight: grid.horizontal ? true : false
+            implicitWidth: grid.iconSize + 14
+            implicitHeight: grid.iconSize + 14
+
+            background: StyledToolButton {
+                hoverEnabled: logout.hoverEnabled
+                sunken: logout.down || logout.checked
+            }
 
             onClicked: session["requestLogoutPrompt"]()
             Kirigami.Icon {
