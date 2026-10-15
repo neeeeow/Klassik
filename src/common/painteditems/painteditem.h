@@ -9,7 +9,7 @@
 #include <QQuickItem>
 #include <QPointer>
 
-// We can technically forward declare these, but every subclass will need these
+// We can technically forward declare these, but every subclass will need them
 // so just include here for convenience.
 #include <QStyle>
 #include <QStyleOption>

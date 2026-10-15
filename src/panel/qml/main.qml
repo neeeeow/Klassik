@@ -42,6 +42,12 @@ ContainmentItem {
 
     readonly property int panelMargin: 2
 
+    Binding {
+        target: root.Plasmoid
+        property: "colorize"
+        value: Plasmoid.configuration.colorize
+    }
+
 //END properties
 
 //BEGIN functions
@@ -115,25 +121,29 @@ ContainmentItem {
 
 //BEGIN background
 
-    Rectangle {
+    Item {
         anchors.fill: parent
-        color: palette.window
-    }
+        palette: Plasmoid.palette
+        Rectangle {
+            anchors.fill: parent
+            color: palette.window
+        }
 
-    PanelBackgroundImage {
-        anchors.fill: parent
-        visible: Plasmoid.configuration.useBackground
-        source: Plasmoid.configuration.useCustomBackground ? Plasmoid.configuration.customBackgroundUrl
-            : Qt.resolvedUrl("defaultBackground.png")
-        location: Plasmoid.location
-        colorize: Plasmoid.configuration.colorize
-    }
+        PanelBackgroundImage {
+            anchors.fill: parent
+            visible: Plasmoid.configuration.useBackground
+            source: Plasmoid.configuration.useCustomBackground ? Plasmoid.configuration.customBackgroundUrl
+                : Qt.resolvedUrl("defaultBackground.png")
+            location: Plasmoid.location
+            colorize: Plasmoid.configuration.colorize
+        }
 
-    StyledFrame {
-        id: panelFrame
-        anchors.fill: parent
-        visible: Plasmoid.configuration.drawFrame
-        lineWidth: root.panelMargin
+        StyledFrame {
+            id: panelFrame
+            anchors.fill: parent
+            visible: Plasmoid.configuration.drawFrame
+            lineWidth: root.panelMargin
+        }
     }
 
 //END background
@@ -192,6 +202,8 @@ ContainmentItem {
             id: appletContainerComponent
             Item {
                 id: container
+
+                palette: Plasmoid.palette
 
                 required property Item applet
                 required property int index
