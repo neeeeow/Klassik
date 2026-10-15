@@ -21,7 +21,7 @@ import org.kde.plasma.plasmoid
 
 import org.kde.taskmanager as TaskManager
 
-Button {
+ToolButton {
     id: task
 
     // To achieve a bottom-to-top layout on vertical panels, the task manager
