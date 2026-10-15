@@ -97,6 +97,10 @@ PaintedItem::updatePolish()
 {
 	QQuickItem::updatePolish();
 
+	// The palette should always be loaded, but re-load it in case it has been destroyed for some reason
+	if (!m_quickPalette)
+		loadPalette();
+
 	// Here we paint the control to the internal QImage
 	if (size().isEmpty() || !window() || !m_style) {
 		m_paintedImage = QImage(); // Clear out the QImage if invalid
