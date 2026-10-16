@@ -22,7 +22,7 @@ class StyledArrow : public PaintedItem
 	// QStyle arrow primitive elements
 	Q_PROPERTY(StyledArrow::Direction direction MEMBER m_direction NOTIFY propertyChanged REQUIRED)
 public:
-	StyledArrow(QQuickItem *parent = nullptr) : PaintedItem(parent) {}
+	explicit StyledArrow(QQuickItem *parent = nullptr) : PaintedItem(parent) {}
 
 	enum Direction {
         Up = QStyle::PE_IndicatorArrowUp,

@@ -82,7 +82,7 @@ protected:
 	
 	// Overrides for painting logic	
 	void updatePolish() override;
-	QSGNode *updatePaintNode(QSGNode *oldNode, QQuickItem::UpdatePaintNodeData *updatePaintNodeData) override;
+	QSGNode *updatePaintNode(QSGNode *oldNode, QQuickItem::UpdatePaintNodeData *) override;
 
 	// Event handling overrides
 	void itemChange(QQuickItem::ItemChange change, const QQuickItem::ItemChangeData &value) override;

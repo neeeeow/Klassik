@@ -39,10 +39,9 @@ namespace menuWidgets {
 			QPainter p(this);
 
 			// Draw the background
-			QStyleOptionHeader opt;
-			opt.initFrom(this);
-			opt.rect = rect(); // NOTE: PE_HeaderSection is replaced by CE_HeaderSection
-			style()->drawControl(QStyle::CE_HeaderSection, &opt, &p, this);
+			QStyleOptionHeader header;
+			header.initFrom(this);
+			style()->drawControl(QStyle::CE_HeaderSection, &header, &p, this);
 
 			// Draw the text
 			if (!m_text.isEmpty()) {
@@ -64,19 +63,14 @@ class PopupMenuTitle : public QWidgetAction
 	Q_OBJECT
 public:
 	PopupMenuTitle(const QString &title, QWidget *parent = nullptr)
-		: QWidgetAction(parent), m_text(title)
-
-	{
+		: QWidgetAction(parent) {
+		setText(title);
 		setEnabled(false); // by default, make it disabled
 	}
 
 protected:
-	QWidget* createWidget(QWidget *parent) override
-	{
-		return new menuWidgets::TitleWidget(m_text, parent); // Create our header inside of the title
+	QWidget* createWidget(QWidget *parent) override {
+		return new menuWidgets::TitleWidget(text(), parent); // Create our header inside of the title
 	}
-
-private:
-	QString m_text; // The text itself
 };
 

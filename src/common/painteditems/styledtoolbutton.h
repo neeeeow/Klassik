@@ -23,7 +23,7 @@ class StyledToolButton : public PaintedItem
 	Q_OBJECT
 	QML_ELEMENT
 public:
-    StyledToolButton(QQuickItem *parent = nullptr) : PaintedItem(parent) {}
+    explicit StyledToolButton(QQuickItem *parent = nullptr) : PaintedItem(parent) {}
 
 private:
 	void paint(QPainter *p) const override {		

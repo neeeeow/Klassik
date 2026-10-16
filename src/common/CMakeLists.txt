@@ -13,3 +13,4 @@ target_link_libraries(klassik_panelpopupitem PUBLIC
 )
 
 add_subdirectory(painteditems)
+add_subdirectory(actions)

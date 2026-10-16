@@ -126,9 +126,8 @@ PaintedItem::updatePolish()
 
 
 QSGNode *
-PaintedItem::updatePaintNode(QSGNode *oldNode, QQuickItem::UpdatePaintNodeData *updatePaintNodeData)
-{
-	Q_UNUSED(updatePaintNodeData);		
+PaintedItem::updatePaintNode(QSGNode *oldNode, QQuickItem::UpdatePaintNodeData *)
+{		
 	auto *node = static_cast<QSGSimpleTextureNode *>(oldNode);
 
 	if (m_paintedImage.isNull() || !window()) {

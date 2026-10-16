@@ -21,6 +21,7 @@ plasma_add_applet(com.github.neeeeow.klassik.taskmanager
         code/TaskTools.js
         KlassikBusyIndicator.qml
     CPP_SOURCES
+        ${KLASSIK_COMMON_DIR}/actions/actionfactory.cpp
         taskbackground.h
         ${KLASSIK_COMMON_DIR}/painteditems/styledframe.h
         ${KLASSIK_COMMON_DIR}/painteditems/styledarrow.h
@@ -30,8 +31,8 @@ plasma_add_applet(com.github.neeeeow.klassik.taskmanager
     GENERATE_APPLET_CLASS
 )
 
-
 target_link_libraries(com.github.neeeeow.klassik.taskmanager PRIVATE
+    klassik_actions
     klassik_painteditem
     Qt::Core
     Qt::Qml
