@@ -31,6 +31,10 @@ ToolButton {
 
     Layout.fillWidth: true
     Layout.fillHeight: true
+    Layout.minimumWidth: 0
+    Layout.minimumHeight: 0
+    Layout.preferredWidth: tasksRoot.vertical ? -1 : TaskManagerApplet.LayoutMetrics.preferredMaxWidth()
+    Layout.preferredHeight: tasksRoot.vertical ? TaskManagerApplet.LayoutMetrics.preferredMaxHeight() : -1
     Layout.maximumWidth: tasksRoot.vertical ? -1 : TaskManagerApplet.LayoutMetrics.preferredMaxWidth()
     Layout.maximumHeight: tasksRoot.vertical ? TaskManagerApplet.LayoutMetrics.preferredMaxHeight() : -1
 
