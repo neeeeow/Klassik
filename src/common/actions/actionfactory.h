@@ -12,7 +12,11 @@
 
 class ActionFactory : public QObject
 {
-	/* Class which creates various custom QActions to be used in QMenus */
+	/*
+	  Class which creates various custom QActions to be used in PlasmaExtras.Menus inside of QML
+	  NB: only place 'generic' actions in here, which are meant to be re-used between different
+	  menus. Applet specific QActions should be generated in their Plasma::Applet C++ subclass	 
+	 */
 	Q_OBJECT
 	QML_ELEMENT
 public:

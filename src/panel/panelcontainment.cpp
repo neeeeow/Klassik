@@ -38,9 +38,32 @@ PanelContainment::loadPalette()
 
 	// Colorize the palette
 	if (m_colorize) {
-		const QColor button = tintColor(palette.button().color());
-		const QColor window = tintColor(palette.window().color());		
-		palette = QPalette(button, window);
+		const QPalette::ColorGroup groups[] = {
+			QPalette::Active,
+			QPalette::Inactive,
+			QPalette::Disabled
+		};
+		for (QPalette::ColorGroup group : groups) {
+			// Base colors
+			const QColor buttonColor = tintColor(palette.color(group, QPalette::Button));
+			const QColor windowColor = tintColor(palette.color(group, QPalette::Window));
+
+			// Derive necessary brushes
+			const QBrush window = QBrush(windowColor);
+			const QBrush button = QBrush(buttonColor);			
+			const QBrush dark = QBrush(buttonColor.darker());
+			const QBrush mid = QBrush(buttonColor.darker(150));
+			const QBrush light = QBrush(buttonColor.lighter(150));
+
+			// Other brushes (taken directly from the palette)
+			const QBrush windowText = palette.brush(group, QPalette::WindowText);
+			const QBrush text = palette.brush(group, QPalette::Text);
+			const QBrush bright_text = palette.brush(group, QPalette::BrightText);
+			const QBrush base = palette.brush(group, QPalette::Base);
+
+			// Set the color group of the palette
+			palette.setColorGroup(group, windowText, button, light, dark, mid, text, bright_text, base, window);			
+		}
 	}
 
 	// Loads in the QPalette

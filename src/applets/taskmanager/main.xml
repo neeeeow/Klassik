@@ -105,6 +105,10 @@
       </choices>
       <default>1</default>
     </entry>
+    <entry name="showAllTasksMenu" type="Bool">
+      <label>Whether to the all tasks menu</label>
+      <default>true</default>
+    </entry>
   </group>
 
 </kcfg>

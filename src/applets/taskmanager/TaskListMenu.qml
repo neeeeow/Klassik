@@ -76,6 +76,15 @@ PlasmaExtras.Menu {
     function populateMenu(): void {
         clearMenuItems();
 
+        if (tasksModel.rowCount() === 0) {
+            // We should never be in this scenario, since we disable the task list button if
+            // the row count is 0, but we leave this here just in case.
+            const emptyItem = newMenuItem(menu);
+            emptyItem.enabled = false;
+            emptyItem.text = i18n("No Tasks");
+            return;
+        }
+
         // IDs of each desktop
         const desktopIds = virtualDesktopInfo.desktopIds.map(String);
         // model indices of each task per destop

@@ -20,10 +20,16 @@ KCMUtils.SimpleKCM {
     property alias cfg_taskMaxWidth: taskMaxWidth.currentIndex
     property alias cfg_taskMaxHeight: taskMaxHeight.currentIndex
 
+    property alias cfg_showAllTasksMenu: showAllTasksMenu.checked
     property alias cfg_drawFrame: drawFrame.checked
     property alias cfg_taskAppearance: taskAppearance.currentIndex
 
     Kirigami.FormLayout {
+        QQC2.CheckBox {
+            id: showAllTasksMenu
+            text: i18n("Show menu displaying all tasks")
+        }
+
         QQC2.CheckBox {
             id: drawFrame
             text: i18n("Draw a frame around the task manager")

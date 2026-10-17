@@ -60,7 +60,14 @@ PaintedItem::loadPalette()
 QPalette
 PaintedItem::palette() const
 {
-	return m_quickPalette ? m_quickPalette->toQPalette() : QPalette();
+	if (!m_quickPalette)
+		return QPalette();
+	QPalette palette = m_quickPalette->toQPalette();
+	if (isEnabled())
+		palette.setCurrentColorGroup(QPalette::Active);
+	else
+		palette.setCurrentColorGroup(QPalette::Disabled);   
+	return palette;
 }
 
 QStyleOption

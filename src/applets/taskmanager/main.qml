@@ -13,7 +13,6 @@ import QtQuick.Controls
 
 import org.kde.plasma.plasmoid
 import org.kde.plasma.core as PlasmaCore
-import org.kde.plasma.extras as PlasmaExtras
 
 import org.kde.taskmanager as TaskManager
 import plasma.applet.com.github.neeeeow.klassik.taskmanager as TaskManagerApplet
@@ -28,13 +27,15 @@ PlasmoidItem {
 
     readonly property bool vertical: Plasmoid.formFactor === PlasmaCore.Types.Vertical
 
-    // Usable task area (after subtracting frame area)
-    readonly property int margin: Plasmoid.configuration.drawFrame ? sunkenFrame.lineWidth : 0
-    readonly property real taskAreaWidth: tasks.width - 2*margin
-    readonly property real taskAreaHeight: tasks.height - 2*margin
-    // Area for the task list (minus the button)
-    readonly property real taskListAreaWidth: taskAreaWidth - (vertical ? 0 : taskListButton.width)
-    readonly property real taskListAreaHeight: taskAreaHeight - (vertical ? taskListButton.height : 0)
+    // Margin applied to the task manager
+    readonly property real margin: Plasmoid.configuration.drawFrame ? sunkenFrame.lineWidth : 0
+
+    // Width reserved for the task list button
+    readonly property real taskListButtonExtent: 12
+
+    // Total usable area for the tasks (excluding task list button!)
+    readonly property real taskAreaWidth: tasks.width - 2*margin - (Plasmoid.configuration.showAllTasksMenu ? (vertical ? 0 : taskListButtonExtent) : 0)
+    readonly property real taskAreaHeight: tasks.height - 2*margin - (Plasmoid.configuration.showAllTasksMenu ? (vertical ? 0 : taskListButtonExtent) : 0)
 
     readonly property Component contextMenuComponent: Qt.createComponent("ContextMenu.qml")
     readonly property Component groupMenuComponent: Qt.createComponent("GroupMenu.qml")
@@ -66,7 +67,7 @@ PlasmoidItem {
         groupMode: groupModeEnumValue(Plasmoid.configuration.groupingStrategy)
         groupInline: false // KDE 3 never had the option to group inline... follow that convention
         groupingWindowTasksThreshold: (Plasmoid.configuration.onlyGroupWhenFull
-            ? TaskManagerApplet.LayoutMetrics.optimumCapacity(tasks.taskListAreaWidth, tasks.taskListAreaHeight) + 1 : -1)
+            ? TaskManagerApplet.LayoutMetrics.optimumCapacity(tasks.taskAreaWidth, tasks.taskAreaHeight) + 1 : -1)
 
         onGroupingAppIdBlacklistChanged: {
             Plasmoid.configuration.groupingAppIdBlacklist = groupingAppIdBlacklist;
@@ -147,17 +148,8 @@ PlasmoidItem {
         }
     }
 
-    StyledFrame {
-        id: sunkenFrame
-        anchors.fill: parent
-        visible: Plasmoid.configuration.drawFrame
-        lineWidth: 1
-        sunken: true
-    }
-
     Item {
         anchors.fill: parent
-        anchors.margins: tasks.margin
 
         TaskManager.VirtualDesktopInfo {
             id: virtualDesktopInfo
@@ -224,78 +216,67 @@ PlasmoidItem {
             }
         }
 
-        ToolButton {
-            id: taskListButton
-            focusPolicy: Qt.NoFocus
-            width: tasks.vertical ? tasks.taskAreaWidth : 16
-            height: tasks.vertical ? 16 : tasks.taskAreaHeight
-            checked: taskListButton.menu?.status === PlasmaExtras.Menu.Open
-            onClicked: showMenu()
-
-            background: TaskBackground {
-                sunken: taskListButton.down || taskListButton.checked
-            }
-
-            contentItem: StyledArrow {
-                sunken: taskListButton.down || taskListButton.checked
-                hoverEnabled: taskListButton.hoverEnabled
-                direction: Up
-            }
-
-            // Task model used to display *all* tasks across each desktop
-            readonly property TaskManager.TasksModel allTasksModel: TaskManager.TasksModel {
-                filterByVirtualDesktop: false
-                filterByScreen: false
-                filterByActivity: false
-                filterNotMinimized: false
-                groupMode: TaskManager.TasksModel.GroupDisabled
-                sortMode: TaskManager.TasksModel.SortVirtualDesktop
-            }
-
-            // Set up the menu which displays the task list
-            readonly property Component menuComponent: Qt.createComponent("TaskListMenu.qml")
-            property QtObject menu: null
-            function showMenu(): void {
-                menu = menuComponent.createObject(taskListButton, {
-                    visualParent: taskListButton,
-                    tasksModel: taskListButton.allTasksModel,
-                }) as TaskManagerApplet.TaskListMenu;
-                menu.show();
-            }
+        StyledFrame {
+            id: sunkenFrame
+            anchors.fill: parent
+            visible: Plasmoid.configuration.drawFrame
+            lineWidth: 1
+            sunken: true
         }
 
         GridLayout {
-            id: taskList
-
-            property int count: tasksModel.count
-            readonly property int stripeCount: TaskManagerApplet.LayoutMetrics.stripeCount()
-            readonly property int orthogonalCount: TaskManagerApplet.LayoutMetrics.orthogonalCount(count)
-
+            anchors.fill: parent
+            anchors.margins: tasks.margin
             rowSpacing: 0
             columnSpacing: 0
-            rows: tasks.vertical ? orthogonalCount : stripeCount
-            columns: tasks.vertical ? stripeCount : orthogonalCount
-            flow: tasks.vertical ? Grid.LeftToRight : Grid.TopToBottom
+            flow: tasks.vertical ? GridLayout.TopToBottom : GridLayout.LeftToRight
 
-            LayoutMirroring.enabled: tasks.shouldBeMirrored(Plasmoid.configuration.reverseMode, Application.layoutDirection, tasks.vertical)
-            anchors {
-                left: tasks.vertical ? parent.left : taskListButton.right
-                top: tasks.vertical ? taskListButton.bottom : parent.top
+            Loader {
+                id: taskListButtonLoader
+                active: Plasmoid.configuration.showAllTasksMenu
+                visible: active
+
+                Layout.fillWidth: tasks.vertical ? true : false
+                Layout.fillHeight: tasks.vertical ? false : true
+                Layout.preferredWidth: tasks.vertical ? -1 : tasks.taskListButtonExtent
+                Layout.preferredHeight: tasks.vertical ? tasks.taskListButtonExtent : -1
+
+                sourceComponent: TaskListButton {}
             }
 
-            width: tasks.vertical
-                ? Math.min((tasks.taskAreaWidth / stripeCount) * count, tasks.taskListAreaWidth)
-                : Math.min(orthogonalCount * TaskManagerApplet.LayoutMetrics.preferredMaxWidth(), tasks.taskListAreaWidth)
-            height: tasks.vertical
-                ? Math.min(orthogonalCount * TaskManagerApplet.LayoutMetrics.preferredMaxHeight(), tasks.taskListAreaHeight)
-                : Math.min((tasks.taskAreaHeight / stripeCount) * count, tasks.taskListAreaHeight)
+            GridLayout {
+                id: taskList
 
-            Repeater {
-                id: taskRepeater
+                property int count: tasksModel.count
+                readonly property int stripeCount: TaskManagerApplet.LayoutMetrics.stripeCount()
+                readonly property int orthogonalCount: TaskManagerApplet.LayoutMetrics.orthogonalCount(count)
 
-                delegate: Task {
-                    tasksRoot: tasks
+                rowSpacing: 0
+                columnSpacing: 0
+                rows: tasks.vertical ? orthogonalCount : stripeCount
+                columns: tasks.vertical ? stripeCount : orthogonalCount
+                flow: tasks.vertical ? Grid.LeftToRight : Grid.TopToBottom
+
+                LayoutMirroring.enabled: tasks.shouldBeMirrored(Plasmoid.configuration.reverseMode, Application.layoutDirection, tasks.vertical)
+                Layout.alignment: Qt.AlignLeft | Qt.AlignTop
+                Layout.fillWidth: true
+                Layout.fillHeight: true
+                Layout.maximumWidth: tasks.vertical ? ((tasks.taskAreaWidth / stripeCount) * count) : (orthogonalCount * TaskManagerApplet.LayoutMetrics.preferredMaxWidth())
+                Layout.maximumHeight: tasks.vertical ? (orthogonalCount * TaskManagerApplet.LayoutMetrics.preferredMaxHeight()) : ((tasks.taskAreaHeight / stripeCount) * count)
+
+                Repeater {
+                    id: taskRepeater
+
+                    delegate: Task {
+                        tasksRoot: tasks
+                    }
                 }
+            }
+
+            Item {
+                // this item simply fills out empty space in our gridlayout
+                Layout.fillWidth: true
+                Layout.fillHeight: true
             }
         }
     }
