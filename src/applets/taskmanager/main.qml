@@ -9,13 +9,11 @@ pragma ComponentBehavior: Bound
 
 import QtQuick
 import QtQuick.Layouts
-import QtQuick.Controls
 
 import org.kde.plasma.plasmoid
 import org.kde.plasma.core as PlasmaCore
 
 import org.kde.taskmanager as TaskManager
-import plasma.applet.com.github.neeeeow.klassik.taskmanager as TaskManagerApplet
 
 PlasmoidItem {
     id: tasks
@@ -30,12 +28,12 @@ PlasmoidItem {
     // Margin applied to the task manager
     readonly property real margin: Plasmoid.configuration.drawFrame ? sunkenFrame.lineWidth : 0
 
-    // Width reserved for the task list button
-    readonly property real taskListButtonExtent: 12
+    // Width reserved for the window list button
+    readonly property real windowListButtonExtent: 12
 
-    // Total usable area for the tasks (excluding task list button!)
-    readonly property real taskAreaWidth: tasks.width - 2*margin - (Plasmoid.configuration.showAllTasksMenu ? (vertical ? 0 : taskListButtonExtent) : 0)
-    readonly property real taskAreaHeight: tasks.height - 2*margin - (Plasmoid.configuration.showAllTasksMenu ? (vertical ? 0 : taskListButtonExtent) : 0)
+    // Total usable area for the tasks (excluding window list button!)
+    readonly property real taskAreaWidth: tasks.width - 2*margin - (Plasmoid.configuration.showAllTasksMenu ? (vertical ? 0 : windowListButtonExtent) : 0)
+    readonly property real taskAreaHeight: tasks.height - 2*margin - (Plasmoid.configuration.showAllTasksMenu ? (vertical ? windowListButtonExtent : 0) : 0)
 
     readonly property Component contextMenuComponent: Qt.createComponent("ContextMenu.qml")
     readonly property Component groupMenuComponent: Qt.createComponent("GroupMenu.qml")
@@ -67,7 +65,7 @@ PlasmoidItem {
         groupMode: groupModeEnumValue(Plasmoid.configuration.groupingStrategy)
         groupInline: false // KDE 3 never had the option to group inline... follow that convention
         groupingWindowTasksThreshold: (Plasmoid.configuration.onlyGroupWhenFull
-            ? TaskManagerApplet.LayoutMetrics.optimumCapacity(tasks.taskAreaWidth, tasks.taskAreaHeight) + 1 : -1)
+            ? LayoutMetrics.optimumCapacity(tasks.taskAreaWidth, tasks.taskAreaHeight) + 1 : -1)
 
         onGroupingAppIdBlacklistChanged: {
             Plasmoid.configuration.groupingAppIdBlacklist = groupingAppIdBlacklist;
@@ -130,7 +128,7 @@ PlasmoidItem {
         target: Plasmoid
 
         function onLocationChanged(): void {
-            if (TaskManagerApplet.TaskTools.taskManagerInstanceCount >= 2) {
+            if (TaskTools.taskManagerInstanceCount >= 2) {
                 return;
             }
             // This is on a timer because the panel may not have
@@ -208,9 +206,10 @@ PlasmoidItem {
                     rotation += 15;
                     increment--;
                 }
-                const anchor = taskList.childAt(event.x, event.y);
+                const p = taskList.mapFromItem(wheelHandler.parent, event.x, event.y);
+                const anchor = taskList.childAt(p.x, p.y);
                 while (increment !== 0) {
-                    TaskManagerApplet.TaskTools.activateNextPrevTask(anchor, increment < 0, Plasmoid.configuration.wheelSkipMinimized, Plasmoid.configuration.wheelEnabled, tasks);
+                    TaskTools.activateNextPrevTask(anchor, increment < 0, Plasmoid.configuration.wheelSkipMinimized, Plasmoid.configuration.wheelEnabled, tasks);
                     increment += (increment < 0) ? 1 : -1;
                 }
             }
@@ -230,26 +229,27 @@ PlasmoidItem {
             rowSpacing: 0
             columnSpacing: 0
             flow: tasks.vertical ? GridLayout.TopToBottom : GridLayout.LeftToRight
+            LayoutMirroring.enabled: tasks.shouldBeMirrored(Plasmoid.configuration.reverseMode, Application.layoutDirection, tasks.vertical)
 
             Loader {
-                id: taskListButtonLoader
+                id: windowListButtonLoader
                 active: Plasmoid.configuration.showAllTasksMenu
                 visible: active
 
                 Layout.fillWidth: tasks.vertical ? true : false
                 Layout.fillHeight: tasks.vertical ? false : true
-                Layout.preferredWidth: tasks.vertical ? -1 : tasks.taskListButtonExtent
-                Layout.preferredHeight: tasks.vertical ? tasks.taskListButtonExtent : -1
+                Layout.preferredWidth: tasks.vertical ? -1 : tasks.windowListButtonExtent
+                Layout.preferredHeight: tasks.vertical ? tasks.windowListButtonExtent : -1
 
-                sourceComponent: TaskListButton {}
+                sourceComponent: WindowListButton {}
             }
 
             GridLayout {
                 id: taskList
 
                 property int count: tasksModel.count
-                readonly property int stripeCount: TaskManagerApplet.LayoutMetrics.stripeCount()
-                readonly property int orthogonalCount: TaskManagerApplet.LayoutMetrics.orthogonalCount(count)
+                readonly property int stripeCount: LayoutMetrics.stripeCount()
+                readonly property int orthogonalCount: LayoutMetrics.orthogonalCount(count)
 
                 rowSpacing: 0
                 columnSpacing: 0
@@ -261,8 +261,8 @@ PlasmoidItem {
                 Layout.alignment: Qt.AlignLeft | Qt.AlignTop
                 Layout.fillWidth: true
                 Layout.fillHeight: true
-                Layout.maximumWidth: tasks.vertical ? ((tasks.taskAreaWidth / stripeCount) * count) : (orthogonalCount * TaskManagerApplet.LayoutMetrics.preferredMaxWidth())
-                Layout.maximumHeight: tasks.vertical ? (orthogonalCount * TaskManagerApplet.LayoutMetrics.preferredMaxHeight()) : ((tasks.taskAreaHeight / stripeCount) * count)
+                Layout.maximumWidth: tasks.vertical ? ((tasks.taskAreaWidth / stripeCount) * count) : (orthogonalCount * LayoutMetrics.preferredMaxWidth())
+                Layout.maximumHeight: tasks.vertical ? (orthogonalCount * LayoutMetrics.preferredMaxHeight()) : ((tasks.taskAreaHeight / stripeCount) * count)
 
                 Repeater {
                     id: taskRepeater
@@ -282,7 +282,7 @@ PlasmoidItem {
     }
 
     function publishIconGeometries(taskItems: /*list<Item>*/var): void {
-        if (TaskManagerApplet.TaskTools.taskManagerInstanceCount >= 2) {
+        if (TaskTools.taskManagerInstanceCount >= 2) {
             return;
         }
         for (let i = 0; i < taskItems.length - 1; ++i) {
@@ -304,7 +304,7 @@ PlasmoidItem {
 
         const task = taskRepeater.itemAt(index) as Task;
         if (task) {
-            TaskManagerApplet.TaskTools.activateTask(task.modelIndex(), task.model, task, Plasmoid, this);
+            TaskTools.activateTask(task.modelIndex(), task.model, task, Plasmoid, this);
         }
     }
 
@@ -346,11 +346,11 @@ PlasmoidItem {
     }
 
     Component.onCompleted: {
-        TaskManagerApplet.TaskTools.taskManagerInstanceCount += 1;
+        TaskTools.taskManagerInstanceCount += 1;
         requestLayout.connect(iconGeometryTimer.restart);
     }
 
     Component.onDestruction: {
-        TaskManagerApplet.TaskTools.taskManagerInstanceCount -= 1;
+        TaskTools.taskManagerInstanceCount -= 1;
     }
 }

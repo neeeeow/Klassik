@@ -9,14 +9,13 @@ import org.kde.plasma.plasmoid
 import org.kde.plasma.core as PlasmaCore
 import org.kde.plasma.extras as PlasmaExtras
 import org.kde.taskmanager as TaskManager
-import plasma.applet.com.github.neeeeow.klassik.taskmanager as TaskManagerApplet
 
 PlasmaExtras.Menu {
     id: menu
 
     required property var tasksModel
     readonly property TaskManager.VirtualDesktopInfo virtualDesktopInfo: TaskManager.VirtualDesktopInfo {}
-    readonly property TaskManagerApplet.ActionFactory actionFactory: TaskManagerApplet.ActionFactory {}
+    readonly property ActionFactory actionFactory: ActionFactory {}
 
     placement: {
         if (Plasmoid.location === PlasmaCore.Types.LeftEdge) {
@@ -119,7 +118,6 @@ PlasmaExtras.Menu {
 
             const title = newMenuItem(menu);
             title.action = actionFactory.popupTitle(menu, virtualDesktopInfo.desktopNames[i], "user-desktop");
-            addMenuItem(title);
 
             for (const modelIndex of desktopTasks[i]) {
                 addMenuItem(createTaskItem(modelIndex));

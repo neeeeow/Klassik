@@ -16,8 +16,8 @@ plasma_add_applet(com.github.neeeeow.klassik.taskmanager
         GroupContextMenu.qml
         main.qml
         Task.qml
-        TaskListButton.qml
-        TaskListMenu.qml
+        WindowListButton.qml
+        WindowListMenu.qml
         code/LayoutMetrics.js
         code/TaskTools.js
         KlassikBusyIndicator.qml

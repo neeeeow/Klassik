@@ -9,7 +9,6 @@ import org.kde.plasma.plasmoid
 import org.kde.plasma.core as PlasmaCore
 import org.kde.plasma.extras as PlasmaExtras
 import org.kde.taskmanager as TaskManager
-import plasma.applet.com.github.neeeeow.klassik.taskmanager as TaskManagerApplet
 
 PlasmaExtras.Menu {
     id: menu
@@ -53,7 +52,7 @@ PlasmaExtras.Menu {
     function populateMenu(): void {
         clearMenuItems();
 
-        TaskManagerApplet.TaskTools.foreachChildTask((childIndex) => {
+        TaskTools.foreachChildTask((childIndex) => {
             const item = newMenuItem(menu);
             const isActive = tasksModel.data(childIndex, TaskManager.AbstractTasksModel.IsActive);
 
@@ -73,8 +72,6 @@ PlasmaExtras.Menu {
                     tasksModel.requestActivate(childIndex);
                 }
             });
-
-            addMenuItem(item);
         }, menu.modelIndex, tasksModel);
     }
 }

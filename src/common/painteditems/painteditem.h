@@ -27,19 +27,20 @@ class PaintedItem : public QQuickItem
 	// QStyle::State_MouseOver. By default, both flags are off. Note: we
 	// make hovered read only since it must never be set outside of our C++ code
 	Q_PROPERTY(bool sunken MEMBER m_sunken NOTIFY propertyChanged FINAL)
-	Q_PROPERTY(bool hovered READ isHovered NOTIFY propertyChanged FINAL)
+	Q_PROPERTY(bool hovered MEMBER m_hovered NOTIFY propertyChanged FINAL)
+
+	// Sets whether or not the QQuickItem should handle the hovered state internally
+	// Set false to manually override the hovered property. Manually setting hovered with hoverEnabled
+	// equal true will lead to undefined behaviour!!!!!
 	Q_PROPERTY(bool hoverEnabled READ isHoverEnabled WRITE setHoverEnabled NOTIFY propertyChanged FINAL)
 	
 public:
 	explicit PaintedItem(QQuickItem *parent = nullptr);
 
-	bool isHovered() const { return m_hovered; }
 	bool isHoverEnabled() const { return m_hoverEnabled; }
 	void setHoverEnabled(bool hoverEnabled) {
 		if (hoverEnabled != m_hoverEnabled) {
-			m_hoverEnabled = hoverEnabled;
-			if (!m_hoverEnabled)
-				m_hovered = false;			
+			m_hoverEnabled = hoverEnabled;			
 			setAcceptHoverEvents(m_hoverEnabled);
 			Q_EMIT propertyChanged();
 		}
@@ -65,6 +66,7 @@ protected:
 
 	// Returns state flags used by QStyle
 	bool isSunken() const { return m_sunken; }
+	bool isHovered() const { return m_hovered; }
 	
 	// Returns the QRect which represents the area to which the QQuickItem is painted on.
 	// Only call from within paint(), m_paintedImage is only guaranteed to be non-null there.

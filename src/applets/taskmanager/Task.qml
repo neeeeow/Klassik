@@ -16,7 +16,6 @@ import QtQuick.Controls
 import org.kde.plasma.core as PlasmaCore
 import org.kde.plasma.extras as PlasmaExtras
 import org.kde.kirigami as Kirigami
-import plasma.applet.com.github.neeeeow.klassik.taskmanager as TaskManagerApplet
 import org.kde.plasma.plasmoid
 
 import org.kde.taskmanager as TaskManager
@@ -31,12 +30,10 @@ ToolButton {
 
     Layout.fillWidth: true
     Layout.fillHeight: true
-    Layout.minimumWidth: 0
-    Layout.minimumHeight: 0
-    Layout.preferredWidth: tasksRoot.vertical ? -1 : TaskManagerApplet.LayoutMetrics.preferredMaxWidth()
-    Layout.preferredHeight: tasksRoot.vertical ? TaskManagerApplet.LayoutMetrics.preferredMaxHeight() : -1
-    Layout.maximumWidth: tasksRoot.vertical ? -1 : TaskManagerApplet.LayoutMetrics.preferredMaxWidth()
-    Layout.maximumHeight: tasksRoot.vertical ? TaskManagerApplet.LayoutMetrics.preferredMaxHeight() : -1
+    Layout.maximumWidth: tasksRoot.vertical ? -1 : LayoutMetrics.preferredMaxWidth()
+    Layout.maximumHeight: tasksRoot.vertical ? LayoutMetrics.preferredMaxHeight() : -1
+    Layout.preferredWidth: Layout.maximumWidth // Ensure the tasks always try to fill up the maximum space they have available
+    Layout.preferredHeight: Layout.maximumHeight
 
     leftPadding: 4
     rightPadding: 4
@@ -45,6 +42,7 @@ ToolButton {
 
     focusPolicy: Qt.NoFocus
     checked: task.model.IsActive
+    hoverEnabled: true
 
     required property var model
     required property int index
@@ -79,7 +77,7 @@ ToolButton {
 
     function showGroupMenu(): void {
         toolTipArea.hideImmediately();
-        groupMenu = tasksRoot.createGroupMenu(task, modelIndex()) as TaskManagerApplet.GroupMenu;
+        groupMenu = tasksRoot.createGroupMenu(task, modelIndex()) as GroupMenu;
         groupMenu.show();
     }
 
@@ -93,7 +91,7 @@ ToolButton {
     }
 
     onChildCountChanged: {
-        if (TaskManagerApplet.TaskTools.taskManagerInstanceCount < 2 && childCount > previousChildCount) {
+        if (TaskTools.taskManagerInstanceCount < 2 && childCount > previousChildCount) {
             tasksModel.requestPublishDelegateGeometry(modelIndex(), tasksRoot.globalRect(task), task);
         }
 
@@ -109,7 +107,7 @@ ToolButton {
 
     onClicked: {
         toolTipArea.hideToolTip();
-        TaskManagerApplet.TaskTools.activateTask(modelIndex(), model, task, Plasmoid, tasksRoot);
+        TaskTools.activateTask(modelIndex(), model, task, Plasmoid, tasksRoot);
     }
 
     MouseArea {
@@ -134,7 +132,7 @@ ToolButton {
                         tasksModel.requestToggleGrouping(modelIndex());
                         break;
                     case Task.MiddleClickAction.BringToCurrentDesktop:
-                        TaskManagerApplet.TaskTools.foreachChildTask((childIndex) => {
+                        TaskTools.foreachChildTask((childIndex) => {
                             tasksModel.requestVirtualDesktops(childIndex, [virtualDesktopInfo.currentDesktopByScreenGeometry(tasksModel.data(childIndex, TaskManager.AbstractTasksModel.ScreenGeometry))]);
                         }, modelIndex(), tasksModel);
                         break;
@@ -162,6 +160,7 @@ ToolButton {
 
     contentItem: RowLayout {
         spacing: Kirigami.Units.smallSpacing
+        opacity: task.model.IsMinimized ? 0.5 : 1.0
 
         Item {
             id: iconBox
@@ -171,7 +170,6 @@ ToolButton {
             Kirigami.Icon {
                 anchors.fill: parent
                 source: task.model.decoration
-                opacity: task.model.IsMinimized ? 0.5 : 1.0
             }
 
             Loader {
@@ -185,14 +183,13 @@ ToolButton {
             Layout.fillWidth: true
             Layout.alignment: Qt.AlignVCenter
 
-            visible: (task.width - iconBox.width - Kirigami.Units.smallSpacing) >= TaskManagerApplet.LayoutMetrics.spaceRequiredToShowText()
+            visible: (task.width - iconBox.width - Kirigami.Units.smallSpacing) >= LayoutMetrics.spaceRequiredToShowText()
 
             text: task.model.display
             elide: Text.ElideRight
             textFormat: Text.PlainText
             maximumLineCount: 1
             font.bold: task.model.IsActive || task.model.IsDemandingAttention
-            opacity: task.model.IsMinimized ? 0.5 : 1.0
         }
     }
 

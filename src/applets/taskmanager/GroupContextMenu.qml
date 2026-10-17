@@ -12,7 +12,6 @@ import org.kde.plasma.core as PlasmaCore
 import org.kde.plasma.extras as PlasmaExtras
 
 import org.kde.taskmanager as TaskManager
-import plasma.applet.com.github.neeeeow.klassik.taskmanager as TaskManagerApplet
 
 PlasmaExtras.Menu {
     id: menu
@@ -78,13 +77,11 @@ PlasmaExtras.Menu {
         clearMenuItems();
 
         // Add per-task controls
-        TaskManagerApplet.TaskTools.foreachChildTask((childIndex) => {
+        TaskTools.foreachChildTask((childIndex) => {
             const item = newMenuItem(menu);
 
             item.text = tasksModel.data(childIndex, Qt.DisplayRole) || "";
             item.icon = tasksModel.data(childIndex, Qt.DecorationRole) || "";
-
-            addMenuItem(item);
 
             taskMenuComponent.createObject(menu, {
                 visualParent: item.action,
@@ -111,7 +108,7 @@ PlasmaExtras.Menu {
                 }
 
                 let isAnyTaskNotOnCurrentDesktop = false;
-                TaskManagerApplet.TaskTools.foreachChildTask((childIndex) => {
+                TaskTools.foreachChildTask((childIndex) => {
                     const screenGeometry = tasksModel.data(childIndex, TaskManager.AbstractTasksModel.ScreenGeometry);
                     const currentDesktop = virtualDesktopInfo.currentDesktopByScreenGeometry(screenGeometry);
                     isAnyTaskNotOnCurrentDesktop = isAnyTaskNotOnCurrentDesktop || tasksModel.data(childIndex, TaskManager.AbstractTasksModel.VirtualDesktops).indexOf(currentDesktop) === -1;
@@ -120,7 +117,7 @@ PlasmaExtras.Menu {
                 return isAnyTaskNotOnCurrentDesktop;
             });
             menuItem.clicked.connect(() => {
-                TaskManagerApplet.TaskTools.foreachChildTask((childIndex) => {
+                TaskTools.foreachChildTask((childIndex) => {
                     tasksModel.requestVirtualDesktops(childIndex, [virtualDesktopInfo.currentDesktopByScreenGeometry(tasksModel.data(childIndex, TaskManager.AbstractTasksModel.ScreenGeometry))]);
                 }, menu.modelIndex, tasksModel);
             });

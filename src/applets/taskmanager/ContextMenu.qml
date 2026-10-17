@@ -15,7 +15,6 @@ import org.kde.plasma.core as PlasmaCore
 import org.kde.plasma.extras as PlasmaExtras
 
 import org.kde.taskmanager as TaskManager
-import plasma.applet.com.github.neeeeow.klassik.taskmanager as TaskManagerApplet
 
 PlasmaExtras.Menu {
     id: menu
@@ -113,7 +112,7 @@ PlasmaExtras.Menu {
             }
 
             PlasmaExtras.MenuItem {
-                enabled: menu.visualParent && menu.get(TaskManager.AbstractTasksModel.CanSetNoBoder)
+                enabled: menu.visualParent && menu.get(TaskManager.AbstractTasksModel.CanSetNoBorder)
 
                 checkable: true
                 checked: menu.visualParent && menu.get(TaskManager.AbstractTasksModel.HasNoBorder)
@@ -201,7 +200,7 @@ PlasmaExtras.Menu {
                     }
 
                     let isAnyTaskNotOnCurrentDesktop = false;
-                    TaskManagerApplet.TaskTools.foreachChildTask((childIndex) => {
+                    TaskTools.foreachChildTask((childIndex) => {
                         const screenGeometry = tasksModel.data(childIndex, TaskManager.AbstractTasksModel.ScreenGeometry);
                         const currentDesktop = virtualDesktopInfo.currentDesktopByScreenGeometry(screenGeometry);
                         isAnyTaskNotOnCurrentDesktop = isAnyTaskNotOnCurrentDesktop || tasksModel.data(childIndex, TaskManager.AbstractTasksModel.VirtualDesktops).indexOf(currentDesktop) === -1;
@@ -210,7 +209,7 @@ PlasmaExtras.Menu {
                     return isAnyTaskNotOnCurrentDesktop;
                 });
                 menuItem.clicked.connect(() => {
-                    TaskManagerApplet.TaskTools.foreachChildTask((childIndex) => {
+                    TaskTools.foreachChildTask((childIndex) => {
                         tasksModel.requestVirtualDesktops(childIndex, [virtualDesktopInfo.currentDesktopByScreenGeometry(tasksModel.data(childIndex, TaskManager.AbstractTasksModel.ScreenGeometry))]);
                     }, menu.modelIndex, tasksModel);
                 });
