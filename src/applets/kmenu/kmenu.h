@@ -9,18 +9,13 @@
 #include "servicemenu.h"
 
 class SessionManagement;
-namespace KActivities::Stats {
-	class ResultModel;
-}
 
 class KMenu final : public ServiceMenu
 {
 	Q_OBJECT
 	
 public:
-	explicit KMenu(KMenuApplet *applet, QWidget *parent = nullptr);
-
-	void reinitialize() override;
+	explicit KMenu(ServiceMenuApplet *applet, QWidget *parent = nullptr);
 
 protected:	
 	void changeEvent(QEvent *event) override;
@@ -37,8 +32,8 @@ private:
 		bool drawSideImage = true;
 		bool showTitles = true;
 		bool showSearch = true;
-		bool showRecentApps = true;
-		int numRecentApps = 3;
+		bool showMostUsedApps = true;
+		int numMostUsedApps = 3;
 		bool showRecentDocs = true;
 		bool showSystem = true;
 		bool showSettings = true;		
@@ -52,25 +47,14 @@ private:
 	QPixmap m_sidePixmap;
 	QPixmap m_sideTilePixmap;
 	
-	// Action to which we anchor the applications. Declare as QPointer as the menu can
-	// be cleared externally, which might destroy the anchor.
-	QPointer<QAction> m_applicationsAnchor = nullptr;
+	// List of applications in the menu, for use with the search bar
+	QList<QPointer<QAction>> m_applicationActions;
+	QList<QAction *> applicationActions() const {
+		return QList<QAction *>(m_applicationActions.begin(), m_applicationActions.end());
+	}
 
-	// ResultModels for recent apps
-	KActivities::Stats::ResultModel *m_recentApps = nullptr;
-
-	// Action lists
-	QList<QAction *> m_recentActions; // List of actions linking to recent applications
-	QList<QAction *> m_applicationActions; // List of actions in the root of the applications list
-	QList<QAction *> m_sessionActions; // List of actions for the session
-
-	// Flags which mark whether any of our action list actions are dirty
-	bool m_recentDirty = false;
-	bool m_applicationDirty = false;
-	bool m_sessionDirty = false;
-
+	void rebuild() override;
 	void populate() override;
-	void refreshContents() override;
 	
 	// Sets the margin dependant on the side pixmap setting
 	void setMargins();
@@ -79,12 +63,8 @@ private:
 	void loadSidePixmap();
 	QRect sideImageRect() const;
 
-	// Functions for populating the menu
-	void createRecentMenuItems();
-	void updateRecent();
-	void createApplicationsItems();	  
-	void updateApplications();
-	void updateSessionActions();
+	// Returns the actions corresponding to the most used applications section
+	QList<QAction *> mostUsedAppsActions();
 
 	// Enables/disables actions based on a search filter. If the search filter text
 	// is empty, all actions are enabled. Returns a bool corresponding to whether or

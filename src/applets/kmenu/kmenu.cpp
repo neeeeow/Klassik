@@ -5,9 +5,9 @@
 */
 
 #include "kmenu.h"
-#include "kmenuapplet.h"
-#include "popupmenutitle.h"
-#include "popupmenusearch.h"
+#include "servicemenuapplet.h"
+#include "kmenumenutitle.h"
+#include "kmenumenusearch.h"
 #include "recentdocsmenu.h"
 #include "settingsmenu.h"
 #include "systemmenu.h"
@@ -22,27 +22,16 @@
 #include <KLocalizedString>
 #include <KSycoca>
 
-#include <PlasmaActivities/Stats/ResultModel>
+#include <PlasmaActivities/Stats/ResultSet>
 #include <PlasmaActivities/Stats/Query>
 
 #include <sessionmanagement.h>
 
-KMenu::KMenu(KMenuApplet *applet, QWidget *parent)
+KMenu::KMenu(ServiceMenuApplet *applet, QWidget *parent)
 	: ServiceMenu(applet, parent),
 	  m_session(new SessionManagement(this))
 {
 	initialize(); // Populate menu items
-	// Connect the signal in the constructor since this connection has no dependance
-	// on any object which are created during initialization
-	connect(KSycoca::self(), &KSycoca::databaseChanged, this, [this]() {
-		markDirty();
-		m_applicationDirty = true;
-	});
-	const auto markSessionDirty = [this] { markDirty(); m_sessionDirty = true; };
-	connect(m_session, &SessionManagement::canSwitchUserChanged, this, markSessionDirty);
-	connect(m_session, &SessionManagement::canLockChanged, this, markSessionDirty);
-	connect(m_session, &SessionManagement::canLogoutChanged, this, markSessionDirty);
-	connect(m_session, &SessionManagement::stateChanged, this, markSessionDirty);	
 }
 
 void
@@ -78,63 +67,90 @@ KMenu::paintEvent(QPaintEvent *e)
 }
 
 void
-KMenu::populate()
+KMenu::rebuild()
 {
-	// Reset dirty flags
-	m_recentDirty = m_applicationDirty = m_sessionDirty = false;
-
 	// Load the configuration
 	if (applet()) {
 		m_config.drawSideImage	= applet()->getConfigValue<bool>(QStringLiteral("drawSideImage"));
 		m_config.showTitles		= applet()->getConfigValue<bool>(QStringLiteral("showTitles"));
 		m_config.showSearch		= applet()->getConfigValue<bool>(QStringLiteral("showSearch"));
-		m_config.showRecentApps = applet()->getConfigValue<bool>(QStringLiteral("showRecentApps"));
-		m_config.numRecentApps	= applet()->getConfigValue<int>(QStringLiteral("numRecentApps"));
+		m_config.showMostUsedApps = applet()->getConfigValue<bool>(QStringLiteral("showRecentApps"));
+		m_config.numMostUsedApps	= applet()->getConfigValue<int>(QStringLiteral("numRecentApps"));
 		m_config.showRecentDocs = applet()->getConfigValue<bool>(QStringLiteral("showRecentDocs"));
 		m_config.showSystem		= applet()->getConfigValue<bool>(QStringLiteral("showSystem"));	
 		m_config.showSettings	= applet()->getConfigValue<bool>(QStringLiteral("showSettings"));
 	}
-	
+
+	// Load in pixmaps and set margins
 	loadSidePixmap();
 	setMargins();
+}
+
+void
+KMenu::populate()
+{
+	m_applicationActions.clear();
 	
-	// Add the section headers
-	if (m_config.showTitles) {
-		addAction(new PopupMenuTitle(i18n("All Applications"), this));	
-		m_applicationsAnchor = new PopupMenuTitle(i18n("Actions"), this);
-		addAction(m_applicationsAnchor);
-	} else {
-		if (m_config.showRecentApps)
+	// Most used applications section
+	if (m_config.showMostUsedApps) {
+		if (m_config.showTitles)
+			addAction(new KMenuTitle(i18n("Most Used Applications"), this));
+		addActions(mostUsedAppsActions());
+		if (!m_config.showTitles)
 			addSeparator();
-		m_applicationsAnchor = addSeparator();
 	}
 
-	// Add recent menu items and applications list
-	if (m_config.showRecentApps)
-		createRecentMenuItems();	
-	createApplicationsItems();
+	if (m_config.showTitles)
+		addAction(new KMenuTitle(i18n("All Applications"), this));		
 
-	// Add actions section
+	// All applications search bar
+	if (m_config.showSearch) {
+		auto *search = new KMenuSearch(i18n("Press '/' to search..."), Qt::Key_Slash, this);
+		addAction(search);				
+		if (QLineEdit *lineEdit = search->lineEdit()) {
+			connect(this, &QMenu::aboutToHide, lineEdit, &QLineEdit::clear);
+			connect(this, &QMenu::aboutToHide, lineEdit, &QLineEdit::clearFocus);
+			connect(lineEdit, &QLineEdit::textChanged, this, [this](QStringView text) {
+				applySearchFilter(applicationActions(), text.trimmed());
+			});
+		}
+	}
+
+	// All applications entries
+	const QList<QAction *> appActions = createActionsFromServiceGroup(KServiceGroup::root());		
+	if (appActions.isEmpty()) {
+		QAction *emptyAction = addAction(i18n("No Entries"));
+		emptyAction->setEnabled(false);
+	} else {
+		m_applicationActions = QList<QPointer<QAction>>(appActions.begin(), appActions.end());
+		addActions(applicationActions());
+	}
+
+	// Actions section
+	if (m_config.showTitles)
+		addAction(new KMenuTitle(i18n("Actions"), this));
+	else
+		addSeparator();
 
 	// NB: we do not need to worry about memory leaks here, since
 	// our actionEvent handler automatically deletes menus associated with
 	// any QAction that gets deleted
 	if (m_config.showRecentDocs) {
 		// Recent documents submenu
-		auto *documentsMenu = new RecentDocsMenu(i18n("Recent Documents"), applet(), this);
-		documentsMenu->setIcon(QIcon::fromTheme(QStringLiteral("document-open-recent")));
+		auto *documentsMenu = new RecentDocsMenu(QIcon::fromTheme(QStringLiteral("document-open-recent")),
+												 i18n("Recent Documents"), applet(), this);
 		addMenu(documentsMenu);
 	}
 	if (m_config.showSystem) {
 		// My system submenu
-		auto *systemMenu = new SystemMenu(i18n("My System"), applet(), this);
-		systemMenu->setIcon(QIcon::fromTheme(QStringLiteral("computer")));
+		auto *systemMenu = new SystemMenu(QIcon::fromTheme(QStringLiteral("computer")),
+										  i18n("My System"), applet(), this);
 		addMenu(systemMenu);
 	}
 	if (m_config.showSettings) {
 		// Settings submenu
-		auto *settingsMenu = new SettingsMenu(i18n("Settings"), applet(), this);
-		settingsMenu->setIcon(QIcon::fromTheme(QStringLiteral("preferences-desktop")));
+		auto *settingsMenu = new SettingsMenu(QIcon::fromTheme(QStringLiteral("preferences-desktop")),
+											  i18n("Settings"), applet(), this);
 		addMenu(settingsMenu);
 	}
 
@@ -142,56 +158,25 @@ KMenu::populate()
 		addSeparator();
 
 	// Add the run command option
-	QAction *action = addAction(QIcon::fromTheme(QStringLiteral("system-run")), i18n("Run Command…"));
-	connect(action, &QAction::triggered, this, [](){invokeKRunner();});	  
+	QAction *runAction = addAction(QIcon::fromTheme(QStringLiteral("system-run")), i18n("Run Command…"));
+	connect(runAction, &QAction::triggered, this, [](){invokeKRunner();});
 
-	updateSessionActions();
-}
-
-void
-KMenu::reinitialize()
-{
-	if (!initialized())
-		return;
-	
-	setInitialized(false);
-
-	// Clear action lists
-	m_recentActions.clear();
-	m_applicationActions.clear();
-	m_sessionActions.clear();
-	
-	// Clear out the menu
-	clear();
-
-	// Clear out recent apps model
-	if (m_recentApps) {
-		m_recentApps->disconnect(this);
-		m_recentApps->deleteLater();
-		m_recentApps = nullptr;
-	}
-
-	m_applicationsAnchor = nullptr; // avoid dangling pointer
-
-	// Reset the pixmaps, to save memory	
-	m_sidePixmap = QPixmap();
-	m_sideTilePixmap = QPixmap();
-
-	// Finally, call initialize() again
-	initialize();
-}
-
-void
-KMenu::refreshContents()
-{
-	if (m_recentDirty)
-		updateRecent();
-	if (m_applicationDirty)
-		updateApplications();
-	if (m_sessionDirty)
-		updateSessionActions();
-
-	m_recentDirty = m_applicationDirty = m_sessionDirty = false;
+	if (m_session->canSwitchUser() || m_session->canLock() || m_session->canLogout()) {
+		addSeparator();
+		QAction *action;
+		if (m_session->canSwitchUser()) {
+			action = addAction(QIcon::fromTheme(QStringLiteral("system-switch-user")), i18n("Switch User"));
+			connect(action, &QAction::triggered, m_session, &SessionManagement::switchUser);
+		}
+		if (m_session->canLock()) {
+			action = addAction(QIcon::fromTheme(QStringLiteral("system-lock-screen")), i18n("Lock Session"));
+			connect(action, &QAction::triggered, m_session, &SessionManagement::lock);
+		}
+		if (m_session->canLogout()) {
+			action = addAction(QIcon::fromTheme(QStringLiteral("system-log-out")), i18n("Log Out…"));
+			connect(action, &QAction::triggered, m_session, &SessionManagement::requestLogoutPrompt);
+		}
+	}	
 }
 
 void
@@ -277,11 +262,13 @@ KMenu::sideImageRect() const
 	return style()->visualRect(layoutDirection(), rect(), pixRect);
 }
 
-void
-KMenu::createRecentMenuItems()
-{	
+QList<QAction *>
+KMenu::mostUsedAppsActions()
+{
+	QList<QAction *> actions;
+	
 	using namespace KActivities::Stats;
-	using namespace KActivities::Stats::Terms;
+	using namespace KActivities::Stats::Terms;	
 	
 	// Create the query used for tracking the most used applications
 	const auto query = UsedResources
@@ -289,135 +276,32 @@ KMenu::createRecentMenuItems()
 		| Agent::any()
 		| Type::any()
 		| Url::startsWith(QStringLiteral("applications:"))
-		| Activity::current()
-		| Limit(qMax(m_config.numRecentApps, 1));
+		| Activity::current();
 
-	if (m_recentApps) {
-		m_recentApps->disconnect(this);
-		m_recentApps->deleteLater();
-	}
-	m_recentApps = new ResultModel(query, this);
+	ResultSet results(query);
+	ResultSet::const_iterator resultIt;
+    resultIt = results.begin();
+    while (actions.count() < m_config.numMostUsedApps && resultIt != results.end()) {
+		const QString resource = (*resultIt).resource();
+		++resultIt;
 
-	// Whenever an application is launched, update the recent apps list
-	connectModel(m_recentApps, {&m_recentDirty});
-
-	// Update the list once to initially populate it
-	updateRecent();
-}
-
-void
-KMenu::updateRecent()
-{
-	/* Updates and populates the most used applications section. It probably *shouldn't* be
-	   called updateRecent, but we follow the convention used by the original KDE 3 KMenu,
-	   even if it doesn't make sense. */
-	
-	cleanupActionList(m_recentActions);
-	if (!m_recentApps)
-		return;
-
-	// Add the section header here so we can clear it if necessary
-	if (m_config.showTitles) {
-		auto *recentHeader = new PopupMenuTitle(i18n("Most Used Applications"), this);
-		m_recentActions.append(recentHeader);
-	}
-
-	QList<QAction *> actionList;
-	for (int i=0; i < m_recentApps->rowCount(); ++i) {
-		const QModelIndex index = m_recentApps->index(i,0);
-		
-		const QUrl resourceUrl(m_recentApps->data(index, KActivities::Stats::ResultModel::ResourceRole).toString());
+		const QUrl resourceUrl(resource);
 		if (resourceUrl.scheme() != QStringLiteral("applications"))
 			continue; // The resource url should always point to an application, but just to be safe
-		const QString storageId = resourceUrl.path();
-		// really we should filter out service->noDisplay(), but plasma does not do this in its own applications
-		// menu, so we just follow convention.
-		const KService::Ptr service = KService::serviceByStorageId(storageId);
+		const KService::Ptr service = KService::serviceByStorageId(resourceUrl.path());
+		if (!service || service->noDisplay())
+			continue;
 		if (QAction *action = createActionFromService(service))
-			actionList.append(action);
+			actions.append(action);
 	}
 
-	if (actionList.isEmpty()) {
+	if (actions.isEmpty()) {
 		auto *emptyAction = new QAction(i18n("No Entries"), this);
 		emptyAction->setEnabled(false);
-		m_recentActions.append(emptyAction);	
-	} else {	
-		m_recentActions.append(actionList);
+		actions.append(emptyAction);
 	}
 
-	// Append the actions to the top of the menu (recent applications *always* go first)
-	insertActions(actions().value(0), m_recentActions);
-}
-
-void
-KMenu::createApplicationsItems()
-{	
-	// Create the search bar container
-	if (m_config.showSearch) {
-		auto *search = new PopupMenuSearch(i18n("Press '/' to search..."), Qt::Key_Slash, this);
-		insertAction(m_applicationsAnchor, search);				
-		if (QLineEdit *lineEdit = search->lineEdit()) {
-			connect(this, &QMenu::aboutToHide, lineEdit, &QLineEdit::clear);
-			connect(this, &QMenu::aboutToHide, lineEdit, &QLineEdit::clearFocus);
-			connect(lineEdit, &QLineEdit::textChanged, this, [this](QStringView text) {
-				applySearchFilter(m_applicationActions, text.trimmed());
-			});
-		}
-	}
-   
-	updateApplications(); // Call the function to populate the menu itself
-}
-
-void
-KMenu::updateApplications()
-{	
-	// Remove old application actions
-	cleanupActionList(m_applicationActions);
-
-	// Construct our new list of actions
-	const QList<QAction *> actionList = createActionsFromServiceGroup(KServiceGroup::root());
-	if (actionList.isEmpty()) {
-		auto *emptyAction = new QAction(i18n("No Entries"), this);
-		emptyAction->setEnabled(false);
-		emptyAction->setProperty("ignoreSearch", true);
-		m_applicationActions.append(emptyAction);
-	} else {
-		m_applicationActions.append(actionList);		
-	}
-
-	// If m_applicationsAnchor is null, insertActions simply appends
-	// the actions to the menu. This behaviour is fine (although
-	// it should never really be null when updateApplications
-	// is called).
-	insertActions(m_applicationsAnchor, m_applicationActions);	
-}
-
-void
-KMenu::updateSessionActions()
-{
-	cleanupActionList(m_sessionActions);
-	if (!m_session || (m_session->state() != SessionManagement::State::Ready))
-		return;
-	
-	if (m_session->canSwitchUser() || m_session->canLock() || m_session->canLogout()) {
-		m_sessionActions.append(addSeparator());
-		QAction *action;
-		if (m_session->canSwitchUser()) {
-			action = addAction(QIcon::fromTheme(QStringLiteral("system-switch-user")), i18n("Switch User"));
-			connect(action, &QAction::triggered, m_session, &SessionManagement::switchUser);
-			m_sessionActions.append(action);
-		}
-		if (m_session->canLock()) {
-			action = addAction(QIcon::fromTheme(QStringLiteral("system-lock-screen")), i18n("Lock Session"));
-			connect(action, &QAction::triggered, m_session, &SessionManagement::lock);
-			m_sessionActions.append(action);
-		}
-		if (m_session->canLogout()) {
-			action = addAction(QIcon::fromTheme(QStringLiteral("system-log-out")), i18n("Log Out…"));
-			connect(action, &QAction::triggered, m_session, &SessionManagement::requestLogoutPrompt);
-			m_sessionActions.append(action);
-		}
-	}
+	return actions;
 }
 
 bool
@@ -425,7 +309,7 @@ KMenu::applySearchFilter(const QList<QAction *> &actions, QStringView text)
 {
 	bool anyEnabled = false;
 	for (QAction *action : actions) {
-		if (action->isSeparator() || action->property("ignoreSearch").toBool())
+		if (!action || action->isSeparator())
 			continue;
 
 		bool enabled = false; // Whether or not to enable the individual action

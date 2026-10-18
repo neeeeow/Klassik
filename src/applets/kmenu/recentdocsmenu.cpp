@@ -5,20 +5,27 @@
 */
 
 #include "recentdocsmenu.h"
-#include "kmenuapplet.h"
+#include "servicemenuapplet.h"
+
+#include <QFileInfo>
 
 #include <KLocalizedString>
 
-#include <PlasmaActivities/Stats/ResultModel>
+#include <PlasmaActivities/Stats/ResultSet>
 #include <PlasmaActivities/Stats/Query>
+#include <PlasmaActivities/Stats/Cleaning>
 
-RecentDocsMenu::RecentDocsMenu(KMenuApplet *applet, QWidget *parent)
-	: RecentDocsMenu(QString(), applet, parent)
-{
-}
+using namespace KActivities::Stats;
+using namespace KActivities::Stats::Terms;
 
-RecentDocsMenu::RecentDocsMenu(const QString &title, KMenuApplet *applet, QWidget *parent)
-	: ServiceMenu(title, applet, parent)
+RecentDocsMenu::RecentDocsMenu(ServiceMenuApplet *applet, QWidget *parent)
+	: RecentDocsMenu(QIcon(), QString(), applet, parent) {}
+
+RecentDocsMenu::RecentDocsMenu(const QString &title, ServiceMenuApplet *applet, QWidget *parent)
+	: RecentDocsMenu(QIcon(), title, applet, parent) {}
+
+RecentDocsMenu::RecentDocsMenu(const QIcon &icon, const QString &title, ServiceMenuApplet *applet, QWidget *parent)
+	: ServiceMenu(icon, title, applet, parent)
 {
 	initialize();
 }
@@ -26,60 +33,57 @@ RecentDocsMenu::RecentDocsMenu(const QString &title, KMenuApplet *applet, QWidge
 void
 RecentDocsMenu::populate()
 {
+	// Add clear recent documents action
+	QAction *clearAction = addAction(QIcon::fromTheme(QStringLiteral("edit-clear-history")), i18n("Clear History"));
+	connect(clearAction, &QAction::triggered, this, &RecentDocsMenu::forgetDocuments, Qt::QueuedConnection);
+	addSeparator();
+	
+	// Actions to add to the menu
+	QList<QAction *> actions;
+	
 	// Setup the recent documents query
 	// NB: we deviate from the KDE 3 era code here, since using KRecentDocument doesn't
 	// work very well.
-	using namespace KActivities::Stats;
-	using namespace KActivities::Stats::Terms;
-	
-	// Run our query once.
 	const int numRecentDocs = applet() ? applet()->getConfigValue<int>(QStringLiteral("numRecentDocs")) : 15;
 	const auto query = UsedResources
 		| RecentlyUsedFirst
 		| Agent::any()
 		| Type::files()
 		| Activity::current()
-		| Url::file()
-		| Limit(numRecentDocs > 0 ? numRecentDocs : 1);
+		| Url::file();
 
-	if (m_fileList) {
-		m_fileList->disconnect(this);
-		m_fileList->deleteLater();
-	}
-	m_fileList = new ResultModel(query, this);	
+	ResultSet results(query);
+	ResultSet::const_iterator resultIt;
+	resultIt = results.begin();
 
-	connectModel(m_fileList);
+	while (actions.count() < numRecentDocs && resultIt != results.end()) {
+		const QUrl url = (*resultIt).url();
+		++resultIt;
 
-	updateRecentDocs();
-}
-
-void
-RecentDocsMenu::updateRecentDocs()
-{
-	if (!m_fileList) // sanity check
-		return;
-	
-	clear();	
-	QAction *clearAction = addAction(QIcon::fromTheme(QStringLiteral("edit-clear-history")), i18n("Clear History"));
-	connect(clearAction, &QAction::triggered, m_fileList, &KActivities::Stats::ResultModel::forgetAllResources, Qt::QueuedConnection);
-	addSeparator();
-
-	QList<QAction *> actionList;
-	for (int i=0; i < m_fileList->rowCount(); ++i) {
-		const QModelIndex index = m_fileList->index(i,0);
-		const QUrl url = QUrl::fromUserInput(m_fileList->data(index, KActivities::Stats::ResultModel::ResourceRole).toString());
+		if (!url.isLocalFile() || !QFileInfo::exists(url.toLocalFile()))
+			continue;
+		
 		QAction *action = createActionFromUrl(url);
 		if (!action)
 			continue;
-		actionList.append(action);
+		actions.append(action);
 	}
 
-	if (actionList.isEmpty()) {
+	if (actions.isEmpty()) {
 		QAction *emptyAction = addAction(i18n("No Entries"));
 		emptyAction->setEnabled(false);
 		clearAction->setEnabled(false);
-	} else {
-		addActions(actionList);
-	}
+	} else
+		addActions(actions);
+}
 
+void
+RecentDocsMenu::forgetDocuments() const
+{
+	const auto query = UsedResources
+		| Agent::any()
+		| Type::files()
+		| Activity::current()
+		| Url::file();
+	KActivities::Stats::forgetResources(query);
 }

@@ -13,15 +13,31 @@
 #include <KLocalizedString>
 #include <KConfigGroup>
 
-SettingsMenu::SettingsMenu(KMenuApplet *applet, QWidget *parent)
-	: SettingsMenu(QString(), applet, parent)
-{
-}
+SettingsMenu::SettingsMenu(ServiceMenuApplet *applet, QWidget *parent)
+	: SettingsMenu(QIcon(), QString(), applet, parent) {}
 
-SettingsMenu::SettingsMenu(const QString &title, KMenuApplet *applet, QWidget *parent)
-	: ServiceMenu(title, applet, parent)
+SettingsMenu::SettingsMenu(const QString &title, ServiceMenuApplet *applet, QWidget *parent)
+	: SettingsMenu(QIcon(), title, applet, parent) {}
+
+SettingsMenu::SettingsMenu(const QIcon &icon, const QString &title, ServiceMenuApplet *applet, QWidget *parent)
+	: ServiceMenu(icon, title, applet, parent)
 {
 	initialize();
+}
+
+void
+SettingsMenu::rebuild()
+{
+	// Load KCM meta data
+	const QList<KPluginMetaData> pluginModules = findKCMsMetaData();
+
+	// Load category data
+	const QList<CategoryData> categories = parseCategoryFiles();
+	
+	// Populate our settings tree
+	m_root.reset();
+	m_root.isCategory = true;
+	buildSettingsTree(&m_root, pluginModules, categories);	
 }
 
 void
@@ -34,20 +50,9 @@ SettingsMenu::populate()
 		addSeparator();
 	}
 
-	// Load KCM meta data
-	const QList<KPluginMetaData> pluginModules = findKCMsMetaData();
-
-	// Load category data
-	const QList<CategoryData> categories = parseCategoryFiles();
-	
-	// Populate our settings tree
-	SettingsItem root;
-	root.isCategory = true;
-	buildSettingsTree(&root, pluginModules, categories);
-
 	// Populate the menu itself
-	if (!root.children.isEmpty())		
-		populateMenu(&root, this);
+	if (!m_root.children.isEmpty())		
+		addSettingsActions(&m_root, this);
 
 	// Add the menu editor action at the bottom
 	QAction *editAction = addAction(QIcon::fromTheme(QStringLiteral("kmenuedit")), i18n("Menu Editor"));
@@ -161,17 +166,16 @@ SettingsMenu::buildSettingsTree(SettingsItem *parent,
 }
 
 void
-SettingsMenu::populateMenu(const SettingsItem *item, ServiceMenu *menu)
+SettingsMenu::addSettingsActions(const SettingsItem *item, ServiceMenu *menu)
 {
 	for (SettingsItem *child : std::as_const(item->children)) {
 		if (child->isCategory) {
 			// If it's a category, add a sub menu for each child and recurse
 			if (!child->children.isEmpty()) {
-				auto *subMenu = new ServiceMenu(escapeMnemonics(child->name), applet(), menu);
-				subMenu->initialize();
-				subMenu->setIcon(QIcon::fromTheme(child->icon));
+				auto *subMenu = new ServiceMenu(QIcon::fromTheme(child->icon),
+												escapeMnemonics(child->name), applet(), menu);
 				menu->addMenu(subMenu);
-				populateMenu(child, subMenu);
+			    addSettingsActions(child, subMenu);
 			}
 		} else {
 			// If it's not a category, then it's a KCM, so add it to the menu

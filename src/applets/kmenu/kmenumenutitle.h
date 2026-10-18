@@ -14,7 +14,7 @@
 #include <QStyleOptionHeader>
 
 // The header widget that we'll draw within the QWidgetAction
-namespace menuWidgets {
+namespace KMenuWidgets {
 	class TitleWidget : public QWidget
 	{
 		Q_OBJECT
@@ -58,11 +58,11 @@ namespace menuWidgets {
 	};
 }
 	
-class PopupMenuTitle : public QWidgetAction
+class KMenuTitle : public QWidgetAction
 {
 	Q_OBJECT
 public:
-	PopupMenuTitle(const QString &title, QWidget *parent = nullptr)
+	KMenuTitle(const QString &title, QWidget *parent = nullptr)
 		: QWidgetAction(parent) {
 		setText(title);
 		setEnabled(false); // by default, make it disabled
@@ -70,7 +70,7 @@ public:
 
 protected:
 	QWidget* createWidget(QWidget *parent) override {
-		return new menuWidgets::TitleWidget(text(), parent); // Create our header inside of the title
+		return new KMenuWidgets::TitleWidget(text(), parent); // Create our header inside of the title
 	}
 };
 

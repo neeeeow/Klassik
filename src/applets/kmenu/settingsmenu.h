@@ -15,8 +15,9 @@ class SettingsMenu final : public ServiceMenu
 	Q_OBJECT
 	
 public:
-	explicit SettingsMenu(KMenuApplet *applet, QWidget *parent = nullptr);
-	explicit SettingsMenu(const QString &title, KMenuApplet *applet, QWidget *parent = nullptr);
+	explicit SettingsMenu(ServiceMenuApplet *applet, QWidget *parent = nullptr);
+	SettingsMenu(const QString &title, ServiceMenuApplet *applet, QWidget *parent = nullptr);
+	SettingsMenu(const QIcon &icon, const QString &title, ServiceMenuApplet *applet, QWidget *parent = nullptr);
 	
 private:
 	// Struct containing the data from a .desktop file
@@ -48,8 +49,23 @@ private:
 		~SettingsItem() {
 			qDeleteAll(children);
 		}
-	};   
 
+		void reset() {
+			qDeleteAll(children);
+			children.clear();
+
+			isCategory = false;
+			id.clear();
+			name.clear();
+			icon.clear();
+			weight = 100;
+		}
+	};
+
+	// The root SettingsItem used for populating the menu
+	SettingsItem m_root;
+
+	void rebuild() override;
 	void populate() override;
 	
 	// Parses each .desktop file to retrieve the category data.
@@ -62,5 +78,5 @@ private:
 	static void buildSettingsTree(SettingsItem *parent, const QList<KPluginMetaData> &pluginModules, const QList<CategoryData> &categories);
 
 	// Adds a settingsitem (and all of its children) to a given menu
-	void populateMenu(const SettingsItem *item, ServiceMenu *menu);
+	void addSettingsActions(const SettingsItem *item, ServiceMenu *menu);
 };

@@ -15,14 +15,13 @@ class SystemMenu final : public ServiceMenu
 	Q_OBJECT
 	
 public:
-	explicit SystemMenu(KMenuApplet *applet, QWidget *parent = nullptr);
-	explicit SystemMenu(const QString &title, KMenuApplet *applet, QWidget *parent = nullptr);
+	explicit SystemMenu(ServiceMenuApplet *applet, QWidget *parent = nullptr);
+    SystemMenu(const QString &title, ServiceMenuApplet *applet, QWidget *parent = nullptr);
+	SystemMenu(const QIcon &icon, const QString &title, ServiceMenuApplet *applet, QWidget *parent = nullptr);
 
 private:
 	KFilePlacesModel *m_placesModel = nullptr;
 
+	void rebuild() override;
 	void populate() override;
-	void refreshContents() override { updatePlaces(); }
-
-	void updatePlaces();
 };

@@ -5,8 +5,9 @@
 */
 
 #include "servicemenu.h"
-#include "kmenuapplet.h"
-#include "popupmenutitle.h"
+#include "servicegroupmenu.h"
+#include "servicemenuapplet.h"
+#include "popuptitle.h"
 #include "containmentinterface.h"
 
 #include <QMimeData>
@@ -32,49 +33,53 @@
 
 #include <PlasmaActivities/ResourceInstance>
 
-ServiceMenu::ServiceMenu(KMenuApplet *applet, QWidget *parent)
-: ServiceMenu(QString(), applet, parent)
-{
-}
+ServiceMenu::ServiceMenu(ServiceMenuApplet *applet, QWidget *parent)
+: ServiceMenu(QIcon(), QString(), applet, parent) {}
 
-ServiceMenu::ServiceMenu(const QString &title, KMenuApplet *applet, QWidget *parent)
-	: QMenu(title, parent),
+ServiceMenu::ServiceMenu(const QString &title, ServiceMenuApplet *applet, QWidget *parent)
+: ServiceMenu(QIcon(), title, applet, parent) {}
+
+ServiceMenu::ServiceMenu(const QIcon &icon, const QString &title, ServiceMenuApplet *applet, QWidget *parent)
+	: QMenu(parent),
 	  m_applet(applet)
 {
+	if (!icon.isNull())
+		setIcon(icon);
+	if (!title.isEmpty())
+		setTitle(title);	
 	this->setContextMenuPolicy(Qt::CustomContextMenu);
 	connect(this, &QMenu::customContextMenuRequested, this, &ServiceMenu::showContextMenu, Qt::UniqueConnection);
+	loadConfig();
+}
+
+void
+ServiceMenu::loadConfig()
+{
+	m_displayGenericName = applet() ? applet()->getConfigValue<bool>(QStringLiteral("showGenericName")) : true;
+    setToolTipsVisible(applet() ? applet()->getConfigValue<bool>(QStringLiteral("showTooltips")) : false);
 }
 
 void
 ServiceMenu::initialize()
 {
 	if (m_initialized) return;
-	m_displayGenericName = applet() ? applet()->getConfigValue<bool>(QStringLiteral("showGenericName")) : true;
-    setToolTipsVisible(applet() ? applet()->getConfigValue<bool>(QStringLiteral("showTooltips")) : false);
-
-	// m_dirty should be false here since we *should* do the initial population in initialize(), and
-	// having m_dirty = true would be wasteful
-	m_dirty = false;
-	connect(this, &QMenu::aboutToShow, this, &ServiceMenu::refreshIfDirty, Qt::UniqueConnection);
-
-	// Populate the menu
-	populate();
-	
-	setInitialized(true);
+	rebuild();
+	connect(this, &QMenu::aboutToShow, this, &ServiceMenu::refreshContents, Qt::UniqueConnection);	
+    m_initialized = true;
 }
 
 void
 ServiceMenu::reinitialize()
 {
-	if (!initialized())
+	if (!m_initialized)
 		return;		
-	setInitialized(false);
-
+    m_initialized = false;
 	clear();
+	loadConfig();
 	initialize();
 }
 
-KMenuApplet*
+ServiceMenuApplet*
 ServiceMenu::applet() const
 {
 	return m_applet;
@@ -94,19 +99,6 @@ ServiceMenu::actionEvent(QActionEvent *e)
 					menu->deleteLater();
 
 	QMenu::actionEvent(e);
-}
-
-void
-ServiceMenu::cleanupActionList(QList<QAction *> &actionList)
-{		
-	// Cleans up all member actions of our QList from the menu
-	for (QAction *action : actionList) {
-		removeAction(action);
-		action->deleteLater();
-	}
-
-	// Clear out the list itself
-	actionList.clear();
 }
 
 QAction*
@@ -262,25 +254,16 @@ ServiceMenu::createActionsFromServiceGroup(const KServiceGroup::Ptr &group)
 			if (QAction *action = createActionFromService(service))
 				actions.append(action);
 		} else if (entry->isType(KST_KServiceGroup)) {
-			// If the entry is a service group, we need to make a submenu and recurse through this function
+			// If the entry is a service group, we need to make a submenu
 			const KServiceGroup::Ptr subGroup(static_cast<KServiceGroup*>(entry.data()));
 			if (subGroup->childCount() == 0)
 				continue;
-					
-			auto *subMenu = new ServiceMenu(escapeMnemonics(subGroup->caption()), applet(), this);
-			subMenu->initialize();
-			subMenu->setIcon(QIcon::fromTheme(subGroup->icon(), QIcon::fromTheme(QStringLiteral("applications-other"))));
-			subMenu->addActions(subMenu->createActionsFromServiceGroup(subGroup));
 
-			if (subMenu->isEmpty()) {
-				delete subMenu;
-				continue;
-			}
-
+			auto *subMenu = new ServiceGroupMenu(subGroup, applet(), this);
 			auto *action = new QAction(subMenu->icon(), subMenu->title(), this);
 			action->setMenu(subMenu);
 			action->setData(QVariant::fromValue(subGroup));
-			actions.append(action);	
+			actions.append(action);
 		}
 	}
 	return actions;
@@ -301,7 +284,6 @@ ServiceMenu::showContextMenu(const QPoint &pos) const
 
 	ServiceMenu contextMenu(applet()); // No need for a parent since we're declaring on the stack
 	contextMenu.setContextMenuPolicy(Qt::NoContextMenu); // disallow the contextmenu to spawn additional context menus
-	contextMenu.initialize();
 
 	if (action->data().canConvert<KService::Ptr>()) {
 		// KService means application!
@@ -362,7 +344,8 @@ ServiceMenu::showContextMenu(const QPoint &pos) const
 
 		if (!services.isEmpty()) {
 			if (applet()->getConfigValue<bool>(QStringLiteral("showTitles")))
-				contextMenu.addAction(new PopupMenuTitle(i18n("Open With"), &contextMenu));
+				contextMenu.addAction(new PopupTitle(QIcon::fromTheme(QStringLiteral("document-open")),
+													 i18n("Open With"), &contextMenu));
 
 			for (const KService::Ptr &service : services) {
 				if (QAction *serviceAction = contextMenu.createActionFromService(service, url))
@@ -436,27 +419,6 @@ QString
 ServiceMenu::escapeMnemonics(QString string)
 {
 	return string.replace(QLatin1Char('&'), QStringLiteral("&&"));
-}
-
-void
-ServiceMenu::connectModel(QAbstractItemModel *model, const QList<bool *> &additionalFlags)
-{
-	if (!model)
-		return;
-	
-	const auto onChanged = [this, additionalFlags] {
-		markDirty();
-		for (bool *flag : additionalFlags) {
-			if (flag)
-				*flag = true;
-		}
-	};
-
-	connect(model, &QAbstractItemModel::dataChanged,  this, onChanged);
-	connect(model, &QAbstractItemModel::modelReset,	  this, onChanged);
-	connect(model, &QAbstractItemModel::rowsInserted, this, onChanged);
-	connect(model, &QAbstractItemModel::rowsMoved,	  this, onChanged);
-	connect(model, &QAbstractItemModel::rowsRemoved,  this, onChanged);
 }
 
 void

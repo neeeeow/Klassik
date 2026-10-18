@@ -14,7 +14,7 @@
 #include <QToolButton>
 #include <QShortcut>
 
-namespace menuWidgets {
+namespace KMenuWidgets {
 	class SearchWidget : public QWidget
 	{
 		Q_OBJECT
@@ -82,20 +82,20 @@ namespace menuWidgets {
 	};
 }
 
-class PopupMenuSearch : public QWidgetAction
+class KMenuSearch : public QWidgetAction
 {
 	Q_OBJECT
 public:
-	PopupMenuSearch(const QString &placeholderText, const QKeySequence &key = QKeySequence(), QWidget *parent = nullptr)
+	KMenuSearch(const QString &placeholderText, const QKeySequence &key = QKeySequence(), QWidget *parent = nullptr)
 		: QWidgetAction(parent)
 
 	{
-		menuWidgets::SearchWidget *widget = new menuWidgets::SearchWidget(placeholderText, key, parent);
+		KMenuWidgets::SearchWidget *widget = new KMenuWidgets::SearchWidget(placeholderText, key, parent);
 		setDefaultWidget(widget); // each PopupMenuSearch should only be created once, so avoid createWidget
 	}
 
 	QLineEdit* lineEdit() const {
-		if (menuWidgets::SearchWidget *widget = qobject_cast<menuWidgets::SearchWidget *>(defaultWidget()))
+		if (KMenuWidgets::SearchWidget *widget = qobject_cast<KMenuWidgets::SearchWidget *>(defaultWidget()))
 			return widget->lineEdit();
 		else
 			return nullptr;

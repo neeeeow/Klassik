@@ -12,15 +12,13 @@ plasma_add_applet(com.github.neeeeow.klassik.kmenu
         qml/config.qml
         qml/main.qml
     CPP_SOURCES
-        containmentinterface.cpp
-        servicemenu.cpp
         kmenu.cpp
         kmenuapplet.cpp
         recentdocsmenu.cpp
         settingsmenu.cpp
         systemmenu.cpp
-        popupmenutitle.h
-        popupmenusearch.h
+        kmenumenutitle.h
+        kmenumenusearch.h
         ${KLASSIK_COMMON_DIR}/painteditems/styledframe.h
         ${KLASSIK_COMMON_DIR}/painteditems/panelbuttonarrow.h
     RESOURCES
@@ -30,23 +28,10 @@ plasma_add_applet(com.github.neeeeow.klassik.kmenu
 )  
 
 target_link_libraries(com.github.neeeeow.klassik.kmenu PRIVATE
+    klassik_servicemenu
     klassik_painteditem
-    Qt::Core
-    Qt::Widgets
-    Qt::Qml
-    Qt::Quick
-    KF6::I18n
-    KF6::Service
-    KF6::KIOGui
-    KF6::JobWidgets
-    KF6::KIOWidgets
-    KF6::ConfigGui
-    KF6::ConfigQml
     KF6::KIOFileWidgets
-    Plasma::Plasma
     Plasma::ActivitiesStats
-    Plasma::Activities
-    Plasma::PlasmaQuick
     PW::KWorkspace
 )
 

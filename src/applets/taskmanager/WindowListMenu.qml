@@ -120,7 +120,6 @@ PlasmaExtras.Menu {
             const emptyItem = newMenuItem(menu);
             emptyItem.enabled = false;
             emptyItem.text = i18n("No Tasks");
-            return;
         }
     }
 }

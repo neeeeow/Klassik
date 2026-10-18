@@ -35,11 +35,11 @@ class PopupTitle : public QWidgetAction
 	Q_OBJECT
 public:
     explicit PopupTitle(const QString &title, QObject *parent = nullptr)
-		: PopupTitle(title, QIcon(), parent) {}
-	explicit PopupTitle(const QString &title, const QIcon &icon, QObject *parent = nullptr)
+		: PopupTitle(QIcon(), title, parent) {}
+	explicit PopupTitle(const QIcon &icon, const QString &title, QObject *parent = nullptr)
 		: QWidgetAction(parent) {
-		setText(title);
 		setIcon(icon);
+		setText(title);		
 	}
 
 protected:

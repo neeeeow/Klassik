@@ -8,34 +8,30 @@
 
 #include <KFilePlacesModel>
 
-SystemMenu::SystemMenu(KMenuApplet *applet, QWidget *parent)
-	: SystemMenu(QString(), applet, parent)
-{
-}
+SystemMenu::SystemMenu(ServiceMenuApplet *applet, QWidget *parent)
+	: SystemMenu(QIcon(), QString(), applet, parent) {}
 
-SystemMenu::SystemMenu(const QString &title, KMenuApplet *applet, QWidget *parent)
-	: ServiceMenu(title, applet, parent)
+SystemMenu::SystemMenu(const QString &title, ServiceMenuApplet *applet, QWidget *parent)
+	: SystemMenu(QIcon(), title, applet, parent) {}
+
+SystemMenu::SystemMenu(const QIcon &icon, const QString &title, ServiceMenuApplet *applet, QWidget *parent)
+	: ServiceMenu(icon, title, applet, parent)
 {
 	setContextMenuPolicy(Qt::NoContextMenu); // We don't want the context menu appearing here
 	initialize();
 }
 
 void
-SystemMenu::populate()
+SystemMenu::rebuild()
 {
-	if (m_placesModel) {
-		m_placesModel->disconnect(this);
+	if (m_placesModel)
 		m_placesModel->deleteLater();
-	}
 	m_placesModel = new KFilePlacesModel(this);
-	connectModel(m_placesModel);
-	updatePlaces();
 }
 
 void
-SystemMenu::updatePlaces()
+SystemMenu::populate()
 {
-	clear();
 	if (!m_placesModel)
 		return;
 	for (int i = 0; i < m_placesModel->rowCount(); ++i) {
