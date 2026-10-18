@@ -27,7 +27,6 @@ PaintedItem::componentComplete()
 	setAcceptHoverEvents(m_hoverEnabled);
 	loadStyle();
 	loadPalette();	
-    requestRepaint();
 	connect(qGuiApp, &QGuiApplication::layoutDirectionChanged, this, &PaintedItem::propertyChanged, Qt::UniqueConnection);
 	connect(this, &PaintedItem::propertyChanged, this, &PaintedItem::requestRepaint, Qt::UniqueConnection);
 	Q_EMIT propertyChanged();
@@ -65,7 +64,9 @@ PaintedItem::palette() const
 	if (!m_quickPalette)
 		return QPalette();
 	QPalette palette = m_quickPalette->toQPalette();
-	if (isEnabled())
+	if (window() && !window()->isActive())
+		palette.setCurrentColorGroup(QPalette::Inactive);
+	else if (isEnabled())
 		palette.setCurrentColorGroup(QPalette::Active);
 	else
 		palette.setCurrentColorGroup(QPalette::Disabled);   
@@ -81,6 +82,9 @@ PaintedItem::baseStyleOption() const
 	opt.direction = QGuiApplication::layoutDirection();
 	if (isEnabled())
 		opt.state |= QStyle::State_Enabled;
+	if ((window() && window()->isActive()) || !window())
+		// If the window pointer is null, just default to the active state
+		opt.state |= QStyle::State_Active;
 	if (hasActiveFocus())
 		opt.state |= QStyle::State_HasFocus;
 	if (isSunken())
@@ -121,15 +125,14 @@ PaintedItem::updatePolish()
 	const qreal dpr = window()->effectiveDevicePixelRatio();
 	const QSize imgSize(qRound(width() * dpr), qRound(height() * dpr));
 
-	if (m_paintedImage.size() != imgSize) {
-		m_paintedImage = QImage(imgSize, QImage::Format_ARGB32_Premultiplied);
-		m_paintedImage.setDevicePixelRatio(dpr);
-	}
-
+	if (m_paintedImage.size() != imgSize)
+		m_paintedImage = QImage(imgSize, QImage::Format_ARGB32_Premultiplied);		
+	m_paintedImage.setDevicePixelRatio(dpr);
 	m_paintedImage.fill(Qt::transparent);
 
 	QPainter painter(&m_paintedImage);
 	paint(&painter);
+	painter.end();
 	
 	update();
 }
