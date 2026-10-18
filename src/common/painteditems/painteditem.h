@@ -24,8 +24,7 @@ class PaintedItem : public QQuickItem
 	QML_ANONYMOUS
 
 	// Custom state flags which correspond to QStyle::State_Sunken and
-	// QStyle::State_MouseOver. By default, both flags are off. Note: we
-	// make hovered read only since it must never be set outside of our C++ code
+	// QStyle::State_MouseOver. By default, both flags are off.
 	Q_PROPERTY(bool sunken MEMBER m_sunken NOTIFY propertyChanged FINAL)
 	Q_PROPERTY(bool hovered MEMBER m_hovered NOTIFY propertyChanged FINAL)
 

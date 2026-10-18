@@ -239,7 +239,6 @@ void
 DigitalClock::drawSegment(const QPoint &pos, const QColor &color, char segmentNo,
 						  QPainter &p, int segLen) const
 {
-	QPoint ppt;
 	QPoint pt = pos;
 	const int width = segLen/5; 
 
@@ -252,7 +251,6 @@ DigitalClock::drawSegment(const QPoint &pos, const QColor &color, char segmentNo
 	//don't make any changes here
 	switch (segmentNo) {
 	case 0 :
-		ppt = pt;
 		LIGHT;
 		LINETO(segLen - 1,0);
 		DARK;
@@ -262,7 +260,6 @@ DigitalClock::drawSegment(const QPoint &pos, const QColor &color, char segmentNo
 		break;
 	case 1 :
 		pt += QPoint(0 , 1);
-		ppt = pt;
 		LIGHT;
 		LINETO(width,width);
 		DARK;
@@ -273,7 +270,6 @@ DigitalClock::drawSegment(const QPoint &pos, const QColor &color, char segmentNo
 		break;
 	case 2 :
 		pt += QPoint(segLen - 1 , 1);
-		ppt = pt;
 		DARK;
 		LINETO(0,segLen - 2);
 		LINETO(-width,segLen - width/2 - 2);
@@ -283,7 +279,6 @@ DigitalClock::drawSegment(const QPoint &pos, const QColor &color, char segmentNo
 		break;
 	case 3 :
 		pt += QPoint(0 , segLen);
-		ppt = pt;
 		LIGHT;
 		LINETO(width,-width/2);
 		LINETO(segLen - width - 1,-width/2);
@@ -300,7 +295,6 @@ DigitalClock::drawSegment(const QPoint &pos, const QColor &color, char segmentNo
 		break;
 	case 4 :
 		pt += QPoint(0 , segLen + 1);
-		ppt = pt;
 		LIGHT;
 		LINETO(width,width/2);
 		DARK;
@@ -311,7 +305,6 @@ DigitalClock::drawSegment(const QPoint &pos, const QColor &color, char segmentNo
 		break;
 	case 5 :
 		pt += QPoint(segLen - 1 , segLen + 1);
-		ppt = pt;
 		DARK;
 		LINETO(0,segLen - 2);
 		LINETO(-width,segLen - width - 2);
@@ -321,7 +314,6 @@ DigitalClock::drawSegment(const QPoint &pos, const QColor &color, char segmentNo
 		break;
 	case 6 :
 		pt += QPoint(0 , segLen*2);
-		ppt = pt;
 		LIGHT;
 		LINETO(width,-width);
 		LINETO(segLen - width - 1,-width);
@@ -331,7 +323,6 @@ DigitalClock::drawSegment(const QPoint &pos, const QColor &color, char segmentNo
 		break;
 	case 7 :
 		pt += QPoint(segLen/2 , segLen*2);
-		ppt = pt;
 		DARK;
 		LINETO(width,0);
 		LINETO(width,-width);
@@ -341,7 +332,6 @@ DigitalClock::drawSegment(const QPoint &pos, const QColor &color, char segmentNo
 		break;
 	case 8 :
 		pt += QPoint(segLen/2 - width/2 + 1 , segLen/2 + width);
-		ppt = pt;
 		DARK;
 		LINETO(width,0);
 		LINETO(width,-width);
@@ -351,7 +341,6 @@ DigitalClock::drawSegment(const QPoint &pos, const QColor &color, char segmentNo
 		break;
 	case 9 :
 		pt += QPoint(segLen/2 - width/2 + 1 , 3*segLen/2 + width);
-		ppt = pt;
 		DARK;
 		LINETO(width,0);
 		LINETO(width,-width);
@@ -410,7 +399,7 @@ AnalogClock::drawContents(QPainter *p) const
 
 	QPolygon pts;
 	const QPoint cp(spWidth / 2, spHeight / 2);
-	const int d = qMin(spWidth,spHeight) - 10;
+	const int d = qMax(qMin(spWidth,spHeight) - 10, 1);
 
 	QPen shadowPen(colors.shadow);
 	shadowPen.setCosmetic(true);

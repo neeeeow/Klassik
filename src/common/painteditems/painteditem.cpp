@@ -28,7 +28,9 @@ PaintedItem::componentComplete()
 	loadStyle();
 	loadPalette();	
     requestRepaint();
-	connect(this, &PaintedItem::propertyChanged, this, &PaintedItem::requestRepaint);
+	connect(qGuiApp, &QGuiApplication::layoutDirectionChanged, this, &PaintedItem::propertyChanged, Qt::UniqueConnection);
+	connect(this, &PaintedItem::propertyChanged, this, &PaintedItem::requestRepaint, Qt::UniqueConnection);
+	Q_EMIT propertyChanged();
 }
 
 void
@@ -37,7 +39,7 @@ PaintedItem::loadStyle()
 	m_style = QApplication::style();
 	// We cannot connect to QEvent::StyleChange, so we do it this way instead
 	if (m_style)
-	  connect(m_style, &QObject::destroyed, this, &PaintedItem::styleChanged, Qt::UniqueConnection);
+		connect(m_style, &QObject::destroyed, this, &PaintedItem::styleChanged, Qt::UniqueConnection);
 }	
 void
 PaintedItem::styleChanged()
@@ -76,6 +78,7 @@ PaintedItem::baseStyleOption() const
 	QStyleOption opt;
 	opt.palette = palette();
 	opt.rect = rect();
+	opt.direction = QGuiApplication::layoutDirection();
 	if (isEnabled())
 		opt.state |= QStyle::State_Enabled;
 	if (hasActiveFocus())
