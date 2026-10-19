@@ -66,15 +66,14 @@ private:
 	// Returns the actions corresponding to the most used applications section
 	QList<QAction *> mostUsedAppsActions();
 
-	// Enables/disables actions based on a search filter. If the search filter text
-	// is empty, all actions are enabled. Returns a bool corresponding to whether or
-	// not any actions in the hierarchy are enabled.
-	bool applySearchFilter(const QList<QAction *> &actions, QStringView text);
-
 	// Translate mouse event, allowing actions to be highlighted if the
 	// mouse is over the side image 
 	std::unique_ptr<QMouseEvent> translateMouseEvent( QMouseEvent* e );
 
 	// KDE 3 colorize function
 	void colorize(QImage &image) const;
+
+private Q_SLOTS:
+	// Applies the search filter to the menu items
+    void applySearchFilter() override;
 };

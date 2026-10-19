@@ -23,7 +23,11 @@ public Q_SLOTS:
 
 	// Refreshes the contents of the menu
     void refreshContents();
-
+	
+protected:
+	// Returns the initialization state of the menu
+	bool initialized() const { return m_initialized; }
+	
 private:
 	// Initialization state
 	bool m_initialized = false;

@@ -87,6 +87,7 @@ void
 KMenu::populate()
 {
 	m_applicationActions.clear();
+	resetSearchFilter();
 	
 	// Most used applications section
 	if (m_config.showMostUsedApps) {
@@ -104,13 +105,8 @@ KMenu::populate()
 	if (m_config.showSearch) {
 		auto *search = new KMenuSearch(i18n("Press '/' to search..."), Qt::Key_Slash, this);
 		addAction(search);				
-		if (QLineEdit *lineEdit = search->lineEdit()) {
-			connect(this, &QMenu::aboutToHide, lineEdit, &QLineEdit::clear);
-			connect(this, &QMenu::aboutToHide, lineEdit, &QLineEdit::clearFocus);
-			connect(lineEdit, &QLineEdit::textChanged, this, [this](QStringView text) {
-				applySearchFilter(applicationActions(), text.trimmed());
-			});
-		}
+		if (QLineEdit *lineEdit = search->lineEdit())	
+			connect(lineEdit, &QLineEdit::textChanged, this, &ServiceGroupMenu::setSearchFilter);
 	}
 
 	// All applications entries
@@ -301,30 +297,16 @@ KMenu::mostUsedAppsActions()
 	return actions;
 }
 
-bool
-KMenu::applySearchFilter(const QList<QAction *> &actions, QStringView text)
+void
+KMenu::applySearchFilter()
 {
-	bool anyEnabled = false;
-	for (QAction *action : actions) {
-		if (!action || action->isSeparator())
-			continue;
+	if (!initialized() || isEmpty() || !isVisible())
+		return;
 
-		bool enabled = false; // Whether or not to enable the individual action
-		
-		if (QMenu *subMenu = action->menu()) {
-			enabled = applySearchFilter(subMenu->actions(), text);
-		} else {
-			if (text.isEmpty() ||
-				action->text().replace(QStringLiteral("&&"), QStringLiteral("&")).contains(text, Qt::CaseInsensitive))
-				// Item must be enabled either if the search string matches the action name, or if the search bar is empty
-				enabled = true;
-		}
-
-		anyEnabled |= enabled;
-		action->setEnabled(enabled);
+	for (QAction *action : applicationActions()) {
+		// Set the enabled/disabled state of the action
+		filterAction(action);
 	}
-
-	return anyEnabled;
 }
 
 /* Mouse events adapted from KDE 3.5 kicker source code.
