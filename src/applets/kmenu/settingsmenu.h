@@ -78,5 +78,5 @@ private:
 	static void buildSettingsTree(SettingsItem *parent, const QList<KPluginMetaData> &pluginModules, const QList<CategoryData> &categories);
 
 	// Adds a settingsitem (and all of its children) to a given menu
-	void addSettingsActions(const SettingsItem *item, ServiceMenu *menu);
+	void addSettingsActions(const SettingsItem *item, ServiceMenuBase *menu);
 };

@@ -28,11 +28,8 @@
 #include <sessionmanagement.h>
 
 KMenu::KMenu(ServiceMenuApplet *applet, QWidget *parent)
-	: ServiceMenu(applet, parent),
-	  m_session(new SessionManagement(this))
-{
-	initialize(); // Populate menu items
-}
+	: ServiceGroupMenu(applet, parent),
+	  m_session(new SessionManagement(this)) {}
 
 void
 KMenu::changeEvent(QEvent *e)
@@ -68,7 +65,7 @@ KMenu::paintEvent(QPaintEvent *e)
 
 void
 KMenu::rebuild()
-{
+{	
 	// Load the configuration
 	if (applet()) {
 		m_config.drawSideImage	= applet()->getConfigValue<bool>(QStringLiteral("drawSideImage"));

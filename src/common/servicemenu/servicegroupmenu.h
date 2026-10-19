@@ -8,19 +8,23 @@
 
 #include "servicemenu.h"
 
-class ServiceGroupMenu final : public ServiceMenu
+class ServiceGroupMenu : public ServiceMenu
 {
 	/* Builds an application menu using a given KServiceGroup */
 	Q_OBJECT
 public:
+	explicit ServiceGroupMenu(ServiceMenuApplet *applet, QWidget *parent = nullptr);
 	ServiceGroupMenu(const KServiceGroup::Ptr &group, ServiceMenuApplet *applet, QWidget *parent = nullptr);
 
-	// Sets a new KServiceGroup to be used.
-	void setServiceGroup(const KServiceGroup::Ptr &group);
+protected:
+	// Returns a list of QAction*s corresponding to the hierarchy of the provided
+	// KServiceGroup, all parented to this
+	QList<QAction *> createActionsFromServiceGroup(const KServiceGroup::Ptr &group);
+
 private:
 	// The KServiceGroup used to build the menu
 	KServiceGroup::Ptr m_group;
-	
-	void rebuild() override;
+
+	void rebuild() override {}
 	void populate() override;
 };

@@ -18,6 +18,7 @@ public:
 	RecentDocsMenu(const QIcon &icon, const QString &title, ServiceMenuApplet *applet, QWidget *parent = nullptr);
 	
 private:
+	void rebuild() override {}
 	void populate() override;
 
 private Q_SLOTS:

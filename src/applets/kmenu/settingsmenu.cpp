@@ -14,16 +14,13 @@
 #include <KConfigGroup>
 
 SettingsMenu::SettingsMenu(ServiceMenuApplet *applet, QWidget *parent)
-	: SettingsMenu(QIcon(), QString(), applet, parent) {}
+	: ServiceMenu(applet, parent) {}
 
 SettingsMenu::SettingsMenu(const QString &title, ServiceMenuApplet *applet, QWidget *parent)
-	: SettingsMenu(QIcon(), title, applet, parent) {}
+	: ServiceMenu(title, applet, parent) {}
 
 SettingsMenu::SettingsMenu(const QIcon &icon, const QString &title, ServiceMenuApplet *applet, QWidget *parent)
-	: ServiceMenu(icon, title, applet, parent)
-{
-	initialize();
-}
+	: ServiceMenu(icon, title, applet, parent) {}
 
 void
 SettingsMenu::rebuild()
@@ -166,14 +163,14 @@ SettingsMenu::buildSettingsTree(SettingsItem *parent,
 }
 
 void
-SettingsMenu::addSettingsActions(const SettingsItem *item, ServiceMenu *menu)
+SettingsMenu::addSettingsActions(const SettingsItem *item, ServiceMenuBase *menu)
 {
 	for (SettingsItem *child : std::as_const(item->children)) {
 		if (child->isCategory) {
 			// If it's a category, add a sub menu for each child and recurse
 			if (!child->children.isEmpty()) {
-				auto *subMenu = new ServiceMenu(QIcon::fromTheme(child->icon),
-												escapeMnemonics(child->name), applet(), menu);
+				auto *subMenu = new ServiceMenuBase(QIcon::fromTheme(child->icon),
+													escapeMnemonics(child->name), applet(), menu);
 				menu->addMenu(subMenu);
 			    addSettingsActions(child, subMenu);
 			}

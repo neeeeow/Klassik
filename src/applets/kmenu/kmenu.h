@@ -6,11 +6,11 @@
 
 #pragma once
 
-#include "servicemenu.h"
+#include "servicegroupmenu.h"
 
 class SessionManagement;
 
-class KMenu final : public ServiceMenu
+class KMenu final : public ServiceGroupMenu
 {
 	Q_OBJECT
 	

@@ -18,7 +18,6 @@ SystemMenu::SystemMenu(const QIcon &icon, const QString &title, ServiceMenuApple
 	: ServiceMenu(icon, title, applet, parent)
 {
 	setContextMenuPolicy(Qt::NoContextMenu); // We don't want the context menu appearing here
-	initialize();
 }
 
 void

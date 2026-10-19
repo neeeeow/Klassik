@@ -19,16 +19,13 @@ using namespace KActivities::Stats;
 using namespace KActivities::Stats::Terms;
 
 RecentDocsMenu::RecentDocsMenu(ServiceMenuApplet *applet, QWidget *parent)
-	: RecentDocsMenu(QIcon(), QString(), applet, parent) {}
+	: ServiceMenu(applet, parent) {}
 
 RecentDocsMenu::RecentDocsMenu(const QString &title, ServiceMenuApplet *applet, QWidget *parent)
-	: RecentDocsMenu(QIcon(), title, applet, parent) {}
+	: ServiceMenu(title, applet, parent) {}
 
 RecentDocsMenu::RecentDocsMenu(const QIcon &icon, const QString &title, ServiceMenuApplet *applet, QWidget *parent)
-	: ServiceMenu(icon, title, applet, parent)
-{
-	initialize();
-}
+	: ServiceMenu(icon, title, applet, parent) {}
 
 void
 RecentDocsMenu::populate()

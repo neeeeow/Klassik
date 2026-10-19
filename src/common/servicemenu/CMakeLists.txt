@@ -1,4 +1,5 @@
 add_library(klassik_servicemenu STATIC
+    servicemenubase.cpp
     servicemenu.cpp
     servicemenuapplet.cpp
     servicegroupmenu.cpp
