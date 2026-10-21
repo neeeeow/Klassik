@@ -36,9 +36,6 @@ protected:
 	// KServiceGroup, all parented to this
 	QList<QAction *> createActionsFromServiceGroup(const KServiceGroup::Ptr &group);
 
-	// Enables/disables the action based on the search filter.
-	void filterAction(QAction *action) const;
-
 private:
 	// The KServiceGroup used to build the menu
 	KServiceGroup::Ptr m_group;
@@ -49,6 +46,12 @@ private:
 	void rebuild() override {}
 	void populate() override;
 
+	// Returns a list of the actions to filter.
+	virtual QList<QAction *> actionsToFilter() const { return actions(); }
+
+	// Filters through each action in a given list of actions
+	static void filterActions(const QList<QAction *> &actions, QStringView filter);
+
 	// Returns true if the service passes the search filter (i.e. if
 	// the service does not contain the search filter string)
     static bool filterService(const KService::Ptr &service, QStringView filter);
@@ -58,5 +61,5 @@ private:
 
 private Q_SLOTS:
 	// Applies the search filter to the menu items
-	virtual void applySearchFilter();
+	void applySearchFilter();
 };

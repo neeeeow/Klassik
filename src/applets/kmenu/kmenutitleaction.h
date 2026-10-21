@@ -22,6 +22,7 @@ namespace KMenuWidgets {
 		TitleWidget(const QString &text, QWidget *parent)
 			: QWidget(parent), m_text(text) {
 			setEnabled(false);
+			setAttribute(Qt::WA_TransparentForMouseEvents);
 		}
 
 		QSize sizeHint() const override {
@@ -58,11 +59,11 @@ namespace KMenuWidgets {
 	};
 }
 	
-class KMenuTitle : public QWidgetAction
+class KMenuTitleAction : public QWidgetAction
 {
 	Q_OBJECT
 public:
-	KMenuTitle(const QString &title, QWidget *parent = nullptr)
+	KMenuTitleAction(const QString &title, QObject *parent = nullptr)
 		: QWidgetAction(parent) {
 		setText(title);
 		setEnabled(false); // by default, make it disabled

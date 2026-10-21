@@ -52,9 +52,10 @@ private:
 	QList<QAction *> applicationActions() const {
 		return QList<QAction *>(m_applicationActions.begin(), m_applicationActions.end());
 	}
-
+	QList<QAction *> actionsToFilter() const override { return applicationActions(); }
+	
 	void rebuild() override;
-	void populate() override;
+	void populate() override;	
 	
 	// Sets the margin dependant on the side pixmap setting
 	void setMargins();
@@ -72,8 +73,4 @@ private:
 
 	// KDE 3 colorize function
 	void colorize(QImage &image) const;
-
-private Q_SLOTS:
-	// Applies the search filter to the menu items
-    void applySearchFilter() override;
 };

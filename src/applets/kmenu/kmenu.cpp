@@ -6,8 +6,8 @@
 
 #include "kmenu.h"
 #include "servicemenuapplet.h"
-#include "kmenumenutitle.h"
-#include "kmenumenusearch.h"
+#include "kmenutitleaction.h"
+#include "kmenusearchaction.h"
 #include "recentdocsmenu.h"
 #include "settingsmenu.h"
 #include "systemmenu.h"
@@ -92,21 +92,20 @@ KMenu::populate()
 	// Most used applications section
 	if (m_config.showMostUsedApps) {
 		if (m_config.showTitles)
-			addAction(new KMenuTitle(i18n("Most Used Applications"), this));
+			addAction(new KMenuTitleAction(i18n("Most Used Applications"), this));
 		addActions(mostUsedAppsActions());
 		if (!m_config.showTitles)
 			addSeparator();
 	}
 
 	if (m_config.showTitles)
-		addAction(new KMenuTitle(i18n("All Applications"), this));		
+		addAction(new KMenuTitleAction(i18n("All Applications"), this));		
 
 	// All applications search bar
 	if (m_config.showSearch) {
-		auto *search = new KMenuSearch(i18n("Press '/' to search..."), Qt::Key_Slash, this);
-		addAction(search);				
-		if (QLineEdit *lineEdit = search->lineEdit())	
-			connect(lineEdit, &QLineEdit::textChanged, this, &ServiceGroupMenu::setSearchFilter);
+		auto *search = new KMenuSearchAction(this);
+		connect(search, &KMenuSearchAction::textChanged, this, &ServiceGroupMenu::setSearchFilter);
+		addAction(search);
 	}
 
 	// All applications entries
@@ -121,7 +120,7 @@ KMenu::populate()
 
 	// Actions section
 	if (m_config.showTitles)
-		addAction(new KMenuTitle(i18n("Actions"), this));
+		addAction(new KMenuTitleAction(i18n("Actions"), this));
 	else
 		addSeparator();
 
@@ -297,18 +296,6 @@ KMenu::mostUsedAppsActions()
 	return actions;
 }
 
-void
-KMenu::applySearchFilter()
-{
-	if (!initialized() || isEmpty() || !isVisible())
-		return;
-
-	for (QAction *action : applicationActions()) {
-		// Set the enabled/disabled state of the action
-		filterAction(action);
-	}
-}
-
 /* Mouse events adapted from KDE 3.5 kicker source code.
    Copyright (c) 1996-2000 the KDE 3 kicker authors.
    Source available: https://kde.org/info/1-2-3/3.5.10/ */
@@ -355,7 +342,15 @@ void
 KMenu::mouseMoveEvent(QMouseEvent *e)
 {
 	auto newEvent(translateMouseEvent(e));
-	ServiceMenu::mouseMoveEvent( newEvent ? newEvent.get() : e );
+	QMouseEvent *ev = newEvent ? newEvent.get() : e;
+
+	// If the search bar action is hovered, make it the active action, which
+	// will close any open submenus
+	QAction *action = actionAt(ev->position().toPoint());
+	if (action && action->isEnabled() && qobject_cast<KMenuSearchAction *>(action))
+	setActiveAction(action);
+	
+	ServiceMenu::mouseMoveEvent(ev);
 }
 
 /* Colorize code adapted from KDE 3 code.

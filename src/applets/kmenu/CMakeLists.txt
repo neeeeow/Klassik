@@ -17,8 +17,8 @@ plasma_add_applet(com.github.neeeeow.klassik.kmenu
         recentdocsmenu.cpp
         settingsmenu.cpp
         systemmenu.cpp
-        kmenumenutitle.h
-        kmenumenusearch.h
+        kmenutitleaction.h
+        kmenusearchaction.cpp
         ${KLASSIK_COMMON_DIR}/painteditems/styledframe.h
         ${KLASSIK_COMMON_DIR}/painteditems/panelbuttonarrow.h
     RESOURCES

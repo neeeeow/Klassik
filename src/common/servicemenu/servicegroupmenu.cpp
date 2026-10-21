@@ -15,7 +15,7 @@ ServiceGroupMenu::ServiceGroupMenu(const KServiceGroup::Ptr &group, ServiceMenuA
 	: ServiceMenu(applet, parent), m_group(group)
 {
 	// Set the KServiceGroup to be used
-	if (m_group && m_group != KServiceGroup::root()) {
+	if (m_group && m_group->storageId() != KServiceGroup::root()->storageId()) {
 		setTitle(escapeMnemonics(m_group->caption()));
 		setIcon(QIcon::fromTheme(m_group->icon(), QIcon::fromTheme(QStringLiteral("applications-other"))));
 	}
@@ -81,39 +81,37 @@ ServiceGroupMenu::createActionsFromServiceGroup(const KServiceGroup::Ptr &group)
 
 void
 ServiceGroupMenu::applySearchFilter()
-{
-	if (!initialized() || isEmpty() || !isVisible())
+{	
+	if (!initialized() || !isVisible())
 		return;
-
-	for (QAction *action : actions()) {
-		// Set the enabled/disabled state of the action
-		filterAction(action);
-	}
+	
+	const QList<QAction *> actions = actionsToFilter();
+	if (actions.isEmpty()) return;
+	
+	filterActions(actions, searchFilter());
 }
 
 void
-ServiceGroupMenu::filterAction(QAction *action) const
+ServiceGroupMenu::filterActions(const QList<QAction *> &actions, QStringView filter)
 {
-	if (!action || action->isSeparator())
+	if (actions.isEmpty())
 		return;
-
-	const QString &filter = searchFilter();
-	if (filter.isEmpty()) {
-		// If the filter is empty, enable the action and bail.
-		action->setEnabled(true);
-		return;
+	
+	for (QAction *action : actions) {	
+		if (!action || action->isSeparator() || action->data().isNull())
+			continue;
+		if (filter.isEmpty()) {
+			action->setEnabled(true);
+			continue;
+		}
+		bool enabled = false; // Whether or not to enable the individual action
+		const QVariant data = action->data();
+		if (data.canConvert<KService::Ptr>())
+			enabled = filterService(data.value<KService::Ptr>(), filter);
+		else if (data.canConvert<KServiceGroup::Ptr>())
+			enabled = filterServiceGroup(data.value<KServiceGroup::Ptr>(), filter);								
+		action->setEnabled(enabled);
 	}
-
-	bool enabled = false;
-	const QVariant data = action->data();	
-	if (data.canConvert<KService::Ptr>()) {
-		// If it's a KService, just filter based on the name
-		enabled = filterService(data.value<KService::Ptr>(), filter);
-	} else if (data.canConvert<KServiceGroup::Ptr>()) {
-		enabled = filterServiceGroup(data.value<KServiceGroup::Ptr>(), filter);
-	}
-
-	action->setEnabled(enabled);
 }
 
 bool
