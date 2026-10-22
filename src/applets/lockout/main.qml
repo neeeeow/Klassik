@@ -16,13 +16,23 @@ import org.kde.kirigami as Kirigami
 PlasmoidItem {
     id: root
 
+    // Copy over the sizing from the gridlayout
+    implicitWidth: grid.implicitWidth
+    implicitHeight: grid.implicitHeight
+    Layout.minimumWidth: grid.Layout.minimumWidth
+    Layout.minimumHeight: grid.Layout.minimumHeight
+    Layout.preferredWidth: grid.Layout.preferredWidth
+    Layout.preferredHeight: grid.Layout.preferredHeight
+    Layout.maximumWidth: grid.Layout.maximumWidth
+    Layout.maximumHeight: grid.Layout.maximumHeight
+
     SessionManagement {
         id: session
     }
 
-    preferredRepresentation: fullRepresentation
-    fullRepresentation: GridLayout {
+    GridLayout {
         id: grid
+        anchors.fill: parent
 
         readonly property bool horizontal: Plasmoid.formFactor === PlasmaCore.Types.Horizontal
         readonly property int iconSize: Kirigami.Units.iconSizes.small
