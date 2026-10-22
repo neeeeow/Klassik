@@ -126,7 +126,7 @@ ServiceMenuBase::createActionFromUrl(const QUrl &url)
 	const QString fileName = escapeMnemonics(url.fileName()); // name to display in the menu
 		
 	const QMimeDatabase db; // use QMimeDatabase to fetch the icon name
-	const QMimeType mime = db.mimeTypeForUrl(url);
+	const QMimeType mime = db.mimeTypeForFile(url.toLocalFile(), QMimeDatabase::MatchExtension);	
 	const QIcon icon = QIcon::fromTheme(mime.iconName(), QIcon::fromTheme(QStringLiteral("text-x-generic")));
 
 	auto *action = new QAction(icon, fileName, this);
@@ -448,6 +448,6 @@ ServiceMenuBase::mouseMoveEvent(QMouseEvent *ev)
 void
 ServiceMenuBase::mouseReleaseEvent(QMouseEvent *ev)
 {
-	QMenu::mouseReleaseEvent(ev);
 	m_startPos.reset();
+	QMenu::mouseReleaseEvent(ev);	
 }

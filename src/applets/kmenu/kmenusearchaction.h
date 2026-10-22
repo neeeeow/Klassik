@@ -10,8 +10,7 @@
 
 class KMenuSearchAction : public QWidgetAction
 {
-	/* QWidgetAction which creates the lineedit used for the search functionality.
-	   The lineedit text is given by the text() function */
+	/* QWidgetAction which creates the lineedit used for the search functionality */
 	Q_OBJECT
 public:
 	explicit KMenuSearchAction(QObject *parent = nullptr);

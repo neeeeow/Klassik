@@ -48,8 +48,8 @@ Q_SIGNALS:
 	void menuActiveChanged();
 
 private:
-	QPointer<ContainmentInterface> m_containmentInterface = nullptr;
-	QPointer<ServiceMenu> m_menu = nullptr;
+	QPointer<ContainmentInterface> m_containmentInterface;
+	QPointer<ServiceMenu> m_menu;
 
 	// Loads a given ServiceMenu. Only ever called by the base class in init().
 	// Implement this in a subclass and return a pointer to a *parentless* ServiceMenu

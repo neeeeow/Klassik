@@ -15,7 +15,8 @@ ServiceMenu::ServiceMenu(const QString &title, ServiceMenuApplet *applet, QWidge
 ServiceMenu::ServiceMenu(const QIcon &icon, const QString &title, ServiceMenuApplet *applet, QWidget *parent)
 	: ServiceMenuBase(icon, title, applet, parent)
 {
-	connect(this, &QMenu::aboutToShow, this, &ServiceMenu::refreshContents, Qt::UniqueConnection);
+	connect(this, &QMenu::aboutToShow, this, [this] { if (!m_fresh) refreshContents(); });
+	connect(this, &QMenu::aboutToHide, this, [this] { m_fresh = false; });
 }
 
 void
@@ -42,4 +43,5 @@ ServiceMenu::refreshContents()
 		initialize();
 	clear();
 	populate();
+	m_fresh = true;
 }

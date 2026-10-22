@@ -44,6 +44,7 @@ ServiceMenuApplet::init()
 	// Create the objects
 	m_containmentInterface = new ContainmentInterface(this);
 	m_menu = createMenu();
+	Q_ASSERT(m_menu);
 
 	// Connect signals
 	connect(m_menu, &QMenu::aboutToShow, this, &ServiceMenuApplet::menuActiveChanged, Qt::QueuedConnection);
@@ -98,8 +99,7 @@ ServiceMenuApplet::toggleMenu(QQuickItem *button)
 		m_menu->createWinId();
 		if (QWindow *menuWindow = m_menu->windowHandle())
 			menuWindow->setTransientParent(button->window());
-		if (m_menu->isEmpty())
-			m_menu->refreshContents();
+		m_menu->refreshContents();
 		m_menu->popup(popupPosition(button));
 	}
 }

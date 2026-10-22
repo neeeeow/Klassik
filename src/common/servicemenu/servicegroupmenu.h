@@ -24,8 +24,10 @@ public:
 		}
 	}
 	void resetSearchFilter() {
-		m_searchFilter = QString();
-		Q_EMIT searchFilterChanged(m_searchFilter);
+		if (m_searchFilter != QString()) {
+			m_searchFilter = QString();
+			Q_EMIT searchFilterChanged(m_searchFilter);
+		}
 	}
 
 Q_SIGNALS:
@@ -53,7 +55,7 @@ private:
 	static void filterActions(const QList<QAction *> &actions, QStringView filter);
 
 	// Returns true if the service passes the search filter (i.e. if
-	// the service does not contain the search filter string)
+	// the service contains the search filter string)
     static bool filterService(const KService::Ptr &service, QStringView filter);
 
 	// Returns true if the service group passes the search filter

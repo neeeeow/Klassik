@@ -27,8 +27,8 @@ KCMUtils.SimpleKCM {
     property alias cfg_showTooltips: showTooltips.checked
     property alias cfg_showGenericName: showGenericName.checked
 
-    property alias cfg_showRecentApps: showRecentApps.checked
-    property alias cfg_numRecentApps: numRecentApps.value
+    property alias cfg_showMostUsedApps: showMostUsedApps.checked
+    property alias cfg_numMostUsedApps: numMostUsedApps.value
 
     property alias cfg_showRecentDocs: showRecentDocs.checked
     property alias cfg_numRecentDocs: numRecentDocs.value
@@ -119,11 +119,11 @@ KCMUtils.SimpleKCM {
         }
 
         CheckBox {
-            id: showRecentApps
+            id: showMostUsedApps
             text: i18n("Display most used applications")
         }
         RowLayout {
-            enabled: showRecentApps.checked
+            enabled: showMostUsedApps.checked
             spacing: Kirigami.Units.smallSpacing
 
             Label {
@@ -131,7 +131,7 @@ KCMUtils.SimpleKCM {
             }
 
             SpinBox {
-                id: numRecentApps
+                id: numMostUsedApps
                 from: 1
                 to: 20
             }

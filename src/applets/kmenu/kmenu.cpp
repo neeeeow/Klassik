@@ -15,12 +15,10 @@
 #include <QPainter>
 #include <QEvent>
 #include <QAction>
-#include <QLineEdit>
 #include <QRect>
 #include <QPaintEvent>
 
 #include <KLocalizedString>
-#include <KSycoca>
 
 #include <PlasmaActivities/Stats/ResultSet>
 #include <PlasmaActivities/Stats/Query>
@@ -71,8 +69,8 @@ KMenu::rebuild()
 		m_config.drawSideImage	= applet()->getConfigValue<bool>(QStringLiteral("drawSideImage"));
 		m_config.showTitles		= applet()->getConfigValue<bool>(QStringLiteral("showTitles"));
 		m_config.showSearch		= applet()->getConfigValue<bool>(QStringLiteral("showSearch"));
-		m_config.showMostUsedApps = applet()->getConfigValue<bool>(QStringLiteral("showRecentApps"));
-		m_config.numMostUsedApps	= applet()->getConfigValue<int>(QStringLiteral("numRecentApps"));
+		m_config.showMostUsedApps = applet()->getConfigValue<bool>(QStringLiteral("showMostUsedApps"));
+		m_config.numMostUsedApps	= applet()->getConfigValue<int>(QStringLiteral("numMostUsedApps"));
 		m_config.showRecentDocs = applet()->getConfigValue<bool>(QStringLiteral("showRecentDocs"));
 		m_config.showSystem		= applet()->getConfigValue<bool>(QStringLiteral("showSystem"));	
 		m_config.showSettings	= applet()->getConfigValue<bool>(QStringLiteral("showSettings"));
@@ -311,17 +309,18 @@ KMenu::translateMouseEvent( QMouseEvent* e )
 	if (!side.contains(e->position().toPoint()))
 		return nullptr;
 
-	QPointF newpos( e->position() );
-	layoutDirection() == Qt::RightToLeft ?
-		newpos.setX( newpos.x() - side.width() ) :
-		newpos.setX( newpos.x() + side.width() );
-	QPointF newglobal( e->globalPosition() );
-	layoutDirection() == Qt::RightToLeft ?
-		newglobal.setX( newglobal.x() - side.width() ) :
-		newglobal.setX( newglobal.x() + side.width() );
+	QPointF newpos(e->position());
+	QPointF newglobal(e->globalPosition());
+
+	qreal offset = side.width();
+	if (layoutDirection() == Qt::RightToLeft)
+		offset = -offset;
+
+	newpos.rx() += offset;
+	newglobal.rx() += offset;
 	
 	return std::make_unique<QMouseEvent>(
-		e->type(), newpos, newglobal, e->button(), e->buttons(), e->modifiers());
+		e->type(), newpos, newglobal, e->button(), e->buttons(), e->modifiers(), e->pointingDevice());
 }
 
 void
@@ -348,7 +347,7 @@ KMenu::mouseMoveEvent(QMouseEvent *e)
 	// will close any open submenus
 	QAction *action = actionAt(ev->position().toPoint());
 	if (action && action->isEnabled() && qobject_cast<KMenuSearchAction *>(action))
-	setActiveAction(action);
+		setActiveAction(action);
 	
 	ServiceMenu::mouseMoveEvent(ev);
 }

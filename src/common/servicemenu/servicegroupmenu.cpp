@@ -15,11 +15,9 @@ ServiceGroupMenu::ServiceGroupMenu(const KServiceGroup::Ptr &group, ServiceMenuA
 	: ServiceMenu(applet, parent), m_group(group)
 {
 	// Set the KServiceGroup to be used
-	if (m_group && m_group->storageId() != KServiceGroup::root()->storageId()) {
-		setTitle(escapeMnemonics(m_group->caption()));
-		setIcon(QIcon::fromTheme(m_group->icon(), QIcon::fromTheme(QStringLiteral("applications-other"))));
-	}
-
+	setTitle(escapeMnemonics(m_group->caption()));
+	setIcon(QIcon::fromTheme(m_group->icon(), QIcon::fromTheme(QStringLiteral("applications-other"))));
+		
 	// Set the search filter from the parent (if there is one!)
 	if (const auto *parentMenu = qobject_cast<const ServiceGroupMenu *>(parentWidget())) {
 		// Directly assign the variable here since there's no need to fire the signal
@@ -132,6 +130,9 @@ ServiceGroupMenu::filterServiceGroup(const KServiceGroup::Ptr &group, QStringVie
 {
 	if (!group || !group->isValid() || group->childCount() == 0)
 		return false;
+
+	if (filter.isEmpty())
+		return true;
 
 	const auto entries = group->entries(true);
 	for (const auto &entry : entries) {

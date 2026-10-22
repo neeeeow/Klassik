@@ -64,7 +64,7 @@ private:
 	bool m_displayGenericName = true;
 
 	// Pointer to the plasma applet
-	QPointer<ServiceMenuApplet> m_applet = nullptr;
+	QPointer<ServiceMenuApplet> m_applet;
 
 	// Initial drag position. We use std::optional here since it only needs to contain
 	// data whenever a drag operation is occuring.

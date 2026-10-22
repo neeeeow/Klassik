@@ -29,11 +29,11 @@
             <default>true</default>
         </entry>
 
-        <entry name="showRecentApps" type="Bool">
+        <entry name="showMostUsedApps" type="Bool">
             <label>Display the Most Used Applications section</label>
             <default>true</default>
         </entry>
-        <entry name="numRecentApps" type="Int">
+        <entry name="numMostUsedApps" type="Int">
             <label>Number of applications to display in the Most Used Applications section</label>
             <default>3</default>
         </entry>
