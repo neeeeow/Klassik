@@ -8,6 +8,8 @@
 
 #include "servicemenu.h"
 
+#include <KServiceGroup>
+
 class ServiceGroupMenu : public ServiceMenu
 {
 	/* Builds an application menu using a given KServiceGroup */

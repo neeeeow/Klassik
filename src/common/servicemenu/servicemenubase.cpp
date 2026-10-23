@@ -24,6 +24,7 @@
 #include <KNotificationJobUiDelegate>
 #include <KApplicationTrader>
 #include <KPropertiesDialog>
+#include <KServiceGroup>
 
 #include <KIO/ApplicationLauncherJob>
 #include <KIO/CommandLauncherJob>

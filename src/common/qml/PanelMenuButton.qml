@@ -43,11 +43,11 @@ Button {
             hoverEnabled: false
             hovered: root.hovered
         }
+    }
 
-        PlasmaCore.ToolTipArea {
-            anchors.fill: parent
-            mainText: root.name
-            icon: root.icon.name
-        }
+    PlasmaCore.ToolTipArea {
+        anchors.fill: parent
+        mainText: root.name
+        icon: root.icon.name
     }
 }

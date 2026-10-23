@@ -12,6 +12,7 @@ plasma_add_applet(com.github.neeeeow.klassik.quicklaunch
         main.qml
         LauncherModel.qml
         layout.js
+        ${KLASSIK_COMMON_DIR}/qml/PanelButton.qml
     CPP_SOURCES
         quicklaunch_p.cpp
         ${KLASSIK_COMMON_DIR}/painteditems/styledframe.h

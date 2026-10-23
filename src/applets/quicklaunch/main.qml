@@ -12,9 +12,7 @@ import QtQuick.Layouts
 import org.kde.plasma.plasmoid
 import org.kde.plasma.core as PlasmaCore
 import org.kde.kirigami as Kirigami
-import org.kde.plasma.components as PlasmaComponents3
 import org.kde.draganddrop as DragAndDrop
-import plasma.applet.com.github.neeeeow.klassik.quicklaunch
 
 import "layout.js" as LayoutManager
 

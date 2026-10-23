@@ -7,12 +7,9 @@
  */
 
 import QtQuick
-import org.kde.plasma.core as PlasmaCore
-import org.kde.kirigami as Kirigami
 import org.kde.plasma.plasmoid
 import org.kde.draganddrop as DragAndDrop
 import org.kde.plasma.extras as PlasmaExtras
-import plasma.applet.com.github.neeeeow.klassik.quicklaunch
 
 Item {
     id: iconItem
@@ -56,7 +53,7 @@ Item {
         enabled: !Plasmoid.immutable
         defaultAction: Qt.MoveAction
         supportedActions: Qt.IgnoreAction | Qt.MoveAction
-        delegate: icon
+        delegate: panelButton
 
         mimeData {
             url: iconItem.storageId == "quicklaunch:drop" ? "" : iconItem.logic.storageIdToUrl(iconItem.storageId)
@@ -71,125 +68,92 @@ Item {
             iconItem.dragging = false;
         }
 
-        MouseArea {
-            id: mouseArea
+        PanelButton {
+            id: panelButton
             anchors.fill: parent
             anchors.margins: 0
-            hoverEnabled: true
-            acceptedButtons: Qt.LeftButton | Qt.RightButton
+            name: iconItem.launcher.applicationName
+            icon.name: iconItem.storageId == "quicklaunch:drop" ? "" : iconItem.iconName
 
-            readonly property bool isDown: pressed && containsMouse
+            onClicked: iconItem.logic.openLauncher(iconItem.storageId)
 
-            activeFocusOnTab: true
-            Accessible.name: iconItem.launcher.applicationName
-            Accessible.description: i18n("Launch %1", iconItem.launcher.genericName || iconItem.launcher.applicationName)
-            Accessible.role: Accessible.Button
-
-            onPressed: mouse => {
-                if (mouse.button == Qt.RightButton) {
+            MouseArea {
+                id: mouseArea
+                anchors.fill: parent
+                acceptedButtons: Qt.RightButton
+                onPressed: mouse => {
                     contextMenu.refreshActions();
                     contextMenu.open(mouse.x, mouse.y);
                 }
-            }
 
-            onClicked: mouse => {
-                if (mouse.button == Qt.LeftButton) {
-                    iconItem.logic.openLauncher(iconItem.storageId)
-                }
-            }
+                PlasmaExtras.Menu {
+                    id: contextMenu
 
-            StyledFrame {
-                id: sunkenFrame
-                anchors.fill: parent
-                visible: mouseArea.isDown
-                sunken: true
-            }
+                    property var jumpListItems : []
 
-            Kirigami.Icon {
-                id: icon
-                anchors.fill: parent
+                    visualParent: mouseArea
 
-                source: iconItem.storageId == "quicklaunch:drop" ? "" : iconItem.iconName
-                active: mouseArea.containsMouse
-
-                scale: mouseArea.isDown ? (width - 2*sunkenFrame.lineWidth) / width : 1.0
-                transformOrigin: Item.Center
-            }
-
-            PlasmaCore.ToolTipArea {
-                anchors.fill: parent
-                active: !iconItem.dragging
-                mainText: iconItem.launcher.applicationName
-                subText: iconItem.launcher.genericName
-                icon: iconItem.iconName
-            }
-
-            PlasmaExtras.Menu {
-                id: contextMenu
-
-                property var jumpListItems : []
-
-                visualParent: mouseArea
-
-                PlasmaExtras.MenuItem {
-                    id: jumpListSeparator
-                    separator: true
-                }
-
-                PlasmaExtras.MenuItem {
-                    text: i18nc("@action:inmenu", "Add Launcher…")
-                    icon: "list-add"
-                    onClicked: iconItem.addLauncher()
-                }
-
-                PlasmaExtras.MenuItem {
-                    text: i18nc("@action:inmenu", "Remove Launcher")
-                    icon: "list-remove"
-                    onClicked: iconItem.removeLauncher()
-                }
-
-                PlasmaExtras.MenuItem {
-                    separator: true
-                }
-
-                PlasmaExtras.MenuItem {
-                    action: Plasmoid.internalAction("configure")
-                }
-
-                PlasmaExtras.MenuItem {
-                    action: Plasmoid.internalAction("remove")
-                }
-
-                function refreshActions() {
-                    for (var i = 0; i < jumpListItems.length; ++i) {
-                        var item = jumpListItems[i];
-                        removeMenuItem(item);
-                        item.destroy();
+                    PlasmaExtras.MenuItem {
+                        id: jumpListSeparator
+                        separator: true
                     }
-                    jumpListItems = [];
 
-                    for (var i = 0; i < iconItem.launcher.jumpListActions.length; ++i) {
-                        var action = iconItem.launcher.jumpListActions[i];
-                        var item = menuItemComponent.createObject(iconItem, {
-                            "text": action.name,
-                            "icon": action.icon
-                        });
-                        item.clicked.connect((function(actionExec) {
-                            return function() {
-                                logic.openExec(actionExec);
-                            };
-                        })(action.exec));
+                    PlasmaExtras.MenuItem {
+                        text: i18nc("@action:inmenu", "Add Launcher…")
+                        icon: "list-add"
+                        onClicked: iconItem.addLauncher()
+                    }
 
-                        addMenuItem(item, jumpListSeparator);
-                        jumpListItems.push(item);
+                    PlasmaExtras.MenuItem {
+                        text: i18nc("@action:inmenu", "Remove Launcher")
+                        icon: "list-remove"
+                        onClicked: iconItem.removeLauncher()
+                    }
+
+                    PlasmaExtras.MenuItem {
+                        separator: true
+                    }
+
+                    PlasmaExtras.MenuItem {
+                        action: Plasmoid.internalAction("configure")
+                    }
+
+                    PlasmaExtras.MenuItem {
+                        action: Plasmoid.internalAction("remove")
+                    }
+
+                    function refreshActions() {
+                        for (var i = 0; i < jumpListItems.length; ++i) {
+                            var item = jumpListItems[i];
+                            removeMenuItem(item);
+                            item.destroy();
+                        }
+                        jumpListItems = [];
+
+                        for (var i = 0; i < iconItem.launcher.jumpListActions.length; ++i) {
+                            var action = iconItem.launcher.jumpListActions[i];
+                            var item = menuItemComponent.createObject(iconItem, {
+                                "text": action.name,
+                                "icon": action.icon
+                            });
+                            item.clicked.connect((function(actionExec) {
+                                return function() {
+                                    logic.openExec(actionExec);
+                                };
+                            })(action.exec));
+
+                            addMenuItem(item, jumpListSeparator);
+                            jumpListItems.push(item);
+                        }
                     }
                 }
+
+                Component {
+                    id: menuItemComponent
+                    PlasmaExtras.MenuItem { }
+                }
             }
 
-            Component {
-                id: menuItemComponent
-                PlasmaExtras.MenuItem { }
-            }
         }
     }
 

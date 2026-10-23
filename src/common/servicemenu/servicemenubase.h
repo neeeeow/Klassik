@@ -11,7 +11,6 @@
 #include <QUrl>
 
 #include <KService>
-#include <KServiceGroup>
 
 class ServiceMenuApplet;
 
