@@ -191,7 +191,9 @@ ContainmentItem {
 
         onDrop: event => {
             appletsModel.remove(dndSpacer.parent.index);
-            root.processMimeData(event.mimeData, event.x, event.y);
+            if (!Plasmoid.processMimeData(event.mimeData, event.x, event.y)) {
+                root.processMimeData(event.mimeData, event.x, event.y);
+            }
             event.accept(event.proposedAction);
             root.fixedWidth = root.fixedHeight = 0;
         }

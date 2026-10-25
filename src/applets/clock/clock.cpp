@@ -53,8 +53,7 @@ Clock::paint(QPainter *p) const
 	// frame
 	if (style() && m_showFrame) {
 		QStyleOptionFrame frame;
-		frame.palette = palette();
-		frame.rect = rect();
+		frame.QStyleOption::operator=(baseStyleOption());
 		frame.state = QStyle::State_Enabled | QStyle::State_Sunken;
 		frame.frameShape = QFrame::Panel;
 		frame.lineWidth = 1;

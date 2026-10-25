@@ -49,7 +49,7 @@ ServiceMenuBase::ServiceMenuBase(const QIcon &icon, const QString &title, Servic
 	if (!title.isEmpty())
 		setTitle(title);	
 	this->setContextMenuPolicy(Qt::CustomContextMenu);
-	connect(this, &QMenu::customContextMenuRequested, this, &ServiceMenuBase::showContextMenu, Qt::UniqueConnection);
+	connect(this, &QMenu::customContextMenuRequested, this, &ServiceMenuBase::showContextMenu);
 	loadConfig();
 }
 

@@ -12,6 +12,8 @@
 
 #include <QtQuick/private/qquickpalette_p.h>
 
+class QMimeData;
+
 class PanelContainment : public Plasma::Containment
 {
 	Q_OBJECT
@@ -20,11 +22,17 @@ class PanelContainment : public Plasma::Containment
 	// Whether or not to colorize the palette
 	Q_PROPERTY(bool colorize MEMBER m_colorize NOTIFY colorizeChanged FINAL)
 public:
-	PanelContainment(QObject *parentObject, const KPluginMetaData &data, const QVariantList &args);
-
-	QQuickPalette *palette() const { return m_quickPalette; }
+	PanelContainment(QObject *parentObject, const KPluginMetaData &data, const QVariantList &args);	
 
 	bool eventFilter(QObject *watched, QEvent *event) override;
+
+	// Returns the QQuickPalette used by the containment
+	QQuickPalette *palette() const { return m_quickPalette; }
+
+	// Custom mimedata handler. Adds custom icon applet as well as custom menu applet.
+	// Returns true if it performed an action. If false, call ContainmentItem's processMimeData
+	Q_INVOKABLE bool processMimeData(QMimeData *mimeData, int x, int y);
+	
 	
 Q_SIGNALS:
 	void paletteChanged();

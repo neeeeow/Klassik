@@ -7,7 +7,11 @@
 #include "panelcontainment.h"
 
 #include <QGuiApplication>
+#include <QUrl>
+#include <QMimeData>
+
 #include <KPluginFactory>
+#include <KUrlMimeData>
 
 K_PLUGIN_CLASS_WITH_JSON(PanelContainment, "metadata.json")
 
@@ -26,6 +30,39 @@ PanelContainment::eventFilter(QObject *watched, QEvent *event)
 	if (watched == qGuiApp && event->type() == QEvent::ApplicationPaletteChange)
 		loadPalette();
 	return Plasma::Containment::eventFilter(watched, event);
+}
+
+bool
+PanelContainment::processMimeData(QMimeData *mimeData, int x, int y)
+{
+	if (!mimeData)
+		return false;
+
+	// We don't deal with applets being dragged/dropped - hand that off to ContainmentItem
+	if (mimeData->hasFormat(QStringLiteral("text/x-plasmoidinstanceid"))
+		|| mimeData->hasFormat(QStringLiteral("text/x-plasmoidservicename")))
+		return false;
+
+	// URLs to append to the panel
+	QList<QUrl> urls;
+	if (mimeData->hasUrls())
+		urls = KUrlMimeData::urlsFromMimeData(mimeData);
+	else if (mimeData->hasFormat(QStringLiteral("text/x-orgkdeplasmataskmanager_taskurl")))
+		urls = {QUrl(QString::fromUtf8(mimeData->data(QStringLiteral("text/x-orgkdeplasmataskmanager_taskurl"))))};
+
+	urls.removeIf([](const QUrl &u) { return !u.isValid() || u.isEmpty(); });
+	if (urls.isEmpty())
+		return false;
+
+	// Add the icons to the panel
+	for (const QUrl &url : std::as_const(urls)) {
+		createApplet(QStringLiteral("org.kde.plasma.icon"),
+					 QVariantList() << url,
+					 QRectF(x, y, -1, -1));
+	}
+
+	return true;
+
 }
 
 void

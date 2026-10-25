@@ -46,8 +46,7 @@ PaintedItem::styleChanged()
 	if (QCoreApplication::closingDown())
 		return;
 	loadStyle();
-	if (m_style)
-	    Q_EMIT propertyChanged();
+	Q_EMIT propertyChanged();
 }
 
 void
