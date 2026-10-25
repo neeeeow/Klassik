@@ -49,7 +49,6 @@ PanelContainment::processMimeData(QMimeData *mimeData, int x, int y)
 		urls = KUrlMimeData::urlsFromMimeData(mimeData);
 	else if (mimeData->hasFormat(QStringLiteral("text/x-orgkdeplasmataskmanager_taskurl")))
 		urls = {QUrl(QString::fromUtf8(mimeData->data(QStringLiteral("text/x-orgkdeplasmataskmanager_taskurl"))))};
-
 	urls.removeIf([](const QUrl &u) { return !u.isValid() || u.isEmpty(); });
 	if (urls.isEmpty())
 		return false;

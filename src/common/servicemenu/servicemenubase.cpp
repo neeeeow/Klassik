@@ -246,17 +246,11 @@ ServiceMenuBase::showContextMenu(const QPoint &pos) const
 		if (!contextMenu.isEmpty())
 			contextMenu.addSeparator();
 
-		// Actions for adding the item to the desktop/quicklaunch/panel
+		// Actions for adding the item to the desktop/panel
 		if (containmentInterface->mayAddLauncher(ContainmentInterface::Desktop)) {
 			QAction *desktopAction = contextMenu.addAction(QIcon::fromTheme(QStringLiteral("list-add")), i18n("Add to Desktop"));
 			connect(desktopAction, &QAction::triggered, containmentInterface, [containmentInterface, service]() {
 				containmentInterface->addLauncher(ContainmentInterface::Desktop, service);
-			});
-		}
-		if (containmentInterface->mayAddLauncher(ContainmentInterface::Quicklaunch)) {
-			QAction *launcherAction = contextMenu.addAction(QIcon::fromTheme(QStringLiteral("list-add")), i18n("Add to Quicklaunch"));
-			connect(launcherAction, &QAction::triggered, containmentInterface, [containmentInterface, service]() {
-				containmentInterface->addLauncher(ContainmentInterface::Quicklaunch, service);
 			});
 		}
 		if (containmentInterface->mayAddLauncher(ContainmentInterface::Panel)) {

@@ -25,7 +25,6 @@ public:
 	enum Target {
 		Desktop = 0,
 		Panel,
-		Quicklaunch
 	};
 	
 	explicit ContainmentInterface(Plasma::Applet *applet);
@@ -37,5 +36,4 @@ private:
 	QPointer<Plasma::Applet> m_applet;
 
 	Plasma::Containment *containment() const;
-	Plasma::Applet *findQuicklaunchApplet() const;
 };

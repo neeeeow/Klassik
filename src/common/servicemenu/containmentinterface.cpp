@@ -47,21 +47,6 @@ ContainmentInterface::mayAddLauncher(ContainmentInterface::Target target) const
 
 		break;
 	}
-	case Quicklaunch: {
-		if (appletContainment->pluginMetaData().pluginId() == QLatin1String("com.github.neeeeow.klassik.panel")) {
-			auto *quicklaunch = findQuicklaunchApplet();
-			if (!quicklaunch)
-				return false;
-
-			auto *quicklaunchQuickItem = PlasmaQuick::AppletQuickItem::itemForApplet(quicklaunch);
-			if (!quicklaunchQuickItem)
-				return false;
-
-			return true;
-		}
-		
-		break;
-	}
 	default: {
 		break;
 	}
@@ -99,6 +84,8 @@ ContainmentInterface::addLauncher(ContainmentInterface::Target target, const KSe
 
 			QMetaObject::invokeMethod(folderQuickItem, "addLauncher", Q_ARG(QVariant, url));
 		} else {
+			// Use default plasma icon for the desktop.
+			// TODO: write a custom desktop icon applet...
 			desktopContainment->createApplet(QStringLiteral("org.kde.plasma.icon"), QVariantList() << url);
 		}
 
@@ -111,36 +98,8 @@ ContainmentInterface::addLauncher(ContainmentInterface::Target target, const KSe
 
 		break;
 	}
-	case Quicklaunch: {
-		if (appletContainment->pluginMetaData().pluginId() == QLatin1String("com.github.neeeeow.klassik.panel")) {
-			auto *quicklaunch = findQuicklaunchApplet();
-			if (!quicklaunch)
-				return;
-
-			auto *quicklaunchQuickItem = PlasmaQuick::AppletQuickItem::itemForApplet(quicklaunch);
-			if (!quicklaunchQuickItem)
-				return;
-
-			QMetaObject::invokeMethod(quicklaunchQuickItem, "addLauncherUrl", Q_ARG(QVariant, QVariant(url.toString())));
-		}
-		
-		break;
-	}
 	default: {
 		break;
 	}		
 	}
-}
-
-Plasma::Applet *
-ContainmentInterface::findQuicklaunchApplet() const
-{
-	if (!containment())
-		return nullptr;
-	
-	const QList<Plasma::Applet *> applets = containment()->applets();
-	const auto found = std::ranges::find_if(applets, [](const Plasma::Applet *applet) {
-		return applet->pluginMetaData().pluginId() == QLatin1String("com.github.neeeeow.klassik.quicklaunch");
-	});
-	return found != applets.cend() ? *found : nullptr;
 }
