@@ -34,6 +34,7 @@ find_package(KF6 REQUIRED COMPONENTS
   Config
   CoreAddons
   IconThemes
+  Notifications
 )
 
 find_package(Plasma REQUIRED)
@@ -42,5 +43,6 @@ find_package(PlasmaActivities REQUIRED)
 find_package(PlasmaQuick REQUIRED)
 find_package(LibKWorkspace REQUIRED)
 find_package(KDecoration3 REQUIRED)
+find_package(LibTaskManager REQUIRED)
 
 add_subdirectory(src)

@@ -106,7 +106,7 @@ ContainmentInterface::addLauncher(ContainmentInterface::Target target, const KSe
 	}
 	case Panel: {
 		if (appletContainment->pluginMetaData().pluginId() == QLatin1String("com.github.neeeeow.klassik.panel")) {
-			appletContainment->createApplet(QStringLiteral("org.kde.plasma.icon"), QVariantList() << url);
+			appletContainment->createApplet(QStringLiteral("com.github.neeeeow.klassik.panel.icon"), QVariantList() << url);
 		}
 
 		break;

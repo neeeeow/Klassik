@@ -72,7 +72,7 @@ Item {
             id: panelButton
             anchors.fill: parent
             anchors.margins: 0
-            name: iconItem.launcher.applicationName
+            title: iconItem.launcher.applicationName
             icon.name: iconItem.storageId == "quicklaunch:drop" ? "" : iconItem.iconName
 
             onClicked: iconItem.logic.openLauncher(iconItem.storageId)

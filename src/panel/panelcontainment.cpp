@@ -56,7 +56,7 @@ PanelContainment::processMimeData(QMimeData *mimeData, int x, int y)
 
 	// Add the icons to the panel
 	for (const QUrl &url : std::as_const(urls)) {
-		createApplet(QStringLiteral("org.kde.plasma.icon"),
+		createApplet(QStringLiteral("com.github.neeeeow.klassik.panel.icon"),
 					 QVariantList() << url,
 					 QRectF(x, y, -1, -1));
 	}

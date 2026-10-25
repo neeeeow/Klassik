@@ -1,0 +1,19 @@
+{
+    "KPlugin": {
+        "Authors": [
+            {
+                "Name": "neeeeow"
+            }
+        ],
+        "BugReportUrl": "https://github.com/neeeeow/Klassik/issues",
+        "Category": "File System",
+        "Description": "A generic KDE 3 style icon",
+        "EnabledByDefault": true,
+        "License": "GPLv3+",
+        "Name": "Klassik Icon",
+        "Version": "@PROJECT_VERSION@",
+        "Website": "https://github.com/neeeeow/Klassik"
+    },
+    "NoDisplay": true,
+    "X-Plasma-API-Minimum-Version": "6.0"
+}

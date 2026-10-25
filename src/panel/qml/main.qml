@@ -237,7 +237,9 @@ ContainmentItem {
                 function findPositive(first, second) {return first > 0 ? first : second}
 
                 // Handle geometry
-                readonly property bool showHandle: applet?.Plasmoid.metaData.category !== "Application Launchers" && applet?.Plasmoid.pluginName !== "org.kde.plasma.icon"
+                readonly property bool showHandle: applet?.Plasmoid.metaData.category !== "Application Launchers"
+                                                && applet?.Plasmoid.pluginName !== "org.kde.plasma.icon"
+                                                && applet?.Plasmoid.pluginName !== "com.github.neeeeow.klassik.panel.icon"
                 readonly property int handleExtent: handleLoader.item?.handleExtent ?? 0
 
                 // Compute applet geometry

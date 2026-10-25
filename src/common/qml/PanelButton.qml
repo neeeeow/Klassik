@@ -12,31 +12,32 @@ import org.kde.plasma.core as PlasmaCore
 import org.kde.kirigami as Kirigami
 
 Button {
-    id: root
+    id: button
 
-    required property string name
+    property alias title: tooltip.mainText
+    property alias subTitle: tooltip.subText
 
     flat: true
     hoverEnabled: true
 
     background: StyledFrame {
         id: frame
-        visible: root.down || root.checked
+        visible: button.down || button.checked
         sunken: true
     }
 
     contentItem: Kirigami.Icon {
         anchors.fill: parent
-        source: root.icon.name
-        active: root.hovered
+        source: button.icon.name
+        active: button.hovered
 
-        scale: (root.down || root.checked) ? (width - 2*frame.lineWidth) / width : 1.0
+        scale: (button.down || button.checked) ? (width - 2*frame.lineWidth) / width : 1.0
         transformOrigin: Item.Center
     }
 
     PlasmaCore.ToolTipArea {
+        id: tooltip
         anchors.fill: parent
-        mainText: root.name
-        icon: root.icon.name
+        icon: button.icon.name
     }
 }
