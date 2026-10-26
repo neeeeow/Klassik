@@ -393,22 +393,6 @@ QList<QAction *> IconApplet::extraActions()
         actions << m_openContainingFolderAction;
     }
 
-    if (!actions.isEmpty()) {
-        if (!m_firstSeparatorAction) {
-            m_firstSeparatorAction = new QAction(this);
-            m_firstSeparatorAction->setSeparator(true);
-        }
-        actions << m_firstSeparatorAction;
-    }
-
-    actions << internalAction(QStringLiteral("remove"));
-
-    if (!m_secondSeparatorAction) {
-        m_secondSeparatorAction = new QAction(this);
-        m_secondSeparatorAction->setSeparator(true);
-    }
-    actions << m_secondSeparatorAction;
-
     return actions;
 }
 
@@ -437,105 +421,6 @@ void IconApplet::run()
     job->setRunExecutables(true); // so it can launch apps
     job->setUiDelegate(new KNotificationJobUiDelegate(KJobUiDelegate::AutoHandlingEnabled));
     job->start();
-}
-
-void IconApplet::processDrop(QObject *dropEvent)
-{
-    Q_ASSERT(dropEvent);
-    const bool isAcceptable = isAcceptableDrag(dropEvent);
-    Q_ASSERT(isAcceptable);
-
-    const auto &urls = urlsFromDrop(dropEvent);
-
-    if (urls.isEmpty()) {
-        return;
-    }
-
-    const QString &localPath = m_url.toLocalFile();
-
-    if (KDesktopFile::isDesktopFile(localPath)) {
-        auto service = new KService(localPath);
-
-        if (service->isApplication()) {
-            auto *job = new KIO::ApplicationLauncherJob(KService::Ptr(service));
-            job->setUrls(urls);
-            job->setUiDelegate(new KNotificationJobUiDelegate(KJobUiDelegate::AutoHandlingEnabled));
-            job->start();
-            return;
-        }
-    }
-
-    QMimeDatabase db;
-    const QMimeType mimeType = db.mimeTypeForUrl(m_url);
-
-    if (isExecutable(mimeType)) { // isAcceptableDrag has the KAuthorized check for this
-        QProcess::startDetached(m_url.toLocalFile(), QUrl::toStringList(urls));
-        return;
-    }
-
-    if (mimeType.inherits(QStringLiteral("inode/directory"))) {
-        QMimeData mimeData;
-        mimeData.setUrls(urls);
-
-        // DeclarativeDropEvent isn't public
-        QDropEvent de(QPointF(dropEvent->property("x").toInt(), dropEvent->property("y").toInt()),
-                      static_cast<Qt::DropActions>(dropEvent->property("proposedActions").toInt()),
-                      &mimeData,
-                      static_cast<Qt::MouseButtons>(dropEvent->property("buttons").toInt()),
-                      static_cast<Qt::KeyboardModifiers>(dropEvent->property("modifiers").toInt()));
-
-        KIO::drop(&de, m_url);
-        return;
-    }
-}
-
-bool IconApplet::isAcceptableDrag(QObject *dropEvent)
-{
-    Q_ASSERT(dropEvent);
-
-    const auto &urls = urlsFromDrop(dropEvent);
-
-    if (urls.isEmpty()) {
-        return false;
-    }
-
-    const QString &localPath = m_url.toLocalFile();
-    if (KDesktopFile::isDesktopFile(localPath)) {
-        return true;
-    }
-
-    QMimeDatabase db;
-    const QMimeType mimeType = db.mimeTypeForUrl(m_url);
-
-    if (KAuthorized::authorize(KAuthorized::SHELL_ACCESS) && isExecutable(mimeType)) {
-        return true;
-    }
-
-    if (mimeType.inherits(QStringLiteral("inode/directory"))) {
-        return true;
-    }
-
-    return false;
-}
-
-QList<QUrl> IconApplet::urlsFromDrop(QObject *dropEvent)
-{
-    // DeclarativeDropEvent and co aren't public
-    const QObject *mimeData = qvariant_cast<QObject *>(dropEvent->property("mimeData"));
-    Q_ASSERT(mimeData);
-
-    const QJsonArray &droppedUrls = mimeData->property("urls").toJsonArray();
-
-    QList<QUrl> urls;
-    urls.reserve(droppedUrls.count());
-    for (const QJsonValue &droppedUrl : droppedUrls) {
-        const QUrl url(droppedUrl.toString());
-        if (url.isValid()) {
-            urls.append(url);
-        }
-    }
-
-    return urls;
 }
 
 bool IconApplet::isExecutable(const QMimeType &mimeType)

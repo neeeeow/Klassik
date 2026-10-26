@@ -13,8 +13,6 @@
 #include <KPluginFactory>
 #include <KUrlMimeData>
 
-K_PLUGIN_CLASS_WITH_JSON(PanelContainment, "metadata.json")
-
 PanelContainment::PanelContainment(QObject *parentObject, const KPluginMetaData &data, const QVariantList &args)
 : Plasma::Containment(parentObject, data, args),
 	m_quickPalette(new QQuickPalette(this))
@@ -166,5 +164,7 @@ PanelContainment::tintColor(const QColor &base)
 
 	return QColor(rval, gval, bval, base.alpha());
 }
+
+K_PLUGIN_CLASS_WITH_JSON(PanelContainment, "metadata.json")
 
 #include "panelcontainment.moc"

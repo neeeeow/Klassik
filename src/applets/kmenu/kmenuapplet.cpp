@@ -7,8 +7,6 @@
 #include "kmenuapplet.h"
 #include "kmenu.h"
 
-K_PLUGIN_CLASS_WITH_JSON(KMenuApplet, "metadata.json")
-
 KMenuApplet::KMenuApplet(QObject *parentObject, const KPluginMetaData &data, const QVariantList &args)
 	: ServiceMenuApplet(parentObject, data, args) {}
 
@@ -17,5 +15,7 @@ KMenuApplet::createMenu()
 {
 	return new KMenu(this);
 }
+
+K_PLUGIN_CLASS_WITH_JSON(KMenuApplet, "metadata.json")
 
 #include "kmenuapplet.moc"

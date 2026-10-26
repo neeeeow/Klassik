@@ -22,10 +22,9 @@ PlasmoidItem {
         id: configureAction
         text: i18n("Properties")
         icon.name: "document-properties"
-        visible: Plasmoid.valid && Plasmoid.immutability !== PlasmaCore.Types.SystemImmutable
+        visible: Plasmoid.immutability !== PlasmaCore.Types.SystemImmutable
         onTriggered: Plasmoid.configure()
     }
-
     Component.onCompleted: {
         Plasmoid.setInternalAction("configure", configureAction);
     }

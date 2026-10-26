@@ -32,8 +32,7 @@ public:
 	// Custom mimedata handler. Adds custom icon applet as well as custom menu applet.
 	// Returns true if it performed an action. If false, call ContainmentItem's processMimeData
 	Q_INVOKABLE bool processMimeData(QMimeData *mimeData, int x, int y);
-	
-	
+		
 Q_SIGNALS:
 	void paletteChanged();
 	void colorizeChanged();

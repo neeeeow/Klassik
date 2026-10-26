@@ -81,7 +81,7 @@ PlasmaExtras.Menu {
         const desktopTasks = desktopIds.map(() => []);
 
         // Iterate through each task
-        for (let i = 0; i < tasksModel.rowCount(); i++) {
+        for (let i = 0; i < tasksModel.rowCount(); ++i) {
             const modelIndex = tasksModel.index(i, 0);
             if (tasksModel.data(modelIndex, TaskManager.AbstractTasksModel.IsStartup)) {
                 continue; // ignore startup items
@@ -93,7 +93,7 @@ PlasmaExtras.Menu {
             // Check to see which groups this task belongs to, and for each
             // of these groups create a menu item and append it to the list of
             // that group's tasks
-            for (let j = 0; j < desktopIds.length; j++) {
+            for (let j = 0; j < desktopIds.length; ++j) {
                 if (onAllDesktops || taskDesktops.includes(desktopIds[j])) {
                     desktopTasks[j].push(modelIndex);
                 }
@@ -102,7 +102,7 @@ PlasmaExtras.Menu {
 
         // For each non-empty group list, create a section and append it to the menu along with
         // the group's tasks.
-        for (let i = 0; i < desktopIds.length; i++) {
+        for (let i = 0; i < desktopIds.length; ++i) {
             if (desktopTasks[i].length === 0) {
                 continue;
             }

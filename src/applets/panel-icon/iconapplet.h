@@ -51,10 +51,7 @@ public:
     QList<QAction *> extraActions();
 
     Q_INVOKABLE void run();
-    Q_INVOKABLE void processDrop(QObject *dropEvent);
     Q_INVOKABLE void configure();
-
-    Q_INVOKABLE bool isAcceptableDrag(QObject *dropEvent);
 
 Q_SIGNALS:
     void urlChanged(const QUrl &url);
@@ -68,7 +65,6 @@ Q_SIGNALS:
 private:
     void setIconName(const QString &iconName);
 
-    static QList<QUrl> urlsFromDrop(QObject *dropEvent);
     static bool isExecutable(const QMimeType &mimeType);
 
     void populate();
@@ -85,8 +81,6 @@ private:
     QString m_genericName;
 
     QList<QAction *> m_jumpListActions;
-    QAction *m_firstSeparatorAction = nullptr;
-    QAction *m_secondSeparatorAction = nullptr;
     QList<QAction *> m_openWithActions;
 
     QAction *m_openContainingFolderAction = nullptr;

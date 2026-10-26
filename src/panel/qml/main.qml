@@ -65,9 +65,32 @@ ContainmentItem {
         }
         hasSpacer = false;
     }
+    function newMenu(parent: QtObject): PlasmaExtras.Menu {
+        return Qt.createQmlObject(`
+        import org.kde.plasma.extras as PlasmaExtras
+
+        PlasmaExtras.Menu {}
+        `, parent) as PlasmaExtras.Menu;
+    }
+    function newMenuItem(parent: QtObject): PlasmaExtras.MenuItem {
+        return Qt.createQmlObject(`
+        import org.kde.plasma.extras as PlasmaExtras
+
+        PlasmaExtras.MenuItem {}
+        `, parent) as PlasmaExtras.MenuItem;
+    }
 //END functions
 
 //BEGIN connections
+    Component.onCompleted: {
+        // Add our custom move action to the applet's internal actions
+        Plasmoid.setInternalAction("klassikConfig", configAction);
+
+        Plasmoid.contextualActions.push(Plasmoid.internalAction("add widgets"));
+        Plasmoid.contextualActions.push(Plasmoid.internalAction("klassikConfig"));
+        Plasmoid.contextualActions.push(Plasmoid.internalAction("configure"));
+    }
+
     Containment.onAppletAdded: (applet, geometry) => {
         let pos = Qt.point(geometry.x, geometry.y)
         if ("positionBeforeDeletion" in applet) {
@@ -105,17 +128,16 @@ ContainmentItem {
     ConfigDialog {
         id: configDialog
     }
-
-    Plasmoid.contextualActions: [
-        PlasmaCore.Action {
-            text: i18n("Klassik Panel Preferences")
-            icon.name: "preferences-other"
-            onTriggered: {
-                configDialog.show()
-                configDialog.requestActivate()
-            }
+    PlasmaCore.Action {
+        id: configAction
+        text: i18n("Klassik Panel Preferences")
+        icon.name: "configure"
+        visible: Plasmoid.immutability !== PlasmaCore.Types.SystemImmutable
+        onTriggered: {
+            configDialog.show()
+            configDialog.requestActivate()
         }
-    ]
+    }
 
 //END preferences
 
@@ -289,6 +311,7 @@ ContainmentItem {
                             Layout.row: root.isHorizontal ? (appletHandle.reverse ? 0 : 1) : 0
                             Layout.column: root.isHorizontal ? 0 : (appletHandle.reverse ? 0 : 1)
 
+                            enabled: applet.Plasmoid.contextualActions.length > 0
                             checkable: true
                             checked: appletHandle.isMenuOpen
                             hoverEnabled: true
@@ -310,37 +333,41 @@ ContainmentItem {
                                 }
                             }
 
-                            onClicked:appletMenu.open()
+                            onClicked:appletMenu.show()
                             PlasmaExtras.Menu {
                                 id: appletMenu
-                                PlasmaExtras.MenuItem {
-                                    icon: "edit-delete-remove"
-                                    text: i18n("Remove")
-                                    onClicked: {
-                                        applet.Plasmoid.internalAction("remove").trigger();
-                                    }
+                                function show(): void {
+                                    populateMenu();
+                                    open();
                                 }
-                                PlasmaExtras.MenuItem {
-                                    icon: "configure"
-                                    text: i18n("Configure…")
-                                    visible: applet.Plasmoid.internalAction("configure")?.enabled ?? false
-                                    onClicked: {
-                                        applet.Plasmoid.internalAction("configure").trigger();
+                                function populateMenu(): void {
+                                    clearMenuItems();
+
+                                    // Applet actions
+                                    const actions = applet.Plasmoid.contextualActions;
+                                    for (let i = 0; i < actions.length; ++i) {
+                                        const action = actions[i];
+                                        const item = newMenuItem(appletMenu);
+                                        item.action = action;
+                                        item.enabled = true;
                                     }
-                                }
-                                PlasmaExtras.MenuItem {
-                                    icon: "widget-alternatives"
-                                    text: i18n("Show Alternatives…")
-                                    visible: applet.Plasmoid.internalAction("alternatives")?.enabled ?? false
-                                    onClicked: {
-                                        applet.Plasmoid.internalAction("alternatives").trigger();
-                                    }
-                                }
-                                PlasmaExtras.MenuItem {
-                                    text: i18n("Move")
-                                    icon: "transform-move"
-                                    onClicked: {
-                                        globalMove.startDrag(container);
+
+                                    // Panel menu
+                                    const panelActions = Plasmoid.contextualActions;
+                                    if (panelActions.length > 0) {
+                                        const separator = newMenuItem(appletMenu);
+                                        separator.separator = true;
+
+                                        const panelMenuItem = newMenuItem(appletMenu);
+                                        panelMenuItem.text = i18n("Panel Menu");
+
+                                        const panelMenu = root.newMenu(panelMenuItem);
+                                        for (let j = 0; j < panelActions.length; ++j) {
+                                            const action = panelActions[j];
+                                            const item = newMenuItem(panelMenu);
+                                            item.action = action;
+                                        }
+                                        panelMenu.visualParent = panelMenuItem.action
                                     }
                                 }
                             }
@@ -387,36 +414,42 @@ ContainmentItem {
                     }
                 }
 
-                PlasmaCore.Action {
-                    id: contextMenuRemoveAction
-                    text: i18n("Remove")
-                    icon.name: "edit-delete-remove"
-                    visible: !container.showHandle
-                    onTriggered: applet.Plasmoid.internalAction("remove").trigger()
-                }
-
+                // Custom move action
                 PlasmaCore.Action {
                     id: contextMenuMoveAction
-                    text: i18n("Move")
+                    text: i18n("Move " + applet.Plasmoid.title)
                     icon.name: "transform-move"
-                    visible: !container.showHandle
+                    visible: Plasmoid.immutability !== PlasmaCore.Types.SystemImmutable // only allow the applet to be moved if the panel isn't immutable
                     onTriggered: globalMove.startDrag(container)
+                }
+                PlasmaCore.Action {
+                    id: separatorAction
+                    isSeparator: true
                 }
 
                 onAppletChanged: {
                     if (applet) {
-                        applet.parent = container
-                        applet.anchors.fill = container
-                        applet.anchors.leftMargin = Qt.binding(() => root.isHorizontal ? container.handleExtent : 0)
-                        applet.anchors.topMargin  = Qt.binding(() => root.isHorizontal ? 0 : container.handleExtent)
+                        applet.parent = container;
+                        applet.anchors.fill = container;
+                        applet.anchors.leftMargin = Qt.binding(() => root.isHorizontal ? container.handleExtent : 0);
+                        applet.anchors.topMargin  = Qt.binding(() => root.isHorizontal ? 0 : container.handleExtent);
 
-                        if (!container.showHandle) {
-                            applet.Plasmoid.contextualActions.push(contextMenuRemoveAction);
-                            applet.Plasmoid.contextualActions.push(contextMenuMoveAction);
-                        }
+                        // Add our custom move action to the applet's internal actions
+                        applet.Plasmoid.setInternalAction("move", contextMenuMoveAction);
 
+                        // Add a separator to separate internal actions from other applet contextual actions
+                        if (applet.Plasmoid.contextualActions.length > 0)
+                            applet.Plasmoid.contextualActions.push(separatorAction);
+
+                        // Append all required internal actions to the applet's contextual actions. This allows us to easily
+                        // query the required contextual actions to appletMenu. NB: doing so makes the applet skip adding these
+                        // actions as part of the normal internal action menu population, so actions do *not* get added twice.
+                        applet.Plasmoid.contextualActions.push(applet.Plasmoid.internalAction("move"));
+                        applet.Plasmoid.contextualActions.push(applet.Plasmoid.internalAction("remove"));
+                        applet.Plasmoid.contextualActions.push(applet.Plasmoid.internalAction("configure"));
+                        applet.Plasmoid.contextualActions.push(applet.Plasmoid.internalAction("alternatives"));
                     } else {
-                        appletsModel.remove(index)
+                        appletsModel.remove(index);
                     }
                 }
             }
