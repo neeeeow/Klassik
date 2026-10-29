@@ -19,11 +19,11 @@ plasma_add_applet(com.github.neeeeow.klassik.panel.icon
 
 target_link_libraries(com.github.neeeeow.klassik.panel.icon PRIVATE
     klassik_painteditem
+    klassik_actions
     KF6::I18n
     KF6::KIOCore # for OpenFileManagerWindowJob
     KF6::KIOGui # for FavIconRequestJob
     KF6::KIOWidgets # for KRun
     KF6::Notifications
     Plasma::Plasma
-    PW::LibTaskManager
 )

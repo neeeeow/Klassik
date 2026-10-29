@@ -27,9 +27,7 @@ public:
 		return style()->pixelMetric(QStyle::PM_ToolBarHandleExtent);
 	}
 
-private:
-	bool m_horizontal = true;
-
+private:	
 	void paint(QPainter *p) const override {		
 		if (!style())
 			return;
@@ -39,4 +37,6 @@ private:
 			handle.state |= QStyle::State_Horizontal;
 		style()->drawPrimitive(QStyle::PE_IndicatorToolBarHandle, &handle, p);
 	}
+
+	bool m_horizontal = true;
 };

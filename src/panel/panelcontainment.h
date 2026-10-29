@@ -38,11 +38,11 @@ Q_SIGNALS:
 	void colorizeChanged();
 
 private:
-	QPointer<QQuickPalette> m_quickPalette = nullptr;
-	bool m_colorize = false;
-
 	// Tints a given QColor according to the selection color
 	QColor tintColor(const QColor &base);
+
+	QPointer<QQuickPalette> m_quickPalette = nullptr;
+	bool m_colorize = false;
 
 private Q_SLOTS:
 	// Loads and colorizes the active QPalette in to our QQuickPalette pointer

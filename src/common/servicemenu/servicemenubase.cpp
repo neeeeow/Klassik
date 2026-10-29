@@ -25,6 +25,7 @@
 #include <KApplicationTrader>
 #include <KPropertiesDialog>
 #include <KServiceGroup>
+#include <KProtocolManager>
 
 #include <KIO/ApplicationLauncherJob>
 #include <KIO/CommandLauncherJob>
@@ -107,7 +108,7 @@ ServiceMenuBase::createActionFromService(const KService::Ptr &service, const QUr
 	
 	connect(action, &QAction::triggered, this, [this, service, url]() {
 		auto *job = new KIO::ApplicationLauncherJob(service);
-		job->setUiDelegate(new KNotificationJobUiDelegate(KJobUiDelegate::AutoHandlingEnabled));
+		job->setUiDelegate(new KNotificationJobUiDelegate(KJobUiDelegate::AutoErrorHandlingEnabled));
 		if (!url.isEmpty())
 			job->setUrls({url});
 		job->start();
@@ -136,7 +137,7 @@ ServiceMenuBase::createActionFromUrl(const QUrl &url)
 	
 	connect(action, &QAction::triggered, this, [this, url]() {
 		auto *job = new KIO::OpenUrlJob(url);
-		job->setUiDelegate(new KNotificationJobUiDelegate(KJobUiDelegate::AutoHandlingEnabled));
+		job->setUiDelegate(new KNotificationJobUiDelegate(KJobUiDelegate::AutoErrorHandlingEnabled));
 		job->start();
 		notifyAccessed(url);
 	});
@@ -149,13 +150,13 @@ ServiceMenuBase::createFileExplorerActionFromUrl(const QUrl &url)
 {
 	/* Returns a QAction* which opens the file pointed to by the QUrl
 	   in the file explorer, parented to this. */
-	if (!url.isValid())
+	if (!url.isValid() || !KProtocolManager::supportsListing(url))
 		return nullptr;
 	
 	auto *action = new QAction(QIcon::fromTheme(QStringLiteral("system-file-manager")), i18n("Open in File Explorer"), this);
 	connect(action, &QAction::triggered, this, [url]() {
 		auto *job = new KIO::OpenFileManagerWindowJob();
-		job->setUiDelegate(new KNotificationJobUiDelegate(KJobUiDelegate::AutoHandlingEnabled));
+		job->setUiDelegate(new KNotificationJobUiDelegate(KJobUiDelegate::AutoErrorHandlingEnabled));
 		job->setHighlightUrls({url});
 		job->start();
 	});
@@ -175,7 +176,7 @@ ServiceMenuBase::createActionFromKCM(const QString &id, const QString &name, con
 	auto *action = new QAction(QIcon::fromTheme(icon), escapeMnemonics(name), this);
 	connect(action, &QAction::triggered, this, [id]() {
 		auto *job = new KIO::CommandLauncherJob(QStringLiteral("kcmshell6"), {id});
-		job->setUiDelegate(new KNotificationJobUiDelegate(KJobUiDelegate::AutoHandlingEnabled));
+		job->setUiDelegate(new KNotificationJobUiDelegate(KJobUiDelegate::AutoErrorHandlingEnabled));
 		job->start();
 	});
 
@@ -193,18 +194,13 @@ ServiceMenuBase::createActionsFromServiceActions(const KService::Ptr &service)
 
 	const QList<KServiceAction> serviceActions = service->actions();
 	for (const KServiceAction &serviceAction : serviceActions) {
-		if (serviceAction.isSeparator()) {
-		    auto *action = new QAction(this);
-			action->setSeparator(true);
-			actions.append(action);
-			continue;
-		}
-		
-		const QString name = escapeMnemonics(serviceAction.text());
-		if (name.isEmpty() || serviceAction.noDisplay() || serviceAction.exec().isEmpty())
+		if (serviceAction.noDisplay())
 			continue;
 
-		auto *action = new QAction(QIcon::fromTheme(serviceAction.icon()), name, this);	  
+		auto *action = new QAction(QIcon::fromTheme(serviceAction.icon()), escapeMnemonics(serviceAction.text()), this);
+		if (serviceAction.isSeparator())
+			action->setSeparator(true);
+
 		connect(action, &QAction::triggered, this, [this, service, serviceAction]() {
 			auto *job = new KIO::ApplicationLauncherJob(serviceAction);
 			job->setUiDelegate(new KNotificationJobUiDelegate(KJobUiDelegate::AutoHandlingEnabled));
@@ -240,8 +236,10 @@ ServiceMenuBase::showContextMenu(const QPoint &pos) const
 
 		// Actions corresponding to the KServiceActions
 		const QList<QAction *> serviceSubActions = contextMenu.createActionsFromServiceActions(service);
-		if (!serviceSubActions.isEmpty())
+		if (!serviceSubActions.isEmpty()) {
+			contextMenu.addAction(new PopupTitle(QIcon::fromTheme(service->icon()), service->name(), &contextMenu));
 			contextMenu.addActions(serviceSubActions);
+		}
 
 		if (!contextMenu.isEmpty())
 			contextMenu.addSeparator();
@@ -284,31 +282,31 @@ ServiceMenuBase::showContextMenu(const QPoint &pos) const
 		const KFileItem fileItem(url);
 
 		const KService::List services = KApplicationTrader::queryByMimeType(fileItem.mimetype());
-
-		if (!services.isEmpty()) {
-			if (applet()->getConfigValue<bool>(QStringLiteral("showTitles")))
-				contextMenu.addAction(new PopupTitle(QIcon::fromTheme(QStringLiteral("document-open")),
-													 i18n("Open With"), &contextMenu));
-
-			for (const KService::Ptr &service : services) {
-				if (QAction *serviceAction = contextMenu.createActionFromService(service, url))
-					contextMenu.addAction(serviceAction);
-			}						
+		for (const KService::Ptr &service : services)
+			if (QAction *serviceAction = contextMenu.createActionFromService(service, url))
+				contextMenu.addAction(serviceAction);
+	
+		if (!contextMenu.isEmpty()) {
+			contextMenu.insertAction(contextMenu.actions().first(),
+									 new PopupTitle(QIcon::fromTheme(QStringLiteral("document-open")),
+													i18n("Open With"), &contextMenu));
+			contextMenu.addSeparator();
 		}
-
-		contextMenu.addSeparator();
+					
+		QAction *fileExplorerAction = contextMenu.createFileExplorerActionFromUrl(url);
+		if (fileExplorerAction) {						
+			contextMenu.addAction(fileExplorerAction);
+			contextMenu.addSeparator();
+		}
+		
 		QAction *propertiesAction = contextMenu.addAction(QIcon::fromTheme(QStringLiteral("document-properties")), i18n("Properties"));
 		connect(propertiesAction, &QAction::triggered, &contextMenu, [url]() {
-			auto *dlg = new KPropertiesDialog(url, QApplication::activeWindow());
+			auto *dlg = new KPropertiesDialog(url);
 			dlg->setAttribute(Qt::WA_DeleteOnClose);
+			dlg->setFileNameReadOnly(true);
+			dlg->setWindowIcon(QIcon::fromTheme(QStringLiteral("document-properties")));
 			dlg->show();
-		});
-		
-		QAction *fileExplorerAction = contextMenu.createFileExplorerActionFromUrl(url);
-		if (fileExplorerAction) {			
-			contextMenu.addSeparator();
-			contextMenu.addAction(fileExplorerAction);
-		}
+		});	   
 		
 	} else
 		return;

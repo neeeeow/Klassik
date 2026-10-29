@@ -13,22 +13,18 @@ PlasmoidItem {
     id: root
 
     enabled: Plasmoid.valid
-    Plasmoid.icon: Plasmoid.iconName
-    Plasmoid.title: Plasmoid.name
     Plasmoid.onActivated: Plasmoid.run()
-    Plasmoid.contextualActions: Plasmoid.extraActions
 
     PlasmaCore.Action {
         id: configureAction
         text: i18n("Properties")
         icon.name: "document-properties"
-        visible: Plasmoid.immutability !== PlasmaCore.Types.SystemImmutable
+        visible: Plasmoid.valid && Plasmoid.immutability !== PlasmaCore.Types.SystemImmutable
         onTriggered: Plasmoid.configure()
     }
     Component.onCompleted: {
         Plasmoid.setInternalAction("configure", configureAction);
     }
-
     onExternalData: (mimetype, data) => {
         root.Plasmoid.url = data;
     }

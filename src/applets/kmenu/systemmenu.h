@@ -20,8 +20,8 @@ public:
 	SystemMenu(const QIcon &icon, const QString &title, ServiceMenuApplet *applet, QWidget *parent = nullptr);
 
 private:
-	KFilePlacesModel *m_placesModel = nullptr;
-
 	void rebuild() override;
 	void populate() override;
+
+	KFilePlacesModel *m_placesModel = nullptr;
 };

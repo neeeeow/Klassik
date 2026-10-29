@@ -25,28 +25,7 @@ protected:
 	void mouseReleaseEvent(QMouseEvent *e) override;
 	void mouseMoveEvent(QMouseEvent *e) override;
 
-private:	
-	// Struct holding the config keys used in the KMenu class,
-	// to avoid loading them many times unnecessarily.
-	struct Config {
-		bool drawSideImage = true;
-		bool showTitles = true;
-		bool showSearch = true;
-		bool showMostUsedApps = true;
-		int numMostUsedApps = 3;
-		bool showRecentDocs = true;
-		bool showSystem = true;
-		bool showSettings = true;		
-	};
-	Config m_config;	
-		
-	// Session manager
-	SessionManagement *m_session = nullptr;
-	
-	// Side pixmaps
-	QPixmap m_sidePixmap;
-	QPixmap m_sideTilePixmap;
-	
+private:		
 	// List of applications in the menu, for use with the search bar
 	QList<QPointer<QAction>> m_applicationActions;
 	QList<QAction *> applicationActions() const {
@@ -73,4 +52,25 @@ private:
 
 	// KDE 3 colorize function
 	void colorize(QImage &image) const;
+
+	// Struct holding the config keys used in the KMenu class,
+	// to avoid loading them many times unnecessarily.
+	struct Config {
+		bool drawSideImage = true;
+		bool showTitles = true;
+		bool showSearch = true;
+		bool showMostUsedApps = true;
+		int numMostUsedApps = 3;
+		bool showRecentDocs = true;
+		bool showSystem = true;
+		bool showSettings = true;		
+	};
+	Config m_config;	
+		
+	// Session manager
+	SessionManagement *m_session = nullptr;
+	
+	// Side pixmaps
+	QPixmap m_sidePixmap;
+	QPixmap m_sideTilePixmap;
 };

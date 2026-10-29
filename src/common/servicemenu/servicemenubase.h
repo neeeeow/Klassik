@@ -59,6 +59,12 @@ protected:
 	void mouseReleaseEvent(QMouseEvent *ev) override;
 
 private:
+	// Notifies KActivities that a QUrl has been accessed by the K Menu
+	void notifyAccessed(const QUrl &url) const;
+	
+	// Creates and displays the context menu
+	void showContextMenu(const QPoint &pos) const;
+
 	// Whether or not to display generic names for applications
 	bool m_displayGenericName = true;
 
@@ -68,10 +74,4 @@ private:
 	// Initial drag position. We use std::optional here since it only needs to contain
 	// data whenever a drag operation is occuring.
 	std::optional<QPointF> m_startPos;
-
-	// Notifies KActivities that a QUrl has been accessed by the K Menu
-	void notifyAccessed(const QUrl &url) const;
-	
-	// Creates and displays the context menu
-	void showContextMenu(const QPoint &pos) const;
 };

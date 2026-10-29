@@ -23,9 +23,7 @@ class PanelButtonArrow : public PaintedItem
 public:
 	explicit PanelButtonArrow(QQuickItem *parent = nullptr) : PaintedItem(parent) {}
 
-private:
-	Plasma::Types::Location m_location = Plasma::Types::Floating;
-
+private:	
     void paint(QPainter *p) const override {
 		if (!style())
 			return;	 
@@ -57,4 +55,6 @@ private:
 		arrow.rect = r;
 		style()->drawPrimitive(e, &arrow, p);
 	}
+
+	Plasma::Types::Location m_location = Plasma::Types::Floating;
 };

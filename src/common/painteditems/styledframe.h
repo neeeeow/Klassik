@@ -39,9 +39,7 @@ public:
 		Q_EMIT propertyChanged();
 	}
 	
-private:
-    std::optional<int> m_lineWidth;
-	
+private:    	
     void paint(QPainter *p) const override {
 		if (!style())
 			return;
@@ -55,4 +53,6 @@ private:
 
 		style()->drawControl(QStyle::CE_ShapedFrame, &frame, p);
 	}
+
+	std::optional<int> m_lineWidth;
 };

@@ -96,6 +96,17 @@ protected Q_SLOTS:
 	void requestRepaint() {if (isComponentComplete()) polish();}
 	
 private:
+	// Loads the current QStyle
+	void loadStyle();
+
+	// Loads the QML objects QQuickPalette
+	void loadPalette();
+	
+	// Function used for painting to the QQuickItem. This function must be implemented
+	// by subclasses, and must *never* be called directly outside of updatePolish(),
+	// otherwise things will break;
+	virtual void paint(QPainter *painter) const = 0;
+
 	QPointer<QStyle> m_style = nullptr; // Declare this a QPointer, since the QStyle might get destroyed by something else
 
 	// QPointer to the internal QML item palette
@@ -110,17 +121,6 @@ private:
 
 	// Whether or not to accept hover events (default false!)
 	bool m_hoverEnabled = false;
-
-	// Loads the current QStyle
-	void loadStyle();
-
-	// Loads the QML objects QQuickPalette
-	void loadPalette();
-	
-	// Function used for painting to the QQuickItem. This function must be implemented
-	// by subclasses, and must *never* be called directly outside of updatePolish(),
-	// otherwise things will break;
-	virtual void paint(QPainter *painter) const = 0;
 
 private Q_SLOTS:
 	void styleChanged();

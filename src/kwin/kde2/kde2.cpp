@@ -649,28 +649,28 @@ KDE2Button::setIconBits()
 	using enum KDecoration3::DecorationButtonType;
 	switch (type()) {
 	case Minimize:
-		iconBits = QBitmap::fromData(QSize(10,10), iconify_bits);
+		m_iconBits = QBitmap::fromData(QSize(10,10), iconify_bits);
 		break;
 	case Maximize:
-		iconBits = QBitmap::fromData(QSize(10,10), decoration()->window()->isMaximized() ? minmax_bits : maximize_bits);
+		m_iconBits = QBitmap::fromData(QSize(10,10), decoration()->window()->isMaximized() ? minmax_bits : maximize_bits);
 		break;
 	case Close:
-		iconBits = QBitmap::fromData(QSize(10,10), close_bits);
+		m_iconBits = QBitmap::fromData(QSize(10,10), close_bits);
 		break;
 	case ContextHelp:
-		iconBits = QBitmap::fromData(QSize(10,10), question_bits);
+		m_iconBits = QBitmap::fromData(QSize(10,10), question_bits);
 		break;
 	case Shade:
-		iconBits = QBitmap::fromData(QSize(10,10), decoration()->window()->isShaded() ? shade_off_bits : shade_on_bits);
+		m_iconBits = QBitmap::fromData(QSize(10,10), decoration()->window()->isShaded() ? shade_off_bits : shade_on_bits);
 		break;
 	case KeepBelow:
-		iconBits = QBitmap::fromData(QSize(10,10), decoration()->window()->isKeepBelow() ? below_off_bits : below_on_bits);
+		m_iconBits = QBitmap::fromData(QSize(10,10), decoration()->window()->isKeepBelow() ? below_off_bits : below_on_bits);
 		break;
 	case KeepAbove:
-		iconBits = QBitmap::fromData(QSize(10,10), decoration()->window()->isKeepAbove() ? above_off_bits : above_on_bits);
+		m_iconBits = QBitmap::fromData(QSize(10,10), decoration()->window()->isKeepAbove() ? above_off_bits : above_on_bits);
 		break;
 	default:
-		iconBits = QBitmap();
+		m_iconBits = QBitmap();
 		break;
 	}
 }
@@ -697,7 +697,7 @@ KDE2Button::paint(QPainter *p, const QRectF &repaintRegion)
 	int h = geometryScaled.height();
 	
 	const bool active = deco->window()->isActive();
-	if (!iconBits.isNull()) {
+	if (!m_iconBits.isNull()) {
 		// First draw the button background
 		QPixmap btnbg;
 		if (isLeft() )	{
@@ -729,7 +729,7 @@ KDE2Button::paint(QPainter *p, const QRectF &repaintRegion)
 
 		int xOff = x + (w-10)/2;
 		int yOff = y + (h-10)/2;
-		p->drawPixmap(isPressed() ? xOff+1: xOff, isPressed() ? yOff+1 : yOff, iconBits);
+		p->drawPixmap(isPressed() ? xOff+1: xOff, isPressed() ? yOff+1 : yOff, m_iconBits);
 	} else {
 		QPixmap btnpix;
 		if (type() == KDecoration3::DecorationButtonType::OnAllDesktops) {

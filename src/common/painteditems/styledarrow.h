@@ -33,12 +33,12 @@ public:
     Q_ENUM(Direction)		
 
 private:
-	Direction m_direction = Up;
-
 	void paint(QPainter *p) const override {		
 		if (!style())
 			return;
 		QStyleOption arrow = baseStyleOption();
 		style()->drawPrimitive(static_cast<QStyle::PrimitiveElement>(m_direction), &arrow, p);
 	}
+
+	Direction m_direction = Up;
 };

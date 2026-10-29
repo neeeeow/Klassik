@@ -50,6 +50,12 @@ public:
 	const KDE2Pixmaps &pixmaps() const { return m_pixmaps; }
 
 private:
+	void reconfigure();
+	void updateBorders();
+	void updateButtonsGeometry();
+	void updateTitleBar();
+	void createPixmaps();
+
 	KDE2Pixmaps m_pixmaps;
 	qreal m_titleHeight = 14;
 	int m_borderWidth = 4;
@@ -57,12 +63,6 @@ private:
 			
 	KDecoration3::DecorationButtonGroup *m_leftButtons = nullptr;
 	KDecoration3::DecorationButtonGroup *m_rightButtons = nullptr;
-
-	void reconfigure();
-	void updateBorders();
-	void updateButtonsGeometry();
-	void updateTitleBar();
-	void createPixmaps();
 };
 
 
@@ -85,12 +85,12 @@ public:
 	void paint(QPainter *p, const QRectF &repaintRegion) override;
 
 private:
-	KDecoration3::DecorationButtonGroup::Position m_position;
-	QBitmap iconBits;
-
 	void setIconBits();
 
 	inline bool isLeft() const {
 		return m_position == KDecoration3::DecorationButtonGroup::Position::Left;
 	}
+
+	KDecoration3::DecorationButtonGroup::Position m_position;
+	QBitmap m_iconBits;
 };

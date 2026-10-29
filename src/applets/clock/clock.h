@@ -52,9 +52,7 @@ protected:
 	};
 	Colors getColors() const;
 	
-private:
-	QPixmap m_lcdPixmap; // Pixmap for the LCD background
-
+private:   
 	void paint(QPainter *p) const override;
 
 	// Function which draws the actual clock contents itself, and must
@@ -63,6 +61,9 @@ private:
 	// below function. This function should *never* be called directly
 	// in any subclass
 	virtual void drawContents(QPainter *p) const = 0;
+
+	// Pixmap for the LCD background
+	QPixmap m_lcdPixmap;
 };
 
 class DigitalClock : public Clock
@@ -76,9 +77,7 @@ public:
     int preferredWidthForHeight(int h) const override;
     int preferredHeightForWidth(int w) const override; 
 
-private:
-	QString m_timeString; // Contains the time we paint		
-	
+private:			
 	// Drawing logic of QLCDNumber.cpp
 	void drawContents(QPainter *p) const override;
 	void drawString(const QString &s, const QRect &rect, const QColor &color, QPainter &p) const;
@@ -86,6 +85,9 @@ private:
 				   char ch) const;
 	void drawSegment(const QPoint &pos, const QColor &color, char segmentNo, QPainter &p,
 					 int segLen) const;
+
+	// String containing the time to be painted
+	QString m_timeString;
 };
 
 class AnalogClock : public Clock
@@ -100,10 +102,10 @@ public:
     int preferredWidthForHeight(int h) const override;
     int preferredHeightForWidth(int w) const override;
 	
-private:
+private:	
+	void drawContents(QPainter *p) const override;
+
 	// Clock properties
 	QDateTime m_dateTime;
 	bool m_showSeconds = false;
-	
-	void drawContents(QPainter *p) const override;
 };

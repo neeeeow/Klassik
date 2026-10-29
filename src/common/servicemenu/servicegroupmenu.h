@@ -41,12 +41,6 @@ protected:
 	QList<QAction *> createActionsFromServiceGroup(const KServiceGroup::Ptr &group);
 
 private:
-	// The KServiceGroup used to build the menu
-	KServiceGroup::Ptr m_group;
-
-	// The string used to filter 
-	QString m_searchFilter;
-
 	void rebuild() override {}
 	void populate() override;
 
@@ -62,6 +56,12 @@ private:
 
 	// Returns true if the service group passes the search filter
 	static bool filterServiceGroup(const KServiceGroup::Ptr	&group, QStringView filter);
+
+	// The KServiceGroup used to build the menu
+	KServiceGroup::Ptr m_group;
+
+	// The string used to filter 
+	QString m_searchFilter;
 
 private Q_SLOTS:
 	// Applies the search filter to the menu items

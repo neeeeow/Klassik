@@ -311,7 +311,6 @@ ContainmentItem {
                             Layout.row: root.isHorizontal ? (appletHandle.reverse ? 0 : 1) : 0
                             Layout.column: root.isHorizontal ? 0 : (appletHandle.reverse ? 0 : 1)
 
-                            enabled: applet.Plasmoid.contextualActions.length > 0
                             checkable: true
                             checked: appletHandle.isMenuOpen
                             hoverEnabled: true
@@ -344,6 +343,7 @@ ContainmentItem {
                                     clearMenuItems();
 
                                     // Applet actions
+                                    applet.prepareContextualActions();
                                     const actions = applet.Plasmoid.contextualActions;
                                     for (let i = 0; i < actions.length; ++i) {
                                         const action = actions[i];
@@ -353,6 +353,7 @@ ContainmentItem {
                                     }
 
                                     // Panel menu
+                                    root.prepareContextualActions();
                                     const panelActions = Plasmoid.contextualActions;
                                     if (panelActions.length > 0) {
                                         const separator = newMenuItem(appletMenu);
@@ -436,8 +437,17 @@ ContainmentItem {
 
                         // Add our custom move action to the applet's internal actions
                         applet.Plasmoid.setInternalAction("move", contextMenuMoveAction);
+                    } else {
+                        appletsModel.remove(index);
+                    }
+                }
 
-                        // Add a separator to separate internal actions from other applet contextual actions
+                Connections {
+                    target: applet ? applet.Plasmoid : null
+                    function onContextualActionsAboutToShow() {
+                        // When the contextual menu is about to show, we need to append our custom actions. We do this here as
+                        // the number of contextual actions may change.
+
                         if (applet.Plasmoid.contextualActions.length > 0)
                             applet.Plasmoid.contextualActions.push(separatorAction);
 
@@ -448,8 +458,6 @@ ContainmentItem {
                         applet.Plasmoid.contextualActions.push(applet.Plasmoid.internalAction("remove"));
                         applet.Plasmoid.contextualActions.push(applet.Plasmoid.internalAction("configure"));
                         applet.Plasmoid.contextualActions.push(applet.Plasmoid.internalAction("alternatives"));
-                    } else {
-                        appletsModel.remove(index);
                     }
                 }
             }

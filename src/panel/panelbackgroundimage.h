@@ -28,6 +28,10 @@ protected:
 	void componentComplete() override;
 	
 private:
+	void paint(QPainter *p) const override;
+	void loadImage();
+	void colorize(QImage &image) const;
+
 	// Properties
 	QUrl m_source;	
 	bool m_colorize = false;	
@@ -35,8 +39,4 @@ private:
 	
 	// The background image itself
 	QImage m_background;
-
-	void paint(QPainter *p) const override;
-	void loadImage();
-	void colorize(QImage &image) const;
 };

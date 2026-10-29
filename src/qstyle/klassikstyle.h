@@ -52,9 +52,9 @@ public:
 				  const QWidget *widget = nullptr,
 				  QStyleHintReturn *hret = nullptr) const override;
 
-private:
-	StyleType m_styleType = Default;
-
+private:	
 	void renderGradient(QPainter *p, const QRect &r, const QColor &color,
 						bool horizontal = false) const;
+
+	StyleType m_styleType = Default;
 };

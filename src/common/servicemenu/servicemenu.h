@@ -29,12 +29,6 @@ protected:
 	bool initialized() const { return m_initialized; }
 	
 private:
-	// Initialization state
-	bool m_initialized = false;
-
-	// Whether or not the menu contents are fresh (i.e. do not need updating)
-	bool m_fresh = false;
-
 	// Initializes the menu's self population. Do not call this function on menus which are
 	// static, otherwise their contents will be wiped when the menu is shown
 	void initialize(); 
@@ -45,4 +39,10 @@ private:
 
 	// Populates the menu contents
 	virtual void populate() = 0;
+
+	// Initialization state
+	bool m_initialized = false;
+
+	// Whether or not the menu contents are fresh (i.e. do not need updating)
+	bool m_fresh = false;
 };

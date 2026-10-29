@@ -62,9 +62,6 @@ private:
 		}
 	};
 
-	// The root SettingsItem used for populating the menu
-	SettingsItem m_root;
-
 	void rebuild() override;
 	void populate() override;
 	
@@ -79,4 +76,7 @@ private:
 
 	// Adds a settingsitem (and all of its children) to a given menu
 	void addSettingsActions(const SettingsItem *item, ServiceMenuBase *menu);
+	
+	// The root SettingsItem used for populating the menu
+	SettingsItem m_root;
 };

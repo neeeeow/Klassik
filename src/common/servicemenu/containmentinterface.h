@@ -32,8 +32,8 @@ public:
 	bool mayAddLauncher(ContainmentInterface::Target target) const;
 	void addLauncher(ContainmentInterface::Target target, const KService::Ptr &service) const;
 
-private:
-	QPointer<Plasma::Applet> m_applet;
-
+private:	
 	Plasma::Containment *containment() const;
+
+	QPointer<Plasma::Applet> m_applet;
 };
