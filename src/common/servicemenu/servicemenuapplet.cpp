@@ -18,16 +18,14 @@
 #include <KConfigPropertyMap>
 #include <KConfigLoader>
 
+#include <PlasmaQuick/AppletQuickItem>
+
 ServiceMenuApplet::ServiceMenuApplet(QObject *parentObject, const KPluginMetaData &data, const QVariantList &args)
 	: Plasma::Applet(parentObject, data, args) {}
 
 ServiceMenuApplet::~ServiceMenuApplet()
 {
-	if (m_menu) {
-		m_menu->disconnect(this);
-		m_menu->close();
-		m_menu->deleteLater();
-	}
+	deleteMenu();
 }
 
 void
@@ -37,31 +35,62 @@ ServiceMenuApplet::init()
 	// has gone wrong.
 	Q_ASSERT(!m_menu);
 	Q_ASSERT(!m_containmentInterface);
+	Q_ASSERT(!m_timer);
 	
 	// Call the original init function
-	Plasma::Applet::init();	  
+	Plasma::Applet::init();
+
+	// Set up the QTimer
+	m_timer = new QTimer(this);
+	m_timer->setSingleShot(true);
+	m_timer->setInterval(0);
+	if (configuration())
+		connect(configuration(), &KConfigPropertyMap::valueChanged, m_timer, qOverload<>(&QTimer::start));		
 	
 	// Create the objects
 	m_containmentInterface = new ContainmentInterface(this);
-	m_menu = createMenu();
-	Q_ASSERT(m_menu);
+	initMenu();	
+}
 
-	// Connect signals
+void
+ServiceMenuApplet::initMenu()
+{
+	if (m_menu)
+		deleteMenu();
+
+	// Create the menu object. If it fails to create, simply bail out.
+	m_menu = createMenu();
+	if (!m_menu)
+		return;
+
+	// Let the applet know the menu's visiblity has changed
 	connect(m_menu, &QMenu::aboutToShow, this, &ServiceMenuApplet::menuActiveChanged, Qt::QueuedConnection);
 	connect(m_menu, &QMenu::aboutToHide, this, &ServiceMenuApplet::menuActiveChanged, Qt::QueuedConnection);
 
-	// Set up a QTimer to deal with multiple config changes simultaneously
-	// Firing the timer immediately on the next loop is sufficient.
-	auto timer = new QTimer(this);
-	timer->setSingleShot(true);
-	timer->setInterval(0);
-	connect(timer, &QTimer::timeout, m_menu, &ServiceMenu::reinitialize);
-	if (configuration())
-		connect(configuration(), &KConfigPropertyMap::valueChanged, timer, qOverload<>(&QTimer::start));
+	// Reconfigure the menu when the timer changes
+	if (m_timer)
+		connect(m_timer, &QTimer::timeout, m_menu, &ServiceMenu::reinitialize);
+
+	Q_EMIT hasMenuChanged();
+}
+
+void
+ServiceMenuApplet::deleteMenu()
+{
+	if (!m_menu)
+		return;
+
+	m_menu->disconnect();
+	m_menu->close();
+	m_menu->deleteLater();
+	m_menu.clear();
+
+	Q_EMIT hasMenuChanged();
+	Q_EMIT menuActiveChanged();
 }
 
 bool
-ServiceMenuApplet::isMenuActive() const
+ServiceMenuApplet::menuActive() const
 {
 	return m_menu && m_menu->isVisible();
 }
@@ -88,9 +117,10 @@ ServiceMenuApplet::configValue(const QString &key) const
 }
 
 void
-ServiceMenuApplet::toggleMenu(QQuickItem *button)
+ServiceMenuApplet::toggleMenu()
 {
-	if (!m_menu || !button)
+	auto *item = PlasmaQuick::AppletQuickItem::itemForApplet(this);
+	if (!m_menu || !item)
 		return;
 
 	if (m_menu->isVisible())
@@ -98,15 +128,16 @@ ServiceMenuApplet::toggleMenu(QQuickItem *button)
 	else {
 		m_menu->createWinId();
 		if (QWindow *menuWindow = m_menu->windowHandle())
-			menuWindow->setTransientParent(button->window());
+			menuWindow->setTransientParent(item->window());
 		m_menu->refreshContents();
-		m_menu->popup(popupPosition(button));
+		m_menu->popup(popupPosition());
 	}
 }
 
 QPoint
-ServiceMenuApplet::popupPosition(QQuickItem *item) const
+ServiceMenuApplet::popupPosition()
 {
+	auto *item = PlasmaQuick::AppletQuickItem::itemForApplet(this);
 	if (!m_menu || !item || !item->window() || !item->window()->screen())
 		return QPoint();
 

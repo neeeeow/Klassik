@@ -12,16 +12,17 @@ PlasmoidItem{
     id: root
 
     Plasmoid.icon: Plasmoid.configuration.icon
-    Plasmoid.onActivated: Plasmoid.toggleMenu(menuButton)
+    Plasmoid.onActivated: Plasmoid.toggleMenu()
 
-    PanelMenuButton {
-        id: menuButton
+    PanelButton {
         anchors.fill: parent
 
         title: Plasmoid.title
         icon.name: Plasmoid.icon
+
+        checkable: Plasmoid.hasMenu
         checked: Plasmoid.menuActive
 
-        onClicked: Plasmoid.toggleMenu(menuButton)
+        onClicked: Plasmoid.toggleMenu()
     }
 }

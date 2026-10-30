@@ -11,7 +11,6 @@
 #include "containmentinterface.h"
 
 #include <QMimeData>
-#include <QMimeDatabase>
 #include <QMouseEvent>
 #include <QApplication>
 #include <QDrag>
@@ -26,6 +25,7 @@
 #include <KPropertiesDialog>
 #include <KServiceGroup>
 #include <KProtocolManager>
+#include <KFileItem>
 
 #include <KIO/ApplicationLauncherJob>
 #include <KIO/CommandLauncherJob>
@@ -123,13 +123,11 @@ ServiceMenuBase::createActionFromUrl(const QUrl &url)
 {
 	/* Returns a QAction* which launches a given QUrl, parented to this. */
 	if (!url.isValid())
-		return nullptr;
-	
-	const QString fileName = escapeMnemonics(url.fileName()); // name to display in the menu
-		
-	const QMimeDatabase db; // use QMimeDatabase to fetch the icon name
-	const QMimeType mime = db.mimeTypeForFile(url.toLocalFile(), QMimeDatabase::MatchExtension);	
-	const QIcon icon = QIcon::fromTheme(mime.iconName(), QIcon::fromTheme(QStringLiteral("text-x-generic")));
+		return nullptr;	
+
+	KFileItem fileItem(url);
+	const QString fileName = escapeMnemonics(fileItem.text());
+	const QIcon icon = QIcon::fromTheme(fileItem.iconName(), QIcon::fromTheme(QStringLiteral("text-x-generic")));
 
 	auto *action = new QAction(icon, fileName, this);
 	action->setData(url);
@@ -154,12 +152,22 @@ ServiceMenuBase::createFileExplorerActionFromUrl(const QUrl &url)
 		return nullptr;
 	
 	auto *action = new QAction(QIcon::fromTheme(QStringLiteral("system-file-manager")), i18n("Open in File Explorer"), this);
-	connect(action, &QAction::triggered, this, [url]() {
-		auto *job = new KIO::OpenFileManagerWindowJob();
-		job->setUiDelegate(new KNotificationJobUiDelegate(KJobUiDelegate::AutoErrorHandlingEnabled));
-		job->setHighlightUrls({url});
-		job->start();
-	});
+	if (KFileItem(url).isDir()) {
+		connect(action, &QAction::triggered, this, [this, url]() {
+			auto *job = new KIO::OpenUrlJob(url);
+			job->setUiDelegate(new KNotificationJobUiDelegate(KJobUiDelegate::AutoErrorHandlingEnabled));
+			job->start();
+			notifyAccessed(url);
+		});
+	} else {
+		connect(action, &QAction::triggered, this, [this, url]() {
+			auto *job = new KIO::OpenFileManagerWindowJob();
+			job->setUiDelegate(new KNotificationJobUiDelegate(KJobUiDelegate::AutoErrorHandlingEnabled));
+			job->setHighlightUrls({url});
+			job->start();
+			notifyAccessed(url);
+		});
+	}
 
 	return action;
 }
@@ -281,16 +289,19 @@ ServiceMenuBase::showContextMenu(const QPoint &pos) const
 		const QUrl url = action->data().toUrl();
 		const KFileItem fileItem(url);
 
-		const KService::List services = KApplicationTrader::queryByMimeType(fileItem.mimetype());
-		for (const KService::Ptr &service : services)
-			if (QAction *serviceAction = contextMenu.createActionFromService(service, url))
-				contextMenu.addAction(serviceAction);
+		if (!fileItem.isDir()) {
+			// We only want the open with section for files, not folders!
+			const KService::List services = KApplicationTrader::queryByMimeType(fileItem.mimetype());
+			for (const KService::Ptr &service : services)
+				if (QAction *serviceAction = contextMenu.createActionFromService(service, url))
+					contextMenu.addAction(serviceAction);
 	
-		if (!contextMenu.isEmpty()) {
-			contextMenu.insertAction(contextMenu.actions().first(),
-									 new PopupTitle(QIcon::fromTheme(QStringLiteral("document-open")),
-													i18n("Open With"), &contextMenu));
-			contextMenu.addSeparator();
+			if (!contextMenu.isEmpty()) {
+				contextMenu.insertAction(contextMenu.actions().first(),
+										 new PopupTitle(QIcon::fromTheme(QStringLiteral("document-open")),
+														i18n("Open With"), &contextMenu));
+				contextMenu.addSeparator();
+			}
 		}
 					
 		QAction *fileExplorerAction = contextMenu.createFileExplorerActionFromUrl(url);

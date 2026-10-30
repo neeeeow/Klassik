@@ -6,13 +6,13 @@
 
 #pragma once
 
-#include <Plasma/Applet>
+#include "servicemenuapplet.h"
 
 #include <QPointer>
 
 class KPropertiesDialog;
 
-class IconApplet : public Plasma::Applet
+class IconApplet : public ServiceMenuApplet
 {
     Q_OBJECT
 
@@ -47,6 +47,8 @@ Q_SIGNALS:
 private:
     void populate();
     void populateFromDesktopFile(const QString &path);
+
+	ServiceMenu *createMenu() override;
 
     QString localPath() const;
     void setLocalPath(const QString &localPath);

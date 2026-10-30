@@ -26,13 +26,26 @@ Button {
         sunken: true
     }
 
-    contentItem: Kirigami.Icon {
-        anchors.fill: parent
-        source: button.icon.name
-        active: button.hovered
+    contentItem: Item {
+        Kirigami.Icon {
+            anchors.fill: parent
+            source: button.icon.name
+            active: button.hovered
 
-        scale: (button.down || button.checked) ? (width - 2*frame.lineWidth) / width : 1.0
-        transformOrigin: Item.Center
+            scale: (button.down || button.checked) ? (width - 2*frame.lineWidth) / width : 1.0
+            transformOrigin: Item.Center
+        }
+        Loader {
+            anchors.fill: parent
+            active: Plasmoid.hasMenu
+
+            sourceComponent: PanelButtonArrow {
+                location: Plasmoid.location
+                sunken: button.down || button.checked
+                hoverEnabled: false
+                hovered: button.hovered
+            }
+        }
     }
 
     PlasmaCore.ToolTipArea {

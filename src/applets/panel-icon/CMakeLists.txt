@@ -9,7 +9,9 @@ configure_file(
 plasma_add_applet(com.github.neeeeow.klassik.panel.icon
     CPP_SOURCES
         iconapplet.cpp
+        dirmenu.cpp
         ${KLASSIK_COMMON_DIR}/painteditems/styledframe.h
+        ${KLASSIK_COMMON_DIR}/painteditems/panelbuttonarrow.h
     QML_SOURCES
         qml/main.qml
         ${KLASSIK_COMMON_DIR}/qml/PanelButton.qml
@@ -20,6 +22,7 @@ plasma_add_applet(com.github.neeeeow.klassik.panel.icon
 target_link_libraries(com.github.neeeeow.klassik.panel.icon PRIVATE
     klassik_painteditem
     klassik_actions
+    klassik_servicemenu
     KF6::I18n
     KF6::KIOCore # for OpenFileManagerWindowJob
     KF6::KIOGui # for FavIconRequestJob

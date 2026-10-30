@@ -20,18 +20,21 @@ class ServiceMenuApplet : public Plasma::Applet
 	  a ServiceMenu (or one of its subclasses!)
 	*/
 	Q_OBJECT
+	// Whether or not the menu has been loaded
+	Q_PROPERTY(bool hasMenu READ hasMenu NOTIFY hasMenuChanged FINAL)
 	// Whether or not the menu is active
-	Q_PROPERTY(bool menuActive READ isMenuActive NOTIFY menuActiveChanged FINAL)	
+	Q_PROPERTY(bool menuActive READ menuActive NOTIFY menuActiveChanged FINAL)	
 public:
 	ServiceMenuApplet(QObject *parentObject, const KPluginMetaData &data, const QVariantList &args);
 	~ServiceMenuApplet() override;
 	void init() override;
 
-	bool isMenuActive() const;
+	bool hasMenu() const { return m_menu; }
+	bool menuActive() const;
 	ContainmentInterface* containmentInterface() const;
 
-	// Show/hide the menu from QML, popping it up at the location of button
-	Q_INVOKABLE void toggleMenu(QQuickItem *button);
+	// Show/hide the menu in QML
+	Q_INVOKABLE void toggleMenu();
 
 	// Config getter
 	template <typename T>
@@ -45,16 +48,24 @@ public:
 	}
 
 Q_SIGNALS:
+	void hasMenuChanged();
 	void menuActiveChanged();
 
+protected:
+	void initMenu();
+	void deleteMenu();
+	
 private:
-	// Loads a given ServiceMenu. Only ever called by the base class in init().
+	// Creates a given ServiceMenu object. Only ever called by the base class inside of initMenu()
 	// Implement this in a subclass and return a pointer to a *parentless* ServiceMenu
 	virtual ServiceMenu *createMenu() = 0;
 
 	QVariant configValue(const QString &key) const;
-	QPoint popupPosition(QQuickItem *item) const;
+	QPoint popupPosition();
 
 	QPointer<ContainmentInterface> m_containmentInterface;
 	QPointer<ServiceMenu> m_menu;
+
+	// Single shot timer used to coalesce config changes 
+	QTimer *m_timer = nullptr;
 };

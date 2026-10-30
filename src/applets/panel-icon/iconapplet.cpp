@@ -1,15 +1,16 @@
 /*
-    SPDX-FileCopyrightText: 2016 Kai Uwe Broulik <kde@privat.broulik.de>
+	SPDX-FileCopyrightText: 2016 Kai Uwe Broulik <kde@privat.broulik.de>
 
-    SPDX-License-Identifier: GPL-2.0-only OR GPL-3.0-only OR LicenseRef-KDE-Accepted-GPL
+	SPDX-License-Identifier: GPL-2.0-only OR GPL-3.0-only OR LicenseRef-KDE-Accepted-GPL
 */
 
 #include "iconapplet.h"
 #include "popuptitle.h"
+#include "dirmenu.h"
 
 #include <QAction>
-#include <QDir>
 #include <QFileInfo>
+#include <QDir>
 #include <QIcon>
 
 #include <KAuthorized>
@@ -22,6 +23,7 @@
 #include <KPropertiesDialog>
 #include <KApplicationTrader>
 #include <KProtocolManager>
+#include <KFileItem>
 
 #include <KIO/ApplicationLauncherJob>
 #include <KIO/FavIconRequestJob>
@@ -30,238 +32,269 @@
 #include <KIO/StatJob>
 
 IconApplet::IconApplet(QObject *parent, const KPluginMetaData &data, const QVariantList &args)
-    : Plasma::Applet(parent, data, args)
+	: ServiceMenuApplet(parent, data, args)
 {
 }
 
 IconApplet::~IconApplet()
 {
-    // in a handler connected to IconApplet::appletDeleted m_localPath will be empty?!
-    if (destroyed()) {
-        QFile::remove(m_localPath);
-    }
+	// in a handler connected to IconApplet::appletDeleted m_localPath will be empty?!
+	if (destroyed()) {
+		QFile::remove(m_localPath);
+	}
 }
 
-void IconApplet::init()
+void
+IconApplet::init()
 {
-    populate();
+	ServiceMenuApplet::init();
+	populate();
 }
 
-void IconApplet::configChanged()
+void
+IconApplet::configChanged()
 {
-    populate();
+	populate();
 }
 
-void IconApplet::populate()
+void
+IconApplet::populate()
 {
 	const QUrl confUrl = url();
 
-    // our backing desktop file already exists? just read all the things from it
-    const QString path = localPath();
-    if (QFileInfo::exists(path)) {
-        populateFromDesktopFile(path);
-        return;
-    }
+	// our backing desktop file already exists? just read all the things from it
+	const QString path = localPath();
+	if (QFileInfo::exists(path)) {
+		populateFromDesktopFile(path);
+		return;
+	}
 
-    if (!confUrl.isValid()) {
-        // invalid confUrl, use dummy data
-        populateFromDesktopFile(QString());
-        return;
-    }
+	if (!confUrl.isValid()) {
+		// invalid confUrl, use dummy data
+		populateFromDesktopFile(QString());
+		return;
+	}
 
-    const QString plasmaIconsFolderPath = QStandardPaths::writableLocation(QStandardPaths::GenericDataLocation) + QLatin1String("/plasma_icons");
-    if (!QDir().mkpath(plasmaIconsFolderPath)) {
-        setLaunchErrorMessage(i18n("Failed to create icon widgets folder '%1'", plasmaIconsFolderPath));
-        return;
-    }
+	const QString plasmaIconsFolderPath = QStandardPaths::writableLocation(QStandardPaths::GenericDataLocation) + QLatin1String("/plasma_icons");
+	if (!QDir().mkpath(plasmaIconsFolderPath)) {
+		setLaunchErrorMessage(i18n("Failed to create icon widgets folder '%1'", plasmaIconsFolderPath));
+		return;
+	}
 
-    setBusy(true); // unset in populateFromDesktopFile where we'll end up in if all goes well
+	setBusy(true); // unset in populateFromDesktopFile where we'll end up in if all goes well
 
-    auto *statJob = KIO::stat(confUrl, KIO::HideProgressInfo);
-    connect(statJob, &KIO::StatJob::finished, this, [=, this] {
-        QString desiredDesktopFileName = confUrl.fileName();
+	auto *statJob = KIO::stat(confUrl, KIO::HideProgressInfo);
+	connect(statJob, &KIO::StatJob::finished, this, [=, this] {
+		QString desiredDesktopFileName = confUrl.fileName();
 
-        // in doubt, just encode the entire URL, e.g. https://www.kde.org/ has no filename
-        if (desiredDesktopFileName.isEmpty()) {
-            desiredDesktopFileName = KIO::encodeFileName(confUrl.toDisplayString());
-        }
+		// in doubt, just encode the entire URL, e.g. https://www.kde.org/ has no filename
+		if (desiredDesktopFileName.isEmpty()) {
+			desiredDesktopFileName = KIO::encodeFileName(confUrl.toDisplayString());
+		}
 
-        // We always want it to be a .desktop file (e.g. also for the "Type=Link" at the end)
-        if (!desiredDesktopFileName.endsWith(QLatin1String(".desktop"))) {
-            desiredDesktopFileName.append(QLatin1String(".desktop"));
-        }
+		// We always want it to be a .desktop file (e.g. also for the "Type=Link" at the end)
+		if (!desiredDesktopFileName.endsWith(QLatin1String(".desktop"))) {
+			desiredDesktopFileName.append(QLatin1String(".desktop"));
+		}
 
-        QString backingDesktopFile = plasmaIconsFolderPath + QLatin1Char('/');
-        // KFileUtils::suggestName always appends a suffix, i.e. it expects that we already know the file already exists
-        if (QFileInfo::exists(backingDesktopFile + desiredDesktopFileName)) {
-            desiredDesktopFileName = KFileUtils::suggestName(QUrl::fromLocalFile(plasmaIconsFolderPath), desiredDesktopFileName);
-        }
-        backingDesktopFile.append(desiredDesktopFileName);
+		QString backingDesktopFile = plasmaIconsFolderPath + QLatin1Char('/');
+		// KFileUtils::suggestName always appends a suffix, i.e. it expects that we already know the file already exists
+		if (QFileInfo::exists(backingDesktopFile + desiredDesktopFileName)) {
+			desiredDesktopFileName = KFileUtils::suggestName(QUrl::fromLocalFile(plasmaIconsFolderPath), desiredDesktopFileName);
+		}
+		backingDesktopFile.append(desiredDesktopFileName);
 
-        QString name; // ends up as "Name" in the .desktop file for "Link" files below
+		QString name; // ends up as "Name" in the .desktop file for "Link" files below
 
-        const QUrl statJobUrl = statJob->mostLocalUrl();
-        if (statJobUrl.isLocalFile()) {
-            const QString localUrlString = statJobUrl.toLocalFile();
+		const QUrl statJobUrl = statJob->mostLocalUrl();
+		if (statJobUrl.isLocalFile()) {
+			const QString localUrlString = statJobUrl.toLocalFile();
 
-            // if desktop file just copy it over
-            if (KDesktopFile::isDesktopFile(localUrlString)) {
-                // if this restriction is set, KIO won't allow running desktop files from outside
-                // registered services, applications, and so on, in this case we'll use the original
-                // .desktop file and lose the ability to customize it
-                if (!KAuthorized::authorize(KAuthorized::RUN_DESKTOP_FILES)) {
-                    populateFromDesktopFile(localUrlString);
-                    // we don't call setLocalPath here as we don't want to store localPath to be a system-location
-                    // so that the fact that we cannot edit is re-evaluated every time
-                    return;
-                }
+			// if desktop file just copy it over
+			if (KDesktopFile::isDesktopFile(localUrlString)) {
+				// if this restriction is set, KIO won't allow running desktop files from outside
+				// registered services, applications, and so on, in this case we'll use the original
+				// .desktop file and lose the ability to customize it
+				if (!KAuthorized::authorize(KAuthorized::RUN_DESKTOP_FILES)) {
+					populateFromDesktopFile(localUrlString);
+					// we don't call setLocalPath here as we don't want to store localPath to be a system-location
+					// so that the fact that we cannot edit is re-evaluated every time
+					return;
+				}
 
-                if (!QFile::copy(localUrlString, backingDesktopFile)) {
-                    setLaunchErrorMessage(i18n("Failed to copy icon widget desktop file from '%1' to '%2'", localUrlString, backingDesktopFile));
-                    setBusy(false);
-                    return;
-                }
+				if (!QFile::copy(localUrlString, backingDesktopFile)) {
+					setLaunchErrorMessage(i18n("Failed to copy icon widget desktop file from '%1' to '%2'", localUrlString, backingDesktopFile));
+					setBusy(false);
+					return;
+				}
 
-                // set executable flag on the desktop file so KIO doesn't complain about executing it
+				// set executable flag on the desktop file so KIO doesn't complain about executing it
 				QFile::setPermissions(backingDesktopFile, QFile::permissions(backingDesktopFile) | QFile::ExeOwner);
 
-                populateFromDesktopFile(backingDesktopFile);
+				populateFromDesktopFile(backingDesktopFile);
 
-                return;
-            }
-        }
+				return;
+			}
+		}
 
-        // in all other cases just make it a link
+		// in all other cases just make it a link
 
-        QString iconName;
-        QString genericName;
+		QString iconName;
+		QString genericName;
 
-        if (!statJob->error()) {
-            KFileItem item(statJob->statResult(), statJobUrl);
+		if (!statJob->error()) {
+			KFileItem item(statJob->statResult(), statJobUrl);
 			name = item.text();
 
-            if (item.mimetype() != QLatin1String("application/octet-stream")) {
-                iconName = item.iconName();
-                genericName = item.mimeComment();
-            }
-        }
+			if (item.mimetype() != QLatin1String("application/octet-stream")) {
+				iconName = item.iconName();
+				genericName = item.mimeComment();
+			}
+		}
 
-        // KFileItem might return "." as text for e.g. root folders
-        if (name == QLatin1Char('.')) {
-            name.clear();
-        }
+		// KFileItem might return "." as text for e.g. root folders
+		if (name == QLatin1Char('.')) {
+			name.clear();
+		}
 
-        if (name.isEmpty()) {
-            name = statJobUrl.fileName();
-        }
+		if (name.isEmpty()) {
+			name = statJobUrl.fileName();
+		}
 
-        if (name.isEmpty()) {
-            // TODO would be cool to just show the parent folder name instead of the full path
-            name = statJobUrl.path();
-        }
+		if (name.isEmpty()) {
+			// TODO would be cool to just show the parent folder name instead of the full path
+			name = statJobUrl.path();
+		}
 
-        // For websites the filename e.g. "index.php" is usually not what you want
-        // also "/" isn't very descript when it's not our local "root" folder
-        if (name.isEmpty() || statJobUrl.scheme().startsWith(QLatin1String("http")) || (!statJobUrl.isLocalFile() && name == QLatin1String("/"))) {
-            name = statJobUrl.host();
-        }
+		// For websites the filename e.g. "index.php" is usually not what you want
+		// also "/" isn't very descript when it's not our local "root" folder
+		if (name.isEmpty() || statJobUrl.scheme().startsWith(QLatin1String("http")) || (!statJobUrl.isLocalFile() && name == QLatin1String("/"))) {
+			name = statJobUrl.host();
+		}
 
-        if (iconName.isEmpty()) {
-            // In doubt ask KIO::iconNameForUrl, KFileItem can't cope with http:// URLs for instance
-            iconName = KIO::iconNameForUrl(statJobUrl);
-        }
+		if (iconName.isEmpty()) {
+			// In doubt ask KIO::iconNameForUrl, KFileItem can't cope with http:// URLs for instance
+			iconName = KIO::iconNameForUrl(statJobUrl);
+		}
 
-        bool downloadFavIcon = false;
+		bool downloadFavIcon = false;
 
-        if (statJobUrl.scheme().startsWith(QLatin1String("http"))) {
-            const QString favIcon = KIO::favIconForUrl(statJobUrl);
+		if (statJobUrl.scheme().startsWith(QLatin1String("http"))) {
+			const QString favIcon = KIO::favIconForUrl(statJobUrl);
 
-            if (!favIcon.isEmpty()) {
-                iconName = favIcon;
-            } else {
-                downloadFavIcon = true;
-            }
-        }
+			if (!favIcon.isEmpty()) {
+				iconName = favIcon;
+			} else {
+				downloadFavIcon = true;
+			}
+		}
 
-        KDesktopFile linkDesktopFile(backingDesktopFile);
-        auto desktopGroup = linkDesktopFile.desktopGroup();
+		KDesktopFile linkDesktopFile(backingDesktopFile);
+		auto desktopGroup = linkDesktopFile.desktopGroup();
 
-        desktopGroup.writeEntry(QStringLiteral("Name"), name);
-        desktopGroup.writeEntry(QStringLiteral("Type"), QStringLiteral("Link"));
-        desktopGroup.writeEntry(QStringLiteral("URL"), statJobUrl);
-        desktopGroup.writeEntry(QStringLiteral("Icon"), iconName);
-        if (!genericName.isEmpty()) {
-            desktopGroup.writeEntry(QStringLiteral("GenericName"), genericName);
-        }
+		desktopGroup.writeEntry(QStringLiteral("Name"), name);
+		desktopGroup.writeEntry(QStringLiteral("Type"), QStringLiteral("Link"));
+		desktopGroup.writeEntry(QStringLiteral("URL"), statJobUrl);
+		desktopGroup.writeEntry(QStringLiteral("Icon"), iconName);
+		if (!genericName.isEmpty()) {
+			desktopGroup.writeEntry(QStringLiteral("GenericName"), genericName);
+		}
 
-        linkDesktopFile.sync();
+		linkDesktopFile.sync();
 
-        populateFromDesktopFile(backingDesktopFile);
+		populateFromDesktopFile(backingDesktopFile);
 
-        if (downloadFavIcon) {
-            auto *job = new KIO::FavIconRequestJob(confUrl);
-            connect(job, &KIO::FavIconRequestJob::result, this, [job, backingDesktopFile, this](KJob *) {
-                if (!job->error()) {
-                    KDesktopFile(backingDesktopFile).desktopGroup().writeEntry(QStringLiteral("Icon"), job->iconFile());
+		if (downloadFavIcon) {
+			auto *job = new KIO::FavIconRequestJob(confUrl);
+			connect(job, &KIO::FavIconRequestJob::result, this, [job, backingDesktopFile, this](KJob *) {
+				if (!job->error()) {
+					KDesktopFile(backingDesktopFile).desktopGroup().writeEntry(QStringLiteral("Icon"), job->iconFile());
 
-                    setIcon(job->iconFile());
-                }
-            });
-        }
-    });
+					setIcon(job->iconFile());
+				}
+			});
+		}
+	});
 }
 
 
-void IconApplet::populateFromDesktopFile(const QString &path)
+void
+IconApplet::populateFromDesktopFile(const QString &path)
 {
-    // path empty? just set icon to "unknown" and call it a day
-    if (path.isEmpty()) {
-        setIcon(QStringLiteral("unknown"));
-        return;
-    }
+	// path empty? just set icon to "unknown" and call it a day
+	if (path.isEmpty()) {
+		setIcon(QStringLiteral("unknown"));
+		return;
+	}
 
-    KDesktopFile desktopFile(path);
+	KDesktopFile desktopFile(path);
 
-    const QString &name = desktopFile.readName();
+	const QString &name = desktopFile.readName();
 	if (title() != name)
 		setTitle(name);
 
-    const QString &genericName = desktopFile.readGenericName();
-    if (m_genericName != genericName) {
-        m_genericName = genericName;
-        Q_EMIT genericNameChanged(genericName);
-    }
+	const QString &genericName = desktopFile.readGenericName();
+	if (m_genericName != genericName) {
+		m_genericName = genericName;
+		Q_EMIT genericNameChanged(genericName);
+	}
 
 	const QString &icon = desktopFile.readIcon();
-    setIcon(!icon.isEmpty() ? icon : QStringLiteral("unknown"));
+	setIcon(!icon.isEmpty() ? icon : QStringLiteral("unknown"));
+	setLocalPath(path);
 
-    setLocalPath(path);
+	// Calls the code to initialize the menu.
+	initMenu();
 
-    setBusy(false);
+	setBusy(false);
 }
 
-QUrl IconApplet::url() const
+ServiceMenu *
+IconApplet::createMenu()
 {
-    return config().readEntry(QStringLiteral("url"), QUrl());
+	if (m_localPath.isEmpty())
+		return nullptr;	
+	
+	const KDesktopFile desktopFile(m_localPath);
+	if (!desktopFile.hasLinkType())
+		return nullptr;
+
+	const QUrl url(desktopFile.readUrl());	
+	if (!url.isValid() ||
+		!url.isLocalFile() ||
+		!KFileItem(url).isDir() ||
+		!KProtocolManager::supportsListing(url))
+		return nullptr;
+
+	return new DirMenu(url, this);
 }
 
-void IconApplet::setUrl(const QUrl &newUrl)
+QUrl
+IconApplet::url() const
 {
-    if (url() != newUrl) {
+	return config().readEntry(QStringLiteral("url"), QUrl());
+}
+
+void
+IconApplet::setUrl(const QUrl &newUrl)
+{
+	if (url() != newUrl) {
 		config().writeEntry(QStringLiteral("url"), newUrl);
-        Q_EMIT urlChanged(newUrl);       
-        populate();
-    }
+		Q_EMIT urlChanged(newUrl);		 
+		populate();
+	}
 }
 
-QString IconApplet::genericName() const
+QString
+IconApplet::genericName() const
 {
-    return m_genericName;
+	return m_genericName;
 }
 
-bool IconApplet::isValid() const
+bool
+IconApplet::isValid() const
 {
-    return !m_localPath.isEmpty();
+	return !m_localPath.isEmpty();
 }
 
 QList<QAction *>
@@ -272,33 +305,37 @@ IconApplet::contextualActions()
 		action->deleteLater();
 	m_actions.clear();
 
-    if (m_localPath.isEmpty()) {
-        return Applet::contextualActions();
+	if (m_localPath.isEmpty()) {
+		return Applet::contextualActions();
 	}
 	
-    KDesktopFile desktopFile(m_localPath);	
+	KDesktopFile desktopFile(m_localPath);	
 	if (desktopFile.hasLinkType()) {
 		// Link type means the icon points to a URL, so add URL specific actions
-        const QUrl linkUrl = QUrl(desktopFile.readUrl());
-        if (linkUrl.isValid() && !linkUrl.scheme().isEmpty()) {
+		const QUrl linkUrl = QUrl(desktopFile.readUrl());
+		if (linkUrl.isValid() && !linkUrl.scheme().isEmpty()) {
 			const KFileItem fileItem(linkUrl);
-			const KService::List services = KApplicationTrader::queryByMimeType(fileItem.mimetype());
-			for (const KService::Ptr &service : services) {
-				if (service->noDisplay())
-					continue;
 
-				auto *action = new QAction(QIcon::fromTheme(service->icon()), service->name(), this);
-				connect(action, &QAction::triggered, this, [linkUrl, service]() {
-					auto *job = new KIO::ApplicationLauncherJob(service);
-					job->setUiDelegate(new KNotificationJobUiDelegate(KJobUiDelegate::AutoErrorHandlingEnabled));
-					job->setUrls({linkUrl});
-					job->start();
-				});
-				m_actions.append(action);
-			}					
-			if (!m_actions.isEmpty())
-				m_actions.prepend(new PopupTitle(QIcon::fromTheme(QStringLiteral("document-open")),
-												 i18n("Open With"), this));
+			if (!fileItem.isDir()) {
+				const KService::List services = KApplicationTrader::queryByMimeType(fileItem.mimetype());
+				for (const KService::Ptr &service : services) {
+					if (service->noDisplay())
+						continue;
+
+					auto *action = new QAction(QIcon::fromTheme(service->icon()), service->name(), this);
+					connect(action, &QAction::triggered, this, [linkUrl, service]() {
+						auto *job = new KIO::ApplicationLauncherJob(service);
+						job->setUiDelegate(new KNotificationJobUiDelegate(KJobUiDelegate::AutoErrorHandlingEnabled));
+						job->setUrls({linkUrl});
+						job->start();
+					});
+					m_actions.append(action);
+				}					
+				if (!m_actions.isEmpty())
+					m_actions.prepend(new PopupTitle(QIcon::fromTheme(QStringLiteral("document-open")),
+													 i18n("Open With"), this));
+
+			}
 
 			if (KProtocolManager::supportsListing(linkUrl)) {
 				// Now we add the open in file explorer action.
@@ -337,7 +374,7 @@ IconApplet::contextualActions()
 				job->start();
 			});
 
-		    m_actions.append(action);
+			m_actions.append(action);
 		}
 
 		if (!m_actions.isEmpty())
@@ -354,67 +391,75 @@ IconApplet::contextualActions()
 	return m_actions + Applet::contextualActions();
 }
 
-void IconApplet::run()
+void
+IconApplet::run()
 {
-	if (m_localPath.isEmpty())
-		return;
-    auto *job = new KIO::OpenUrlJob(QUrl::fromLocalFile(m_localPath));
-    job->setRunExecutables(true); // so it can launch apps
-    job->setUiDelegate(new KNotificationJobUiDelegate(KJobUiDelegate::AutoHandlingEnabled));
-    job->start();
+	if (hasMenu())
+		toggleMenu();
+	else {	
+		if (m_localPath.isEmpty())
+			return;
+		auto *job = new KIO::OpenUrlJob(QUrl::fromLocalFile(m_localPath));
+		job->setRunExecutables(true); // so it can launch apps
+		job->setUiDelegate(new KNotificationJobUiDelegate(KJobUiDelegate::AutoHandlingEnabled));
+		job->start();
+	}
 }
 
-void IconApplet::configure()
+void
+IconApplet::configure()
 {
 	if (m_localPath.isEmpty())
 		return;
 	
-    KPropertiesDialog *dialog = m_configDialog.data();
-    if (dialog) {
-        dialog->show();
-        dialog->raise();
-        return;
-    }
+	KPropertiesDialog *dialog = m_configDialog.data();
+	if (dialog) {
+		dialog->show();
+		dialog->raise();
+		return;
+	}
 
-    dialog = new KPropertiesDialog(QUrl::fromLocalFile(m_localPath));
-    m_configDialog = dialog;
+	dialog = new KPropertiesDialog(QUrl::fromLocalFile(m_localPath));
+	m_configDialog = dialog;
 
-    connect(dialog, &KPropertiesDialog::applied, this, [this] {
-        KDesktopFile desktopFile(m_localPath);
-        if (desktopFile.hasLinkType()) {
-            const QUrl newUrl(desktopFile.readUrl());
+	connect(dialog, &KPropertiesDialog::applied, this, [this] {
+		KDesktopFile desktopFile(m_localPath);
+		if (desktopFile.hasLinkType()) {
+			const QUrl newUrl(desktopFile.readUrl());
 
-            if (url() != newUrl) {
-                // make sure to fully repopulate in case the user changed the Link URL
-                QFile::remove(m_localPath);
+			if (url() != newUrl) {
+				// make sure to fully repopulate in case the user changed the Link URL
+				QFile::remove(m_localPath);
 
-                setUrl(newUrl); // calls populate() itself, but only if it changed
-                return;
-            }
-        }
+				setUrl(newUrl); // calls populate() itself, but only if it changed
+				return;
+			}
+		}
 
-        populate();
-    });
+		populate();
+	});
 
-    dialog->setAttribute(Qt::WA_DeleteOnClose, true);
-    dialog->setFileNameReadOnly(true);
-    dialog->setWindowIcon(QIcon::fromTheme(QStringLiteral("document-properties")));
-    dialog->show();
+	dialog->setAttribute(Qt::WA_DeleteOnClose, true);
+	dialog->setFileNameReadOnly(true);
+	dialog->setWindowIcon(QIcon::fromTheme(QStringLiteral("document-properties")));
+	dialog->show();
 }
 
-QString IconApplet::localPath() const
+QString
+IconApplet::localPath() const
 {
-    return config().readEntry(QStringLiteral("localPath"));
+	return config().readEntry(QStringLiteral("localPath"));
 }
 
-void IconApplet::setLocalPath(const QString &localPath)
+void
+IconApplet::setLocalPath(const QString &localPath)
 {
-    const bool oldValid = isValid();
-    m_localPath = localPath;
-    config().writeEntry(QStringLiteral("localPath"), localPath);
-    if (oldValid != isValid()) {
-        Q_EMIT isValidChanged();
-    }
+	const bool oldValid = isValid();
+	m_localPath = localPath;
+	config().writeEntry(QStringLiteral("localPath"), localPath);
+	if (oldValid != isValid()) {
+		Q_EMIT isValidChanged();
+	}
 }
 
 K_PLUGIN_CLASS_WITH_JSON(IconApplet, "metadata.json")
