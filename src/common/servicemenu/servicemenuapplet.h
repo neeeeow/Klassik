@@ -29,7 +29,7 @@ public:
 	~ServiceMenuApplet() override;
 	void init() override;
 
-	bool hasMenu() const { return m_menu; }
+	bool hasMenu() const { return !m_menu.isNull(); }
 	bool menuActive() const;
 	ContainmentInterface* containmentInterface() const;
 

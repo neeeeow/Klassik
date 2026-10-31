@@ -26,7 +26,7 @@ PlasmoidItem {
         Plasmoid.setInternalAction("configure", configureAction);
     }
     onExternalData: (mimetype, data) => {
-        root.Plasmoid.url = data;
+        Plasmoid.url = data;
     }
 
     PanelButton {

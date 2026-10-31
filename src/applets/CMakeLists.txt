@@ -1,5 +1,6 @@
 add_subdirectory(panel-icon)
 add_subdirectory(kmenu)
+add_subdirectory(servicegroupmenu)
 add_subdirectory(taskmanager)
 add_subdirectory(clock)
 add_subdirectory(lockout)

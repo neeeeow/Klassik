@@ -315,8 +315,9 @@ IconApplet::contextualActions()
 		const QUrl linkUrl = QUrl(desktopFile.readUrl());
 		if (linkUrl.isValid() && !linkUrl.scheme().isEmpty()) {
 			const KFileItem fileItem(linkUrl);
+			const bool isDir = fileItem.isDir();
 
-			if (!fileItem.isDir()) {
+			if (!isDir) {
 				const KService::List services = KApplicationTrader::queryByMimeType(fileItem.mimetype());
 				for (const KService::Ptr &service : services) {
 					if (service->noDisplay())
@@ -345,13 +346,23 @@ IconApplet::contextualActions()
 					m_actions.append(separator);
 				}
 				auto *explorerAction = new QAction(QIcon::fromTheme(QStringLiteral("system-file-manager")),
-												   i18n("Open in File Explorer"), this);
-				connect(explorerAction, &QAction::triggered, this, [linkUrl]() {
-					auto *job = new KIO::OpenFileManagerWindowJob();
-					job->setUiDelegate(new KNotificationJobUiDelegate(KJobUiDelegate::AutoErrorHandlingEnabled));
-					job->setHighlightUrls({linkUrl});
-					job->start();
-				});
+												   i18n("Open in File Explorer"), this);				
+
+				if (isDir) {
+					connect(explorerAction, &QAction::triggered, this, [linkUrl]() {
+						auto *job = new KIO::OpenUrlJob(linkUrl);
+						job->setUiDelegate(new KNotificationJobUiDelegate(KJobUiDelegate::AutoErrorHandlingEnabled));
+						job->start();
+					});
+				} else {
+					connect(explorerAction, &QAction::triggered, this, [linkUrl]() {
+						auto *job = new KIO::OpenFileManagerWindowJob();
+						job->setUiDelegate(new KNotificationJobUiDelegate(KJobUiDelegate::AutoErrorHandlingEnabled));
+						job->setHighlightUrls({linkUrl});
+						job->start();
+					});
+				}
+				
 				m_actions.append(explorerAction);
 			}
 		}

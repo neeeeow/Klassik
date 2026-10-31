@@ -437,6 +437,7 @@ ServiceMenuBase::mouseMoveEvent(QMouseEvent *ev)
 
 	mimeData->setUrls({url});
 	drag->setMimeData(mimeData);
+	qWarning() << url.toLocalFile();
 
 	if (!action->icon().isNull()) {
 		const int iconSize = style()->pixelMetric(QStyle::PM_SmallIconSize);

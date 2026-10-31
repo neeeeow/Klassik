@@ -15,7 +15,7 @@
       <default>false</default>
     </entry>
     <entry name="showGenericName" type="Bool">
-      <default>true</default>
+      <default>false</default>
     </entry>
   </group>
 

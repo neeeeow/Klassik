@@ -1,0 +1,19 @@
+{
+    "KPlugin": {
+        "Authors": [
+            {
+                "Name": "neeeeow"
+            }
+        ],
+        "BugReportUrl": "https://github.com/neeeeow/Klassik/issues",
+        "Category": "Application Launchers",
+        "Description": "A generic KDE 3 application menu",
+        "EnabledByDefault": true,
+        "License": "GPLv3+",
+        "Name": "Klassik Application Menu",
+        "Version": "@PROJECT_VERSION@",
+        "Website": "https://github.com/neeeeow/Klassik"
+    },
+    "NoDisplay": true,
+    "X-Plasma-API-Minimum-Version": "6.0"
+}

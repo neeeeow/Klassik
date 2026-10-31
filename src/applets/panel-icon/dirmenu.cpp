@@ -11,7 +11,6 @@
 
 #include <KFileItem>
 #include <KProtocolManager>
-#include <KLocalizedString>
 
 DirMenu::DirMenu(const QUrl &url, ServiceMenuApplet *applet, QWidget *parent)
 	: ServiceMenu(applet, parent), m_url(url)
