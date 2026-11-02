@@ -13,10 +13,15 @@
 #include <QRect>
 #include <QQuickWindow>
 #include <QTimer>
+#include <QDBusConnection>
+#include <QDBusMessage>
 
 #include <KPluginFactory>
 #include <KConfigPropertyMap>
 #include <KConfigLoader>
+#include <KNotificationJobUiDelegate>
+
+#include <KIO/CommandLauncherJob>
 
 #include <PlasmaQuick/AppletQuickItem>
 
@@ -55,6 +60,7 @@ ServiceMenuApplet::init()
 void
 ServiceMenuApplet::initMenu()
 {
+	
 	if (m_menu)
 		deleteMenu();
 
@@ -219,3 +225,41 @@ ServiceMenuApplet::popupPosition()
 	
 	return dialogPos;
 }
+
+void
+ServiceMenuApplet::menuEditor(const QString &arg)
+{
+	const auto service = KService::serviceByDesktopName(QStringLiteral("org.kde.kmenuedit"));
+	if (!service) {
+		qWarning() << "Could not find kmenuedit";
+		return;
+	}	
+
+	auto *job = new KIO::CommandLauncherJob(service->exec(),
+											{!arg.isEmpty() ? arg : QStringLiteral("/")});
+	job->setDesktopName(service->desktopEntryName());
+	job->setUiDelegate(new KNotificationJobUiDelegate(KJobUiDelegate::AutoErrorHandlingEnabled));
+	job->start();
+}
+
+void
+ServiceMenuApplet::invokeKRunner(const QString &arg)
+{
+	QDBusMessage query = QDBusMessage::createMethodCall(
+		QStringLiteral("org.kde.krunner"),
+		QStringLiteral("/App"),
+		QStringLiteral("org.kde.krunner.App"),
+		QStringLiteral("query"));
+	query.setArguments({arg});
+
+	QDBusMessage display = QDBusMessage::createMethodCall(
+		QStringLiteral("org.kde.krunner"),
+		QStringLiteral("/App"),
+		QStringLiteral("org.kde.krunner.App"),
+		QStringLiteral("display"));
+
+	QDBusConnection bus = QDBusConnection::sessionBus();
+	bus.send(query);
+	bus.send(display);
+}
+

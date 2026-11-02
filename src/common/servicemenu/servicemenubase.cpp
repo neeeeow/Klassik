@@ -15,8 +15,6 @@
 #include <QApplication>
 #include <QDrag>
 #include <QStyle>
-#include <QDBusMessage>
-#include <QDBusConnection>
 #include <QAbstractItemModel>
 
 #include <KLocalizedString>
@@ -253,14 +251,14 @@ ServiceMenuBase::showContextMenu(const QPoint &pos) const
 			contextMenu.addSeparator();
 
 		// Actions for adding the item to the desktop/panel
-		if (containmentInterface->mayAddLauncher(ContainmentInterface::Desktop)) {
-			QAction *desktopAction = contextMenu.addAction(QIcon::fromTheme(QStringLiteral("list-add")), i18n("Add to Desktop"));
+		if (containmentInterface->mayAddItem(ContainmentInterface::Desktop)) {
+			QAction *desktopAction = contextMenu.addAction(QIcon::fromTheme(QStringLiteral("list-add")), i18n("Add Item to Desktop"));
 			connect(desktopAction, &QAction::triggered, containmentInterface, [containmentInterface, service]() {
 				containmentInterface->addLauncher(ContainmentInterface::Desktop, service);
 			});
 		}
-		if (containmentInterface->mayAddLauncher(ContainmentInterface::Panel)) {
-			QAction *panelAction = contextMenu.addAction(QIcon::fromTheme(QStringLiteral("list-add")), i18n("Add to Panel"));
+		if (containmentInterface->mayAddItem(ContainmentInterface::Panel)) {
+			QAction *panelAction = contextMenu.addAction(QIcon::fromTheme(QStringLiteral("list-add")), i18n("Add Item to Panel"));
 			connect(panelAction, &QAction::triggered, containmentInterface, [containmentInterface, service]() {
 				containmentInterface->addLauncher(ContainmentInterface::Panel, service);
 			});
@@ -270,19 +268,35 @@ ServiceMenuBase::showContextMenu(const QPoint &pos) const
 			contextMenu.addSeparator();
 
 		// Action for editing the menu item
-		QAction *editAction = contextMenu.addAction(QIcon::fromTheme(QStringLiteral("kmenuedit")), i18n("Edit Application"));
-		connect(editAction, &QAction::triggered, &contextMenu, [service]() {runMenuEditor(service->menuId());});
+		QAction *editAction = contextMenu.addAction(QIcon::fromTheme(QStringLiteral("kmenuedit")), i18n("Edit Item"));
+		connect(editAction, &QAction::triggered, &contextMenu, [this, service]() {
+			if (auto a = applet())
+				a->menuEditor(service->menuId());
+		});
 
 		// Action to put the action's exec command in krunner
 		QAction *runAction = contextMenu.addAction(QIcon::fromTheme(QStringLiteral("system-run")), i18n("Put Into Run Dialog"));
-		connect(runAction, &QAction::triggered, &contextMenu, [service](){invokeKRunner(KIO::DesktopExecParser::executablePath(service->exec()));});
+		connect(runAction, &QAction::triggered, &contextMenu, [this, service](){
+			if (auto a = applet())
+				a->invokeKRunner(KIO::DesktopExecParser::executablePath(service->exec()));
+		});
 		
 	} else if (action->data().canConvert<KServiceGroup::Ptr>()) {
 		// KServiceGroup means sub menu container
-		const KServiceGroup::Ptr serviceGroup = action->data().value<KServiceGroup::Ptr>();
+		const KServiceGroup::Ptr group = action->data().value<KServiceGroup::Ptr>();
+
+	    if (containmentInterface->mayAddItem(ContainmentInterface::Panel)) {
+			QAction *panelAction = contextMenu.addAction(QIcon::fromTheme(QStringLiteral("list-add")), i18n("Add Menu to Panel"));
+			connect(panelAction, &QAction::triggered, containmentInterface, [containmentInterface, group]() {
+				containmentInterface->addServiceGroupMenu(group);
+			});
+			contextMenu.addSeparator();
+		}
+		
 		QAction *editAction = contextMenu.addAction(QIcon::fromTheme(QStringLiteral("kmenuedit")), i18n("Edit Menu"));
-		connect(editAction, &QAction::triggered, &contextMenu, [serviceGroup]() {
-			runMenuEditor(serviceGroup->relPath());
+		connect(editAction, &QAction::triggered, &contextMenu, [this, group]() {
+			if (auto a = applet())
+				a->menuEditor(group->relPath());
 		});
 	} else if (action->data().canConvert<QUrl>()) {
 		// QUrl means a file path
@@ -325,46 +339,6 @@ ServiceMenuBase::showContextMenu(const QPoint &pos) const
 	// Display the menu
 	if (!contextMenu.isEmpty())
 		contextMenu.exec(mapToGlobal(pos));
-}
-
-void
-ServiceMenuBase::runMenuEditor(QString arg)
-{
-	const auto service = KService::serviceByDesktopName(QStringLiteral("org.kde.kmenuedit"));
-	if (!service) {
-		qWarning() << "Could not find kmenuedit";
-		return;
-	}
-	
-	if (arg.isEmpty()) {
-		arg = QStringLiteral("/"); // If already open, will collapse editor tree
-	}
-
-	auto *job = new KIO::CommandLauncherJob(service->exec(), {arg});
-	job->setDesktopName(service->desktopEntryName());
-	job->setUiDelegate(new KNotificationJobUiDelegate(KJobUiDelegate::AutoErrorHandlingEnabled));
-	job->start();
-}
-
-void
-ServiceMenuBase::invokeKRunner(const QString &arg)
-{
-	QDBusMessage query = QDBusMessage::createMethodCall(
-		QStringLiteral("org.kde.krunner"),
-		QStringLiteral("/App"),
-		QStringLiteral("org.kde.krunner.App"),
-		QStringLiteral("query"));
-	query.setArguments({arg});
-
-	QDBusMessage display = QDBusMessage::createMethodCall(
-		QStringLiteral("org.kde.krunner"),
-		QStringLiteral("/App"),
-		QStringLiteral("org.kde.krunner.App"),
-		QStringLiteral("display"));
-
-	QDBusConnection bus = QDBusConnection::sessionBus();
-	bus.send(query);
-	bus.send(display);
 }
 
 QString

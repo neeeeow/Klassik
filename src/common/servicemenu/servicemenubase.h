@@ -45,10 +45,6 @@ protected:
 	// Returns a pointer to the Plasma applet attached to our menu
 	ServiceMenuApplet* applet() const;
 
-	// Launches the menu editor and KRunner
-	static void runMenuEditor(QString arg = QString());
-	static void invokeKRunner(const QString &arg = QString());
-
 	// Cleans up mnemonics from a string
 	static QString escapeMnemonics(QString string);
 

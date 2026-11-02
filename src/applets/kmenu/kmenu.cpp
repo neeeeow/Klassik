@@ -149,7 +149,10 @@ KMenu::populate()
 
 	// Add the run command option
 	QAction *runAction = addAction(QIcon::fromTheme(QStringLiteral("system-run")), i18n("Run Command…"));
-	connect(runAction, &QAction::triggered, this, [](){invokeKRunner();});
+	connect(runAction, &QAction::triggered, this, [this](){
+		if (auto a = applet())
+			a->invokeKRunner();
+	});
 
 	if (m_session->canSwitchUser() || m_session->canLock() || m_session->canLogout()) {
 		addSeparator();

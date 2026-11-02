@@ -5,6 +5,7 @@
 */
 
 #include "settingsmenu.h"
+#include "servicemenuapplet.h"
 
 #include <KPluginMetaData>
 #include <KAuthorized>
@@ -53,8 +54,9 @@ SettingsMenu::populate()
 
 	// Add the menu editor action at the bottom
 	QAction *editAction = addAction(QIcon::fromTheme(QStringLiteral("kmenuedit")), i18n("Menu Editor"));
-	connect(editAction, &QAction::triggered, this, []() {
-		runMenuEditor();
+	connect(editAction, &QAction::triggered, this, [this]() {
+		if (auto a = applet())
+			a->menuEditor();
 	});
 }
 

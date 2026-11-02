@@ -36,6 +36,10 @@ public:
 	// Show/hide the menu in QML
 	Q_INVOKABLE void toggleMenu();
 
+	// Launches the menu editor and KRunner
+	Q_INVOKABLE static void menuEditor(const QString &arg = QString());
+	Q_INVOKABLE static void invokeKRunner(const QString &arg = QString());
+
 	// Config getter
 	template <typename T>
 	T getConfigValue(const QString &key) const {
@@ -51,16 +55,21 @@ Q_SIGNALS:
 	void hasMenuChanged();
 	void menuActiveChanged();
 
-protected:
-	void initMenu();
-	void deleteMenu();
+protected Q_SLOTS:
+	void initMenu();	
 	
 private:
 	// Creates a given ServiceMenu object. Only ever called by the base class inside of initMenu()
 	// Implement this in a subclass and return a pointer to a *parentless* ServiceMenu
 	virtual ServiceMenu *createMenu() = 0;
 
+	// Deletes the currently loaded ServiceMenu class
+	void deleteMenu();
+
+	// Gets the config value
 	QVariant configValue(const QString &key) const;
+
+	// Calculates the position at which the menu should be shown at.
 	QPoint popupPosition();
 
 	QPointer<ContainmentInterface> m_containmentInterface;

@@ -1,7 +1,9 @@
 /*
-	SPDX-FileCopyrightText: 2016 Kai Uwe Broulik <kde@privat.broulik.de>
+  SPDX-FileCopyrightText: 2026 neeeeow <https://github.com/neeeeow>
 
-	SPDX-License-Identifier: GPL-2.0-only OR GPL-3.0-only OR LicenseRef-KDE-Accepted-GPL
+  SPDX-FileCopyrightText: 2016 Kai Uwe Broulik <kde@privat.broulik.de>
+
+  SPDX-License-Identifier: GPL-3.0-or-later
 */
 
 #include "iconapplet.h"
@@ -30,6 +32,7 @@
 #include <KIO/OpenFileManagerWindowJob>
 #include <KIO/OpenUrlJob>
 #include <KIO/StatJob>
+#include <KIO/DesktopExecParser>
 
 IconApplet::IconApplet(QObject *parent, const KPluginMetaData &data, const QVariantList &args)
 	: ServiceMenuApplet(parent, data, args)
@@ -340,11 +343,8 @@ IconApplet::contextualActions()
 
 			if (KProtocolManager::supportsListing(linkUrl)) {
 				// Now we add the open in file explorer action.
-				if (!m_actions.isEmpty()) {
-					auto *separator = new QAction(this);
-					separator->setSeparator(true);
-					m_actions.append(separator);
-				}
+				if (!m_actions.isEmpty())
+					appendSeparatorActionToList(m_actions, this);
 				auto *explorerAction = new QAction(QIcon::fromTheme(QStringLiteral("system-file-manager")),
 												   i18n("Open in File Explorer"), this);				
 
@@ -388,16 +388,22 @@ IconApplet::contextualActions()
 			m_actions.append(action);
 		}
 
-		if (!m_actions.isEmpty())
+		if (!m_actions.isEmpty()) {
 			m_actions.prepend(new PopupTitle(QIcon::fromTheme(service.icon()), service.name(), this));
+			appendSeparatorActionToList(m_actions, this);
+		}
+
+		QAction *runAction = new QAction(QIcon::fromTheme(QStringLiteral("system-run")),
+										 i18n("Put Into Run Dialog"), this);
+		connect(runAction, &QAction::triggered, this, [this, service](){
+			invokeKRunner(KIO::DesktopExecParser::executablePath(service.exec()));
+		});
+		m_actions.append(runAction);
 	}
 
 	// Append a separator to separate out contextual actions from the internal actions
-	if (!m_actions.isEmpty()) {
-		auto *separator = new QAction(this);
-		separator->setSeparator(true);
-		m_actions.append(separator);
-	}
+	if (!m_actions.isEmpty())
+		appendSeparatorActionToList(m_actions, this);
 	
 	return m_actions + Applet::contextualActions();
 }
@@ -471,6 +477,14 @@ IconApplet::setLocalPath(const QString &localPath)
 	if (oldValid != isValid()) {
 		Q_EMIT isValidChanged();
 	}
+}
+
+void
+IconApplet::appendSeparatorActionToList(QList<QAction *> &actions, QObject *parent)
+{
+	auto *separator = new QAction(parent);
+	separator->setSeparator(true);
+	actions.append(separator);
 }
 
 K_PLUGIN_CLASS_WITH_JSON(IconApplet, "metadata.json")

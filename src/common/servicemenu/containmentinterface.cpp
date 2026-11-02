@@ -23,7 +23,7 @@ ContainmentInterface::containment() const
 }
 
 bool
-ContainmentInterface::mayAddLauncher(ContainmentInterface::Target target) const
+ContainmentInterface::mayAddItem(ContainmentInterface::Target target) const
 {
 	Plasma::Containment *appletContainment = containment();
 	if (!appletContainment)
@@ -92,9 +92,8 @@ ContainmentInterface::addLauncher(ContainmentInterface::Target target, const KSe
 		break;
 	}
 	case Panel: {
-		if (appletContainment->pluginMetaData().pluginId() == QLatin1String("com.github.neeeeow.klassik.panel")) {
+		if (appletContainment->pluginMetaData().pluginId() == QLatin1String("com.github.neeeeow.klassik.panel"))
 			appletContainment->createApplet(QStringLiteral("com.github.neeeeow.klassik.panel.icon"), QVariantList() << url);
-		}
 
 		break;
 	}
@@ -102,4 +101,21 @@ ContainmentInterface::addLauncher(ContainmentInterface::Target target, const KSe
 		break;
 	}		
 	}
+}
+
+void
+ContainmentInterface::addServiceGroupMenu(const KServiceGroup::Ptr &group) const
+{
+	Plasma::Containment *appletContainment = containment();
+	if (!appletContainment || !group)
+		return;
+	
+	Plasma::Corona *corona = appletContainment->corona();
+	if (!corona)
+		return;
+
+	const QString relPath = group->relPath();
+	if (appletContainment->pluginMetaData().pluginId() == QLatin1String("com.github.neeeeow.klassik.panel"))
+		appletContainment->createApplet(QStringLiteral("com.github.neeeeow.klassik.servicegroupmenu"), QVariantList() << relPath);
+
 }
