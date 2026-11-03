@@ -5,7 +5,7 @@
 */
 
 #include "kmenu.h"
-#include "servicemenuapplet.h"
+#include "kmenuapplet.h"
 #include "kmenutitleaction.h"
 #include "kmenusearchaction.h"
 #include "recentdocsmenu.h"
@@ -102,7 +102,7 @@ KMenu::populate()
 	// All applications search bar
 	if (m_config.showSearch) {
 		auto *search = new KMenuSearchAction(this);
-		connect(search, &KMenuSearchAction::textChanged, this, &ServiceGroupMenu::setSearchFilter);
+		connect(search, &KMenuSearchAction::textChanged, this, &KMenu::setSearchFilter);
 		addAction(search);
 	}
 
@@ -148,11 +148,10 @@ KMenu::populate()
 		addSeparator();
 
 	// Add the run command option
-	QAction *runAction = addAction(QIcon::fromTheme(QStringLiteral("system-run")), i18n("Run Command…"));
-	connect(runAction, &QAction::triggered, this, [this](){
-		if (auto a = applet())
-			a->invokeKRunner();
-	});
+	if (auto a = applet()) {
+		QAction *runAction = addAction(QIcon::fromTheme(QStringLiteral("system-run")), i18n("Run Command…"));
+		connect(runAction, &QAction::triggered, a, [a]{ a->invokeKRunner(); });
+	}
 
 	if (m_session->canSwitchUser() || m_session->canLock() || m_session->canLogout()) {
 		addSeparator();

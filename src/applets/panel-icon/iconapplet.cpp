@@ -316,87 +316,30 @@ IconApplet::contextualActions()
 	if (desktopFile.hasLinkType()) {
 		// Link type means the icon points to a URL, so add URL specific actions
 		const QUrl linkUrl = QUrl(desktopFile.readUrl());
-		if (linkUrl.isValid() && !linkUrl.scheme().isEmpty()) {
-			const KFileItem fileItem(linkUrl);
-			const bool isDir = fileItem.isDir();
 
-			if (!isDir) {
-				const KService::List services = KApplicationTrader::queryByMimeType(fileItem.mimetype());
-				for (const KService::Ptr &service : services) {
-					if (service->noDisplay())
-						continue;
-
-					auto *action = new QAction(QIcon::fromTheme(service->icon()), service->name(), this);
-					connect(action, &QAction::triggered, this, [linkUrl, service]() {
-						auto *job = new KIO::ApplicationLauncherJob(service);
-						job->setUiDelegate(new KNotificationJobUiDelegate(KJobUiDelegate::AutoErrorHandlingEnabled));
-						job->setUrls({linkUrl});
-						job->start();
-					});
-					m_actions.append(action);
-				}					
-				if (!m_actions.isEmpty())
-					m_actions.prepend(new PopupTitle(QIcon::fromTheme(QStringLiteral("document-open")),
-													 i18n("Open With"), this));
-
-			}
-
-			if (KProtocolManager::supportsListing(linkUrl)) {
-				// Now we add the open in file explorer action.
-				if (!m_actions.isEmpty())
-					appendSeparatorActionToList(m_actions, this);
-				auto *explorerAction = new QAction(QIcon::fromTheme(QStringLiteral("system-file-manager")),
-												   i18n("Open in File Explorer"), this);				
-
-				if (isDir) {
-					connect(explorerAction, &QAction::triggered, this, [linkUrl]() {
-						auto *job = new KIO::OpenUrlJob(linkUrl);
-						job->setUiDelegate(new KNotificationJobUiDelegate(KJobUiDelegate::AutoErrorHandlingEnabled));
-						job->start();
-					});
-				} else {
-					connect(explorerAction, &QAction::triggered, this, [linkUrl]() {
-						auto *job = new KIO::OpenFileManagerWindowJob();
-						job->setUiDelegate(new KNotificationJobUiDelegate(KJobUiDelegate::AutoErrorHandlingEnabled));
-						job->setHighlightUrls({linkUrl});
-						job->start();
-					});
-				}
-				
-				m_actions.append(explorerAction);
-			}
+		m_actions.append(openWithActions(linkUrl, this));
+		if (!m_actions.isEmpty())
+			appendSeparatorActionToList(m_actions, this);
+			
+		QAction *fileExplorerAction = openInFileExplorerAction(linkUrl, this);
+		if (fileExplorerAction) {						
+			m_actions.append(fileExplorerAction);
+		    appendSeparatorActionToList(m_actions, this);
 		}
 	} else {
 		// Otherwise, we just consider the icon to be a service and query the serviceactions
-		const KService service(m_localPath);
+		KService::Ptr service = KService::serviceByStorageId(m_localPath);
+		if (!service || !service->isValid())
+			return Applet::contextualActions();
 
-		const auto jumpListActions = service.actions();
-		for (const KServiceAction &serviceAction : jumpListActions) {
-			if (serviceAction.noDisplay())
-				continue;
-
-			auto *action = new QAction(QIcon::fromTheme(serviceAction.icon()), serviceAction.text(), this);
-			if (serviceAction.isSeparator())
-				action->setSeparator(true);
-
-			connect(action, &QAction::triggered, this, [serviceAction]() {
-				auto *job = new KIO::ApplicationLauncherJob(serviceAction);
-				job->setUiDelegate(new KNotificationJobUiDelegate(KJobUiDelegate::AutoErrorHandlingEnabled));
-				job->start();
-			});
-
-			m_actions.append(action);
-		}
-
-		if (!m_actions.isEmpty()) {
-			m_actions.prepend(new PopupTitle(QIcon::fromTheme(service.icon()), service.name(), this));
+		m_actions.append(jumpListActions(service, this));
+		if (!m_actions.isEmpty())
 			appendSeparatorActionToList(m_actions, this);
-		}
 
 		QAction *runAction = new QAction(QIcon::fromTheme(QStringLiteral("system-run")),
 										 i18n("Put Into Run Dialog"), this);
-		connect(runAction, &QAction::triggered, this, [this, service](){
-			invokeKRunner(KIO::DesktopExecParser::executablePath(service.exec()));
+		connect(runAction, &QAction::triggered, this, [service](){
+			invokeKRunner(KIO::DesktopExecParser::executablePath(service->exec()));
 		});
 		m_actions.append(runAction);
 	}

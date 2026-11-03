@@ -6,6 +6,7 @@
 
 #include "dirmenu.h"
 #include "popuptitle.h"
+#include "servicemenuapplet.h"
 
 #include <QDirIterator>
 
@@ -35,10 +36,12 @@ DirMenu::populate()
 	dir.setFilter(QDir::AllEntries | QDir::NoDotAndDotDot);
 	
 	addAction(new PopupTitle(icon(), dir.absolutePath(), this));
-	if (QAction *fileExplorerAction = createFileExplorerActionFromUrl(m_url)) {
-		addAction(fileExplorerAction);
-		if (!dir.isEmpty())
-			addSeparator();
+	if (auto a = applet()) {
+		if (QAction *fileExplorerAction = a->openInFileExplorerAction(m_url, this)) {
+			addAction(fileExplorerAction);
+			if (!dir.isEmpty())
+				addSeparator();
+		}
 	}
 
 	QDirIterator it(dir);

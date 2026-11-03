@@ -13,6 +13,9 @@
 #include <KDesktopFile>
 #include <KLocalizedString>
 #include <KConfigGroup>
+#include <KNotificationJobUiDelegate>
+
+#include <KIO/CommandLauncherJob>
 
 SettingsMenu::SettingsMenu(ServiceMenuApplet *applet, QWidget *parent)
 	: ServiceMenu(applet, parent) {}
@@ -53,11 +56,10 @@ SettingsMenu::populate()
 		addSettingsActions(&m_root, this);
 
 	// Add the menu editor action at the bottom
-	QAction *editAction = addAction(QIcon::fromTheme(QStringLiteral("kmenuedit")), i18n("Menu Editor"));
-	connect(editAction, &QAction::triggered, this, [this]() {
-		if (auto a = applet())
-			a->menuEditor();
-	});
+	if (auto a = applet()) {
+		QAction *editAction = addAction(QIcon::fromTheme(QStringLiteral("kmenuedit")), i18n("Menu Editor"));
+		connect(editAction, &QAction::triggered, a, [a]() { a->menuEditor(); });
+	}
 }
 
 QList<SettingsMenu::CategoryData>
@@ -165,21 +167,37 @@ SettingsMenu::buildSettingsTree(SettingsItem *parent,
 }
 
 void
-SettingsMenu::addSettingsActions(const SettingsItem *item, ServiceMenuBase *menu)
+SettingsMenu::addSettingsActions(const SettingsItem *item, QMenu *menu)
 {
 	for (SettingsItem *child : std::as_const(item->children)) {
 		if (child->isCategory) {
 			// If it's a category, add a sub menu for each child and recurse
 			if (!child->children.isEmpty()) {
-				auto *subMenu = new ServiceMenuBase(QIcon::fromTheme(child->icon),
-													escapeMnemonics(child->name), applet(), menu);
-				menu->addMenu(subMenu);
+				QMenu *subMenu = menu->addMenu(QIcon::fromTheme(child->icon),
+											   escapeMnemonics(child->name));
 			    addSettingsActions(child, subMenu);
 			}
 		} else {
 			// If it's not a category, then it's a KCM, so add it to the menu
-			if (QAction *action = menu->createActionFromKCM(child->id, child->name, child->icon))
+			if (QAction *action = createActionFromKCM(child->id, child->name, child->icon, menu))
 				menu->addAction(action);
 		}
 	}
+}
+
+QAction*
+SettingsMenu::createActionFromKCM(const QString &id, const QString &name,
+									 const QString &icon, QObject *parent) const
+{
+	if (id.isEmpty())
+		return nullptr;
+
+	auto *action = new QAction(QIcon::fromTheme(icon), escapeMnemonics(name), parent);
+	connect(action, &QAction::triggered, parent, [id]() {
+		auto *job = new KIO::CommandLauncherJob(QStringLiteral("kcmshell6"), {id});
+		job->setUiDelegate(new KNotificationJobUiDelegate(KJobUiDelegate::AutoErrorHandlingEnabled));
+		job->start();
+	});
+
+	return action;
 }

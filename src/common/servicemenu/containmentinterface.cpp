@@ -109,10 +109,6 @@ ContainmentInterface::addServiceGroupMenu(const KServiceGroup::Ptr &group) const
 	Plasma::Containment *appletContainment = containment();
 	if (!appletContainment || !group)
 		return;
-	
-	Plasma::Corona *corona = appletContainment->corona();
-	if (!corona)
-		return;
 
 	const QString relPath = group->relPath();
 	if (appletContainment->pluginMetaData().pluginId() == QLatin1String("com.github.neeeeow.klassik.panel"))

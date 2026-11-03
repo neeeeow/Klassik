@@ -7,6 +7,7 @@
 #include "containmentinterface.h"
 #include "servicemenuapplet.h"
 #include "servicemenu.h"
+#include "popuptitle.h"
 
 #include <QQuickItem>
 #include <QPoint>
@@ -16,13 +17,20 @@
 #include <QDBusConnection>
 #include <QDBusMessage>
 
-#include <KPluginFactory>
 #include <KConfigPropertyMap>
 #include <KConfigLoader>
+#include <KLocalizedString>
 #include <KNotificationJobUiDelegate>
+#include <KProtocolManager>
+#include <KFileItem>
+#include <KApplicationTrader>
 
+#include <KIO/ApplicationLauncherJob>
 #include <KIO/CommandLauncherJob>
+#include <KIO/OpenUrlJob>
+#include <KIO/OpenFileManagerWindowJob>
 
+#include <PlasmaActivities/ResourceInstance>
 #include <PlasmaQuick/AppletQuickItem>
 
 ServiceMenuApplet::ServiceMenuApplet(QObject *parentObject, const KPluginMetaData &data, const QVariantList &args)
@@ -30,7 +38,7 @@ ServiceMenuApplet::ServiceMenuApplet(QObject *parentObject, const KPluginMetaDat
 
 ServiceMenuApplet::~ServiceMenuApplet()
 {
-	deleteMenu();
+	deleteMenu(false); // don't send signals in the destructor
 }
 
 void
@@ -60,9 +68,8 @@ ServiceMenuApplet::init()
 void
 ServiceMenuApplet::initMenu()
 {
-	
-	if (m_menu)
-		deleteMenu();
+	// Delete any old menu objects
+	deleteMenu(false);
 
 	// Create the menu object. If it fails to create, simply bail out.
 	m_menu = createMenu();
@@ -78,21 +85,23 @@ ServiceMenuApplet::initMenu()
 		connect(m_timer, &QTimer::timeout, m_menu, &ServiceMenu::reinitialize);
 
 	Q_EMIT hasMenuChanged();
+	Q_EMIT menuActiveChanged();
 }
 
 void
-ServiceMenuApplet::deleteMenu()
+ServiceMenuApplet::deleteMenu(bool notify)
 {
 	if (!m_menu)
 		return;
 
-	m_menu->disconnect();
+	m_menu->disconnect(this);
 	m_menu->close();
 	m_menu->deleteLater();
 	m_menu.clear();
-
-	Q_EMIT hasMenuChanged();
-	Q_EMIT menuActiveChanged();
+	if (notify) {
+		Q_EMIT hasMenuChanged();
+		Q_EMIT menuActiveChanged();
+	}
 }
 
 bool
@@ -116,7 +125,7 @@ ServiceMenuApplet::configValue(const QString &key) const
 	
 	const QVariant value = configLoader->property(key);
 	if (!value.isValid()) {
-		qWarning() << "key " << key << " not found!";
+		qWarning() << "key" << key << "not found!";
 		return QVariant();
 	}
 	return value;
@@ -227,7 +236,16 @@ ServiceMenuApplet::popupPosition()
 }
 
 void
-ServiceMenuApplet::menuEditor(const QString &arg)
+ServiceMenuApplet::notifyAccessed(const QUrl &url) const
+{
+	if (!url.isValid())
+		return;
+	KActivities::ResourceInstance::notifyAccessed(
+		url, pluginName() );	
+}
+
+void
+ServiceMenuApplet::menuEditor(const QString &arg) const
 {
 	const auto service = KService::serviceByDesktopName(QStringLiteral("org.kde.kmenuedit"));
 	if (!service) {
@@ -240,6 +258,7 @@ ServiceMenuApplet::menuEditor(const QString &arg)
 	job->setDesktopName(service->desktopEntryName());
 	job->setUiDelegate(new KNotificationJobUiDelegate(KJobUiDelegate::AutoErrorHandlingEnabled));
 	job->start();
+	notifyAccessed(QUrl(QStringLiteral("applications:") + service->storageId()));
 }
 
 void
@@ -263,3 +282,104 @@ ServiceMenuApplet::invokeKRunner(const QString &arg)
 	bus.send(display);
 }
 
+QList<QAction *>
+ServiceMenuApplet::jumpListActions(const KService::Ptr &service, QObject *parent) const
+{
+	QList<QAction *> actions;	
+	if (!service || !service->isValid())
+		return actions;
+
+	const QList<KServiceAction> serviceActions = service->actions();
+	for (const KServiceAction &serviceAction : serviceActions) {
+		if (serviceAction.noDisplay())
+			continue;
+
+		auto *action = new QAction(QIcon::fromTheme(serviceAction.icon()),
+								   serviceAction.text().replace(QLatin1Char('&'), QStringLiteral("&&")), parent);
+		if (serviceAction.isSeparator())
+			action->setSeparator(true);
+
+		connect(action, &QAction::triggered, this, [this, service, serviceAction]() {
+			auto *job = new KIO::ApplicationLauncherJob(serviceAction);
+			job->setUiDelegate(new KNotificationJobUiDelegate(KJobUiDelegate::AutoErrorHandlingEnabled));
+			job->start();
+			notifyAccessed(QUrl(QStringLiteral("applications:") + service->storageId()));
+		});
+
+		actions.append(action);
+	}
+
+	if (!actions.isEmpty())
+		actions.prepend(new PopupTitle(QIcon::fromTheme(service->icon()), service->name(), parent));
+
+	return actions;
+}
+
+QList<QAction *>
+ServiceMenuApplet::openWithActions(const QUrl &url, QObject *parent) const
+{
+	QList<QAction *> actions;
+	if (!url.isValid() || url.scheme().isEmpty())
+		return actions;
+
+	const KFileItem fileItem(url);
+	if (fileItem.isDir())
+		// We don't want to provide the options to open directories
+		// with a certain application.
+		return actions;
+
+	const KService::List services = KApplicationTrader::queryByMimeType(fileItem.mimetype());
+	for (const KService::Ptr &service : services) {
+		if (!service || !service->isValid() || service->noDisplay())
+			continue;
+
+		auto *action = new QAction(
+			QIcon::fromTheme(service->icon(),
+							 QIcon::fromTheme(QStringLiteral("application-x-executable"))),
+			service->name().replace(QLatin1Char('&'), QStringLiteral("&&")), parent);
+
+		connect(action, &QAction::triggered, this, [this, service, url]() {
+			auto *job = new KIO::ApplicationLauncherJob(service);
+			job->setUiDelegate(new KNotificationJobUiDelegate(KJobUiDelegate::AutoErrorHandlingEnabled));
+			job->setUrls({url});
+			job->start();
+			notifyAccessed(url);
+		});
+		actions.append(action);
+	}
+	
+	if (!actions.isEmpty())
+		actions.prepend(new PopupTitle(QIcon::fromTheme(QStringLiteral("document-open")),
+									 i18n("Open With"), parent));
+
+	return actions;
+}
+
+QAction*
+ServiceMenuApplet::openInFileExplorerAction(const QUrl &url, QObject *parent) const
+{
+	if (!url.isValid() || url.scheme().isEmpty() ||
+		!KProtocolManager::supportsListing(url))
+		return nullptr;
+	
+	auto *action = new QAction(QIcon::fromTheme(QStringLiteral("system-file-manager")),
+							   i18n("Open in File Explorer"), parent);
+	if (KFileItem(url).isDir()) {
+		connect(action, &QAction::triggered, this, [this, url]() {
+			auto *job = new KIO::OpenUrlJob(url);
+			job->setUiDelegate(new KNotificationJobUiDelegate(KJobUiDelegate::AutoErrorHandlingEnabled));
+			job->start();
+			notifyAccessed(url);
+		});
+	} else {
+		connect(action, &QAction::triggered, this, [this, url]() {
+			auto *job = new KIO::OpenFileManagerWindowJob();
+			job->setUiDelegate(new KNotificationJobUiDelegate(KJobUiDelegate::AutoErrorHandlingEnabled));
+			job->setHighlightUrls({url});
+			job->start();
+			notifyAccessed(url);
+		});
+	}
+
+	return action;
+}

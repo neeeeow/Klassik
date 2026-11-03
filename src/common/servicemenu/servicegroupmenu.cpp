@@ -15,8 +15,10 @@ ServiceGroupMenu::ServiceGroupMenu(const KServiceGroup::Ptr &group, ServiceMenuA
 	: ServiceMenu(applet, parent), m_group(group)
 {
 	// Set the KServiceGroup to be used
-	setTitle(escapeMnemonics(m_group->caption()));
-	setIcon(QIcon::fromTheme(m_group->icon(), QIcon::fromTheme(QStringLiteral("applications-other"))));
+	if (m_group && m_group->isValid()) {
+		setTitle(escapeMnemonics(m_group->caption()));
+		setIcon(QIcon::fromTheme(m_group->icon(), QIcon::fromTheme(QStringLiteral("applications-other"))));
+	}
 		
 	// Set the search filter from the parent (if there is one!)
 	if (const auto *parentMenu = qobject_cast<const ServiceGroupMenu *>(parentWidget())) {
@@ -33,11 +35,7 @@ ServiceGroupMenu::ServiceGroupMenu(const KServiceGroup::Ptr &group, ServiceMenuA
 void
 ServiceGroupMenu::populate()
 {
-	if (!m_group || !m_group->isValid())
-		return;
-	
 	addActions(createActionsFromServiceGroup(m_group));
-
 	if (isEmpty()) {
 		QAction *emptyAction = addAction(i18n("No Entries"));
 		emptyAction->setEnabled(false);

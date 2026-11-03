@@ -18,20 +18,6 @@ public:
 	explicit ServiceGroupMenu(ServiceMenuApplet *applet, QWidget *parent = nullptr);
 	ServiceGroupMenu(const KServiceGroup::Ptr &group, ServiceMenuApplet *applet, QWidget *parent = nullptr);
 
-	QString searchFilter() const { return m_searchFilter; }
-	void setSearchFilter(const QString &filter) {
-		if (filter != m_searchFilter) {
-			m_searchFilter = filter;
-			Q_EMIT searchFilterChanged(m_searchFilter);
-		}
-	}
-	void resetSearchFilter() {
-		if (m_searchFilter != QString()) {
-			m_searchFilter = QString();
-			Q_EMIT searchFilterChanged(m_searchFilter);
-		}
-	}
-
 Q_SIGNALS:
 	void searchFilterChanged(const QString &filter);
 	
@@ -39,6 +25,24 @@ protected:
 	// Returns a list of QAction*s corresponding to the hierarchy of the provided
 	// KServiceGroup, all parented to this
 	QList<QAction *> createActionsFromServiceGroup(const KServiceGroup::Ptr &group);
+
+	// Returns the current search filter
+	QString searchFilter() const { return m_searchFilter; }
+
+protected Q_SLOTS:
+	// Sets and resets the search filter for the menu
+	void setSearchFilter(const QString &filter) {
+		if (filter != m_searchFilter) {
+			m_searchFilter = filter;
+			Q_EMIT searchFilterChanged(m_searchFilter);
+		}
+	}
+	void resetSearchFilter() {
+		if (!m_searchFilter.isEmpty()) {
+			m_searchFilter = QString();
+			Q_EMIT searchFilterChanged(m_searchFilter);
+		}
+	}
 
 private:
 	void rebuild() override {}
@@ -52,7 +56,7 @@ private:
 
 	// Returns true if the service passes the search filter (i.e. if
 	// the service contains the search filter string)
-    static bool filterService(const KService::Ptr &service, QStringView filter);
+	static bool filterService(const KService::Ptr &service, QStringView filter);
 
 	// Returns true if the service group passes the search filter
 	static bool filterServiceGroup(const KServiceGroup::Ptr	&group, QStringView filter);

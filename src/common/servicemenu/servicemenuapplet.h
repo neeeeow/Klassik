@@ -7,9 +7,9 @@
 #pragma once
 
 #include <QPointer>
+#include <KService>
 #include <Plasma/Applet>
 
-class QQuickItem;
 class ContainmentInterface;
 class ServiceMenu;
 
@@ -36,9 +36,24 @@ public:
 	// Show/hide the menu in QML
 	Q_INVOKABLE void toggleMenu();
 
+	// Notifies KActivities that a QUrl has been accessed by our applet
+	void notifyAccessed(const QUrl &url) const;
+
 	// Launches the menu editor and KRunner
-	Q_INVOKABLE static void menuEditor(const QString &arg = QString());
+	Q_INVOKABLE void menuEditor(const QString &arg = QString()) const;
 	Q_INVOKABLE static void invokeKRunner(const QString &arg = QString());
+
+	// Jump list actions for a given KService
+	QList<QAction *> jumpListActions(const KService::Ptr &service, QObject *parent = nullptr) const;
+
+	// Actions which correspond to KServices for opening a specific file.
+	// Also appends the header title.
+	// Will return an empty list for a directory!
+	QList<QAction *> openWithActions(const QUrl &url, QObject *parent = nullptr) const;
+	
+	// Returns a QAction* which opens the file pointed to by the QUrl
+	// in the file explorer.
+	QAction* openInFileExplorerAction(const QUrl &url, QObject *parent = nullptr) const;
 
 	// Config getter
 	template <typename T>
@@ -64,7 +79,7 @@ private:
 	virtual ServiceMenu *createMenu() = 0;
 
 	// Deletes the currently loaded ServiceMenu class
-	void deleteMenu();
+	void deleteMenu(bool notify = true);
 
 	// Gets the config value
 	QVariant configValue(const QString &key) const;

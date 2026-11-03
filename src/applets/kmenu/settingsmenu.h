@@ -72,10 +72,16 @@ private:
 	static QList<KPluginMetaData> findKCMsMetaData();
 
 	// Builds the settings item hierarchy from a starting item
-	static void buildSettingsTree(SettingsItem *parent, const QList<KPluginMetaData> &pluginModules, const QList<CategoryData> &categories);
+	static void buildSettingsTree(SettingsItem *parent, const QList<KPluginMetaData> &pluginModules,
+								  const QList<CategoryData> &categories);
 
 	// Adds a settingsitem (and all of its children) to a given menu
-	void addSettingsActions(const SettingsItem *item, ServiceMenuBase *menu);
+	void addSettingsActions(const SettingsItem *item, QMenu *menu);
+
+    // QAction* which launches a KCM with given id inside of
+	// kcmshell6, with a given name and icon, parented to this.
+	QAction* createActionFromKCM(const QString &id, const QString &name,
+								 const QString &icon, QObject *parent = nullptr) const;
 	
 	// The root SettingsItem used for populating the menu
 	SettingsItem m_root;
