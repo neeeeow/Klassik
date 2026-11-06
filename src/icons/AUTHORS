@@ -1,0 +1,17 @@
+KDE Modern Classic
+==================
+
+SPDX-FileCopyrightText: 2026 Shaun Belcher
+SPDX-License-Identifier: LGPL-3.0-or-later
+
+Design direction, review and maintenance: Shaun Belcher
+Drawing: Claude (Anthropic's AI assistant), under the author's direction (see README.md, "How it was made")
+
+Based on the KDE Classic icon theme
+  The KDE artists of the KDE 2.x/3.x era, maintained by James Richard Tyrer <tyrerj@acm.org>
+  Licence: free for commercial and non-commercial use; copying, modification and redistribution
+  permitted (LICENSE-KDE-Classic.txt)
+
+KDE logo (start-here, kmenu and aliases)
+  From KDE_2_logo.svg, covered by the LGPL like KDE's own artwork.
+  KDE, K Desktop Environment and the KDE Logo are trademarks of KDE e.V.

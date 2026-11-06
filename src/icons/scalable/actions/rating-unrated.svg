@@ -1,0 +1,2 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 64 64"><defs><radialGradient id="r1" cx="0.45" cy="0.4" r="0.7" fx="0.45" fy="0.4"><stop offset="0" stop-color="#ffffff"/><stop offset="0.5" stop-color="#c3c7cd"/><stop offset="1" stop-color="#6c727a"/></radialGradient></defs><path d="M32.00,5.00L39.35,23.89L59.58,25.04L43.89,37.86L49.05,57.46L32.00,46.50L14.95,57.46L20.11,37.86L4.42,25.04L24.65,23.89Z" fill="url(#r1)" stroke="#141414" stroke-width="2.4" stroke-linejoin="round"/></svg>
