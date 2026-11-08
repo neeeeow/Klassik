@@ -349,7 +349,7 @@ ContainmentItem {
                                         const action = actions[i];
                                         const item = newMenuItem(appletMenu);
                                         item.action = action;
-                                        item.enabled = true;
+                                        //item.enabled = true;
                                     }
 
                                     // Panel menu
@@ -454,10 +454,11 @@ ContainmentItem {
                         // Append all required internal actions to the applet's contextual actions. This allows us to easily
                         // query the required contextual actions to appletMenu. NB: doing so makes the applet skip adding these
                         // actions as part of the normal internal action menu population, so actions do *not* get added twice.
-                        applet.Plasmoid.contextualActions.push(applet.Plasmoid.internalAction("move"));
-                        applet.Plasmoid.contextualActions.push(applet.Plasmoid.internalAction("remove"));
-                        applet.Plasmoid.contextualActions.push(applet.Plasmoid.internalAction("configure"));
-                        applet.Plasmoid.contextualActions.push(applet.Plasmoid.internalAction("alternatives"));
+                        for (const name of ["move", "remove", "configure", "alternatives"]) {
+                            const action = applet.Plasmoid.internalAction(name);
+                            if (action && action.enabled)
+                                applet.Plasmoid.contextualActions.push(action);
+                        }
                     }
                 }
             }

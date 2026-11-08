@@ -18,13 +18,8 @@
 #include <KIO/CommandLauncherJob>
 
 SettingsMenu::SettingsMenu(ServiceMenuApplet *applet, QWidget *parent)
-	: ServiceMenu(applet, parent) {}
-
-SettingsMenu::SettingsMenu(const QString &title, ServiceMenuApplet *applet, QWidget *parent)
-	: ServiceMenu(title, applet, parent) {}
-
-SettingsMenu::SettingsMenu(const QIcon &icon, const QString &title, ServiceMenuApplet *applet, QWidget *parent)
-	: ServiceMenu(icon, title, applet, parent) {}
+	: ServiceMenu(QIcon::fromTheme(QStringLiteral("preferences-desktop")),
+				  i18n("Settings"), applet, parent) {}
 
 void
 SettingsMenu::rebuild()
@@ -57,8 +52,8 @@ SettingsMenu::populate()
 
 	// Add the menu editor action at the bottom
 	if (auto a = applet()) {
-		QAction *editAction = addAction(QIcon::fromTheme(QStringLiteral("kmenuedit")), i18n("Menu Editor"));
-		connect(editAction, &QAction::triggered, a, [a]() { a->menuEditor(); });
+		if (QAction *editAction = a->menuEditorAction(QUrl(), this))
+			addAction(editAction);
 	}
 }
 
@@ -174,7 +169,7 @@ SettingsMenu::addSettingsActions(const SettingsItem *item, QMenu *menu)
 			// If it's a category, add a sub menu for each child and recurse
 			if (!child->children.isEmpty()) {
 				QMenu *subMenu = menu->addMenu(QIcon::fromTheme(child->icon),
-											   escapeMnemonics(child->name));
+											   ServiceMenuApplet::escapeMnemonics(child->name));
 			    addSettingsActions(child, subMenu);
 			}
 		} else {
@@ -192,10 +187,10 @@ SettingsMenu::createActionFromKCM(const QString &id, const QString &name,
 	if (id.isEmpty())
 		return nullptr;
 
-	auto *action = new QAction(QIcon::fromTheme(icon), escapeMnemonics(name), parent);
-	connect(action, &QAction::triggered, parent, [id]() {
+	auto *action = new QAction(QIcon::fromTheme(icon), ServiceMenuApplet::escapeMnemonics(name), parent);
+	connect(action, &QAction::triggered, action, [id]() {
 		auto *job = new KIO::CommandLauncherJob(QStringLiteral("kcmshell6"), {id});
-		job->setUiDelegate(new KNotificationJobUiDelegate(KJobUiDelegate::AutoErrorHandlingEnabled));
+		job->setUiDelegate(new KNotificationJobUiDelegate(KJobUiDelegate::AutoHandlingEnabled));
 		job->start();
 	});
 

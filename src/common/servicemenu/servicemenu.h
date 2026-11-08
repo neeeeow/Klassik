@@ -28,10 +28,6 @@ public:
 	ServiceMenu(const QString &title, ServiceMenuApplet *applet, QWidget *parent = nullptr);
 	ServiceMenu(const QIcon &icon, const QString &title, ServiceMenuApplet *applet, QWidget *parent = nullptr);
 
-	// Functions for creating QActions, from either a service, a url, parented to the menu
-	QAction* createActionFromService(const KService::Ptr &service, const QUrl &url = QUrl());	
-	QAction* createActionFromUrl(const QUrl &url);
-
 public Q_SLOTS:
 	// Marks the menu to be reinitialized (e.g. after a config change). The menu is
 	// reinitialized when the menu is re-opened.
@@ -50,8 +46,14 @@ protected:
 	// Returns a pointer to the Plasma applet attached to our menu
 	ServiceMenuApplet* applet() const;
 
-	// Cleans up mnemonics from a string
-	static QString escapeMnemonics(QString string);
+	// Takes a KService (and an optional url pointing to a file to open) and
+	// creates a QAction which launches the service, parented to this.
+	QAction* createActionFromService(const KService::Ptr &service, const QUrl &url = QUrl());
+
+	// QAction which launches a given url. Includes overloaded version for manually
+	// specifying icon and title
+	QAction* createActionFromUrl(const QUrl &url);
+	QAction* createActionFromUrl(const QUrl &url, const QIcon &icon, const QString &title);
 
 	// QMenu overrides
 	void actionEvent(QActionEvent *e) override;
@@ -69,10 +71,7 @@ private:
 	virtual void rebuild() = 0;
 
 	// Populates the menu contents
-	virtual void populate() = 0;
-	
-	// Creates and displays the context menu
-	void showContextMenu(const QPoint &pos) const;
+	virtual void populate() = 0;   
 
 	// Pointer to the plasma applet
 	QPointer<ServiceMenuApplet> m_applet;
@@ -89,4 +88,8 @@ private:
 	// Initial drag position. We use std::optional here since it only needs to contain
 	// data whenever a drag operation is occuring.
 	std::optional<QPointF> m_startPos;
+
+private Q_SLOTS:
+	// Creates and displays the context menu
+	void showContextMenu(const QPoint &pos) const;
 };

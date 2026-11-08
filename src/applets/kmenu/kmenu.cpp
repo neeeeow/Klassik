@@ -40,13 +40,13 @@ KMenu::changeEvent(QEvent *e)
 		setMargins();
 		update();
 	}
-	ServiceMenu::changeEvent(e);
+	ServiceGroupMenu::changeEvent(e);
 }
 
 void
 KMenu::paintEvent(QPaintEvent *e)
 {
-	ServiceMenu::paintEvent(e);
+	ServiceGroupMenu::paintEvent(e);
 	if (m_sidePixmap.isNull() || m_sideTilePixmap.isNull() || !m_config.drawSideImage)
 		return;
 
@@ -107,13 +107,13 @@ KMenu::populate()
 	}
 
 	// All applications entries
-	const QList<QAction *> appActions = createActionsFromServiceGroup(KServiceGroup::root());		
+	const QList<QAction *> appActions = createActionsFromServiceGroup();		
 	if (appActions.isEmpty()) {
 		QAction *emptyAction = addAction(i18n("No Entries"));
 		emptyAction->setEnabled(false);
 	} else {
 		m_applicationActions = QList<QPointer<QAction>>(appActions.begin(), appActions.end());
-		addActions(applicationActions());
+		addActions(appActions);
 	}
 
 	// Actions section
@@ -127,20 +127,17 @@ KMenu::populate()
 	// any QAction that gets deleted
 	if (m_config.showRecentDocs) {
 		// Recent documents submenu
-		auto *documentsMenu = new RecentDocsMenu(QIcon::fromTheme(QStringLiteral("document-open-recent")),
-												 i18n("Recent Documents"), applet(), this);
+		auto *documentsMenu = new RecentDocsMenu(applet(), this);
 		addMenu(documentsMenu);
 	}
 	if (m_config.showSystem) {
 		// My system submenu
-		auto *systemMenu = new SystemMenu(QIcon::fromTheme(QStringLiteral("computer")),
-										  i18n("My System"), applet(), this);
+		auto *systemMenu = new SystemMenu(applet(), this);
 		addMenu(systemMenu);
 	}
 	if (m_config.showSettings) {
 		// Settings submenu
-		auto *settingsMenu = new SettingsMenu(QIcon::fromTheme(QStringLiteral("preferences-desktop")),
-											  i18n("Settings"), applet(), this);
+		auto *settingsMenu = new SettingsMenu(applet(), this);
 		addMenu(settingsMenu);
 	}
 
@@ -149,23 +146,24 @@ KMenu::populate()
 
 	// Add the run command option
 	if (auto a = applet()) {
-		QAction *runAction = addAction(QIcon::fromTheme(QStringLiteral("system-run")), i18n("Run Command…"));
-		connect(runAction, &QAction::triggered, a, [a]{ a->invokeKRunner(); });
+		if (QAction *runAction = a->kRunnerAction(QString(), this)) {
+			runAction->setText(i18n("Run Command…"));
+			addAction(runAction);
+		}
 	}
 
 	if (m_session->canSwitchUser() || m_session->canLock() || m_session->canLogout()) {
 		addSeparator();
-		QAction *action;
 		if (m_session->canSwitchUser()) {
-			action = addAction(QIcon::fromTheme(QStringLiteral("system-switch-user")), i18n("Switch User"));
+			auto *action = addAction(QIcon::fromTheme(QStringLiteral("system-switch-user")), i18n("Switch User"));
 			connect(action, &QAction::triggered, m_session, &SessionManagement::switchUser);
 		}
 		if (m_session->canLock()) {
-			action = addAction(QIcon::fromTheme(QStringLiteral("system-lock-screen")), i18n("Lock Session"));
+			auto *action = addAction(QIcon::fromTheme(QStringLiteral("system-lock-screen")), i18n("Lock Session"));
 			connect(action, &QAction::triggered, m_session, &SessionManagement::lock);
 		}
 		if (m_session->canLogout()) {
-			action = addAction(QIcon::fromTheme(QStringLiteral("system-log-out")), i18n("Log Out…"));
+			auto *action = addAction(QIcon::fromTheme(QStringLiteral("system-log-out")), i18n("Log Out…"));
 			connect(action, &QAction::triggered, m_session, &SessionManagement::requestLogoutPrompt);
 		}
 	}	
@@ -272,8 +270,8 @@ KMenu::mostUsedAppsActions()
 
 	ResultSet results(query);
 	ResultSet::const_iterator resultIt;
-    resultIt = results.begin();
-    while (actions.count() < m_config.numMostUsedApps && resultIt != results.end()) {
+	resultIt = results.begin();
+	while (actions.count() < m_config.numMostUsedApps && resultIt != results.end()) {
 		const QString resource = (*resultIt).resource();
 		++resultIt;
 
@@ -329,14 +327,14 @@ void
 KMenu::mousePressEvent(QMouseEvent * e)
 {
 	auto newEvent(translateMouseEvent(e));
-	ServiceMenu::mousePressEvent( newEvent ? newEvent.get() : e );
+	ServiceGroupMenu::mousePressEvent( newEvent ? newEvent.get() : e );
 }
 
 void
 KMenu::mouseReleaseEvent(QMouseEvent *e)
 {
 	auto newEvent(translateMouseEvent(e));
-	ServiceMenu::mouseReleaseEvent( newEvent ? newEvent.get() : e );
+	ServiceGroupMenu::mouseReleaseEvent( newEvent ? newEvent.get() : e );
 }
 
 void
@@ -351,7 +349,7 @@ KMenu::mouseMoveEvent(QMouseEvent *e)
 	if (action && action->isEnabled() && qobject_cast<KMenuSearchAction *>(action))
 		setActiveAction(action);
 	
-	ServiceMenu::mouseMoveEvent(ev);
+	ServiceGroupMenu::mouseMoveEvent(ev);
 }
 
 /* Colorize code adapted from KDE 3 code.

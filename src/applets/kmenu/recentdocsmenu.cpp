@@ -19,13 +19,8 @@ using namespace KActivities::Stats;
 using namespace KActivities::Stats::Terms;
 
 RecentDocsMenu::RecentDocsMenu(ServiceMenuApplet *applet, QWidget *parent)
-	: ServiceMenu(applet, parent) {}
-
-RecentDocsMenu::RecentDocsMenu(const QString &title, ServiceMenuApplet *applet, QWidget *parent)
-	: ServiceMenu(title, applet, parent) {}
-
-RecentDocsMenu::RecentDocsMenu(const QIcon &icon, const QString &title, ServiceMenuApplet *applet, QWidget *parent)
-	: ServiceMenu(icon, title, applet, parent) {}
+	: ServiceMenu(QIcon::fromTheme(QStringLiteral("document-open-recent")),
+				  i18n("Recent Documents"), applet, parent) {}
 
 void
 RecentDocsMenu::populate()

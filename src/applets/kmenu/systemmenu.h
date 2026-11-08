@@ -16,8 +16,6 @@ class SystemMenu final : public ServiceMenu
 	
 public:
 	explicit SystemMenu(ServiceMenuApplet *applet, QWidget *parent = nullptr);
-    SystemMenu(const QString &title, ServiceMenuApplet *applet, QWidget *parent = nullptr);
-	SystemMenu(const QIcon &icon, const QString &title, ServiceMenuApplet *applet, QWidget *parent = nullptr);
 
 private:
 	void rebuild() override;

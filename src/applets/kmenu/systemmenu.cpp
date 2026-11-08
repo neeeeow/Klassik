@@ -6,19 +6,12 @@
 
 #include "systemmenu.h"
 
+#include <KLocalizedString>
 #include <KFilePlacesModel>
 
 SystemMenu::SystemMenu(ServiceMenuApplet *applet, QWidget *parent)
-	: SystemMenu(QIcon(), QString(), applet, parent) {}
-
-SystemMenu::SystemMenu(const QString &title, ServiceMenuApplet *applet, QWidget *parent)
-	: SystemMenu(QIcon(), title, applet, parent) {}
-
-SystemMenu::SystemMenu(const QIcon &icon, const QString &title, ServiceMenuApplet *applet, QWidget *parent)
-	: ServiceMenu(icon, title, applet, parent)
-{
-	setContextMenuPolicy(Qt::NoContextMenu); // We don't want the context menu appearing here
-}
+	: ServiceMenu(QIcon::fromTheme(QStringLiteral("computer")),
+				  i18n("My System"), applet, parent) {}
 
 void
 SystemMenu::rebuild()
@@ -42,10 +35,7 @@ SystemMenu::populate()
 		const QIcon icon = idx.data(Qt::DecorationRole).value<QIcon>();
 		const QUrl url = idx.data(KFilePlacesModel::UrlRole).toUrl();
 
-		if (QAction *action = createActionFromUrl(url)) {
-			action->setText(escapeMnemonics(title));
-			action->setIcon(icon);
+		if (QAction *action = createActionFromUrl(url, icon, title))
 			addAction(action);
-		}
 	}
 }

@@ -9,21 +9,13 @@ import QtQuick
 import org.kde.plasma.core as PlasmaCore
 import org.kde.plasma.plasmoid
 
-PlasmoidItem{
+PlasmoidItem {
     id: root
 
     enabled: Plasmoid.hasMenu
     Plasmoid.icon: Plasmoid.configuration.icon
     Plasmoid.onActivated: Plasmoid.toggleMenu()
 
-    Plasmoid.contextualActions: [
-        PlasmaCore.Action {
-            text: i18n("Menu Editor")
-            icon.name: "kmenuedit"
-            visible: Plasmoid.immutability !== PlasmaCore.Types.SystemImmutable
-            onTriggered: Plasmoid.menuEditor()
-        }
-    ]
     PanelButton {
         anchors.fill: parent
 

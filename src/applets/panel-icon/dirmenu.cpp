@@ -8,10 +8,12 @@
 #include "popuptitle.h"
 #include "servicemenuapplet.h"
 
-#include <QDirIterator>
+#include <QDir>
+#include <QFileInfo>
 
 #include <KFileItem>
 #include <KProtocolManager>
+#include <KLocalizedString>
 
 DirMenu::DirMenu(const QUrl &url, ServiceMenuApplet *applet, QWidget *parent)
 	: ServiceMenu(applet, parent), m_url(url)
@@ -19,8 +21,8 @@ DirMenu::DirMenu(const QUrl &url, ServiceMenuApplet *applet, QWidget *parent)
 	if (!m_url.isValid())
 		return;
 	KFileItem fileItem(m_url);
-	setTitle(escapeMnemonics(fileItem.text()));
-    setIcon(QIcon::fromTheme(fileItem.iconName(), QIcon::fromTheme(QStringLiteral("folder"))));
+	setTitle(ServiceMenuApplet::escapeMnemonics(fileItem.text()));
+	setIcon(QIcon::fromTheme(fileItem.iconName(), QIcon::fromTheme(QStringLiteral("folder"))));
 }
 
 void
@@ -29,33 +31,38 @@ DirMenu::populate()
 	if (!m_url.isValid() ||
 		!m_url.isLocalFile() ||
 		!KFileItem(m_url).isDir() ||
-		!KProtocolManager::supportsListing(m_url))
+		!KProtocolManager::supportsListing(m_url)) {
+		QAction *emptyAction = addAction(i18n("No Entries"));
+		emptyAction->setEnabled(false);
 		return;
+	}	
 
-	QDir dir(m_url.toLocalFile());
-	dir.setFilter(QDir::AllEntries | QDir::NoDotAndDotDot);
+	const QDir dir(m_url.toLocalFile());
+	const auto entries = dir.entryInfoList(QDir::Dirs | QDir::Files | QDir::NoDotAndDotDot,
+										   QDir::DirsFirst | QDir::Name | QDir::IgnoreCase | QDir::LocaleAware);
 	
 	addAction(new PopupTitle(icon(), dir.absolutePath(), this));
-	if (auto a = applet()) {
-		if (QAction *fileExplorerAction = a->openInFileExplorerAction(m_url, this)) {
-			addAction(fileExplorerAction);
-			if (!dir.isEmpty())
-				addSeparator();
-		}
+	if (QAction *fileExplorerAction = ServiceMenuApplet::openInFileExplorerAction(m_url, this)) {
+		addAction(fileExplorerAction);
+		if (!entries.isEmpty())
+			addSeparator();
 	}
 
-	QDirIterator it(dir);
-	while (it.hasNext()) {
-		const QUrl url = QUrl::fromLocalFile(it.next());
-		if (it.fileInfo().isDir() && url.isLocalFile() && KProtocolManager::supportsListing(url)) {
-			// If the URL points to a directory, we add a sub menu for the new directory
+	bool seenDir, fileSeparator = false;
+	for (const QFileInfo &file : entries) {
+		if (file.isDir())
+			seenDir = true;
+		else if (seenDir && !fileSeparator) {
+			addSeparator();
+			fileSeparator = true;
+		}
+		
+		const QUrl url = QUrl::fromLocalFile(file.absoluteFilePath());
+		if (file.isDir() && url.isLocalFile() && KProtocolManager::supportsListing(url)) {
 			QAction *action = addMenu(new DirMenu(url, applet(), this));
 			action->setData(url);
 			action->setToolTip(url.toDisplayString(QUrl::PreferLocalFile));
-		} else {
-			// Otherwise, just add a normal action
-			if (QAction *action = createActionFromUrl(url))
-				addAction(action);
-		}
+		} else if (QAction *action = createActionFromUrl(url))
+			addAction(action);
 	}
 }

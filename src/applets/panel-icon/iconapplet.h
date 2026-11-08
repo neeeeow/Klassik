@@ -1,8 +1,6 @@
 /*
   SPDX-FileCopyrightText: 2026 neeeeow <https://github.com/neeeeow>
 
-  SPDX-FileCopyrightText: 2016 Kai Uwe Broulik <kde@privat.broulik.de>
-
   SPDX-License-Identifier: GPL-3.0-or-later
 */
 
@@ -10,63 +8,40 @@
 
 #include "servicemenuapplet.h"
 
-#include <QPointer>
-
-class KPropertiesDialog;
-
-class IconApplet : public ServiceMenuApplet
+class IconApplet final : public ServiceMenuApplet
 {
 	Q_OBJECT
 
-	Q_PROPERTY(QUrl url READ url WRITE setUrl NOTIFY urlChanged)
-	
-	Q_PROPERTY(QString genericName READ genericName NOTIFY genericNameChanged)
-	Q_PROPERTY(bool valid READ isValid NOTIFY isValidChanged)
+	// The url the applet points to
+	Q_PROPERTY(QUrl url READ appletUrl WRITE setUrl NOTIFY urlChanged)
+	// Whether or not the url is valid
+	Q_PROPERTY(bool valid READ isValid NOTIFY urlChanged)
+	// The generic name of the applet
+	Q_PROPERTY(QString genericName READ genericName NOTIFY genericNameChanged)	
 
 public:
-	explicit IconApplet(QObject *parent, const KPluginMetaData &data, const QVariantList &args);
-	~IconApplet() override;
-
+	IconApplet(QObject *parent, const KPluginMetaData &data, const QVariantList &args);
 	void init() override;
-	void configChanged() override;
 
-	QUrl url() const;
+	QUrl appletUrl() const override;
 	void setUrl(const QUrl &newUrl);
-	
-	QString genericName() const;
 	bool isValid() const;
-
-	QList<QAction *> contextualActions() override;
+	QString genericName() const;	
 
 	Q_INVOKABLE void run();
-	Q_INVOKABLE void configure();
 
 Q_SIGNALS:
 	void urlChanged(const QUrl &url);
 	void genericNameChanged(const QString &genericName);
-	void isValidChanged();
 
 private:
-	// Populates the icon applet
-	void populate();
-	void populateFromDesktopFile(const QString &path);
-
 	ServiceMenu *createMenu() override;
 
-	// Retrieve and set the local path
-	QString localPath() const;
-	void setLocalPath(const QString &localPath);
-
-	// Appends a separator QAction to a given QList
-    static void appendSeparatorActionToList(QList<QAction *> &actions, QObject *parent = nullptr);
-	
-	QString m_localPath;
+	// Sets the generic name, and emits the required signal. Never called externally
+	void setGenericName(const QString &genericName);	
 	QString m_genericName;
 
-	// QList containing the extra actions we add to the applet's contextual actions
-	QList<QAction *> m_actions;
-
-	// Pointer to the open file properties dialog. We keep a track of this variable in case
-	// multiple properties windows are open
-	QPointer<KPropertiesDialog> m_configDialog;
+private Q_SLOTS:
+	// Populates the icon applet
+	void populate(const QUrl &url);
 };

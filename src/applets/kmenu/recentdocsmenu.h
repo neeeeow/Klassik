@@ -14,8 +14,6 @@ class RecentDocsMenu final : public ServiceMenu
 	
 public:
 	explicit RecentDocsMenu(ServiceMenuApplet *applet, QWidget *parent = nullptr);
-    RecentDocsMenu(const QString &title, ServiceMenuApplet *applet, QWidget *parent = nullptr);
-	RecentDocsMenu(const QIcon &icon, const QString &title, ServiceMenuApplet *applet, QWidget *parent = nullptr);
 	
 private:
 	void rebuild() override {}

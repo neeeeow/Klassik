@@ -8,8 +8,6 @@
   <group name="General">
     <entry name="url" type="String">
     </entry>
-    <entry name="localPath" type="String">
-    </entry>
 
     <entry name="showTooltips" type="Bool">
       <default>false</default>

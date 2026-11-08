@@ -9,9 +9,6 @@
 #include <QObject>
 #include <QPointer>
 
-#include <KService>
-#include <KServiceGroup>
-
 namespace Plasma
 {
 	class Containment;
@@ -31,8 +28,7 @@ public:
 	explicit ContainmentInterface(Plasma::Applet *applet);
 
 	bool mayAddItem(ContainmentInterface::Target target) const;
-	void addLauncher(ContainmentInterface::Target target, const KService::Ptr &service) const;
-	void addServiceGroupMenu(const KServiceGroup::Ptr &group) const;
+	void addLauncher(ContainmentInterface::Target target, const QUrl &url) const;
 
 private:	
 	Plasma::Containment *containment() const;

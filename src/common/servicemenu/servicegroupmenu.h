@@ -12,19 +12,19 @@
 
 class ServiceGroupMenu : public ServiceMenu
 {
-	/* Builds an application menu using a given KServiceGroup */
+	/* Builds an application menu using a given relative path */
 	Q_OBJECT
 public:
 	explicit ServiceGroupMenu(ServiceMenuApplet *applet, QWidget *parent = nullptr);
-	ServiceGroupMenu(const KServiceGroup::Ptr &group, ServiceMenuApplet *applet, QWidget *parent = nullptr);
+	ServiceGroupMenu(const QString &relPath, ServiceMenuApplet *applet, QWidget *parent = nullptr);
 
 Q_SIGNALS:
 	void searchFilterChanged(const QString &filter);
 	
 protected:
-	// Returns a list of QAction*s corresponding to the hierarchy of the provided
+	// Returns a list of QAction*s corresponding to the hierarchy of the menu's
 	// KServiceGroup, all parented to this
-	QList<QAction *> createActionsFromServiceGroup(const KServiceGroup::Ptr &group);
+	QList<QAction *> createActionsFromServiceGroup();
 
 	// Returns the current search filter
 	QString searchFilter() const { return m_searchFilter; }
@@ -61,8 +61,8 @@ private:
 	// Returns true if the service group passes the search filter
 	static bool filterServiceGroup(const KServiceGroup::Ptr	&group, QStringView filter);
 
-	// The KServiceGroup used to build the menu
-	KServiceGroup::Ptr m_group;
+	// The relpath of the KServiceGroup used to build the menu
+	QString m_relPath;
 
 	// The string used to filter 
 	QString m_searchFilter;

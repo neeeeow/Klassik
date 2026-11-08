@@ -5,19 +5,21 @@
 */
 
 #include "servicegroupmenu.h"
+#include "servicemenuapplet.h"
 
 #include <KLocalizedString>
 
 ServiceGroupMenu::ServiceGroupMenu(ServiceMenuApplet *applet, QWidget *parent)
-	: ServiceGroupMenu(KServiceGroup::root(), applet, parent) {}
+	: ServiceGroupMenu(QString(), applet, parent) {}
 
-ServiceGroupMenu::ServiceGroupMenu(const KServiceGroup::Ptr &group, ServiceMenuApplet *applet, QWidget *parent)
-	: ServiceMenu(applet, parent), m_group(group)
+ServiceGroupMenu::ServiceGroupMenu(const QString &relPath, ServiceMenuApplet *applet, QWidget *parent)
+	: ServiceMenu(applet, parent), m_relPath(relPath)
 {
-	// Set the KServiceGroup to be used
-	if (m_group && m_group->isValid()) {
-		setTitle(escapeMnemonics(m_group->caption()));
-		setIcon(QIcon::fromTheme(m_group->icon(), QIcon::fromTheme(QStringLiteral("applications-other"))));
+	// Set the title/icon
+	const KServiceGroup::Ptr group = KServiceGroup::group(m_relPath);
+	if (group && group->isValid()) {
+		setTitle(ServiceMenuApplet::escapeMnemonics(group->caption()));
+		setIcon(QIcon::fromTheme(group->icon(), QIcon::fromTheme(QStringLiteral("applications-other"))));
 	}
 		
 	// Set the search filter from the parent (if there is one!)
@@ -35,7 +37,7 @@ ServiceGroupMenu::ServiceGroupMenu(const KServiceGroup::Ptr &group, ServiceMenuA
 void
 ServiceGroupMenu::populate()
 {
-	addActions(createActionsFromServiceGroup(m_group));
+	addActions(createActionsFromServiceGroup());
 	if (isEmpty()) {
 		QAction *emptyAction = addAction(i18n("No Entries"));
 		emptyAction->setEnabled(false);
@@ -43,9 +45,10 @@ ServiceGroupMenu::populate()
 }
 
 QList<QAction *>
-ServiceGroupMenu::createActionsFromServiceGroup(const KServiceGroup::Ptr &group)
+ServiceGroupMenu::createActionsFromServiceGroup()
 {
 	QList<QAction *> actions;
+	const KServiceGroup::Ptr group = KServiceGroup::group(m_relPath);
 	if (!group || !group->isValid())
 		return actions;
 
@@ -64,10 +67,10 @@ ServiceGroupMenu::createActionsFromServiceGroup(const KServiceGroup::Ptr &group)
 			if (subGroup->childCount() == 0)
 				continue;
 
-			auto *subMenu = new ServiceGroupMenu(subGroup, applet(), this);
+			auto *subMenu = new ServiceGroupMenu(subGroup->relPath(), applet(), this);
 			auto *action = new QAction(subMenu->icon(), subMenu->title(), this);
 			action->setMenu(subMenu);
-			action->setData(QVariant::fromValue(subGroup));
+			action->setData(ServiceMenuApplet::urlFromServiceGroup(subGroup));
 			action->setEnabled(filterServiceGroup(subGroup, searchFilter()));
 			actions.append(action);
 		}
@@ -94,18 +97,22 @@ ServiceGroupMenu::filterActions(const QList<QAction *> &actions, QStringView fil
 		return;
 	
 	for (QAction *action : actions) {	
-		if (!action || action->isSeparator() || action->data().isNull())
+		if (!action || action->isSeparator()) {
+			continue;
+		}
+		const QUrl url = action->data().toUrl();
+		if (!url.isValid())
 			continue;
 		if (filter.isEmpty()) {
 			action->setEnabled(true);
 			continue;
 		}
-		bool enabled = false; // Whether or not to enable the individual action
-		const QVariant data = action->data();
-		if (data.canConvert<KService::Ptr>())
-			enabled = filterService(data.value<KService::Ptr>(), filter);
-		else if (data.canConvert<KServiceGroup::Ptr>())
-			enabled = filterServiceGroup(data.value<KServiceGroup::Ptr>(), filter);								
+		bool enabled = false; // Whether or not to enable the individual action	   				
+		if (const KService::Ptr service = ServiceMenuApplet::serviceFromUrl(url))
+			enabled = filterService(service, filter);
+		else if (const KServiceGroup::Ptr group = ServiceMenuApplet::serviceGroupFromUrl(url))
+			enabled = filterServiceGroup(group, filter);
+		
 		action->setEnabled(enabled);
 	}
 }

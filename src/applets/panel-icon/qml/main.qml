@@ -15,16 +15,6 @@ PlasmoidItem {
     enabled: Plasmoid.valid
     Plasmoid.onActivated: Plasmoid.run()
 
-    PlasmaCore.Action {
-        id: configureAction
-        text: i18n("Properties")
-        icon.name: "document-properties"
-        visible: Plasmoid.valid && Plasmoid.immutability !== PlasmaCore.Types.SystemImmutable
-        onTriggered: Plasmoid.configure()
-    }
-    Component.onCompleted: {
-        Plasmoid.setInternalAction("configure", configureAction);
-    }
     onExternalData: (mimetype, data) => {
         Plasmoid.url = data;
     }

@@ -16,8 +16,6 @@ class SettingsMenu final : public ServiceMenu
 	
 public:
 	explicit SettingsMenu(ServiceMenuApplet *applet, QWidget *parent = nullptr);
-	SettingsMenu(const QString &title, ServiceMenuApplet *applet, QWidget *parent = nullptr);
-	SettingsMenu(const QIcon &icon, const QString &title, ServiceMenuApplet *applet, QWidget *parent = nullptr);
 	
 private:
 	// Struct containing the data from a .desktop file

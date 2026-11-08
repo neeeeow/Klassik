@@ -8,7 +8,7 @@
 
 #include "servicemenuapplet.h"
 
-class KMenuApplet : public ServiceMenuApplet
+class KMenuApplet final : public ServiceMenuApplet
 {
 	Q_OBJECT
 	
@@ -17,4 +17,5 @@ public:
 
 private:
 	ServiceMenu* createMenu() override;
+	QUrl appletUrl() const override;
 };
