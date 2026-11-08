@@ -19,6 +19,8 @@ Button {
 
     flat: true
     hoverEnabled: true
+    checkable: Plasmoid.hasMenu
+    checked: Plasmoid.menuActive
 
     background: StyledFrame {
         id: frame

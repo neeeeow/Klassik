@@ -65,15 +65,15 @@ void
 KMenu::rebuild()
 {	
 	// Load the configuration
-	if (applet()) {
-		m_config.drawSideImage	= applet()->getConfigValue<bool>(QStringLiteral("drawSideImage"));
-		m_config.showTitles		= applet()->getConfigValue<bool>(QStringLiteral("showTitles"));
-		m_config.showSearch		= applet()->getConfigValue<bool>(QStringLiteral("showSearch"));
-		m_config.showMostUsedApps = applet()->getConfigValue<bool>(QStringLiteral("showMostUsedApps"));
-		m_config.numMostUsedApps	= applet()->getConfigValue<int>(QStringLiteral("numMostUsedApps"));
-		m_config.showRecentDocs = applet()->getConfigValue<bool>(QStringLiteral("showRecentDocs"));
-		m_config.showSystem		= applet()->getConfigValue<bool>(QStringLiteral("showSystem"));	
-		m_config.showSettings	= applet()->getConfigValue<bool>(QStringLiteral("showSettings"));
+	if (auto a = applet()) {
+		m_config.drawSideImage	= a->getConfigValue<bool>(QStringLiteral("drawSideImage"));
+		m_config.showTitles		= a->getConfigValue<bool>(QStringLiteral("showTitles"));
+		m_config.showSearch		= a->getConfigValue<bool>(QStringLiteral("showSearch"));
+		m_config.showMostUsedApps = a->getConfigValue<bool>(QStringLiteral("showMostUsedApps"));
+		m_config.numMostUsedApps	= a->getConfigValue<int>(QStringLiteral("numMostUsedApps"));
+		m_config.showRecentDocs = a->getConfigValue<bool>(QStringLiteral("showRecentDocs"));
+		m_config.showSystem		= a->getConfigValue<bool>(QStringLiteral("showSystem"));	
+		m_config.showSettings	= a->getConfigValue<bool>(QStringLiteral("showSettings"));
 	}
 
 	// Load in pixmaps and set margins
@@ -145,11 +145,9 @@ KMenu::populate()
 		addSeparator();
 
 	// Add the run command option
-	if (auto a = applet()) {
-		if (QAction *runAction = a->kRunnerAction(QString(), this)) {
-			runAction->setText(i18n("Run Command…"));
-			addAction(runAction);
-		}
+	if (QAction *runAction = ServiceMenuApplet::kRunnerAction(QString(), this)) {
+		runAction->setText(i18n("Run Command…"));
+		addAction(runAction);
 	}
 
 	if (m_session->canSwitchUser() || m_session->canLock() || m_session->canLogout()) {

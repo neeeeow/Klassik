@@ -19,15 +19,12 @@ PlasmoidItem {
         Plasmoid.url = data;
     }
 
-    PanelButton {
+    ServiceMenuButton {
         anchors.fill: parent
 
         title: Plasmoid.title
         subTitle: Plasmoid.genericName !== Plasmoid.title ? Plasmoid.genericName : ""
         icon.name: Plasmoid.icon
-
-        checkable: Plasmoid.hasMenu
-        checked: Plasmoid.menuActive
 
         onClicked: Plasmoid.run()
     }

@@ -51,10 +51,8 @@ SettingsMenu::populate()
 		addSettingsActions(&m_root, this);
 
 	// Add the menu editor action at the bottom
-	if (auto a = applet()) {
-		if (QAction *editAction = a->menuEditorAction(QUrl(), this))
-			addAction(editAction);
-	}
+	if (QAction *editAction = ServiceMenuApplet::menuEditorAction(QUrl(), this))
+		addAction(editAction);
 }
 
 QList<SettingsMenu::CategoryData>
