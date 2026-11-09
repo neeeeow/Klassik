@@ -21,7 +21,6 @@ class IconApplet final : public ServiceMenuApplet
 
 public:
 	IconApplet(QObject *parent, const KPluginMetaData &data, const QVariantList &args);
-	void init() override;
 
 	QUrl appletUrl() const override;
 	void setUrl(const QUrl &newUrl);
@@ -29,6 +28,9 @@ public:
 	QString genericName() const;	
 
 	Q_INVOKABLE void run();
+
+public Q_SLOTS:
+	void init() override;
 
 Q_SIGNALS:
 	void urlChanged(const QUrl &url);

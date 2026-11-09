@@ -86,9 +86,9 @@ ContainmentItem {
         // Add our custom move action to the applet's internal actions
         Plasmoid.setInternalAction("klassikConfig", configAction);
 
-        Plasmoid.contextualActions.push(Plasmoid.internalAction("add widgets"));
+        /*Plasmoid.contextualActions.push(Plasmoid.internalAction("add widgets"));
         Plasmoid.contextualActions.push(Plasmoid.internalAction("klassikConfig"));
-        Plasmoid.contextualActions.push(Plasmoid.internalAction("configure"));
+        Plasmoid.contextualActions.push(Plasmoid.internalAction("configure"));*/
     }
 
     Containment.onAppletAdded: (applet, geometry) => {

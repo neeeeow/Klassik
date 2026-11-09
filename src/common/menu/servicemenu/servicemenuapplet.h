@@ -28,7 +28,6 @@ class ServiceMenuApplet : public Plasma::Applet
 public:
 	ServiceMenuApplet(QObject *parentObject, const KPluginMetaData &data, const QVariantList &args);
 	~ServiceMenuApplet() override;
-	void init() override;
 
 	ContainmentInterface* containmentInterface() const;
 	
@@ -90,6 +89,9 @@ public:
 		}
 		return value.value<T>();
 	}
+
+public Q_SLOTS:
+	void init() override;
 
 Q_SIGNALS:
 	void hasMenuChanged();

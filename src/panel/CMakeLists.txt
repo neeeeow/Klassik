@@ -1,3 +1,5 @@
+add_definitions(-DTRANSLATION_DOMAIN=\"plasma_containment_com.github.neeeeow.klassik.panel\")
+
 configure_file(
     ${CMAKE_CURRENT_SOURCE_DIR}/metadata.json.in
     ${CMAKE_CURRENT_BINARY_DIR}/metadata.json
@@ -22,10 +24,8 @@ plasma_add_applet(com.github.neeeeow.klassik.panel
 
 target_link_libraries(com.github.neeeeow.klassik.panel PRIVATE
     klassik_painteditem
-    Qt::Core
-    Qt::Widgets
+    klassik_servicemenu
     Qt::Qml
-    Qt::Quick
     Plasma::Plasma
 )
 

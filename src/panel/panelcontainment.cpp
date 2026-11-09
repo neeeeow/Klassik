@@ -12,6 +12,7 @@
 
 #include <KPluginFactory>
 #include <KUrlMimeData>
+#include <KLocalizedString>
 
 PanelContainment::PanelContainment(QObject *parentObject, const KPluginMetaData &data, const QVariantList &args)
 : Plasma::Containment(parentObject, data, args),
@@ -20,6 +21,13 @@ PanelContainment::PanelContainment(QObject *parentObject, const KPluginMetaData 
 	loadPalette();
 	qGuiApp->installEventFilter(this);
 	connect(this, &PanelContainment::colorizeChanged, this, &PanelContainment::loadPalette);
+}
+
+void
+PanelContainment::init()
+{
+	Plasma::Containment::init();
+	m_actions = customActions();
 }
 
 bool
@@ -163,6 +171,28 @@ PanelContainment::tintColor(const QColor &base)
 	}
 
 	return QColor(rval, gval, bval, base.alpha());
+}
+
+QList<QAction *>
+PanelContainment::contextualActions()
+{	
+	return m_actions;
+}
+
+QList<QAction *>
+PanelContainment::customActions()
+{
+	QList<QAction *> actions;
+
+	// Add/remove section
+	if (QAction *addWidgets = internalAction(QStringLiteral("add widgets"))) {
+		addWidgets->setText(i18n("Add Applet to Panel…"));
+		actions.append(addWidgets);
+	}
+
+	
+	
+	return actions;
 }
 
 K_PLUGIN_CLASS_WITH_JSON(PanelContainment, "metadata.json")

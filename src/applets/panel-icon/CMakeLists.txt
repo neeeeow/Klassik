@@ -14,7 +14,7 @@ plasma_add_applet(com.github.neeeeow.klassik.panel.icon
         ${KLASSIK_COMMON_DIR}/painteditems/panelbuttonarrow.h
     QML_SOURCES
         qml/main.qml
-        ${KLASSIK_COMMON_DIR}/servicemenu/qml/ServiceMenuButton.qml
+        ${KLASSIK_COMMON_DIR}/menu/servicemenu/qml/ServiceMenuButton.qml
     RESOURCES
         main.xml
 )

@@ -22,7 +22,7 @@ class PanelContainment : public Plasma::Containment
 	// Whether or not to colorize the palette
 	Q_PROPERTY(bool colorize MEMBER m_colorize NOTIFY colorizeChanged FINAL)
 public:
-	PanelContainment(QObject *parentObject, const KPluginMetaData &data, const QVariantList &args);	
+	PanelContainment(QObject *parentObject, const KPluginMetaData &data, const QVariantList &args);
 
 	bool eventFilter(QObject *watched, QEvent *event) override;
 
@@ -32,17 +32,28 @@ public:
 	// Custom mimedata handler. Adds custom icon applet as well as custom menu applet.
 	// Returns true if it performed an action. If false, call ContainmentItem's processMimeData
 	Q_INVOKABLE bool processMimeData(QMimeData *mimeData, int x, int y);
-		
+
+	QList<QAction *> contextualActions() override;
+
+public Q_SLOTS:
+	void init() override;
+	
 Q_SIGNALS:
 	void paletteChanged();
 	void colorizeChanged();
 
 private:
 	// Tints a given QColor according to the selection color
-	QColor tintColor(const QColor &base);
+	static QColor tintColor(const QColor &base);
+
+	// Generate our custom contextual actions
+	QList<QAction *> customActions();
 
 	QPointer<QQuickPalette> m_quickPalette = nullptr;
 	bool m_colorize = false;
+
+	// Contextual actions
+	QList<QAction *> m_actions;						   
 
 private Q_SLOTS:
 	// Loads and colorizes the active QPalette in to our QQuickPalette pointer
