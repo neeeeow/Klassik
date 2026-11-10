@@ -17,7 +17,9 @@ class KMenu final : public ServiceGroupMenu
 public:
 	explicit KMenu(ServiceMenuApplet *applet, QWidget *parent = nullptr);
 
-protected:	
+protected:
+	void initialize() override;
+	
 	void changeEvent(QEvent *event) override;
 	void paintEvent(QPaintEvent *e) override;
 
@@ -33,7 +35,6 @@ private:
 	}
 	QList<QAction *> actionsToFilter() const override { return applicationActions(); }
 	
-	void rebuild() override;
 	void populate() override;	
 	
 	// Sets the margin dependant on the side pixmap setting

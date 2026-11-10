@@ -110,7 +110,7 @@ KCMUtils.SimpleKCM {
         }
         CheckBox {
             id: showGenericName
-            text: i18n("Display the generic name of applications (if there is one)")
+            text: i18n("Detailed menu entries")
         }
 
         Item {

@@ -7,11 +7,9 @@ target_link_libraries(klassik_panelmenu PUBLIC
     klassik_actions
     Qt::Core
     Qt::Widgets
-    Qt::Quick
     KF6::I18n
     KF6::Service
     KF6::KIOWidgets
-    KF6::ConfigQml
     Plasma::Activities
     Plasma::PlasmaQuick
 )

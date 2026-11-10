@@ -62,8 +62,7 @@ RecentDocsMenu::populate()
 	}
 
 	if (actions.isEmpty()) {
-		QAction *emptyAction = addAction(i18n("No Entries"));
-		emptyAction->setEnabled(false);
+		addAction(noEntriesAction());
 		clearAction->setEnabled(false);
 	} else
 		addActions(actions);

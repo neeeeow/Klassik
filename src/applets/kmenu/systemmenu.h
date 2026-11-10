@@ -17,8 +17,10 @@ class SystemMenu final : public ServiceMenu
 public:
 	explicit SystemMenu(ServiceMenuApplet *applet, QWidget *parent = nullptr);
 
+protected:
+	void initialize() override;
+
 private:
-	void rebuild() override;
 	void populate() override;
 
 	KFilePlacesModel *m_placesModel = nullptr;

@@ -18,7 +18,6 @@ public:
     DirMenu(const QUrl &url, ServiceMenuApplet *applet, QWidget *parent = nullptr);
 
 private:
-	void rebuild() override {}
 	void populate() override;
 
 	// The url of the folder to display

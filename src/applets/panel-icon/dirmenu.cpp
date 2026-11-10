@@ -6,14 +6,12 @@
 
 #include "dirmenu.h"
 #include "popuptitle.h"
-#include "servicemenuapplet.h"
 
 #include <QDir>
 #include <QFileInfo>
 
 #include <KFileItem>
 #include <KProtocolManager>
-#include <KLocalizedString>
 
 DirMenu::DirMenu(const QUrl &url, ServiceMenuApplet *applet, QWidget *parent)
 	: ServiceMenu(applet, parent), m_url(url)
@@ -21,7 +19,7 @@ DirMenu::DirMenu(const QUrl &url, ServiceMenuApplet *applet, QWidget *parent)
 	if (!m_url.isValid())
 		return;
 	KFileItem fileItem(m_url);
-	setTitle(ServiceMenuApplet::escapeMnemonics(fileItem.text()));
+	setTitle(escapeMnemonics(fileItem.text()));
 	setIcon(QIcon::fromTheme(fileItem.iconName(), QIcon::fromTheme(QStringLiteral("folder"))));
 }
 
@@ -32,8 +30,7 @@ DirMenu::populate()
 		!m_url.isLocalFile() ||
 		!KFileItem(m_url).isDir() ||
 		!KProtocolManager::supportsListing(m_url)) {
-		QAction *emptyAction = addAction(i18n("No Entries"));
-		emptyAction->setEnabled(false);
+		addAction(noEntriesAction());
 		return;
 	}	
 
@@ -42,13 +39,13 @@ DirMenu::populate()
 										   QDir::DirsFirst | QDir::Name | QDir::IgnoreCase | QDir::LocaleAware);
 	
 	addAction(new PopupTitle(icon(), dir.absolutePath(), this));
-	if (QAction *fileExplorerAction = ServiceMenuApplet::openInFileExplorerAction(m_url, this)) {
+	if (QAction *fileExplorerAction = openInFileExplorerAction(m_url, this)) {
 		addAction(fileExplorerAction);
 		if (!entries.isEmpty())
 			addSeparator();
 	}
 
-	bool seenDir, fileSeparator = false;
+	bool seenDir = false, fileSeparator = false;
 	for (const QFileInfo &file : entries) {
 		if (file.isDir())
 			seenDir = true;

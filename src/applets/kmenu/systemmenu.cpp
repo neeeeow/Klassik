@@ -14,8 +14,11 @@ SystemMenu::SystemMenu(ServiceMenuApplet *applet, QWidget *parent)
 				  i18n("My System"), applet, parent) {}
 
 void
-SystemMenu::rebuild()
+SystemMenu::initialize()
 {
+	if (initialized()) return;
+	ServiceMenu::initialize();
+	
 	if (m_placesModel)
 		m_placesModel->deleteLater();
 	m_placesModel = new KFilePlacesModel(this);

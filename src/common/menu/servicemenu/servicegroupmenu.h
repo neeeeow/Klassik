@@ -45,7 +45,6 @@ protected Q_SLOTS:
 	}
 
 private:
-	void rebuild() override {}
 	void populate() override;
 
 	// Returns a list of the actions to filter.

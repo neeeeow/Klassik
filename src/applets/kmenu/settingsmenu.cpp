@@ -5,7 +5,6 @@
 */
 
 #include "settingsmenu.h"
-#include "servicemenuapplet.h"
 
 #include <KPluginMetaData>
 #include <KAuthorized>
@@ -22,8 +21,11 @@ SettingsMenu::SettingsMenu(ServiceMenuApplet *applet, QWidget *parent)
 				  i18n("Settings"), applet, parent) {}
 
 void
-SettingsMenu::rebuild()
+SettingsMenu::initialize()
 {
+	if (initialized()) return;
+	ServiceMenu::initialize();
+	
 	// Load KCM meta data
 	const QList<KPluginMetaData> pluginModules = findKCMsMetaData();
 
@@ -51,7 +53,7 @@ SettingsMenu::populate()
 		addSettingsActions(&m_root, this);
 
 	// Add the menu editor action at the bottom
-	if (QAction *editAction = ServiceMenuApplet::menuEditorAction(QUrl(), this))
+	if (QAction *editAction = PanelMenu::menuEditorAction(QUrl(), this))
 		addAction(editAction);
 }
 
@@ -167,7 +169,7 @@ SettingsMenu::addSettingsActions(const SettingsItem *item, QMenu *menu)
 			// If it's a category, add a sub menu for each child and recurse
 			if (!child->children.isEmpty()) {
 				QMenu *subMenu = menu->addMenu(QIcon::fromTheme(child->icon),
-											   ServiceMenuApplet::escapeMnemonics(child->name));
+											   escapeMnemonics(child->name));
 			    addSettingsActions(child, subMenu);
 			}
 		} else {
@@ -185,7 +187,7 @@ SettingsMenu::createActionFromKCM(const QString &id, const QString &name,
 	if (id.isEmpty())
 		return nullptr;
 
-	auto *action = new QAction(QIcon::fromTheme(icon), ServiceMenuApplet::escapeMnemonics(name), parent);
+	auto *action = new QAction(QIcon::fromTheme(icon), escapeMnemonics(name), parent);
 	connect(action, &QAction::triggered, action, [id]() {
 		auto *job = new KIO::CommandLauncherJob(QStringLiteral("kcmshell6"), {id});
 		job->setUiDelegate(new KNotificationJobUiDelegate(KJobUiDelegate::AutoHandlingEnabled));

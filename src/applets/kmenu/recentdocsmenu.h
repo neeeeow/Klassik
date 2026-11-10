@@ -16,7 +16,6 @@ public:
 	explicit RecentDocsMenu(ServiceMenuApplet *applet, QWidget *parent = nullptr);
 	
 private:
-	void rebuild() override {}
 	void populate() override;
 
 private Q_SLOTS:

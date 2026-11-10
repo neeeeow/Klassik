@@ -62,8 +62,11 @@ KMenu::paintEvent(QPaintEvent *e)
 }
 
 void
-KMenu::rebuild()
-{	
+KMenu::initialize()
+{
+	if (initialized()) return;
+	ServiceGroupMenu::initialize();
+	
 	// Load the configuration
 	if (auto a = applet()) {
 		m_config.drawSideImage	= a->getConfigValue<bool>(QStringLiteral("drawSideImage"));
@@ -109,8 +112,7 @@ KMenu::populate()
 	// All applications entries
 	const QList<QAction *> appActions = createActionsFromServiceGroup();		
 	if (appActions.isEmpty()) {
-		QAction *emptyAction = addAction(i18n("No Entries"));
-		emptyAction->setEnabled(false);
+		addAction(noEntriesAction());
 	} else {
 		m_applicationActions = QList<QPointer<QAction>>(appActions.begin(), appActions.end());
 		addActions(appActions);
@@ -145,7 +147,7 @@ KMenu::populate()
 		addSeparator();
 
 	// Add the run command option
-	if (QAction *runAction = ServiceMenuApplet::kRunnerAction(QString(), this)) {
+	if (QAction *runAction = kRunnerAction(QString(), this)) {
 		runAction->setText(i18n("Run Command…"));
 		addAction(runAction);
 	}
@@ -283,11 +285,8 @@ KMenu::mostUsedAppsActions()
 			actions.append(action);
 	}
 
-	if (actions.isEmpty()) {
-		auto *emptyAction = new QAction(i18n("No Entries"), this);
-		emptyAction->setEnabled(false);
-		actions.append(emptyAction);
-	}
+	if (actions.isEmpty())
+		actions.append(noEntriesAction());
 
 	return actions;
 }

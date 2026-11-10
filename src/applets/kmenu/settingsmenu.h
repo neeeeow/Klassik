@@ -16,6 +16,9 @@ class SettingsMenu final : public ServiceMenu
 	
 public:
 	explicit SettingsMenu(ServiceMenuApplet *applet, QWidget *parent = nullptr);
+
+protected:
+	void initialize() override;
 	
 private:
 	// Struct containing the data from a .desktop file
@@ -60,7 +63,6 @@ private:
 		}
 	};
 
-	void rebuild() override;
 	void populate() override;
 	
 	// Parses each .desktop file to retrieve the category data.

@@ -36,7 +36,7 @@ IconApplet::createMenu()
 	if (!url.isValid())
 		return nullptr;
 
-	if (const KServiceGroup::Ptr group = serviceGroupFromUrl(url))
+	if (const KServiceGroup::Ptr group = PanelMenu::serviceGroupFromUrl(url))
 		return new ServiceGroupMenu(group->relPath(), this);
 	else if (url.isLocalFile() &&
 			 KFileItem(url).isDir() &&
@@ -50,11 +50,11 @@ void
 IconApplet::populate(const QUrl &url)
 {
 	QString name, icon, genericName;
-	if (const KService::Ptr service = serviceFromUrl(url)) {
+	if (const KService::Ptr service = PanelMenu::serviceFromUrl(url)) {
 		name = service->name();
 		icon = !service->icon().isEmpty() ? service->icon() : QStringLiteral("application-x-executable");
 		genericName = service->genericName();
-	} else if (const KServiceGroup::Ptr group = serviceGroupFromUrl(url)) {
+	} else if (const KServiceGroup::Ptr group = PanelMenu::serviceGroupFromUrl(url)) {
 		name = group->caption();
 		icon = !group->icon().isEmpty() ? group->icon() : QStringLiteral("applications-other");
 		genericName = i18n("Application Menu");
@@ -123,10 +123,10 @@ IconApplet::run()
 		if (!url.isValid())
 			return;
 
-		if (const KService::Ptr service = serviceFromUrl(url))
-			execService(service);
+		if (const KService::Ptr service = PanelMenu::serviceFromUrl(url))
+			PanelMenu::execService(service);
 		else
-			execUrl(url);
+			PanelMenu::execUrl(url);
 	}
 }
 

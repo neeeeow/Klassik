@@ -18,7 +18,7 @@ ServiceGroupMenu::ServiceGroupMenu(const QString &relPath, ServiceMenuApplet *ap
 	// Set the title/icon
 	const KServiceGroup::Ptr group = KServiceGroup::group(m_relPath);
 	if (group && group->isValid()) {
-		setTitle(ServiceMenuApplet::escapeMnemonics(group->caption()));
+		setTitle(escapeMnemonics(group->caption()));
 		setIcon(QIcon::fromTheme(group->icon(), QIcon::fromTheme(QStringLiteral("applications-other"))));
 	}
 		
@@ -38,10 +38,8 @@ void
 ServiceGroupMenu::populate()
 {
 	addActions(createActionsFromServiceGroup());
-	if (isEmpty()) {
-		QAction *emptyAction = addAction(i18n("No Entries"));
-		emptyAction->setEnabled(false);
-	}
+	if (isEmpty())
+		addAction(noEntriesAction());
 }
 
 QList<QAction *>
@@ -70,7 +68,7 @@ ServiceGroupMenu::createActionsFromServiceGroup()
 			auto *subMenu = new ServiceGroupMenu(subGroup->relPath(), applet(), this);
 			auto *action = new QAction(subMenu->icon(), subMenu->title(), this);
 			action->setMenu(subMenu);
-			action->setData(ServiceMenuApplet::urlFromServiceGroup(subGroup));
+			action->setData(PanelMenu::urlFromServiceGroup(subGroup));
 			action->setEnabled(filterServiceGroup(subGroup, searchFilter()));
 			actions.append(action);
 		}
@@ -108,9 +106,9 @@ ServiceGroupMenu::filterActions(const QList<QAction *> &actions, QStringView fil
 			continue;
 		}
 		bool enabled = false; // Whether or not to enable the individual action	   				
-		if (const KService::Ptr service = ServiceMenuApplet::serviceFromUrl(url))
+		if (const KService::Ptr service = PanelMenu::serviceFromUrl(url))
 			enabled = filterService(service, filter);
-		else if (const KServiceGroup::Ptr group = ServiceMenuApplet::serviceGroupFromUrl(url))
+		else if (const KServiceGroup::Ptr group = PanelMenu::serviceGroupFromUrl(url))
 			enabled = filterServiceGroup(group, filter);
 		
 		action->setEnabled(enabled);
