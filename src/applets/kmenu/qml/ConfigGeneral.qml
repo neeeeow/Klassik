@@ -11,7 +11,6 @@ import QtQuick.Layouts
 import org.kde.iconthemes as KIconThemes
 import org.kde.kcmutils as KCMUtils
 import org.kde.kirigami as Kirigami
-import org.kde.ksvg as KSvg
 import org.kde.plasma.core as PlasmaCore
 import org.kde.plasma.plasmoid
 
@@ -27,14 +26,14 @@ KCMUtils.SimpleKCM {
     property alias cfg_showTooltips: showTooltips.checked
     property alias cfg_showGenericName: showGenericName.checked
 
-    property alias cfg_showMostUsedApps: showMostUsedApps.checked
-    property alias cfg_numMostUsedApps: numMostUsedApps.value
+    property alias cfg_showRecentApps: showRecentApps.checked
+    property int cfg_recentAppsType: 0
+    property alias cfg_numRecentApps: numRecentApps.value
 
     property alias cfg_showRecentDocs: showRecentDocs.checked
     property alias cfg_numRecentDocs: numRecentDocs.value
 
     property alias cfg_showSystem: showSystem.checked
-
     property alias cfg_showSettings: showSettings.checked
 
     Kirigami.FormLayout {
@@ -44,7 +43,7 @@ KCMUtils.SimpleKCM {
         Button {
             id: configIcon
 
-            Kirigami.FormData.label: i18n("Icon:")
+            Kirigami.FormData.label: i18n('Icon:')
 
             implicitWidth: Kirigami.Units.iconSizes.large + Kirigami.Units.smallSpacing * 2
             implicitHeight: implicitWidth
@@ -75,82 +74,112 @@ KCMUtils.SimpleKCM {
                 onClosed: configIcon.checked = false;
 
                 MenuItem {
-                    text: i18n("Choose icon...")
-                    icon.name: "document-open-folder"
+                    text: i18n('Choose icon…')
+                    icon.name: 'document-open-folder'
                     onClicked: iconDialog.open()
                 }
                 MenuItem {
-                    text: i18n("Reset to default icon")
-                    icon.name: "edit-clear"
+                    text: i18n('Reset to default icon')
+                    icon.name: 'edit-clear'
                     onClicked: configGeneral.cfg_icon = configGeneral.cfg_iconDefault
                 }
             }
         }
 
         Item {
-            Kirigami.FormData.label: i18n("General")
             Kirigami.FormData.isSection: true
         }
 
-        CheckBox {
-            id: drawSideImage
-            text: i18n("Display side image")
-        }
-        CheckBox {
-            id: showTitles
-            text: i18n("Display section titles")
-        }
-        CheckBox {
-            id: showSearch
-            text: i18n("Display application search bar")
-        }
-        CheckBox {
-            id: showTooltips
-            text: i18n("Display tooltips on menu items")
-        }
-        CheckBox {
-            id: showGenericName
-            text: i18n("Detailed menu entries")
+        GroupBox {
+            title: i18n("K Menu Layout")
+            GridLayout {
+                columns: 2
+
+                CheckBox {
+                    id: drawSideImage
+                    text: i18n('Show side image')
+                }
+                CheckBox {
+                    id: showTitles
+                    text: i18n('Show section titles')
+                }
+                CheckBox {
+                    id: showSearch
+                    text: i18n('Show applications search bar')
+                }
+                CheckBox {
+                    id: showRecentApps
+                    text: i18n('Show "Quick Start" section')
+                }
+                CheckBox {
+                    id: showRecentDocs
+                    text: i18n('Show "Recent Documents" submenu')
+                }
+                CheckBox {
+                    id: showSystem
+                    text: i18n('Show "My System" submenu')
+                }
+                CheckBox {
+                    id: showSettings
+                    text: i18n('Show "Settings" submenu')
+                }
+                CheckBox {
+                    id: showTooltips
+                    text: i18n('Display tooltips on menu items')
+                }
+                CheckBox {
+                    id: showGenericName
+                    text: i18n('Detailed menu entries')
+                }
+            }
         }
 
         Item {
-            Kirigami.FormData.label: i18n("Menu sections")
             Kirigami.FormData.isSection: true
         }
 
-        CheckBox {
-            id: showMostUsedApps
-            text: i18n("Display most used applications")
-        }
         RowLayout {
-            enabled: showMostUsedApps.checked
+            enabled: showRecentApps.checked
             spacing: Kirigami.Units.smallSpacing
 
             Label {
-                text: i18n("Number of applications:")
+                text: i18n('Max number of "Quick Start" entries:')
             }
 
             SpinBox {
-                id: numMostUsedApps
+                id: numRecentApps
                 from: 1
                 to: 20
             }
         }
 
+        GroupBox {
+            enabled: showRecentApps.checked
+            title: i18n('"Quick Start" section contains')
+            RowLayout {
+                RadioButton {
+                    text: i18n('Most recently used items')
+                    checked: cfg_recentAppsType === 0
+                    onToggled: cfg_recentAppsType = 0
+                }
+                RadioButton {
+                    text: i18n('Most frequently used items')
+                    checked: cfg_recentAppsType === 1
+                    onToggled: cfg_recentAppsType = 1
+                }
+            }
+        }
+
         Item {
             Kirigami.FormData.isSection: true
         }
 
-        CheckBox {
-            id: showRecentDocs
-            text: i18n("Display Recent Documents menu")
-        }
         RowLayout {
             enabled: showRecentDocs.checked
             spacing: Kirigami.Units.smallSpacing
 
             Label {
-                text: i18n("Number of documents:")
+                text: i18n('Max number of "Recent Documents" entries:')
             }
 
             SpinBox {
@@ -158,24 +187,6 @@ KCMUtils.SimpleKCM {
                 from: 1
                 to: 20
             }
-        }
-
-        Item {
-            Kirigami.FormData.isSection: true
-        }
-
-        CheckBox {
-            id: showSystem
-            text: i18n("Display My System menu")
-        }
-
-        Item {
-            Kirigami.FormData.isSection: true
-        }
-
-        CheckBox {
-            id: showSettings
-            text: i18n("Display Settings menu")
         }
     }
 }

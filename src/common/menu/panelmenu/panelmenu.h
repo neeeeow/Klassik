@@ -88,7 +88,7 @@ public Q_SLOTS:
 protected:
 	enum class AddToTarget {
 		Desktop = 0,
-		Panel,
+		Panel
 	};
 	
 	// Initializes the menu. Overriden by subclasses. Use this for loading in

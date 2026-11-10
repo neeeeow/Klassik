@@ -27,7 +27,13 @@ protected:
 	void mouseReleaseEvent(QMouseEvent *e) override;
 	void mouseMoveEvent(QMouseEvent *e) override;
 
-private:		
+private:
+	// Quick Start section type
+	enum class RecentAppsType {
+		Recent = 0,
+		MostUsed
+	};
+	
 	// List of applications in the menu, for use with the search bar
 	QList<QPointer<QAction>> m_applicationActions;
 	QList<QAction *> applicationActions() const {
@@ -45,7 +51,7 @@ private:
 	QRect sideImageRect() const;
 
 	// Returns the actions corresponding to the most used applications section
-	QList<QAction *> mostUsedAppsActions();
+	QList<QAction *> recentAppsActions();
 
 	// Translate mouse event, allowing actions to be highlighted if the
 	// mouse is over the side image 
@@ -60,8 +66,9 @@ private:
 		bool drawSideImage = true;
 		bool showTitles = true;
 		bool showSearch = true;
-		bool showMostUsedApps = true;
-		int numMostUsedApps = 3;
+		bool showRecentApps = true;
+		RecentAppsType recentAppsType = RecentAppsType::MostUsed;
+		int numRecentApps = 3;
 		bool showRecentDocs = true;
 		bool showSystem = true;
 		bool showSettings = true;		

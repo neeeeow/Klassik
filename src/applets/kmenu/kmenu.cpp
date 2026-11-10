@@ -72,8 +72,9 @@ KMenu::initialize()
 		m_config.drawSideImage	= a->getConfigValue<bool>(QStringLiteral("drawSideImage"));
 		m_config.showTitles		= a->getConfigValue<bool>(QStringLiteral("showTitles"));
 		m_config.showSearch		= a->getConfigValue<bool>(QStringLiteral("showSearch"));
-		m_config.showMostUsedApps = a->getConfigValue<bool>(QStringLiteral("showMostUsedApps"));
-		m_config.numMostUsedApps	= a->getConfigValue<int>(QStringLiteral("numMostUsedApps"));
+		m_config.showRecentApps = a->getConfigValue<bool>(QStringLiteral("showRecentApps"));
+		m_config.recentAppsType = a->getConfigValue<RecentAppsType>(QStringLiteral("recentAppsType"));
+		m_config.numRecentApps	= a->getConfigValue<int>(QStringLiteral("numRecentApps"));
 		m_config.showRecentDocs = a->getConfigValue<bool>(QStringLiteral("showRecentDocs"));
 		m_config.showSystem		= a->getConfigValue<bool>(QStringLiteral("showSystem"));	
 		m_config.showSettings	= a->getConfigValue<bool>(QStringLiteral("showSettings"));
@@ -91,10 +92,17 @@ KMenu::populate()
 	resetSearchFilter();
 	
 	// Most used applications section
-	if (m_config.showMostUsedApps) {
-		if (m_config.showTitles)
-			addAction(new KMenuTitleAction(i18n("Most Used Applications"), this));
-		addActions(mostUsedAppsActions());
+	if (m_config.showRecentApps) {
+		if (m_config.showTitles) {
+			QString title;
+			if (m_config.recentAppsType == RecentAppsType::Recent)
+				title = i18n("Recent Applications");
+			else
+				title = i18n("Most Used Applications");
+			
+			addAction(new KMenuTitleAction(title, this));
+		}
+		addActions(recentAppsActions());
 		if (!m_config.showTitles)
 			addSeparator();
 	}
@@ -253,7 +261,7 @@ KMenu::sideImageRect() const
 }
 
 QList<QAction *>
-KMenu::mostUsedAppsActions()
+KMenu::recentAppsActions()
 {
 	QList<QAction *> actions;
 	
@@ -262,7 +270,7 @@ KMenu::mostUsedAppsActions()
 	
 	// Create the query used for tracking the most used applications
 	const auto query = UsedResources
-		| HighScoredFirst		
+		| ((m_config.recentAppsType == RecentAppsType::Recent) ? RecentlyUsedFirst : HighScoredFirst)	
 		| Agent::any()
 		| Type::any()
 		| Url::startsWith(QStringLiteral("applications:"))
@@ -271,7 +279,7 @@ KMenu::mostUsedAppsActions()
 	ResultSet results(query);
 	ResultSet::const_iterator resultIt;
 	resultIt = results.begin();
-	while (actions.count() < m_config.numMostUsedApps && resultIt != results.end()) {
+	while (actions.count() < m_config.numRecentApps && resultIt != results.end()) {
 		const QString resource = (*resultIt).resource();
 		++resultIt;
 
