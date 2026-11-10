@@ -36,7 +36,7 @@ RecentDocsMenu::populate()
 	// Setup the recent documents query
 	// NB: we deviate from the KDE 3 era code here, since using KRecentDocument doesn't
 	// work very well.
-	const int numRecentDocs = applet() ? applet()->getConfigValue<int>(QStringLiteral("numRecentDocs")) : 15;
+	const int numRecentDocs = applet() ? applet()->getConfigValue<int>(QStringLiteral("numRecentDocs"), 15) : 15;
 	const auto query = UsedResources
 		| RecentlyUsedFirst
 		| Agent::any()

@@ -69,15 +69,15 @@ KMenu::initialize()
 	
 	// Load the configuration
 	if (auto a = applet()) {
-		m_config.drawSideImage	= a->getConfigValue<bool>(QStringLiteral("drawSideImage"));
-		m_config.showTitles		= a->getConfigValue<bool>(QStringLiteral("showTitles"));
-		m_config.showSearch		= a->getConfigValue<bool>(QStringLiteral("showSearch"));
-		m_config.showRecentApps = a->getConfigValue<bool>(QStringLiteral("showRecentApps"));
-		m_config.recentAppsType = a->getConfigValue<RecentAppsType>(QStringLiteral("recentAppsType"));
-		m_config.numRecentApps	= a->getConfigValue<int>(QStringLiteral("numRecentApps"));
-		m_config.showRecentDocs = a->getConfigValue<bool>(QStringLiteral("showRecentDocs"));
-		m_config.showSystem		= a->getConfigValue<bool>(QStringLiteral("showSystem"));	
-		m_config.showSettings	= a->getConfigValue<bool>(QStringLiteral("showSettings"));
+		m_config.drawSideImage	= a->getConfigValue<bool>(QStringLiteral("drawSideImage"), m_config.drawSideImage);
+		m_config.showTitles		= a->getConfigValue<bool>(QStringLiteral("showTitles"), m_config.showTitles);
+		m_config.showSearch		= a->getConfigValue<bool>(QStringLiteral("showSearch"), m_config.showSearch);
+		m_config.showRecentApps = a->getConfigValue<bool>(QStringLiteral("showRecentApps"), m_config.showRecentApps);
+		m_config.recentAppsType = a->getConfigValue<RecentAppsType>(QStringLiteral("recentAppsType"), m_config.recentAppsType);
+		m_config.numRecentApps	= a->getConfigValue<int>(QStringLiteral("numRecentApps"), m_config.numRecentApps);
+		m_config.showRecentDocs = a->getConfigValue<bool>(QStringLiteral("showRecentDocs"), m_config.showRecentDocs);
+		m_config.showSystem		= a->getConfigValue<bool>(QStringLiteral("showSystem"), m_config.showSystem);	
+		m_config.showSettings	= a->getConfigValue<bool>(QStringLiteral("showSettings"), m_config.showSettings);
 	}
 
 	// Load in pixmaps and set margins

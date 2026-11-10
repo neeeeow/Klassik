@@ -22,8 +22,10 @@ void
 ServiceMenu::initialize()
 {
 	if (initialized()) return;
-	m_displayGenericName = applet() ? applet()->getConfigValue<bool>(QStringLiteral("showGenericName")) : true;
-	setToolTipsVisible(applet() ? applet()->getConfigValue<bool>(QStringLiteral("showTooltips")) : false);
+	if (auto a = applet()) {	
+		m_displayGenericName = a->getConfigValue<bool>(QStringLiteral("showGenericName"), m_displayGenericName);
+		setToolTipsVisible(a->getConfigValue<bool>(QStringLiteral("showTooltips"), toolTipsVisible()));
+	}
 }
 
 ServiceMenuApplet*

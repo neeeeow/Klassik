@@ -37,11 +37,13 @@ public:
 
 	// Config getter
 	template <typename T>
-	T getConfigValue(const QString &key) const {
+	T getConfigValue(const QString &key, const T &fallback = T()) const {
 		const QVariant value = configValue(key);
+		if (!value.isValid())
+			return fallback;
 		if (!value.canConvert<T>()) {
 			qWarning() << "key" << key << "type mismatch!";
-			return T();
+			return fallback;
 		}
 		return value.value<T>();
 	}
