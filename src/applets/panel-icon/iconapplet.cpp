@@ -10,10 +10,12 @@
 
 #include <KPluginFactory>
 #include <KLocalizedString>
-#include <KService>
-#include <KServiceGroup>
 #include <KProtocolManager>
 #include <KFileItem>
+
+#include <KIO/StatJob>
+
+using namespace Qt::StringLiterals;
 
 IconApplet::IconApplet(QObject *parent, const KPluginMetaData &data, const QVariantList &args)
 	: ServiceMenuApplet(parent, data, args) {
@@ -24,9 +26,13 @@ void
 IconApplet::init()
 {
 	ServiceMenuApplet::init();
-	populate(appletUrl());
+		
 	connect(this, &IconApplet::urlChanged, this, &IconApplet::populate);
 	connect(this, &IconApplet::urlChanged, this, &IconApplet::initMenu);
+
+	const QUrl url = appletUrl();
+	populate(url);
+	resolveUrl(url);
 }
 
 ServiceMenu *
@@ -37,13 +43,15 @@ IconApplet::createMenu()
 		return nullptr;
 
 	if (const KServiceGroup::Ptr group = PanelMenu::serviceGroupFromUrl(url))
-		return new ServiceGroupMenu(group->relPath(), this);
-	else if (url.isLocalFile() &&
-			 KFileItem(url).isDir() &&
-			 KProtocolManager::supportsListing(url))
-		return new DirMenu(url, this);
-	else
-		return nullptr;
+		return new ServiceGroupMenu(group, this);
+	else if (url.isLocalFile() && KProtocolManager::supportsListing(url)) {
+		const KFileItem file(url);
+		if (file.isDir())
+			return new DirMenu(file, this);
+	}
+
+
+	return nullptr;		
 }
 
 void
@@ -63,7 +71,7 @@ IconApplet::populate(const QUrl &url)
 		name = item.text();
 		if (name.isEmpty() || name == QLatin1Char('.'))
 			name = url.fileName();
-		if (name.isEmpty() || url.scheme().startsWith(QLatin1String("http")))
+		if (name.isEmpty() || url.scheme().startsWith("http"_L1))
 			name = url.host();
 		if (name.isEmpty())
 			name = url.path();
@@ -83,12 +91,51 @@ IconApplet::appletUrl() const
 }
 
 void
-IconApplet::setUrl(const QUrl &newUrl)
+IconApplet::setUrl(const QUrl &url)
 {
-	if (appletUrl() != newUrl) {
-		config().writeEntry(QStringLiteral("url"), newUrl);
-		Q_EMIT urlChanged(newUrl);
-		Q_EMIT configNeedsSaving();
+	if (appletUrl() == url)
+		return;
+
+	config().writeEntry(QStringLiteral("url"), url);
+	Q_EMIT urlChanged(url);
+	Q_EMIT configNeedsSaving();
+
+	// Resolve the url in case it is non-local
+	resolveUrl(url);
+}
+
+void
+IconApplet::resolveUrl(const QUrl &url)
+{
+	// Kill any existing statjobs before starting any new ones
+	if (m_statJob)
+		m_statJob->kill(KJob::Quietly);
+	m_statJob.clear();
+
+	// If the url is not a local file (and not an applications:/// group),
+	// try to resolve it to a local file via a KIO::StatJob.
+	if (url.isValid()
+		&& !url.isLocalFile()
+		&& url.scheme() != "applications"_L1
+		&& KProtocolInfo::protocolClass(url.scheme()) == ":local"_L1) {
+		m_statJob = KIO::mostLocalUrl(url, KIO::HideProgressInfo);
+		connect(m_statJob, &KJob::result, this, &IconApplet::updateUrlFromJob);
+	}
+}
+
+void
+IconApplet::updateUrlFromJob(KJob *job)
+{
+	if (m_statJob == job)
+		m_statJob.clear();
+	
+	if (!job || job->error())
+		return;
+
+	if (auto *statJob = qobject_cast<KIO::StatJob *>(job)) {
+		const QUrl url = statJob->mostLocalUrl();
+		if (url.isLocalFile())
+			setUrl(url);
 	}
 }
 

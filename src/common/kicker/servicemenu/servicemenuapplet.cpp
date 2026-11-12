@@ -7,7 +7,6 @@
 #include "servicemenuapplet.h"
 #include "servicemenu.h"
 
-#include <QQuickItem>
 #include <QPoint>
 #include <QRect>
 #include <QQuickWindow>
@@ -32,20 +31,20 @@ ServiceMenuApplet::init()
 	// init() should only ever be called once. If these pointers are not null, then something
 	// has gone wrong.
 	Q_ASSERT(!m_menu);
-	Q_ASSERT(!m_timer);
 	
 	// Call the original init function
 	Plasma::Applet::init();
 
-	// Set up the QTimer
-	m_timer = new QTimer(this);
-	m_timer->setSingleShot(true);
-	m_timer->setInterval(0);
+	// Set up the QTimer used to coalesce config changes
+	auto timer = new QTimer(this);
+	timer->setSingleShot(true);
+	timer->setInterval(0);
 	if (configuration())
-		connect(configuration(), &KConfigPropertyMap::valueChanged, m_timer, qOverload<>(&QTimer::start));		
+		connect(configuration(), &KConfigPropertyMap::valueChanged, timer, qOverload<>(&QTimer::start));
+	connect(timer, &QTimer::timeout, this, &ServiceMenuApplet::configurationChanged);
 	
 	// Create the menu
-	initMenu();	
+	initMenu();
 }
 
 QVariant
@@ -66,39 +65,41 @@ ServiceMenuApplet::configValue(const QString &key) const
 void
 ServiceMenuApplet::initMenu()
 {
+	const bool hadMenu = hasMenu();
+	
 	// Delete any old menu objects
 	deleteMenu();
 
 	// Create the menu object. If it fails to create, simply bail out.
 	m_menu = createMenu();
 	if (m_menu) {
-		connect(m_menu, &QMenu::aboutToShow, this, &ServiceMenuApplet::menuActiveChanged, Qt::QueuedConnection);
-		connect(m_menu, &QMenu::aboutToHide, this, &ServiceMenuApplet::menuActiveChanged, Qt::QueuedConnection);
-		if (m_timer)
-			connect(m_timer, &QTimer::timeout, m_menu, &ServiceMenu::reinitialize);
+		connect(m_menu, &QMenu::aboutToShow, this, [this]() {
+			setActive(true);
+		});
+		connect(m_menu, &QMenu::aboutToHide, this, [this]() {
+			setActive(false);
+		});
+	    
+		connect(this, &ServiceMenuApplet::configurationChanged, m_menu, &ServiceMenu::reinitialize);	
 	}
-
+	
 	// Emit the required signals
-	Q_EMIT hasMenuChanged();
-	Q_EMIT menuActiveChanged();
+	if (hadMenu != hasMenu())
+		Q_EMIT hasMenuChanged();
 }
 
 void
 ServiceMenuApplet::deleteMenu()
 {
+	setActive(false);
 	if (!m_menu)
 		return;
 
+	disconnect(m_menu);
 	m_menu->disconnect(this);
 	m_menu->close();
 	m_menu->deleteLater();
 	m_menu.clear();
-}
-
-bool
-ServiceMenuApplet::menuActive() const
-{
-	return m_menu && m_menu->isVisible();
 }
 
 void
@@ -158,27 +159,17 @@ ServiceMenuApplet::popupPosition()
 
 	// If popup goes out of bounds...
 	// ...at the left edge
-	if (dialogPos.x() < avail.left()) {
-		if (panelLocation != Plasma::Types::LeftEdge) {
-			// move it in bounds
-			// Note: floating popup goes here.
-			dialogPos.setX(avail.left());
-		} else {
-			// flip it around
-			dialogPos.setX(rightPoint.x());
-		}
-	}
+	if (dialogPos.x() < avail.left() && panelLocation != Plasma::Types::LeftEdge)
+		// move it in bounds
+		// Note: floating popup goes here.
+		dialogPos.setX(avail.left());
+	
 	// ...at the right edge
-	if (dialogPos.x() + menuSize.width() > avail.right()) {
-		if (panelLocation != Plasma::Types::RightEdge) {
-			// move it in bounds
-			// Note: floating popup goes here.
-			dialogPos.setX(qMax(avail.left(), (avail.right() - menuSize.width() + 1)));
-		} else {
-			// flip it around
-			dialogPos.setX(leftPoint.x());
-		}
-	}
+	if (dialogPos.x() + menuSize.width() > avail.right() && panelLocation != Plasma::Types::RightEdge)
+		// move it in bounds
+		// Note: floating popup goes here.
+		dialogPos.setX(qMax(avail.left(), (avail.right() - menuSize.width() + 1)));
+	
 	// ...at the top edge
 	if (dialogPos.y() < avail.top()) {
 		if (panelLocation == Plasma::Types::LeftEdge || panelLocation == Plasma::Types::RightEdge) {
@@ -216,8 +207,7 @@ ServiceMenuApplet::contextualActions()
 	m_actions = PanelMenu::contextualActions(appletUrl(), this);
 
 	// Append a separator to separate out contextual actions from the internal actions
-	if (!m_actions.isEmpty())
-		PanelMenu::appendSeparatorActionToList(m_actions, this);
+	PanelMenu::appendSeparatorActionToList(m_actions, this);
 	
 	return m_actions + Applet::contextualActions();
 }

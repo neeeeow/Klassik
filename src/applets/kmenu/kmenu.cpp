@@ -5,7 +5,7 @@
 */
 
 #include "kmenu.h"
-#include "kmenuapplet.h"
+#include "servicemenuapplet.h"
 #include "kmenutitleaction.h"
 #include "kmenusearchaction.h"
 #include "recentdocsmenu.h"
@@ -268,7 +268,7 @@ KMenu::recentAppsActions()
 	using namespace KActivities::Stats;
 	using namespace KActivities::Stats::Terms;	
 	
-	// Create the query used for tracking the most used applications
+	// Create the query used for tracking the most recent /  most used applications
 	const auto query = UsedResources
 		| ((m_config.recentAppsType == RecentAppsType::Recent) ? RecentlyUsedFirst : HighScoredFirst)	
 		| Agent::any()

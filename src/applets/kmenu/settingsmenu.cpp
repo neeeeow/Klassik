@@ -55,6 +55,8 @@ SettingsMenu::populate()
 	// Add the menu editor action at the bottom
 	if (QAction *editAction = PanelMenu::menuEditorAction(QUrl(), this))
 		addAction(editAction);
+	else if (isEmpty())
+		addAction(noEntriesAction());
 }
 
 QList<SettingsMenu::CategoryData>
@@ -131,8 +133,11 @@ SettingsMenu::buildSettingsTree(SettingsItem *parent,
 			item->name = category.name;
 			item->icon = category.icon;
 			item->weight = category.weight;
-			parent->children.append(item);
 			buildSettingsTree(item, pluginModules, categories); // Recurse for the new item
+			if (!item->children.isEmpty())
+				parent->children.append(item);
+			else
+				delete item;
 		}
 	}
 

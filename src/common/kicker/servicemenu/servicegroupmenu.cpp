@@ -5,23 +5,19 @@
 */
 
 #include "servicegroupmenu.h"
-#include "servicemenuapplet.h"
-
-#include <KLocalizedString>
 
 ServiceGroupMenu::ServiceGroupMenu(ServiceMenuApplet *applet, QWidget *parent)
-	: ServiceGroupMenu(QString(), applet, parent) {}
+	: ServiceGroupMenu(KServiceGroup::root(), applet, parent) {}
 
-ServiceGroupMenu::ServiceGroupMenu(const QString &relPath, ServiceMenuApplet *applet, QWidget *parent)
-	: ServiceMenu(applet, parent), m_relPath(relPath)
+ServiceGroupMenu::ServiceGroupMenu(const KServiceGroup::Ptr &group, ServiceMenuApplet *applet, QWidget *parent)
+	: ServiceMenu(applet, parent)
 {
-	// Set the title/icon
-	const KServiceGroup::Ptr group = KServiceGroup::group(m_relPath);
 	if (group && group->isValid()) {
 		setTitle(escapeMnemonics(group->caption()));
 		setIcon(QIcon::fromTheme(group->icon(), QIcon::fromTheme(QStringLiteral("applications-other"))));
+		m_relPath = group->relPath();
 	}
-		
+
 	// Set the search filter from the parent (if there is one!)
 	if (const auto *parentMenu = qobject_cast<const ServiceGroupMenu *>(parentWidget())) {
 		// Directly assign the variable here since there's no need to fire the signal
@@ -50,7 +46,7 @@ ServiceGroupMenu::createActionsFromServiceGroup()
 	if (!group || !group->isValid())
 		return actions;
 
-	const auto entries = group->entries(true);
+	const auto entries = group->entries(true, true, true);
 	for (const auto &entry : entries) {
 		if (entry->isType(KST_KService)) {
 			// If the entry is a service, it's an individual application
@@ -62,16 +58,16 @@ ServiceGroupMenu::createActionsFromServiceGroup()
 		} else if (entry->isType(KST_KServiceGroup)) {
 			// If the entry is a service group, we need to make a submenu
 			const KServiceGroup::Ptr subGroup(static_cast<KServiceGroup*>(entry.data()));
-			if (subGroup->childCount() == 0)
+			if (!subGroup || !subGroup->isValid() || subGroup->childCount() == 0)
 				continue;
 
-			auto *subMenu = new ServiceGroupMenu(subGroup->relPath(), applet(), this);
-			auto *action = new QAction(subMenu->icon(), subMenu->title(), this);
-			action->setMenu(subMenu);
-			action->setData(PanelMenu::urlFromServiceGroup(subGroup));
+			auto *subMenu = new ServiceGroupMenu(subGroup, applet(), this);
+			auto *action = subMenu->menuAction();
+			action->setData(urlFromServiceGroup(subGroup));
 			action->setEnabled(filterServiceGroup(subGroup, searchFilter()));
 			actions.append(action);
-		}
+		} else if (entry->isType(KST_KServiceSeparator))
+			appendSeparatorActionToList(actions, this);
 	}
 	return actions;
 }
@@ -79,7 +75,7 @@ ServiceGroupMenu::createActionsFromServiceGroup()
 void
 ServiceGroupMenu::applySearchFilter()
 {	
-	if (!initialized() || !isVisible())
+	if (!fresh())
 		return;
 	
 	const QList<QAction *> actions = actionsToFilter();
@@ -106,9 +102,9 @@ ServiceGroupMenu::filterActions(const QList<QAction *> &actions, QStringView fil
 			continue;
 		}
 		bool enabled = false; // Whether or not to enable the individual action	   				
-		if (const KService::Ptr service = PanelMenu::serviceFromUrl(url))
+		if (const KService::Ptr service = serviceFromUrl(url))
 			enabled = filterService(service, filter);
-		else if (const KServiceGroup::Ptr group = PanelMenu::serviceGroupFromUrl(url))
+		else if (const KServiceGroup::Ptr group = serviceGroupFromUrl(url))
 			enabled = filterServiceGroup(group, filter);
 		
 		action->setEnabled(enabled);
@@ -118,12 +114,20 @@ ServiceGroupMenu::filterActions(const QList<QAction *> &actions, QStringView fil
 bool
 ServiceGroupMenu::filterService(const KService::Ptr &service, QStringView filter)
 {
-	if (!service || !service->isValid())
+	if (!service || !service->isValid() || service->noDisplay())
 		return false;
 
-	if (filter.isEmpty() || service->name().contains(filter, Qt::CaseInsensitive)
-		|| service->genericName().contains(filter, Qt::CaseInsensitive))
+	if (filter.isEmpty() ||
+		service->name().contains(filter, Qt::CaseInsensitive) ||
+		service->genericName().contains(filter, Qt::CaseInsensitive) ||
+		service->untranslatedName().contains(filter, Qt::CaseInsensitive))
 		return true;
+
+	// We also check the keywords too
+	for (const QString &keyword : service->keywords()) {
+		if (keyword.contains(filter, Qt::CaseInsensitive))
+			return true;
+	}
 	
 	return false;
 }
@@ -131,13 +135,14 @@ ServiceGroupMenu::filterService(const KService::Ptr &service, QStringView filter
 bool
 ServiceGroupMenu::filterServiceGroup(const KServiceGroup::Ptr &group, QStringView filter)
 {
-	if (!group || !group->isValid() || group->childCount() == 0)
+	if (!group || !group->isValid())
 		return false;
 
 	if (filter.isEmpty())
 		return true;
 
-	const auto entries = group->entries(true);
+	// For the search filter, we can avoid sorting and ignore separators entirely
+	const auto entries = group->entries(false, true, false);
 	for (const auto &entry : entries) {
 		if (entry->isType(KST_KService)) {
 			// If the entry is a service, it's an individual application

@@ -14,8 +14,10 @@
 #include <KServiceGroup>
 
 namespace Plasma {
-    class Applet;
+	class Applet;
+	class Containment;
 }
+class KFileItem;
 
 class PanelMenu : public QMenu
 {
@@ -43,6 +45,7 @@ public:
 
 	// Returns a QUrl which points to a given KServiceGroup
 	static QUrl urlFromServiceGroup(const KServiceGroup::Ptr &group);
+	static QUrl urlFromServiceGroup(const QString &relPath);
 
 	// Returns a KServiceGroup from a QUrl which points to a folder in the
 	// applications:/// scheme, which corresponds to an application group.
@@ -60,9 +63,8 @@ public:
 	// Returns a non-applet specific list of contextual actions for a given QUrl.
 	static QList<QAction *> contextualActions(const QUrl &url, QObject *parent = nullptr);
 
-	// QAction* which opens the file pointed to by the QUrl
-	// in the file explorer.
-	static QAction* openInFileExplorerAction(const QUrl &url, QObject *parent = nullptr);
+	// QAction* which opens a given file in the file explorer
+	static QAction* openInFileExplorerAction(const KFileItem &file, QObject *parent = nullptr);
 
 	// QAction* which invokes the KRunner with a given argument
 	static QAction* kRunnerAction(const QString &arg = QString(), QObject *parent = nullptr);
@@ -72,7 +74,7 @@ public:
 	static QAction* menuEditorAction(const QUrl &url = QUrl(), QObject *parent = nullptr);
 
 	// Appends a separator QAction to a given QList
-    static void appendSeparatorActionToList(QList<QAction *> &actions, QObject *parent = nullptr);
+	static void appendSeparatorActionToList(QList<QAction *> &actions, QObject *parent = nullptr);
 
 	// Cleans up mnemonics from a string
 	static QString escapeMnemonics(QString string);																										 
@@ -80,7 +82,7 @@ public:
 public Q_SLOTS:
 	// Marks the menu to be reinitialized (e.g. after a config change). The menu is
 	// reinitialized when the menu is re-opened.
-	void reinitialize() { m_initialized = false; }
+	void reinitialize() { m_initialized = false; m_fresh = false; }
 
 	// Refreshes the contents of the menu
 	void refreshContents();
@@ -99,6 +101,10 @@ protected:
 	// Returns the initialization state of the menu
 	bool initialized() const { return m_initialized; }
 
+	// Returns whether or not the menu contents are fresh, and ready
+	// to be displayed
+	bool fresh() const { return m_fresh; }
+
 	// Pointer to the Plasma::Applet in which the menu is contained
 	Plasma::Applet *applet() const;
 
@@ -109,18 +115,26 @@ protected:
 	// panel. Will return true if the operation was successful!
 	bool addLauncher(AddToTarget target, const QUrl &url) const;
 
-    // QMenu event overrides
+	// QMenu event overrides
 	void actionEvent(QActionEvent *e) override;
 	void mousePressEvent(QMouseEvent *ev) override;
 	void mouseMoveEvent(QMouseEvent *ev) override;
 	void mouseReleaseEvent(QMouseEvent *ev) override;
 
 	// 'No Entries' action
-    QAction* noEntriesAction();
+	QAction* noEntriesAction();
 
 private:	
 	// Populates the menu
 	virtual void populate() = 0;
+
+	// Returns the desktop containment of the current activity.
+	// Will return nullptr if no valid containment can be found
+	Plasma::Containment *desktopContainment() const;
+
+	// Returns the panel containment of the applet. Note, will only return a containment
+	// if it's a Klassik Panel, otherwise it will return nullptr!
+	Plasma::Containment *panelContainment() const;
 
 	// Jump list actions for a given KService
 	static QList<QAction *> jumpListActions(const KService::Ptr &service, QObject *parent = nullptr);
@@ -128,15 +142,12 @@ private:
 	// Actions which correspond to KServices for opening a specific file.
 	// Also appends the header title.
 	// Will return an empty list for a directory!
-	static QList<QAction *> openWithActions(const QUrl &url, QObject *parent = nullptr);
+	static QList<QAction *> openWithActions(const KFileItem &file, QObject *parent = nullptr);
 	
 	// Pointer to the plasma applet
 	QPointer<Plasma::Applet> m_applet;
 
-	// Initialization state
 	bool m_initialized = false;
-
-	// Whether or not the menu contents are fresh (i.e. do not need updating)
 	bool m_fresh = false;
 
 	// Initial drag position. We use std::optional here since it only needs to contain
@@ -145,5 +156,5 @@ private:
 
 private Q_SLOTS:
 	// Creates and displays the context menu
-	void showContextMenu(const QPoint &pos) const;
+	void showContextMenu(const QPoint &pos);
 };

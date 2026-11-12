@@ -66,12 +66,15 @@ QAction*
 ServiceMenu::createActionFromUrl(const QUrl &url)
 {
 	if (!url.isValid())
-		return nullptr;	
+		return nullptr;
 
-	KFileItem fileItem(url);
-	const QIcon icon = QIcon::fromTheme(fileItem.iconName(), QIcon::fromTheme(QStringLiteral("text-x-generic")));
+	KFileItem file(url, KFileItem::SkipMimeTypeFromContent);
+	if (file.isDir())
+		return nullptr;
 
-	return createActionFromUrl(url, icon, fileItem.text());
+	return createActionFromUrl(url,
+							   QIcon::fromTheme(file.iconName(), QIcon::fromTheme(QStringLiteral("text-x-generic"))),
+							   file.text());
 }
 
 QAction*

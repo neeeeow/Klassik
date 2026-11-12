@@ -10,36 +10,35 @@
 #include <QDir>
 #include <QFileInfo>
 
-#include <KFileItem>
 #include <KProtocolManager>
 
-DirMenu::DirMenu(const QUrl &url, ServiceMenuApplet *applet, QWidget *parent)
-	: ServiceMenu(applet, parent), m_url(url)
+DirMenu::DirMenu(const KFileItem &dir, ServiceMenuApplet *applet, QWidget *parent)
+	: ServiceMenu(applet, parent), m_dir(dir)
 {
-	if (!m_url.isValid())
+	if (m_dir.isNull() || !m_dir.isDir())
 		return;
-	KFileItem fileItem(m_url);
-	setTitle(escapeMnemonics(fileItem.text()));
-	setIcon(QIcon::fromTheme(fileItem.iconName(), QIcon::fromTheme(QStringLiteral("folder"))));
+	setTitle(escapeMnemonics(m_dir.text()));
+	setIcon(QIcon::fromTheme(m_dir.iconName(), QIcon::fromTheme(QStringLiteral("folder"))));
 }
 
 void
 DirMenu::populate()
 {
-	if (!m_url.isValid() ||
-		!m_url.isLocalFile() ||
-		!KFileItem(m_url).isDir() ||
-		!KProtocolManager::supportsListing(m_url)) {
+	m_dir.refresh();
+	if (m_dir.isNull() ||
+		!m_dir.isDir() ||
+		!m_dir.isLocalFile() ||
+		!KProtocolManager::supportsListing(m_dir.url())) {
 		addAction(noEntriesAction());
 		return;
-	}	
+	}
 
-	const QDir dir(m_url.toLocalFile());
+	const QDir dir(m_dir.localPath());
 	const auto entries = dir.entryInfoList(QDir::Dirs | QDir::Files | QDir::NoDotAndDotDot,
 										   QDir::DirsFirst | QDir::Name | QDir::IgnoreCase | QDir::LocaleAware);
 	
 	addAction(new PopupTitle(icon(), dir.absolutePath(), this));
-	if (QAction *fileExplorerAction = openInFileExplorerAction(m_url, this)) {
+	if (QAction *fileExplorerAction = openInFileExplorerAction(m_dir, this)) {
 		addAction(fileExplorerAction);
 		if (!entries.isEmpty())
 			addSeparator();
@@ -56,7 +55,7 @@ DirMenu::populate()
 		
 		const QUrl url = QUrl::fromLocalFile(file.absoluteFilePath());
 		if (file.isDir() && url.isLocalFile() && KProtocolManager::supportsListing(url)) {
-			QAction *action = addMenu(new DirMenu(url, applet(), this));
+			QAction *action = addMenu(new DirMenu(KFileItem(url), applet(), this));
 			action->setData(url);
 			action->setToolTip(url.toDisplayString(QUrl::PreferLocalFile));
 		} else if (QAction *action = createActionFromUrl(url))

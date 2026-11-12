@@ -35,7 +35,8 @@ protected:
 	QAction* createActionFromService(const KService::Ptr &service, const QUrl &url = QUrl());
 
 	// QAction which launches a given url. Includes overloaded version for manually
-	// specifying icon and title
+	// specifying icon and title. If the QUrl points to a folder, the icon and title
+	// must be specified! The first function returns a nullptr for folders.
 	QAction* createActionFromUrl(const QUrl &url);
 	QAction* createActionFromUrl(const QUrl &url, const QIcon &icon, const QString &title);
 

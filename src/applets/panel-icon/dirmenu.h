@@ -8,18 +8,18 @@
 
 #include "servicemenu.h"
 
-#include <QUrl>
+#include <KFileItem>
 
 class DirMenu final : public ServiceMenu
 {
 	/* Menu which holds the contents of a directory */
 	Q_OBJECT
 public:
-    DirMenu(const QUrl &url, ServiceMenuApplet *applet, QWidget *parent = nullptr);
+    DirMenu(const KFileItem &dir, ServiceMenuApplet *applet, QWidget *parent = nullptr);
 
 private:
 	void populate() override;
 
-	// The url of the folder to display
-	QUrl m_url;
+	// The KFileItem of the folder we display
+	KFileItem m_dir;
 };

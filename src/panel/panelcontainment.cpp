@@ -5,6 +5,7 @@
 */
 
 #include "panelcontainment.h"
+#include "addappsmenu.h"
 
 #include <QGuiApplication>
 #include <QUrl>
@@ -176,7 +177,7 @@ PanelContainment::tintColor(const QColor &base)
 QList<QAction *>
 PanelContainment::contextualActions()
 {	
-	return m_actions;
+	return m_actions + Plasma::Containment::contextualActions();
 }
 
 QList<QAction *>
@@ -189,8 +190,10 @@ PanelContainment::customActions()
 		addWidgets->setText(i18n("Add Applet to Panel…"));
 		actions.append(addWidgets);
 	}
-
-	
+	auto *addAppsMenu = new AddAppsMenu(this);
+	auto *addAppsAction = new QAction(i18n("Add Application to Panel"), this);
+	addAppsAction->setMenu(addAppsMenu);
+	actions.append(addAppsAction);
 	
 	return actions;
 }

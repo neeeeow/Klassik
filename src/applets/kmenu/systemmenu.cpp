@@ -41,4 +41,7 @@ SystemMenu::populate()
 		if (QAction *action = createActionFromUrl(url, icon, title))
 			addAction(action);
 	}
+
+	if (isEmpty())
+		addAction(noEntriesAction());
 }

@@ -21,13 +21,13 @@ class ServiceMenuApplet : public Plasma::Applet
 	// Whether or not the menu has been loaded
 	Q_PROPERTY(bool hasMenu READ hasMenu NOTIFY hasMenuChanged FINAL)
 	// Whether or not the menu is active
-	Q_PROPERTY(bool menuActive READ menuActive NOTIFY menuActiveChanged FINAL)	
+	Q_PROPERTY(bool active READ active NOTIFY activeChanged FINAL)	
 public:
 	ServiceMenuApplet(QObject *parentObject, const KPluginMetaData &data, const QVariantList &args);
 	~ServiceMenuApplet() override;
 	
 	bool hasMenu() const { return !m_menu.isNull(); }
-	bool menuActive() const;	
+	bool active() const { return m_active; }
 
 	// Show/hide the menu in QML
 	Q_INVOKABLE void toggleMenu();
@@ -41,11 +41,22 @@ public:
 		const QVariant value = configValue(key);
 		if (!value.isValid())
 			return fallback;
-		if (!value.canConvert<T>()) {
-			qWarning() << "key" << key << "type mismatch!";
-			return fallback;
+		if constexpr (std::is_enum_v<T>) {
+			// KConfigLoader stores Enum entries as int
+			bool ok = false;
+			const int i = value.toInt(&ok);
+			if (!ok) {
+				qWarning() << "key" << key << "type mismatch!";
+				return fallback;
+			}
+			return static_cast<T>(i);
+		} else {
+			if (value.metaType() != QMetaType::fromType<T>()) {
+				qWarning() << "key" << key << "type mismatch!";
+				return fallback;
+			}
+			return value.value<T>();
 		}
-		return value.value<T>();
 	}
 
 public Q_SLOTS:
@@ -53,7 +64,8 @@ public Q_SLOTS:
 
 Q_SIGNALS:
 	void hasMenuChanged();
-	void menuActiveChanged();
+	void activeChanged();
+	void configurationChanged();
 							
 protected Q_SLOTS:
 	void initMenu();	
@@ -68,6 +80,14 @@ private:
 	// contextual actions will be generated for the applet
 	virtual QUrl appletUrl() const { return QUrl(); }
 
+	// Sets the toggled state of the applet
+	void setActive(bool active) {
+		if (m_active != active) {
+			m_active = active;
+			Q_EMIT activeChanged();
+		}
+	}
+
 	// Gets the config value
 	QVariant configValue(const QString &key) const;
 
@@ -80,9 +100,9 @@ private:
 	// Pointers
 	QPointer<ServiceMenu> m_menu;
 
-	// Single shot timer used to coalesce config changes 
-	QTimer *m_timer = nullptr;
-
 	// QList containing the extra actions we add to the applet's contextual actions
 	QList<QAction *> m_actions;
+
+	// Whether or not the menu is active
+	bool m_active = false;
 };

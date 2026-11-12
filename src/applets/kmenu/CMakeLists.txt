@@ -11,7 +11,7 @@ plasma_add_applet(com.github.neeeeow.klassik.kmenu
         qml/ConfigGeneral.qml
         qml/config.qml
         qml/main.qml
-        ${KLASSIK_COMMON_DIR}/menu/servicemenu/qml/ServiceMenuButton.qml
+        ${KLASSIK_COMMON_DIR}/kicker/servicemenu/qml/ServiceMenuButton.qml
     CPP_SOURCES
         kmenu.cpp
         kmenuapplet.cpp

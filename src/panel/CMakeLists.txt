@@ -14,6 +14,7 @@ plasma_add_applet(com.github.neeeeow.klassik.panel
     CPP_SOURCES
         panelcontainment.cpp
         panelbackgroundimage.cpp
+        addappsmenu.cpp
         ${KLASSIK_COMMON_DIR}/painteditems/styledtoolbarhandle.h
         ${KLASSIK_COMMON_DIR}/painteditems/styledarrow.h
         ${KLASSIK_COMMON_DIR}/painteditems/styledframe.h
@@ -24,7 +25,7 @@ plasma_add_applet(com.github.neeeeow.klassik.panel
 
 target_link_libraries(com.github.neeeeow.klassik.panel PRIVATE
     klassik_painteditem
-    klassik_servicemenu
+    klassik_panelmenu
     Qt::Qml
     Plasma::Plasma
 )

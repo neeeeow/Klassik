@@ -6,7 +6,6 @@
 
 import QtQuick
 
-import org.kde.plasma.core as PlasmaCore
 import org.kde.plasma.plasmoid
 
 PlasmoidItem {

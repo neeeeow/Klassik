@@ -19,8 +19,7 @@ Button {
 
     flat: true
     hoverEnabled: true
-    checkable: Plasmoid.hasMenu
-    checked: Plasmoid.menuActive
+    checked: Plasmoid.active
 
     background: StyledFrame {
         id: frame
@@ -34,7 +33,7 @@ Button {
             source: button.icon.name
             active: button.hovered
 
-            scale: (button.down || button.checked) ? (width - 2*frame.lineWidth) / width : 1.0
+            scale: ((button.down || button.checked) && (width > 0)) ? (width - 2 * frame.lineWidth) / width : 1.0
             transformOrigin: Item.Center
         }
         Loader {

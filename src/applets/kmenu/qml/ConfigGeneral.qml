@@ -11,7 +11,6 @@ import QtQuick.Layouts
 import org.kde.iconthemes as KIconThemes
 import org.kde.kcmutils as KCMUtils
 import org.kde.kirigami as Kirigami
-import org.kde.plasma.core as PlasmaCore
 import org.kde.plasma.plasmoid
 
 KCMUtils.SimpleKCM {
@@ -156,16 +155,26 @@ KCMUtils.SimpleKCM {
         GroupBox {
             enabled: showRecentApps.checked
             title: i18n('"Quick Start" section contains')
+
+            ButtonGroup {
+                buttons: recentAppsRow.children
+                onCheckedButtonChanged: {
+                    if (checkedButton)
+                        cfg_recentAppsType = checkedButton.typeValue
+                }
+            }
+
             RowLayout {
+                id: recentAppsRow
                 RadioButton {
+                    readonly property int typeValue: 0
                     text: i18n('Most recently used items')
-                    checked: cfg_recentAppsType === 0
-                    onToggled: cfg_recentAppsType = 0
+                    checked: cfg_recentAppsType === typeValue
                 }
                 RadioButton {
+                    readonly property int typeValue: 1
                     text: i18n('Most frequently used items')
-                    checked: cfg_recentAppsType === 1
-                    onToggled: cfg_recentAppsType = 1
+                    checked: cfg_recentAppsType === typeValue
                 }
             }
         }

@@ -15,8 +15,8 @@ class ServiceGroupMenu : public ServiceMenu
 	/* Builds an application menu using a given relative path */
 	Q_OBJECT
 public:
-	explicit ServiceGroupMenu(ServiceMenuApplet *applet, QWidget *parent = nullptr);
-	ServiceGroupMenu(const QString &relPath, ServiceMenuApplet *applet, QWidget *parent = nullptr);
+	explicit ServiceGroupMenu(ServiceMenuApplet *applet, QWidget *parent = nullptr);	
+	ServiceGroupMenu(const KServiceGroup::Ptr &group, ServiceMenuApplet *applet, QWidget *parent = nullptr);
 
 Q_SIGNALS:
 	void searchFilterChanged(const QString &filter);

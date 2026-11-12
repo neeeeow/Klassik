@@ -50,7 +50,7 @@ private:
 	void loadSidePixmap();
 	QRect sideImageRect() const;
 
-	// Returns the actions corresponding to the most used applications section
+	// Returns the actions corresponding to the quick start section
 	QList<QAction *> recentAppsActions();
 
 	// Translate mouse event, allowing actions to be highlighted if the

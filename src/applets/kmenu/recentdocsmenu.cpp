@@ -54,11 +54,9 @@ RecentDocsMenu::populate()
 
 		if (!url.isLocalFile() || !QFileInfo::exists(url.toLocalFile()))
 			continue;
-		
-		QAction *action = createActionFromUrl(url);
-		if (!action)
-			continue;
-		actions.append(action);
+				
+		if (QAction *action = createActionFromUrl(url))
+			actions.append(action);		
 	}
 
 	if (actions.isEmpty()) {

@@ -21,6 +21,8 @@
 #include <KFileItem>
 #include <KApplicationTrader>
 #include <KPropertiesDialog>
+#include <KShell>
+#include <KDesktopFile>
 
 #include <KIO/ApplicationLauncherJob>
 #include <KIO/CommandLauncherJob>
@@ -33,6 +35,18 @@
 #include <Plasma/Corona>
 #include <PlasmaQuick/AppletQuickItem>
 #include <PlasmaActivities/ResourceInstance>
+#include <PlasmaActivities/Consumer>
+
+using namespace Qt::StringLiterals;
+
+static KActivities::Consumer *consumer()
+{
+	// Returns a shared KActivities::Consumer pointer
+	static QPointer<KActivities::Consumer> consumer;
+	if (!consumer)
+		consumer = new KActivities::Consumer(qApp);
+	return consumer;
+}
 
 PanelMenu::PanelMenu(Plasma::Applet *applet, QWidget *parent)
 : PanelMenu(QString(), applet, parent) {}
@@ -47,6 +61,9 @@ PanelMenu::PanelMenu(const QIcon &icon, const QString &title, Plasma::Applet *ap
 	if (!icon.isNull())
 		setIcon(icon);	
 	setContextMenuPolicy(Qt::CustomContextMenu);
+	consumer(); // Create the shared consumer instance
+
+	// Connect signals
 	connect(this, &QWidget::customContextMenuRequested, this, &PanelMenu::showContextMenu);
 	connect(this, &QMenu::aboutToShow, this, &PanelMenu::refreshContents);
 	connect(this, &QMenu::aboutToHide, this, [this] {
@@ -76,69 +93,65 @@ PanelMenu::refreshContents()
 }
 
 void
-PanelMenu::showContextMenu(const QPoint &pos) const
+PanelMenu::showContextMenu(const QPoint &pos)
 {	
 	QAction *action = actionAt(pos);
 	if (!action)
 		return;
-
+	
 	const QUrl url = action->data().toUrl();
 	if (!url.isValid())
 		return;
 
-	QMenu contextMenu; // No need for a parent since we're declaring on the stack
-	contextMenu.addActions(PanelMenu::contextualActions(url, &contextMenu));
+	auto *contextMenu = new QMenu(this);
+	contextMenu->setAttribute(Qt::WA_DeleteOnClose);
 
-	if (!contextMenu.isEmpty())
-		contextMenu.addSeparator();
+	// Add contextual actions for the given QUrl
+	contextMenu->addActions(PanelMenu::contextualActions(url, contextMenu));
 
 	// Add to section
-	// Actions for adding the item to the desktop/panel
-	if (mayAddItem(AddToTarget::Desktop)) {
-		QAction *desktopAction = contextMenu.addAction(QIcon::fromTheme(QStringLiteral("list-add")), i18n("Add to Desktop"));
+	const bool mayAddDesktop = mayAddItem(AddToTarget::Desktop);
+	const bool mayAddPanel = mayAddItem(AddToTarget::Panel);
+	if ((mayAddDesktop || mayAddPanel) && !contextMenu->isEmpty())
+		contextMenu->addSeparator();
+	
+	if (mayAddDesktop) {
+		QAction *desktopAction = contextMenu->addAction(QIcon::fromTheme(QStringLiteral("list-add")), i18n("Add to Desktop"));
 		connect(desktopAction, &QAction::triggered, this, [this, url]() {
-		    if (!addLauncher(AddToTarget::Desktop, url))
+			if (!addLauncher(AddToTarget::Desktop, url))
 				qWarning() << "failed to add launcher to desktop!";
 		});
 	}
-	if (mayAddItem(AddToTarget::Panel)) {
-		QAction *panelAction = contextMenu.addAction(QIcon::fromTheme(QStringLiteral("list-add")), i18n("Add to Panel"));
+	if (mayAddPanel) {
+		QAction *panelAction = contextMenu->addAction(QIcon::fromTheme(QStringLiteral("list-add")), i18n("Add to Panel"));
 		connect(panelAction, &QAction::triggered, this, [this, url]() {
 			if (!addLauncher(AddToTarget::Panel, url))
 				qWarning() << "failed to add launcher to panel!";
 		});
 	}
 
-	if (!contextMenu.isEmpty())
-		contextMenu.exec(mapToGlobal(pos));
+	if (!contextMenu->isEmpty()) {
+		if (auto m = action->menu())
+			m->close();
+		contextMenu->popup(mapToGlobal(pos));
+	} else
+		delete contextMenu;
 }
 
 bool
 PanelMenu::mayAddItem(AddToTarget target) const
-{
-	if (!m_applet) return false;
-	
-	Plasma::Containment *containment = m_applet->containment();
-	if (!containment) return false;
-	
+{	
 	switch (target) {
-	case AddToTarget::Desktop: {		
-		Plasma::Corona *corona = containment->corona();
-		if (!corona) return false;
-
-		Plasma::Containment *desktopContainment = corona->containmentForScreen(containment->screen(), QString(), QString());
-		if (desktopContainment)
-			return (desktopContainment->immutability() == Plasma::Types::Mutable);
-
-		break;
-	}
-	case AddToTarget::Panel: {
-		if (containment->pluginMetaData().pluginId() == QLatin1String("com.github.neeeeow.klassik.panel"))
+	case AddToTarget::Desktop: {				
+		if (Plasma::Containment *containment = desktopContainment())
 			return (containment->immutability() == Plasma::Types::Mutable);
 
 		break;
 	}
-	default: {
+	case AddToTarget::Panel: {				
+		if (Plasma::Containment *containment = panelContainment())
+			return (containment->immutability() == Plasma::Types::Mutable);
+
 		break;
 	}
 	}	
@@ -149,23 +162,17 @@ PanelMenu::mayAddItem(AddToTarget target) const
 bool
 PanelMenu::addLauncher(AddToTarget target, const QUrl &url) const
 {
-	if (!m_applet) return false;
-	
-	Plasma::Containment *containment = m_applet->containment();
-	if (!containment) return false;
+	if (!mayAddItem(target)) return false;   
 	
 	switch (target) {
 	case AddToTarget::Desktop: {		
-		Plasma::Corona *corona = containment->corona();
-		if (!corona) return false;
+		Plasma::Containment *containment = desktopContainment();
+		if (!containment) return false;
 
-		Plasma::Containment *desktopContainment = corona->containmentForScreen(containment->screen(), QString(), QString());
-		if (!desktopContainment) return false;
+		const QStringList containmentProvides = containment->pluginMetaData().value(u"X-Plasma-Provides", QStringList());
 
-		const QStringList &containmentProvides = desktopContainment->pluginMetaData().value(u"X-Plasma-Provides", QStringList());
-
-		if (containmentProvides.contains(QLatin1String("org.kde.plasma.filemanagement"))) {
-			auto *folderQuickItem = PlasmaQuick::AppletQuickItem::itemForApplet(desktopContainment);
+		if (containmentProvides.contains("org.kde.plasma.filemanagement"_L1)) {
+			auto *folderQuickItem = PlasmaQuick::AppletQuickItem::itemForApplet(containment);
 			if (!folderQuickItem)
 				return false;
 
@@ -174,26 +181,48 @@ PanelMenu::addLauncher(AddToTarget target, const QUrl &url) const
 		} else {
 			// Use default plasma icon for the desktop.
 			// TODO: write a custom desktop icon applet...
-			if (desktopContainment->createApplet(QStringLiteral("org.kde.plasma.icon"), QVariantList() << url))
+			if (containment->createApplet(QStringLiteral("org.kde.plasma.icon"), QVariantList() << url))
 				return true;
 		}
 
 		break;
 	}
 	case AddToTarget::Panel: {
-		if (containment->pluginMetaData().pluginId() == QLatin1String("com.github.neeeeow.klassik.panel")) {
+		if (Plasma::Containment *containment = panelContainment()) {
 			if (containment->createApplet(QStringLiteral("com.github.neeeeow.klassik.panel.icon"), QVariantList() << url))
 				return true;
 		}
 
 		break;
 	}
-	default: {
-		break;
-	}
 	}	
 	
 	return false;
+}
+
+Plasma::Containment *
+PanelMenu::desktopContainment() const {
+	if (!m_applet) return nullptr;
+	
+	Plasma::Containment *containment = m_applet->containment();
+	if (!containment) return nullptr;
+
+	Plasma::Corona *corona = containment->corona();
+	if (!corona) return nullptr;
+
+	const QString activity = consumer()->currentActivity();
+	return corona->containmentForScreen(containment->screen(), activity, QString());
+}
+
+Plasma::Containment *
+PanelMenu::panelContainment() const {
+	if (!m_applet) return nullptr;
+	
+	Plasma::Containment *containment = m_applet->containment();
+	if (!containment ||
+		containment->pluginMetaData().pluginId() != "com.github.neeeeow.klassik.panel"_L1)
+		return nullptr;
+	return containment;
 }
 
 void
@@ -263,12 +292,10 @@ PanelMenu::mouseMoveEvent(QMouseEvent *e)
 		drag->setPixmap(action->icon().pixmap(QSize(iconSize, iconSize), devicePixelRatio()));
 	}
 
-	QPointer<PanelMenu> guard(this); // guard in case the menu destroys itself
 	if (auto m = action->menu()) // Close any submenus to avoid a weird bug
 		m->close();
-	drag->exec(Qt::CopyAction | Qt::LinkAction);
-	if (!guard) return;
 	m_startPos.reset();
+	drag->exec(Qt::CopyAction | Qt::LinkAction);
 }
 
 void
@@ -292,8 +319,19 @@ PanelMenu::serviceFromUrl(const QUrl &url)
 	if (!url.isValid() || !url.isLocalFile())
 		return KService::Ptr();
 
-	const KService::Ptr service = KService::serviceByDesktopPath(url.toLocalFile());
-	if (!service || !service->isValid())
+	// First try to retrieve the service directly from the desktop path...
+    KService::Ptr service = KService::serviceByDesktopPath(url.toLocalFile());
+	if (service && service->isValid() && service->isApplication())
+		return service;
+
+	// ... if that fails, then we inspect the .desktop file and construct
+	// a KService ourselves.
+	const QString path = url.toLocalFile();
+	if (!KDesktopFile::isDesktopFile(path) || !KDesktopFile::isAuthorizedDesktopFile(path))
+		return KService::Ptr();
+
+    service = KService::Ptr(new KService(path));
+	if (!service || !service->isValid() || !service->isApplication())
 		return KService::Ptr();
 	
 	return service;
@@ -305,9 +343,15 @@ PanelMenu::urlFromServiceGroup(const KServiceGroup::Ptr &group)
 	if (!group || !group->isValid())
 		return QUrl();
 
+	return urlFromServiceGroup(group->relPath());
+}
+
+QUrl
+PanelMenu::urlFromServiceGroup(const QString &relPath)
+{
 	QUrl url;
-	url.setScheme(QLatin1String("applications"));
-	url.setPath(QLatin1Char('/') + group->relPath());
+	url.setScheme("applications"_L1);
+	url.setPath(QLatin1Char('/') + relPath);
 
 	return url;
 }
@@ -315,7 +359,7 @@ PanelMenu::urlFromServiceGroup(const KServiceGroup::Ptr &group)
 KServiceGroup::Ptr
 PanelMenu::serviceGroupFromUrl(const QUrl &url)
 {
-	if (!url.isValid() || url.scheme() != QLatin1String("applications")
+	if (!url.isValid() || url.scheme() != "applications"_L1
 		|| !url.path().startsWith(QLatin1Char('/')))
 		return KServiceGroup::Ptr();
 
@@ -370,35 +414,42 @@ PanelMenu::contextualActions(const QUrl &url, QObject *parent)
 	if (service)
 		// First add the jump list actions for services
 	    actions.append(jumpListActions(service, parent));
-	else if (!group)
+	else if (!group) {
 		// And add the open with actions for any QUrl which isn't a service, service group
-	    actions.append(openWithActions(url, parent));
+		KFileItem file(url);
+		
+	    actions.append(openWithActions(file, parent));		
 
-	if (!actions.isEmpty())
-	    appendSeparatorActionToList(actions, parent);
-
-	// Now add the open in file explorer action, only for normal QUrls
-	if (!service && !group) {
-		QAction *fileExplorerAction = openInFileExplorerAction(url, parent);
-		if (fileExplorerAction) {						
+		if (QAction *fileExplorerAction = openInFileExplorerAction(file, parent)) {
+			appendSeparatorActionToList(actions, parent);
 		    actions.append(fileExplorerAction);
-		    appendSeparatorActionToList(actions, parent);
 		}
 	}
 
 	// Configuration section
 	if (service || group) {
 		// If we have a service or service group, we want to add the option to open the menu editor
-		if (QAction *editAction = menuEditorAction(url, parent))
+		QAction *editAction = menuEditorAction(url, parent);
+		if (editAction) {
+			appendSeparatorActionToList(actions, parent);
 			actions.append(editAction);
+		}
 
 		if (service) {
 			// Furthermore for services, we add the option to put it in a KRunner dialog.
-			if (QAction *runAction = kRunnerAction(KIO::DesktopExecParser::executablePath(service->exec()), parent))
-				actions.append(runAction);
+			KIO::DesktopExecParser parser(*service, {});
+			const QStringList args = parser.resultingArguments();
+			if (!args.isEmpty()) {
+				if (QAction *runAction = kRunnerAction(KShell::joinArgs(args), parent)) {
+					if (!editAction)
+						appendSeparatorActionToList(actions, parent);
+					actions.append(runAction);
+				}
+			}
 		}
 	} else {
 		// In any other case, place a standard properties action
+		appendSeparatorActionToList(actions, parent);
 		auto *propertiesAction = new QAction(QIcon::fromTheme(QStringLiteral("document-properties")), i18n("Properties"), parent);
 		connect(propertiesAction, &QAction::triggered, propertiesAction, [url]() {
 			auto *dlg = new KPropertiesDialog(url);
@@ -423,7 +474,7 @@ PanelMenu::jumpListActions(const KService::Ptr &service, QObject *parent)
 	actions.append(new PopupTitle(QIcon::fromTheme(service->icon()), service->name(), parent));
 	// We always add the option to launch the application
     auto *runAction = new QAction(QIcon::fromTheme(QStringLiteral("system-run")),
-								  i18n("Run Application…"), parent);
+								  i18n("Run Application"), parent);
 	connect(runAction, &QAction::triggered, runAction, [service]() {
 		execService(service);
 	});
@@ -454,19 +505,16 @@ PanelMenu::jumpListActions(const KService::Ptr &service, QObject *parent)
 }
 
 QList<QAction *>
-PanelMenu::openWithActions(const QUrl &url, QObject *parent)
+PanelMenu::openWithActions(const KFileItem &file, QObject *parent)
 {
 	QList<QAction *> actions;
-	if (!url.isValid() || url.scheme().isEmpty())
+	if (file.isNull() ||
+		!file.url().isValid() ||
+		file.url().scheme().isEmpty() ||
+		file.isDir())
 		return actions;
 
-	const KFileItem fileItem(url);
-	if (fileItem.isDir())
-		// We don't want to provide the options to open directories
-		// with a certain application.
-		return actions;
-
-	const KService::List services = KApplicationTrader::queryByMimeType(fileItem.mimetype());
+	const KService::List services = KApplicationTrader::queryByMimeType(file.mimetype());
 	for (const KService::Ptr &service : services) {
 		if (!service || !service->isValid() || service->noDisplay())
 			continue;
@@ -476,8 +524,8 @@ PanelMenu::openWithActions(const QUrl &url, QObject *parent)
 							 QIcon::fromTheme(QStringLiteral("application-x-executable"))),
 			escapeMnemonics(service->name()), parent);
 
-		connect(action, &QAction::triggered, action, [service, url]() {
-			execService(service, url);
+		connect(action, &QAction::triggered, action, [service, file]() {
+			execService(service, file.url());
 		});
 		actions.append(action);
 	}
@@ -490,25 +538,26 @@ PanelMenu::openWithActions(const QUrl &url, QObject *parent)
 }
 
 QAction*
-PanelMenu::openInFileExplorerAction(const QUrl &url, QObject *parent)
+PanelMenu::openInFileExplorerAction(const KFileItem &file, QObject *parent)
 {
-	if (!url.isValid() || url.scheme().isEmpty() ||
-		!KProtocolManager::supportsListing(url))
+	if (file.isNull() ||
+		!file.url().isValid() ||
+		file.url().scheme().isEmpty() ||
+		!KProtocolManager::supportsListing(file.url()))
 		return nullptr;
 	
 	auto *action = new QAction(QIcon::fromTheme(QStringLiteral("system-file-manager")),
 							   i18n("Open in File Explorer"), parent);
-	if (KFileItem(url).isDir()) {
-		connect(action, &QAction::triggered, action, [url]() {
-			execUrl(url);
+	if (file.isDir()) {
+		connect(action, &QAction::triggered, action, [file]() {
+			execUrl(file.url());
 		});
 	} else {
-		connect(action, &QAction::triggered, action, [url]() {
+		connect(action, &QAction::triggered, action, [file]() {
 			auto *job = new KIO::OpenFileManagerWindowJob();
 			job->setUiDelegate(new KNotificationJobUiDelegate(KJobUiDelegate::AutoHandlingEnabled));
-			job->setHighlightUrls({url});
+			job->setHighlightUrls({file.url()});
 			job->start();
-		    KActivities::ResourceInstance::notifyAccessed(url);
 		});
 	}
 
@@ -528,15 +577,8 @@ PanelMenu::kRunnerAction(const QString &arg, QObject *parent)
 			QStringLiteral("query"));
 		query.setArguments({arg});
 
-		QDBusMessage display = QDBusMessage::createMethodCall(
-			QStringLiteral("org.kde.krunner"),
-			QStringLiteral("/App"),
-			QStringLiteral("org.kde.krunner.App"),
-			QStringLiteral("display"));
-
 		QDBusConnection bus = QDBusConnection::sessionBus();
 		bus.send(query);
-		bus.send(display);
 	});
 
 	return action;
@@ -565,7 +607,7 @@ PanelMenu::menuEditorAction(const QUrl &url, QObject *parent)
 		QIcon::fromTheme(editorService->icon(), QIcon::fromTheme(QStringLiteral("kmenuedit"))),
 		escapeMnemonics(title), parent);
 	connect(action, &QAction::triggered, action, [editorService, arg]() {
-    	auto *job = new KIO::CommandLauncherJob(editorService->exec(),
+    	auto *job = new KIO::CommandLauncherJob(KIO::DesktopExecParser::executablePath(editorService->exec()),
 												{!arg.isEmpty() ? arg : QStringLiteral("/")});
 		job->setDesktopName(editorService->desktopEntryName());
 		job->setUiDelegate(new KNotificationJobUiDelegate(KJobUiDelegate::AutoHandlingEnabled));
@@ -577,6 +619,10 @@ PanelMenu::menuEditorAction(const QUrl &url, QObject *parent)
 void
 PanelMenu::appendSeparatorActionToList(QList<QAction *> &actions, QObject *parent)
 {
+	// Avoid placing a separator at the beginning, and avoid doubling separators
+	if (actions.isEmpty() || actions.last()->isSeparator())
+		return;
+				
 	auto *separator = new QAction(parent);
 	separator->setSeparator(true);
 	actions.append(separator);
