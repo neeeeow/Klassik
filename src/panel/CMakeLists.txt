@@ -15,6 +15,7 @@ plasma_add_applet(com.github.neeeeow.klassik.panel
         panelcontainment.cpp
         panelbackgroundimage.cpp
         addappsmenu.cpp
+        removemenu.cpp
         ${KLASSIK_COMMON_DIR}/painteditems/styledtoolbarhandle.h
         ${KLASSIK_COMMON_DIR}/painteditems/styledarrow.h
         ${KLASSIK_COMMON_DIR}/painteditems/styledframe.h

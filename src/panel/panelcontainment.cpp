@@ -6,6 +6,7 @@
 
 #include "panelcontainment.h"
 #include "addappsmenu.h"
+#include "removemenu.h"
 
 #include <QGuiApplication>
 #include <QUrl>
@@ -185,16 +186,23 @@ PanelContainment::customActions()
 {
 	QList<QAction *> actions;
 
-	// Add/remove section
+	// Add widgets
 	if (QAction *addWidgets = internalAction(QStringLiteral("add widgets"))) {
 		addWidgets->setText(i18n("Add Applet to Panel…"));
 		actions.append(addWidgets);
 	}
+
+	// Add applications / application menus
 	auto *addAppsMenu = new AddAppsMenu(this);
 	connect(this, &QObject::destroyed, addAppsMenu, &QObject::deleteLater);
 	auto *addAppsAction = addAppsMenu->menuAction();
 	addAppsAction->setText(i18n("Add Application to Panel"));
 	actions.append(addAppsAction);
+
+	// Remove widgets
+	auto *removeMenu = new RemoveMenu(this);
+	connect(this, &QObject::destroyed, removeMenu, &QObject::deleteLater);
+	actions.append(removeMenu->menuAction());
 	
 	return actions;
 }
