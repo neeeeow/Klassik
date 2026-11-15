@@ -11,13 +11,12 @@
 #include <QUrl>
 
 #include <KService>
-#include <KServiceGroup>
 
 namespace Plasma {
 	class Applet;
 	class Containment;
 }
-class KFileItem;
+class ItemInfo;
 
 class PanelMenu : public QMenu
 {
@@ -28,6 +27,7 @@ class PanelMenu : public QMenu
 	Q_OBJECT
 public:
 	explicit PanelMenu(Plasma::Applet *applet, QWidget *parent = nullptr);
+	PanelMenu(const ItemInfo &info, Plasma::Applet *applet, QWidget *parent = nullptr);
 	PanelMenu(const QString &title, Plasma::Applet *applet, QWidget *parent = nullptr);
 	PanelMenu(const QIcon &icon, const QString &title, Plasma::Applet *applet, QWidget *parent = nullptr);
 
@@ -38,21 +38,6 @@ public:
 	//
 	//
 
-	// Returns a KService from a given QUrl which points to a .desktop file
-	// If a non-null KService::Ptr is returned, it can be safely assumed to be valid
-	// and from a local file!
-	static KService::Ptr serviceFromUrl(const QUrl &url);
-
-	// Returns a QUrl which points to a given KServiceGroup
-	static QUrl urlFromServiceGroup(const KServiceGroup::Ptr &group);
-	static QUrl urlFromServiceGroup(const QString &relPath);
-
-	// Returns a KServiceGroup from a QUrl which points to a folder in the
-	// applications:/// scheme, which corresponds to an application group.
-	// Once again, if a non-null KServiceGroup::Ptr is returned, it can
-	// safely assumed to be valid!
-	static KServiceGroup::Ptr serviceGroupFromUrl(const QUrl &url);
-
 	// Executes a given KService, with the option to open a specific
 	// QUrl in the KService
 	static void execService(const KService::Ptr &service, const QUrl &url = QUrl());
@@ -60,18 +45,20 @@ public:
 	// Executes a given QUrl
 	static void execUrl(const QUrl &url);
 
-	// Returns a non-applet specific list of contextual actions for a given QUrl.
-	static QList<QAction *> contextualActions(const QUrl &url, QObject *parent = nullptr);
+	// Returns a non-applet specific list of contextual actions for a given ItemInfo
+	static QList<QAction *> contextualActions(const ItemInfo &info, QObject *parent = nullptr);
 
 	// QAction* which opens a given file in the file explorer
-	static QAction* openInFileExplorerAction(const KFileItem &file, QObject *parent = nullptr);
+	static QAction* openInFileExplorerAction(const ItemInfo &info, QObject *parent = nullptr);
 
 	// QAction* which invokes the KRunner with a given argument
-	static QAction* kRunnerAction(const QString &arg = QString(), QObject *parent = nullptr);
+	static QAction* kRunnerAction(QObject *parent = nullptr);
+	static QAction* kRunnerAction(const QString &arg, QObject *parent = nullptr);
 
 	// QAction* which launches the menu editor for a given KService or KServiceGroup
-	// pointed to by the QUrl. If the QUrl is empty, we simply open the menu editor at the root.
-	static QAction* menuEditorAction(const QUrl &url = QUrl(), QObject *parent = nullptr);
+	// pointed to by the ItemInfo. If no ItemInfo is specified, we simply open the menu editor at the root.
+	static QAction* menuEditorAction(QObject *parent = nullptr);
+	static QAction* menuEditorAction(const ItemInfo &info, QObject *parent = nullptr);	
 
 	// Appends a separator QAction to a given QList
 	static void appendSeparatorActionToList(QList<QAction *> &actions, QObject *parent = nullptr);
@@ -124,6 +111,30 @@ protected:
 	// 'No Entries' action
 	QAction* noEntriesAction();
 
+	template <typename T>
+	T getConfigValue(const QString &key, const T &fallback = T()) const {
+		const QVariant value = configValue(key);
+		if (!value.isValid())
+			return fallback;
+		if constexpr (std::is_enum_v<T>) {
+			// KConfigLoader stores Enum entries as int
+			bool ok = false;
+			const int i = value.toInt(&ok);
+			if (!ok) {
+				qWarning() << "key" << key << "type mismatch!";
+				return fallback;
+			}
+			return static_cast<T>(i);
+		} else {
+			if (value.metaType() != QMetaType::fromType<T>()) {
+				qWarning() << "key" << key << "type mismatch!";
+				return fallback;
+			}
+			return value.value<T>();
+		}
+	}
+
+
 private:	
 	// Populates the menu
 	virtual void populate() = 0;
@@ -142,7 +153,10 @@ private:
 	// Actions which correspond to KServices for opening a specific file.
 	// Also appends the header title.
 	// Will return an empty list for a directory!
-	static QList<QAction *> openWithActions(const KFileItem &file, QObject *parent = nullptr);
+	static QList<QAction *> openWithActions(const ItemInfo &info, QObject *parent = nullptr);
+
+	// Gets the config value
+	QVariant configValue(const QString &key) const;
 	
 	// Pointer to the plasma applet
 	QPointer<Plasma::Applet> m_applet;

@@ -8,8 +8,6 @@
 
 #include "panelmenu.h"
 
-class ServiceMenuApplet;
-
 class ServiceMenu : public PanelMenu
 {
 	/*
@@ -19,28 +17,20 @@ class ServiceMenu : public PanelMenu
 	Q_OBJECT
 	
 public:
-	explicit ServiceMenu(ServiceMenuApplet *applet, QWidget *parent = nullptr);
-	ServiceMenu(const QString &title, ServiceMenuApplet *applet, QWidget *parent = nullptr);
-	ServiceMenu(const QIcon &icon, const QString &title, ServiceMenuApplet *applet, QWidget *parent = nullptr);
+	explicit ServiceMenu(Plasma::Applet *applet, QWidget *parent = nullptr);
+	ServiceMenu(const ItemInfo &info, Plasma::Applet *applet, QWidget *parent = nullptr);
+	ServiceMenu(const QString &title, Plasma::Applet *applet, QWidget *parent = nullptr);
+	ServiceMenu(const QIcon &icon, const QString &title, Plasma::Applet *applet, QWidget *parent = nullptr);
 
 protected:
-	// Call ServiceMenu::initialize() in any further overrides of initialize!
+	// NB: this *must* be called by subclasses if initialize is overriden, since we
+	// set tooltip and generic name policy here!
 	void initialize() override;
 	
-	// Returns a pointer to the Plasma applet attached to our menu
-	ServiceMenuApplet* applet() const;
-
-	// Takes a KService (and an optional url pointing to a file to open) and
-	// creates a QAction which launches the service, parented to this.
-	QAction* createActionFromService(const KService::Ptr &service, const QUrl &url = QUrl());
-
-	// QAction which launches a given url. Includes overloaded version for manually
-	// specifying icon and title. If the QUrl points to a folder, the icon and title
-	// must be specified! The first function returns a nullptr for folders.
-	QAction* createActionFromUrl(const QUrl &url);
-	QAction* createActionFromUrl(const QUrl &url, const QIcon &icon, const QString &title);
+	// Creates an action from a given ItemInfo
+    QAction* createActionFromItemInfo(const ItemInfo &info);
 
 private: 
 	// Whether or not to display generic names for applications
-	bool m_displayGenericName = true;
+	bool m_showGenericName = false;
 };

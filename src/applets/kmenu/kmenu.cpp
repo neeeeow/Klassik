@@ -5,7 +5,6 @@
 */
 
 #include "kmenu.h"
-#include "servicemenuapplet.h"
 #include "kmenutitleaction.h"
 #include "kmenusearchaction.h"
 #include "recentdocsmenu.h"
@@ -25,9 +24,31 @@
 
 #include <sessionmanagement.h>
 
-KMenu::KMenu(ServiceMenuApplet *applet, QWidget *parent)
+KMenu::KMenu(Plasma::Applet *applet, QWidget *parent)
 	: ServiceGroupMenu(applet, parent),
 	  m_session(new SessionManagement(this)) {}
+
+void
+KMenu::initialize()
+{
+	if (initialized()) return;
+	ServiceGroupMenu::initialize();
+	
+	// Load the configuration
+	m_config.drawSideImage	= getConfigValue<bool>(QStringLiteral("drawSideImage"), m_config.drawSideImage);
+	m_config.showTitles	 	= getConfigValue<bool>(QStringLiteral("showTitles"), m_config.showTitles);
+	m_config.showSearch		= getConfigValue<bool>(QStringLiteral("showSearch"), m_config.showSearch);
+	m_config.showRecentApps = getConfigValue<bool>(QStringLiteral("showRecentApps"), m_config.showRecentApps);
+	m_config.recentAppsType = getConfigValue<RecentAppsType>(QStringLiteral("recentAppsType"), m_config.recentAppsType);
+	m_config.numRecentApps	= getConfigValue<int>(QStringLiteral("numRecentApps"), m_config.numRecentApps);
+	m_config.showRecentDocs = getConfigValue<bool>(QStringLiteral("showRecentDocs"), m_config.showRecentDocs);
+	m_config.showSystem		= getConfigValue<bool>(QStringLiteral("showSystem"), m_config.showSystem);	
+	m_config.showSettings	= getConfigValue<bool>(QStringLiteral("showSettings"), m_config.showSettings);
+	
+	// Load in pixmaps and set margins
+	loadSidePixmap();
+	setMargins();
+}
 
 void
 KMenu::changeEvent(QEvent *e)
@@ -59,30 +80,6 @@ KMenu::paintEvent(QPaintEvent *e)
 	r = sideImageRect();
 	r.setTop( r.bottom() - m_sidePixmap.height() + 1 );
 	p.drawPixmap(r, m_sidePixmap);
-}
-
-void
-KMenu::initialize()
-{
-	if (initialized()) return;
-	ServiceGroupMenu::initialize();
-	
-	// Load the configuration
-	if (auto a = applet()) {
-		m_config.drawSideImage	= a->getConfigValue<bool>(QStringLiteral("drawSideImage"), m_config.drawSideImage);
-		m_config.showTitles		= a->getConfigValue<bool>(QStringLiteral("showTitles"), m_config.showTitles);
-		m_config.showSearch		= a->getConfigValue<bool>(QStringLiteral("showSearch"), m_config.showSearch);
-		m_config.showRecentApps = a->getConfigValue<bool>(QStringLiteral("showRecentApps"), m_config.showRecentApps);
-		m_config.recentAppsType = a->getConfigValue<RecentAppsType>(QStringLiteral("recentAppsType"), m_config.recentAppsType);
-		m_config.numRecentApps	= a->getConfigValue<int>(QStringLiteral("numRecentApps"), m_config.numRecentApps);
-		m_config.showRecentDocs = a->getConfigValue<bool>(QStringLiteral("showRecentDocs"), m_config.showRecentDocs);
-		m_config.showSystem		= a->getConfigValue<bool>(QStringLiteral("showSystem"), m_config.showSystem);	
-		m_config.showSettings	= a->getConfigValue<bool>(QStringLiteral("showSettings"), m_config.showSettings);
-	}
-
-	// Load in pixmaps and set margins
-	loadSidePixmap();
-	setMargins();
 }
 
 void
@@ -155,7 +152,7 @@ KMenu::populate()
 		addSeparator();
 
 	// Add the run command option
-	if (QAction *runAction = kRunnerAction(QString(), this)) {
+	if (QAction *runAction = kRunnerAction(this)) {
 		runAction->setText(i18n("Run Command…"));
 		addAction(runAction);
 	}
@@ -289,7 +286,7 @@ KMenu::recentAppsActions()
 		const KService::Ptr service = KService::serviceByStorageId(resourceUrl.path());
 		if (!service || service->noDisplay())
 			continue;
-		if (QAction *action = createActionFromService(service))
+		if (QAction *action = createActionFromItemInfo(ItemInfo(service)))
 			actions.append(action);
 	}
 

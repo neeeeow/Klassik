@@ -15,7 +15,7 @@ class SystemMenu final : public ServiceMenu
 	Q_OBJECT
 	
 public:
-	explicit SystemMenu(ServiceMenuApplet *applet, QWidget *parent = nullptr);
+	explicit SystemMenu(Plasma::Applet *applet, QWidget *parent = nullptr);
 
 protected:
 	void initialize() override;

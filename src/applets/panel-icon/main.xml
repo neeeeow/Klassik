@@ -7,10 +7,12 @@
 
   <group name="General">
     <entry name="showTooltips" type="Bool">
+      <label>Show action tooltips</label>
       <default>false</default>
     </entry>
     <entry name="showGenericName" type="Bool">
-      <default>false</default>
+      <label>Detailed menu entries</label>
+      <default>true</default>
     </entry>
   </group>
 

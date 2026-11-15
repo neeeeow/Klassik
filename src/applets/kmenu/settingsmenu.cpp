@@ -5,6 +5,7 @@
 */
 
 #include "settingsmenu.h"
+#include "iteminfo.h"
 
 #include <KPluginMetaData>
 #include <KAuthorized>
@@ -16,15 +17,28 @@
 
 #include <KIO/CommandLauncherJob>
 
-SettingsMenu::SettingsMenu(ServiceMenuApplet *applet, QWidget *parent)
+SettingsMenu::SettingsMenu(Plasma::Applet *applet, QWidget *parent)
 	: ServiceMenu(QIcon::fromTheme(QStringLiteral("preferences-desktop")),
 				  i18n("Settings"), applet, parent) {}
+
+SettingsMenu::SettingsMenu(std::shared_ptr<const SettingsItem> item,
+						   Plasma::Applet *applet, QWidget *parent)
+	: ServiceMenu(applet, parent), m_item(std::move(item))
+{
+	if (m_item) {
+		setTitle(escapeMnemonics(m_item->name));
+		setIcon(QIcon::fromTheme(m_item->icon, QIcon::fromTheme(QStringLiteral("preferences-other"))));
+	}
+}
 
 void
 SettingsMenu::initialize()
 {
 	if (initialized()) return;
 	ServiceMenu::initialize();
+
+	if (!isRoot())
+		return;
 	
 	// Load KCM meta data
 	const QList<KPluginMetaData> pluginModules = findKCMsMetaData();
@@ -33,29 +47,33 @@ SettingsMenu::initialize()
 	const QList<CategoryData> categories = parseCategoryFiles();
 	
 	// Populate our settings tree
-	m_root.reset();
-	m_root.isCategory = true;
-	buildSettingsTree(&m_root, pluginModules, categories);	
+	auto root = std::make_shared<SettingsItem>();
+	root->isCategory = true;
+	buildSettingsTree(root.get(), pluginModules, categories);
+	m_item = std::move(root);
 }
 
 void
 SettingsMenu::populate()
 {
-	// Add system settings action at the top of the menu
-	const KService::Ptr systemsettings = KService::serviceByDesktopName(QStringLiteral("systemsettings"));
-	if (QAction *settingsAction = createActionFromService(systemsettings)) {
-		addAction(settingsAction);
-		addSeparator();
-	}
+	if (isRoot()) {
+		// Add system settings action at the top of the menu
+		const KService::Ptr systemsettings = KService::serviceByDesktopName(QStringLiteral("systemsettings"));
+		if (QAction *settingsAction = createActionFromItemInfo(ItemInfo(systemsettings))) {
+			addAction(settingsAction);
+			addSeparator();
+		}
 
-	// Populate the menu itself
-	if (!m_root.children.isEmpty())		
-		addSettingsActions(&m_root, this);
+		// Populate the menu itself	
+		addSettingsActions();
 
-	// Add the menu editor action at the bottom
-	if (QAction *editAction = PanelMenu::menuEditorAction(QUrl(), this))
-		addAction(editAction);
-	else if (isEmpty())
+		// Add the menu editor action at the bottom
+		if (QAction *editAction = PanelMenu::menuEditorAction(this))
+			addAction(editAction);
+	} else if (m_item)
+		addSettingsActions();
+	
+	if (isEmpty())
 		addAction(noEntriesAction());
 }
 
@@ -127,17 +145,16 @@ SettingsMenu::buildSettingsTree(SettingsItem *parent,
 			(!category.parentCategory2.isEmpty() && category.parentCategory2 == parent->id)) {
 			
 			// Create category settings item
-			auto item = new SettingsItem();
+			auto item = std::make_shared<SettingsItem>();
 			item->isCategory = true;
 			item->id = category.id;
 			item->name = category.name;
 			item->icon = category.icon;
 			item->weight = category.weight;
-			buildSettingsTree(item, pluginModules, categories); // Recurse for the new item
+			buildSettingsTree(item.get(), pluginModules, categories); // Recurse for the new item
 			if (!item->children.isEmpty())
-				parent->children.append(item);
-			else
-				delete item;
+				parent->children.append(std::move(item));
+
 		}
 	}
 
@@ -150,49 +167,53 @@ SettingsMenu::buildSettingsTree(SettingsItem *parent,
 			(parentCategory == parent->id || parentCategory2 == parent->id)) {
 
 			// Create KCM (i.e. isCategory = false) settings item
-			auto item = new SettingsItem();
+			auto item = std::make_shared<SettingsItem>();
 			item->isCategory = false;
 			item->id = metaData.pluginId();
 			item->name = metaData.name();
 			item->icon = metaData.iconName();
 			item->weight = metaData.value(QStringLiteral("X-KDE-Weight"), 100);
-			parent->children.append(item);
+			parent->children.append(std::move(item));
 		}
 	}
 
 	// Sort children by weight
-	std::stable_sort(parent->children.begin(), parent->children.end(), [](const SettingsItem *i1, const SettingsItem *i2) {
-		return i1->weight < i2->weight;
-	});
+	std::stable_sort(parent->children.begin(), parent->children.end(),
+					 [](const std::shared_ptr<SettingsItem> &i1, const std::shared_ptr<SettingsItem> &i2) {
+						 return i1->weight < i2->weight;
+					 });
+
 }
 
 void
-SettingsMenu::addSettingsActions(const SettingsItem *item, QMenu *menu)
+SettingsMenu::addSettingsActions()
 {
-	for (SettingsItem *child : std::as_const(item->children)) {
+	if (!m_item)
+		return;
+
+	for (const std::shared_ptr<SettingsItem> &child : m_item->children) {
 		if (child->isCategory) {
-			// If it's a category, add a sub menu for each child and recurse
-			if (!child->children.isEmpty()) {
-				QMenu *subMenu = menu->addMenu(QIcon::fromTheme(child->icon),
-											   escapeMnemonics(child->name));
-			    addSettingsActions(child, subMenu);
-			}
+			if (!child->children.isEmpty())
+				addMenu(new SettingsMenu(child, applet(), this));
 		} else {
-			// If it's not a category, then it's a KCM, so add it to the menu
-			if (QAction *action = createActionFromKCM(child->id, child->name, child->icon, menu))
-				menu->addAction(action);
+			if (QAction *action = createActionFromKCM(child->id, child->name, child->icon))
+				addAction(action);
 		}
 	}
+
 }
 
 QAction*
 SettingsMenu::createActionFromKCM(const QString &id, const QString &name,
-									 const QString &icon, QObject *parent) const
+								  const QString &icon)
 {
-	if (id.isEmpty())
+	const ItemInfo info(KService::serviceByDesktopName(id));
+	if (info.type() != ItemInfo::Type::Service)
 		return nullptr;
 
-	auto *action = new QAction(QIcon::fromTheme(icon), escapeMnemonics(name), parent);
+	auto *action = new QAction(QIcon::fromTheme(icon), escapeMnemonics(name), this);
+	action->setToolTip(info.comment());
+	action->setData(QVariant::fromValue(info));
 	connect(action, &QAction::triggered, action, [id]() {
 		auto *job = new KIO::CommandLauncherJob(QStringLiteral("kcmshell6"), {id});
 		job->setUiDelegate(new KNotificationJobUiDelegate(KJobUiDelegate::AutoHandlingEnabled));

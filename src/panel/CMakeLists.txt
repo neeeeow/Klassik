@@ -1,4 +1,4 @@
-add_definitions(-DTRANSLATION_DOMAIN=\"plasma_containment_com.github.neeeeow.klassik.panel\")
+add_definitions(-DTRANSLATION_DOMAIN=\"plasma_applet_com.github.neeeeow.klassik.panel\")
 
 configure_file(
     ${CMAKE_CURRENT_SOURCE_DIR}/metadata.json.in

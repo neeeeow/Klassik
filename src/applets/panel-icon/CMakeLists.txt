@@ -1,4 +1,4 @@
-add_definitions(-DTRANSLATION_DOMAIN=\"plasma_applet_com.github.neeeeow.klassik.panel.icon\")
+add_definitions(-DTRANSLATION_DOMAIN=\"com.github.neeeeow.klassik.kicker\")
 
 configure_file(
     ${CMAKE_CURRENT_SOURCE_DIR}/metadata.json.in
@@ -9,7 +9,6 @@ configure_file(
 plasma_add_applet(com.github.neeeeow.klassik.panel.icon
     CPP_SOURCES
         iconapplet.cpp
-        dirmenu.cpp
         ${KLASSIK_COMMON_DIR}/painteditems/styledframe.h
         ${KLASSIK_COMMON_DIR}/painteditems/panelbuttonarrow.h
     QML_SOURCES
@@ -21,6 +20,5 @@ plasma_add_applet(com.github.neeeeow.klassik.panel.icon
 
 target_link_libraries(com.github.neeeeow.klassik.panel.icon PRIVATE
     klassik_painteditem
-    klassik_actions
     klassik_servicemenu
 )

@@ -17,5 +17,4 @@ public:
 
 private:
 	ServiceMenu* createMenu() override;
-	QUrl appletUrl() const override;
 };

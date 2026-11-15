@@ -5,6 +5,7 @@
 */
 
 #include "panelmenu.h"
+#include "iteminfo.h"
 #include "popuptitle.h"
 
 #include <QMimeData>
@@ -18,11 +19,10 @@
 #include <KLocalizedString>
 #include <KNotificationJobUiDelegate>
 #include <KProtocolManager>
-#include <KFileItem>
 #include <KApplicationTrader>
 #include <KPropertiesDialog>
 #include <KShell>
-#include <KDesktopFile>
+#include <KConfigLoader>
 
 #include <KIO/ApplicationLauncherJob>
 #include <KIO/CommandLauncherJob>
@@ -49,13 +49,16 @@ static KActivities::Consumer *consumer()
 }
 
 PanelMenu::PanelMenu(Plasma::Applet *applet, QWidget *parent)
-: PanelMenu(QString(), applet, parent) {}
+	: PanelMenu(QString(), applet, parent) {}
+
+PanelMenu::PanelMenu(const ItemInfo &info, Plasma::Applet *applet, QWidget *parent)
+	: PanelMenu(QIcon::fromTheme(info.icon()), info.name(), applet, parent) {}
 
 PanelMenu::PanelMenu(const QString &title, Plasma::Applet *applet, QWidget *parent)
-: PanelMenu(QIcon(), title, applet, parent) {}
+	: PanelMenu(QIcon(), title, applet, parent) {}
 
 PanelMenu::PanelMenu(const QIcon &icon, const QString &title, Plasma::Applet *applet, QWidget *parent)
-	: QMenu(title, parent),
+	: QMenu(escapeMnemonics(title), parent),
 	  m_applet(applet)
 {
 	if (!icon.isNull())
@@ -99,15 +102,15 @@ PanelMenu::showContextMenu(const QPoint &pos)
 	if (!action)
 		return;
 	
-	const QUrl url = action->data().toUrl();
-	if (!url.isValid())
+	const ItemInfo info = action->data().value<ItemInfo>();
+	if (!info.isValid())
 		return;
 
 	auto *contextMenu = new QMenu(this);
 	contextMenu->setAttribute(Qt::WA_DeleteOnClose);
 
 	// Add contextual actions for the given QUrl
-	contextMenu->addActions(PanelMenu::contextualActions(url, contextMenu));
+	contextMenu->addActions(PanelMenu::contextualActions(info, contextMenu));
 
 	// Add to section
 	const bool mayAddDesktop = mayAddItem(AddToTarget::Desktop);
@@ -117,14 +120,14 @@ PanelMenu::showContextMenu(const QPoint &pos)
 	
 	if (mayAddDesktop) {
 		QAction *desktopAction = contextMenu->addAction(QIcon::fromTheme(QStringLiteral("list-add")), i18n("Add to Desktop"));
-		connect(desktopAction, &QAction::triggered, this, [this, url]() {
+		connect(desktopAction, &QAction::triggered, this, [this, url = info.url()]() {
 			if (!addLauncher(AddToTarget::Desktop, url))
 				qWarning() << "failed to add launcher to desktop!";
 		});
 	}
 	if (mayAddPanel) {
 		QAction *panelAction = contextMenu->addAction(QIcon::fromTheme(QStringLiteral("list-add")), i18n("Add to Panel"));
-		connect(panelAction, &QAction::triggered, this, [this, url]() {
+		connect(panelAction, &QAction::triggered, this, [this, url = info.url()]() {
 			if (!addLauncher(AddToTarget::Panel, url))
 				qWarning() << "failed to add launcher to panel!";
 		});
@@ -277,14 +280,14 @@ PanelMenu::mouseMoveEvent(QMouseEvent *e)
 	if (!action || !action->isEnabled())
 		return;
 
-	QUrl url = action->data().toUrl();
-	if (!url.isValid())
+	const ItemInfo info = action->data().value<ItemInfo>();
+	if (!info.isValid())
 		return;
 
 	QDrag *drag = new QDrag(this);
 	QMimeData *mimeData = new QMimeData;
 
-	mimeData->setUrls({url});
+	mimeData->setUrls({info.url()});
 	drag->setMimeData(mimeData);
 
 	if (!action->icon().isNull()) {
@@ -313,68 +316,13 @@ PanelMenu::noEntriesAction()
 	return action;
 }
 
-KService::Ptr
-PanelMenu::serviceFromUrl(const QUrl &url)
-{
-	if (!url.isValid() || !url.isLocalFile())
-		return KService::Ptr();
-
-	// First try to retrieve the service directly from the desktop path...
-    KService::Ptr service = KService::serviceByDesktopPath(url.toLocalFile());
-	if (service && service->isValid() && service->isApplication())
-		return service;
-
-	// ... if that fails, then we inspect the .desktop file and construct
-	// a KService ourselves.
-	const QString path = url.toLocalFile();
-	if (!KDesktopFile::isDesktopFile(path) || !KDesktopFile::isAuthorizedDesktopFile(path))
-		return KService::Ptr();
-
-    service = KService::Ptr(new KService(path));
-	if (!service || !service->isValid() || !service->isApplication())
-		return KService::Ptr();
-	
-	return service;
-}
-
-QUrl
-PanelMenu::urlFromServiceGroup(const KServiceGroup::Ptr &group)
-{
-	if (!group || !group->isValid())
-		return QUrl();
-
-	return urlFromServiceGroup(group->relPath());
-}
-
-QUrl
-PanelMenu::urlFromServiceGroup(const QString &relPath)
-{
-	QUrl url;
-	url.setScheme("applications"_L1);
-	url.setPath(QLatin1Char('/') + relPath);
-
-	return url;
-}
-
-KServiceGroup::Ptr
-PanelMenu::serviceGroupFromUrl(const QUrl &url)
-{
-	if (!url.isValid() || url.scheme() != "applications"_L1
-		|| !url.path().startsWith(QLatin1Char('/')))
-		return KServiceGroup::Ptr();
-
-	const KServiceGroup::Ptr group = KServiceGroup::group(url.path().mid(1));
-	if (!group || !group->isValid())
-		return KServiceGroup::Ptr();
-	
-	return group;
-}
-
 void
 PanelMenu::execService(const KService::Ptr &service, const QUrl &url)
 {
-	if (!service || !service->isValid())
+	if (!service || !service->isValid()) {
+		qWarning() << "attempted to exec invalid service!";
 		return;
+	}
 	auto *job = new KIO::ApplicationLauncherJob(service);
 	job->setUiDelegate(new KNotificationJobUiDelegate(KJobUiDelegate::AutoHandlingEnabled));
 	if (!url.isEmpty())
@@ -392,8 +340,10 @@ PanelMenu::execService(const KService::Ptr &service, const QUrl &url)
 void
 PanelMenu::execUrl(const QUrl &url)
 {
-	if (!url.isValid())
+	if (!url.isValid()) {
+		qWarning() << "attempted to exec invalid url!";
 		return;
+	}
 	auto *job = new KIO::OpenUrlJob(url);
 	job->setUiDelegate(new KNotificationJobUiDelegate(KJobUiDelegate::AutoHandlingEnabled));
 	job->start();
@@ -401,57 +351,62 @@ PanelMenu::execUrl(const QUrl &url)
 }
 
 QList<QAction *>
-PanelMenu::contextualActions(const QUrl &url, QObject *parent)
+PanelMenu::contextualActions(const ItemInfo &info, QObject *parent)
 {
 	QList<QAction *> actions;
-	if (!url.isValid())
+	if (!info.isValid())
 		return actions;
 
-	// Get pointers to a potential KService or KServiceGroup
-	const KService::Ptr service = serviceFromUrl(url);
-	const KServiceGroup::Ptr group = serviceGroupFromUrl(url);
+	switch (info.type()) {
+	case ItemInfo::Type::Service: {
+		const KService::Ptr service = info.service();
+		if (!service)
+			break;
 
-	if (service)
-		// First add the jump list actions for services
-	    actions.append(jumpListActions(service, parent));
-	else if (!group) {
-		// And add the open with actions for any QUrl which isn't a service, service group
-		KFileItem file(url);
-		
-	    actions.append(openWithActions(file, parent));		
+		// Jump list actions
+		actions.append(jumpListActions(service, parent));
 
-		if (QAction *fileExplorerAction = openInFileExplorerAction(file, parent)) {
-			appendSeparatorActionToList(actions, parent);
-		    actions.append(fileExplorerAction);
-		}
-	}
-
-	// Configuration section
-	if (service || group) {
-		// If we have a service or service group, we want to add the option to open the menu editor
-		QAction *editAction = menuEditorAction(url, parent);
+		// Menu editor action
+		QAction *editAction = menuEditorAction(info, parent);
 		if (editAction) {
 			appendSeparatorActionToList(actions, parent);
 			actions.append(editAction);
 		}
 
-		if (service) {
-			// Furthermore for services, we add the option to put it in a KRunner dialog.
-			KIO::DesktopExecParser parser(*service, {});
-			const QStringList args = parser.resultingArguments();
-			if (!args.isEmpty()) {
-				if (QAction *runAction = kRunnerAction(KShell::joinArgs(args), parent)) {
-					if (!editAction)
-						appendSeparatorActionToList(actions, parent);
-					actions.append(runAction);
-				}
+		// KRunner action
+		KIO::DesktopExecParser parser(*service, {});
+		const QStringList args = parser.resultingArguments();
+		if (!args.isEmpty()) {
+			if (QAction *runAction = kRunnerAction(KShell::joinArgs(args), parent)) {
+				if (!editAction)
+					appendSeparatorActionToList(actions, parent);
+				actions.append(runAction);
 			}
 		}
-	} else {
-		// In any other case, place a standard properties action
+		
+		break;
+	}
+	case ItemInfo::Type::ServiceGroup: {
+		const KServiceGroup::Ptr group = info.group();
+		if (!group)
+			break;
+
+		if (QAction *editAction = menuEditorAction(info, parent))
+			actions.append(editAction);
+		
+		break;
+	}
+	case ItemInfo::Type::File:
+	case ItemInfo::Type::Directory: {
+		actions.append(openWithActions(info, parent));		
+		if (QAction *fileExplorerAction = openInFileExplorerAction(info, parent)) {
+			appendSeparatorActionToList(actions, parent);
+		    actions.append(fileExplorerAction);
+		}
+
 		appendSeparatorActionToList(actions, parent);
 		auto *propertiesAction = new QAction(QIcon::fromTheme(QStringLiteral("document-properties")), i18n("Properties"), parent);
-		connect(propertiesAction, &QAction::triggered, propertiesAction, [url]() {
+		connect(propertiesAction, &QAction::triggered, propertiesAction, [url = info.url()]() {
 			auto *dlg = new KPropertiesDialog(url);
 			dlg->setAttribute(Qt::WA_DeleteOnClose);
 			dlg->setFileNameReadOnly(true);
@@ -459,19 +414,27 @@ PanelMenu::contextualActions(const QUrl &url, QObject *parent)
 			dlg->show();
 		});
 		actions.append(propertiesAction);
-	}	
-
+		
+		break;
+	}
+	case ItemInfo::Type::Invalid: {
+		break;
+	}
+	}
+	
 	return actions;
 }
 
 QList<QAction *>
 PanelMenu::jumpListActions(const KService::Ptr &service, QObject *parent)
 {
-	QList<QAction *> actions;	
-	if (!service || !service->isValid())
+	QList<QAction *> actions;
+	
+	ItemInfo info(service);
+	if (!info.isValid())
 		return actions;
 
-	actions.append(new PopupTitle(QIcon::fromTheme(service->icon()), service->name(), parent));
+	actions.append(new PopupTitle(QIcon::fromTheme(info.icon()), info.name(), parent));
 	// We always add the option to launch the application
     auto *runAction = new QAction(QIcon::fromTheme(QStringLiteral("system-run")),
 								  i18n("Run Application"), parent);
@@ -505,63 +468,66 @@ PanelMenu::jumpListActions(const KService::Ptr &service, QObject *parent)
 }
 
 QList<QAction *>
-PanelMenu::openWithActions(const KFileItem &file, QObject *parent)
+PanelMenu::openWithActions(const ItemInfo &info, QObject *parent)
 {
 	QList<QAction *> actions;
-	if (file.isNull() ||
-		!file.url().isValid() ||
-		file.url().scheme().isEmpty() ||
-		file.isDir())
+	if (info.type() != ItemInfo::Type::File)
 		return actions;
 
-	const KService::List services = KApplicationTrader::queryByMimeType(file.mimetype());
-	for (const KService::Ptr &service : services) {
+	const KService::List services = KApplicationTrader::queryByMimeType(info.mimetype());
+	for (const KService::Ptr &service : services) {		
 		if (!service || !service->isValid() || service->noDisplay())
 			continue;
 
-		auto *action = new QAction(
-			QIcon::fromTheme(service->icon(),
-							 QIcon::fromTheme(QStringLiteral("application-x-executable"))),
-			escapeMnemonics(service->name()), parent);
+		ItemInfo serviceInfo(service);
+		if (!serviceInfo.isValid())
+			continue;
 
-		connect(action, &QAction::triggered, action, [service, file]() {
-			execService(service, file.url());
+		auto *action = new QAction(QIcon::fromTheme(serviceInfo.icon()),
+								   escapeMnemonics(serviceInfo.name()), parent);
+		connect(action, &QAction::triggered, action, [service, url = info.url()]() {
+			execService(service, url);
 		});
 		actions.append(action);
 	}
 	
 	if (!actions.isEmpty())
 		actions.prepend(new PopupTitle(QIcon::fromTheme(QStringLiteral("document-open")),
-									 i18n("Open With"), parent));
+									   i18n("Open With"), parent));
 
 	return actions;
 }
 
 QAction*
-PanelMenu::openInFileExplorerAction(const KFileItem &file, QObject *parent)
+PanelMenu::openInFileExplorerAction(const ItemInfo &info, QObject *parent)
 {
-	if (file.isNull() ||
-		!file.url().isValid() ||
-		file.url().scheme().isEmpty() ||
-		!KProtocolManager::supportsListing(file.url()))
+	if (!info.isValid() ||
+		!KProtocolManager::supportsListing(info.url()))
 		return nullptr;
 	
 	auto *action = new QAction(QIcon::fromTheme(QStringLiteral("system-file-manager")),
 							   i18n("Open in File Explorer"), parent);
-	if (file.isDir()) {
-		connect(action, &QAction::triggered, action, [file]() {
-			execUrl(file.url());
+	const QUrl url = info.url();
+	if (info.type() == ItemInfo::Type::Directory) {
+		connect(action, &QAction::triggered, action, [url]() {
+			execUrl(url);
 		});
 	} else {
-		connect(action, &QAction::triggered, action, [file]() {
+		connect(action, &QAction::triggered, action, [url]() {
 			auto *job = new KIO::OpenFileManagerWindowJob();
 			job->setUiDelegate(new KNotificationJobUiDelegate(KJobUiDelegate::AutoHandlingEnabled));
-			job->setHighlightUrls({file.url()});
+			job->setHighlightUrls({url});
 			job->start();
 		});
 	}
 
 	return action;
+}
+
+QAction*
+PanelMenu::kRunnerAction(QObject *parent)
+{
+	return kRunnerAction(QString(), parent);
 }
 
 QAction*
@@ -585,7 +551,13 @@ PanelMenu::kRunnerAction(const QString &arg, QObject *parent)
 }
 
 QAction*
-PanelMenu::menuEditorAction(const QUrl &url, QObject *parent)
+PanelMenu::menuEditorAction(QObject *parent)
+{
+	return menuEditorAction(ItemInfo(), parent);
+}
+
+QAction*
+PanelMenu::menuEditorAction(const ItemInfo &info, QObject *parent)
 {
 	const auto editorService = KService::serviceByDesktopName(QStringLiteral("org.kde.kmenuedit"));
 	if (!editorService || !editorService->isValid()) {
@@ -593,11 +565,11 @@ PanelMenu::menuEditorAction(const QUrl &url, QObject *parent)
 		return nullptr;
 	}
 
-	QString title, arg;
-	if (const KService::Ptr service = serviceFromUrl(url)) {
+	QString title, arg;	
+	if (const KService::Ptr service = info.service()) {
 		title = i18n("Edit Item");
 		arg = service->menuId();
-	} else if (const KServiceGroup::Ptr group = serviceGroupFromUrl(url)) {
+	} else if (const KServiceGroup::Ptr group = info.group()) {
 		title = i18n("Edit Menu");
 		arg = group->relPath();
 	} else
@@ -633,5 +605,23 @@ QString
 PanelMenu::escapeMnemonics(QString string)
 {
 	return string.replace(QLatin1Char('&'), QStringLiteral("&&"));
+}
+
+QVariant
+PanelMenu::configValue(const QString &key) const
+{
+	if (!m_applet)
+		return QVariant();
+
+	KConfigLoader *configLoader = m_applet->configScheme();
+	if (!configLoader)
+		return QVariant();
+
+	const QVariant value = configLoader->property(key);
+	if (!value.isValid()) {
+		qWarning() << "key" << key << "not found!";
+		return QVariant();
+	}
+	return value;
 }
 

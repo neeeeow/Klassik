@@ -13,7 +13,6 @@
 #include <QTimer>
 
 #include <KConfigPropertyMap>
-#include <KConfigLoader>
 
 #include <PlasmaQuick/AppletQuickItem>
 
@@ -42,24 +41,13 @@ ServiceMenuApplet::init()
 	if (configuration())
 		connect(configuration(), &KConfigPropertyMap::valueChanged, timer, qOverload<>(&QTimer::start));
 	connect(timer, &QTimer::timeout, this, &ServiceMenuApplet::configurationChanged);
-	
-	// Create the menu
-	initMenu();
-}
 
-QVariant
-ServiceMenuApplet::configValue(const QString &key) const
-{
-	KConfigLoader *configLoader = configScheme();
-	if (!configLoader)
-		return QVariant();	
-	
-	const QVariant value = configLoader->property(key);
-	if (!value.isValid()) {
-		qWarning() << "key" << key << "not found!";
-		return QVariant();
-	}
-	return value;
+	// Initialize the menu (will only be successful here if setInfo(...) was called prior to init()
+	// by a subclass
+	initMenu();
+
+	// Re-initialize the menu if the item info has changed
+	connect(this, &ServiceMenuApplet::infoChanged, this, &ServiceMenuApplet::initMenu);
 }
 
 void
@@ -70,17 +58,19 @@ ServiceMenuApplet::initMenu()
 	// Delete any old menu objects
 	deleteMenu();
 
-	// Create the menu object. If it fails to create, simply bail out.
-	m_menu = createMenu();
-	if (m_menu) {
-		connect(m_menu, &QMenu::aboutToShow, this, [this]() {
-			setActive(true);
-		});
-		connect(m_menu, &QMenu::aboutToHide, this, [this]() {
-			setActive(false);
-		});
+	if (m_info.isValid()) {
+		// Create the menu object. If it fails to create, simply bail out.
+		m_menu = createMenu();
+		if (m_menu) {
+			connect(m_menu, &QMenu::aboutToShow, this, [this]() {
+				setActive(true);
+			});
+			connect(m_menu, &QMenu::aboutToHide, this, [this]() {
+				setActive(false);
+			});
 	    
-		connect(this, &ServiceMenuApplet::configurationChanged, m_menu, &ServiceMenu::reinitialize);	
+			connect(this, &ServiceMenuApplet::configurationChanged, m_menu, &ServiceMenu::reinitialize);	
+		}
 	}
 	
 	// Emit the required signals
@@ -204,7 +194,7 @@ ServiceMenuApplet::contextualActions()
 		action->deleteLater();
 	m_actions.clear();
 
-	m_actions = PanelMenu::contextualActions(appletUrl(), this);
+	m_actions = PanelMenu::contextualActions(m_info, this);
 
 	// Append a separator to separate out contextual actions from the internal actions
 	PanelMenu::appendSeparatorActionToList(m_actions, this);

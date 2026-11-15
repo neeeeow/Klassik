@@ -15,14 +15,14 @@ class KMenu final : public ServiceGroupMenu
 	Q_OBJECT
 	
 public:
-	explicit KMenu(ServiceMenuApplet *applet, QWidget *parent = nullptr);
+	explicit KMenu(Plasma::Applet *applet, QWidget *parent = nullptr);
 
-protected:
+protected:	
 	void initialize() override;
 	
 	void changeEvent(QEvent *event) override;
 	void paintEvent(QPaintEvent *e) override;
-
+	
 	void mousePressEvent(QMouseEvent *e) override;
 	void mouseReleaseEvent(QMouseEvent *e) override;
 	void mouseMoveEvent(QMouseEvent *e) override;

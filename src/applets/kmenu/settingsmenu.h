@@ -15,7 +15,7 @@ class SettingsMenu final : public ServiceMenu
 	Q_OBJECT
 	
 public:
-	explicit SettingsMenu(ServiceMenuApplet *applet, QWidget *parent = nullptr);
+	explicit SettingsMenu(Plasma::Applet *applet, QWidget *parent = nullptr);	
 
 protected:
 	void initialize() override;
@@ -36,7 +36,6 @@ private:
 	// hierarchy.
 	struct SettingsItem {
 		Q_DISABLE_COPY(SettingsItem)
-
 		SettingsItem() = default;
 		
 		bool isCategory = false;
@@ -44,24 +43,17 @@ private:
 		QString name;
 		QString icon;
 		int weight = 100; // default weight
-
-		QList<SettingsItem*> children;
-
-		~SettingsItem() {
-			qDeleteAll(children);
-		}
-
-		void reset() {
-			qDeleteAll(children);
-			children.clear();
-
-			isCategory = false;
-			id.clear();
-			name.clear();
-			icon.clear();
-			weight = 100;
-		}
+    
+		QList<std::shared_ptr<SettingsItem>> children;
 	};
+
+	// Private constructor to skip building the SettingsItem tree. Should never be called
+	// outside of this class
+	SettingsMenu(std::shared_ptr<const SettingsItem> item, Plasma::Applet *applet, QWidget *parent = nullptr);
+
+	// Whether or not this menu is the root-level settings menu. NB: the root item
+	// always has an empty id.
+    bool isRoot() const { return !m_item || m_item->id.isEmpty(); }
 
 	void populate() override;
 	
@@ -75,14 +67,14 @@ private:
 	static void buildSettingsTree(SettingsItem *parent, const QList<KPluginMetaData> &pluginModules,
 								  const QList<CategoryData> &categories);
 
-	// Adds a settingsitem (and all of its children) to a given menu
-	void addSettingsActions(const SettingsItem *item, QMenu *menu);
+	// Adds a settingsitem (and all of its children) to our menu.
+	void addSettingsActions();
 
     // QAction* which launches a KCM with given id inside of
 	// kcmshell6, with a given name and icon, parented to this.
 	QAction* createActionFromKCM(const QString &id, const QString &name,
-								 const QString &icon, QObject *parent = nullptr) const;
+								 const QString &icon);
 	
-	// The root SettingsItem used for populating the menu
-	SettingsItem m_root;
+	// The SettingsItem used for populating the menu
+	std::shared_ptr<const SettingsItem> m_item;
 };

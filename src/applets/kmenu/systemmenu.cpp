@@ -5,11 +5,12 @@
 */
 
 #include "systemmenu.h"
+#include "iteminfo.h"
 
 #include <KLocalizedString>
 #include <KFilePlacesModel>
 
-SystemMenu::SystemMenu(ServiceMenuApplet *applet, QWidget *parent)
+SystemMenu::SystemMenu(Plasma::Applet *applet, QWidget *parent)
 	: ServiceMenu(QIcon::fromTheme(QStringLiteral("computer")),
 				  i18n("My System"), applet, parent) {}
 
@@ -38,8 +39,16 @@ SystemMenu::populate()
 		const QIcon icon = idx.data(Qt::DecorationRole).value<QIcon>();
 		const QUrl url = idx.data(KFilePlacesModel::UrlRole).toUrl();
 
-		if (QAction *action = createActionFromUrl(url, icon, title))
-			addAction(action);
+		if (!url.isValid())
+			continue;
+		
+		auto *action = new QAction(icon, escapeMnemonics(title), this);
+		action->setData(QVariant::fromValue(ItemInfo(url)));
+		action->setToolTip(url.toDisplayString(QUrl::PreferLocalFile));	
+		connect(action, &QAction::triggered, action, [url]() {
+			execUrl(url);
+		});
+		addAction(action);
 	}
 
 	if (isEmpty())

@@ -11,7 +11,7 @@ import org.kde.plasma.plasmoid
 PlasmoidItem {
     id: root
 
-    enabled: Plasmoid.hasMenu
+    enabled: Plasmoid.hasMenu && Plasmoid.valid
     Plasmoid.icon: Plasmoid.configuration.icon
     Plasmoid.onActivated: Plasmoid.toggleMenu()
 

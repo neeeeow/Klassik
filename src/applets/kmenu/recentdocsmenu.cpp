@@ -5,7 +5,7 @@
 */
 
 #include "recentdocsmenu.h"
-#include "servicemenuapplet.h"
+#include "iteminfo.h"
 
 #include <QFileInfo>
 
@@ -18,9 +18,18 @@
 using namespace KActivities::Stats;
 using namespace KActivities::Stats::Terms;
 
-RecentDocsMenu::RecentDocsMenu(ServiceMenuApplet *applet, QWidget *parent)
+RecentDocsMenu::RecentDocsMenu(Plasma::Applet *applet, QWidget *parent)
 	: ServiceMenu(QIcon::fromTheme(QStringLiteral("document-open-recent")),
 				  i18n("Recent Documents"), applet, parent) {}
+
+void
+RecentDocsMenu::initialize()
+{
+	if (initialized()) return;
+	ServiceMenu::initialize();
+	
+	m_numRecentDocs = getConfigValue<int>(QStringLiteral("numRecentDocs"), m_numRecentDocs);
+}
 
 void
 RecentDocsMenu::populate()
@@ -36,7 +45,6 @@ RecentDocsMenu::populate()
 	// Setup the recent documents query
 	// NB: we deviate from the KDE 3 era code here, since using KRecentDocument doesn't
 	// work very well.
-	const int numRecentDocs = applet() ? applet()->getConfigValue<int>(QStringLiteral("numRecentDocs"), 15) : 15;
 	const auto query = UsedResources
 		| RecentlyUsedFirst
 		| Agent::any()
@@ -48,14 +56,14 @@ RecentDocsMenu::populate()
 	ResultSet::const_iterator resultIt;
 	resultIt = results.begin();
 
-	while (actions.count() < numRecentDocs && resultIt != results.end()) {
+	while (actions.count() < m_numRecentDocs && resultIt != results.end()) {
 		const QUrl url = (*resultIt).url();
 		++resultIt;
 
 		if (!url.isLocalFile() || !QFileInfo::exists(url.toLocalFile()))
 			continue;
 				
-		if (QAction *action = createActionFromUrl(url))
+		if (QAction *action = createActionFromItemInfo(ItemInfo(url, ItemInfo::Type::File)))
 			actions.append(action);		
 	}
 

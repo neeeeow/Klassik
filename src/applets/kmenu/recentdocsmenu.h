@@ -13,10 +13,15 @@ class RecentDocsMenu final : public ServiceMenu
 	Q_OBJECT
 	
 public:
-	explicit RecentDocsMenu(ServiceMenuApplet *applet, QWidget *parent = nullptr);
+	explicit RecentDocsMenu(Plasma::Applet *applet, QWidget *parent = nullptr);
+
+protected:
+	void initialize() override;
 	
 private:
 	void populate() override;
+
+	int m_numRecentDocs = 15;
 
 private Q_SLOTS:
 	void forgetDocuments() const;

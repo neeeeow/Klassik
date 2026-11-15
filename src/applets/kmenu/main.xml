@@ -8,6 +8,15 @@
             <default>start-here-kde</default>
         </entry>
 
+        <entry name="showTooltips" type="Bool">
+            <label>Show action tooltips</label>
+            <default>false</default>
+        </entry>
+        <entry name="showGenericName" type="Bool">
+            <label>Detailed menu entries</label>
+            <default>true</default>
+        </entry>
+
         <entry name="drawSideImage" type="Bool">
             <label>Show side image</label>
             <default>true</default>
@@ -18,14 +27,6 @@
         </entry>
         <entry name="showSearch" type="Bool">
             <label>Show applications search bar</label>
-            <default>true</default>
-        </entry>
-        <entry name="showTooltips" type="Bool">
-            <label>Show action tooltips</label>
-            <default>false</default>
-        </entry>
-        <entry name="showGenericName" type="Bool">
-            <label>Detailed menu entries</label>
             <default>true</default>
         </entry>
 

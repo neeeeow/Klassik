@@ -7,19 +7,18 @@
 #pragma once
 
 #include "servicemenu.h"
-
-#include <KFileItem>
+#include "iteminfo.h"
 
 class DirMenu final : public ServiceMenu
 {
 	/* Menu which holds the contents of a directory */
 	Q_OBJECT
 public:
-    DirMenu(const KFileItem &dir, ServiceMenuApplet *applet, QWidget *parent = nullptr);
+    DirMenu(const ItemInfo &info, Plasma::Applet *applet, QWidget *parent = nullptr);
 
 private:
 	void populate() override;
 
-	// The KFileItem of the folder we display
-	KFileItem m_dir;
+	// The ItemInfo of the folder we display
+	ItemInfo m_info;
 };

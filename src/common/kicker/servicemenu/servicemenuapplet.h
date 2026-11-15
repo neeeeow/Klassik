@@ -6,6 +6,8 @@
 
 #pragma once
 
+#include "iteminfo.h"
+
 #include <QPointer>
 #include <Plasma/Applet>
 
@@ -21,13 +23,19 @@ class ServiceMenuApplet : public Plasma::Applet
 	// Whether or not the menu has been loaded
 	Q_PROPERTY(bool hasMenu READ hasMenu NOTIFY hasMenuChanged FINAL)
 	// Whether or not the menu is active
-	Q_PROPERTY(bool active READ active NOTIFY activeChanged FINAL)	
+	Q_PROPERTY(bool active READ active NOTIFY activeChanged FINAL)
+	// Whether or not the url is valid
+	Q_PROPERTY(bool valid READ valid NOTIFY infoChanged FINAL)
+	// The generic name of the applet
+	Q_PROPERTY(QString genericName READ genericName NOTIFY infoChanged FINAL)
 public:
 	ServiceMenuApplet(QObject *parentObject, const KPluginMetaData &data, const QVariantList &args);
 	~ServiceMenuApplet() override;
 	
 	bool hasMenu() const { return !m_menu.isNull(); }
 	bool active() const { return m_active; }
+	bool valid() const { return m_info.isValid(); }
+	QString genericName() const { return m_info.genericName(); }
 
 	// Show/hide the menu in QML
 	Q_INVOKABLE void toggleMenu();
@@ -35,37 +43,22 @@ public:
 	// Returns contextual actions for the specific applet
 	QList<QAction *> contextualActions() override;
 
-	// Config getter
-	template <typename T>
-	T getConfigValue(const QString &key, const T &fallback = T()) const {
-		const QVariant value = configValue(key);
-		if (!value.isValid())
-			return fallback;
-		if constexpr (std::is_enum_v<T>) {
-			// KConfigLoader stores Enum entries as int
-			bool ok = false;
-			const int i = value.toInt(&ok);
-			if (!ok) {
-				qWarning() << "key" << key << "type mismatch!";
-				return fallback;
-			}
-			return static_cast<T>(i);
-		} else {
-			if (value.metaType() != QMetaType::fromType<T>()) {
-				qWarning() << "key" << key << "type mismatch!";
-				return fallback;
-			}
-			return value.value<T>();
-		}
-	}
-
 public Q_SLOTS:
 	void init() override;
 
 Q_SIGNALS:
 	void hasMenuChanged();
 	void activeChanged();
-	void configurationChanged();
+	void infoChanged();
+	void configurationChanged();	
+
+protected:
+	// Getter and setters for the item info. Note: one of the setInfos *must* be called by the
+	// subclasses at some point, as the menu *will not* be initialized if the info is invalid!
+	ItemInfo info() const { return m_info; }
+	void setInfo(const QUrl &url) { m_info = ItemInfo(url); Q_EMIT infoChanged(); }
+	void setInfo(const KService::Ptr &service) { m_info = ItemInfo(service); Q_EMIT infoChanged(); }
+	void setInfo(const KServiceGroup::Ptr &group) { m_info = ItemInfo(group); Q_EMIT infoChanged(); }	
 							
 protected Q_SLOTS:
 	void initMenu();	
@@ -75,11 +68,6 @@ private:
 	// Implement this in a subclass and return a pointer to a *parentless* ServiceMenu
 	virtual ServiceMenu *createMenu() = 0;
 
-	// Returns the QUrl that the applet points to. Used for generating contextual actions.
-	// This does not need to be overriden and set - a blank QUrl() simply means no additional
-	// contextual actions will be generated for the applet
-	virtual QUrl appletUrl() const { return QUrl(); }
-
 	// Sets the toggled state of the applet
 	void setActive(bool active) {
 		if (m_active != active) {
@@ -87,9 +75,6 @@ private:
 			Q_EMIT activeChanged();
 		}
 	}
-
-	// Gets the config value
-	QVariant configValue(const QString &key) const;
 
 	// Deletes the currently loaded ServiceMenu class
 	void deleteMenu();
@@ -105,4 +90,7 @@ private:
 
 	// Whether or not the menu is active
 	bool m_active = false;
+
+	// The item info of what this applet points to
+	ItemInfo m_info;
 };

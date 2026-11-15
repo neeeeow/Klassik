@@ -6,17 +6,18 @@
 
 #pragma once
 
+#include "iteminfo.h"
 #include "servicemenu.h"
 
 #include <KServiceGroup>
 
 class ServiceGroupMenu : public ServiceMenu
 {
-	/* Builds an application menu using a given relative path */
+	/* Builds an application menu using a given ItemInfo (which points to a KServiceGroup!) */
 	Q_OBJECT
 public:
-	explicit ServiceGroupMenu(ServiceMenuApplet *applet, QWidget *parent = nullptr);	
-	ServiceGroupMenu(const KServiceGroup::Ptr &group, ServiceMenuApplet *applet, QWidget *parent = nullptr);
+	explicit ServiceGroupMenu(Plasma::Applet *applet, QWidget *parent = nullptr);	
+	ServiceGroupMenu(const ItemInfo &info, Plasma::Applet *applet, QWidget *parent = nullptr);
 
 Q_SIGNALS:
 	void searchFilterChanged(const QString &filter);
@@ -59,9 +60,9 @@ private:
 
 	// Returns true if the service group passes the search filter
 	static bool filterServiceGroup(const KServiceGroup::Ptr	&group, QStringView filter);
-
-	// The relpath of the KServiceGroup used to build the menu
-	QString m_relPath;
+	
+	// The ItemInfo of the group
+	ItemInfo m_info;
 
 	// The string used to filter 
 	QString m_searchFilter;

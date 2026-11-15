@@ -10,16 +10,22 @@
 
 #include <KPluginFactory>
 #include <KLocalizedString>
-#include <KProtocolManager>
-#include <KFileItem>
+#include <KProtocolInfo>
 
 #include <KIO/StatJob>
 
 using namespace Qt::StringLiterals;
 
 IconApplet::IconApplet(QObject *parent, const KPluginMetaData &data, const QVariantList &args)
-	: ServiceMenuApplet(parent, data, args) {
+	: ServiceMenuApplet(parent, data, args)
+{
 	setHasConfigurationInterface(false);
+}
+
+IconApplet::~IconApplet()
+{
+	if (m_statJob)
+		m_statJob->kill(KJob::Quietly);
 }
 
 void
@@ -27,81 +33,47 @@ IconApplet::init()
 {
 	ServiceMenuApplet::init();
 		
-	connect(this, &IconApplet::urlChanged, this, &IconApplet::populate);
-	connect(this, &IconApplet::urlChanged, this, &IconApplet::initMenu);
+	connect(this, &IconApplet::urlChanged, this, qOverload<const QUrl &>(&ServiceMenuApplet::setInfo));
+	connect(this, &IconApplet::urlChanged, this, &IconApplet::resolveUrl);
+	connect(this, &ServiceMenuApplet::infoChanged, this, &IconApplet::populate);
 
-	const QUrl url = appletUrl();
-	populate(url);
-	resolveUrl(url);
+	Q_EMIT urlChanged(config().readEntry(QStringLiteral("url"), QUrl()));
 }
 
 ServiceMenu *
 IconApplet::createMenu()
 {
-	const QUrl url = appletUrl();	
-	if (!url.isValid())
+	switch (info().type()) {
+	case ItemInfo::Type::ServiceGroup:
+		return new ServiceGroupMenu(info(), this);
+	case ItemInfo::Type::Directory:
+		return new DirMenu(info(), this);
+	default:
 		return nullptr;
-
-	if (const KServiceGroup::Ptr group = PanelMenu::serviceGroupFromUrl(url))
-		return new ServiceGroupMenu(group, this);
-	else if (url.isLocalFile() && KProtocolManager::supportsListing(url)) {
-		const KFileItem file(url);
-		if (file.isDir())
-			return new DirMenu(file, this);
-	}
-
-
-	return nullptr;		
+	}	
 }
 
 void
-IconApplet::populate(const QUrl &url)
+IconApplet::populate()
 {
-	QString name, icon, genericName;
-	if (const KService::Ptr service = PanelMenu::serviceFromUrl(url)) {
-		name = service->name();
-		icon = !service->icon().isEmpty() ? service->icon() : QStringLiteral("application-x-executable");
-		genericName = service->genericName();
-	} else if (const KServiceGroup::Ptr group = PanelMenu::serviceGroupFromUrl(url)) {
-		name = group->caption();
-		icon = !group->icon().isEmpty() ? group->icon() : QStringLiteral("applications-other");
-		genericName = i18n("Application Menu");
-	} else if (url.isValid()) {
-		const KFileItem item(url);
-		name = item.text();
-		if (name.isEmpty() || name == QLatin1Char('.'))
-			name = url.fileName();
-		if (name.isEmpty() || url.scheme().startsWith("http"_L1))
-			name = url.host();
-		if (name.isEmpty())
-			name = url.path();
-		icon = item.iconName();
-		genericName = item.mimeComment();
+	if (!info().isValid()) {
+		setTitle(i18n("Unknown"));
+		setIcon(QStringLiteral("unknown"));
+		return;
 	}
-
-	setTitle(name);
-	setIcon(!icon.isEmpty() ? icon : QStringLiteral("unknown"));
-	setGenericName(genericName);
-}
-
-QUrl
-IconApplet::appletUrl() const
-{
-	return config().readEntry(QStringLiteral("url"), QUrl());
+	setTitle(info().name());
+	setIcon(info().icon());
 }
 
 void
 IconApplet::setUrl(const QUrl &url)
 {
-	if (appletUrl() == url)
+	if (info().url() == url)
 		return;
 
 	config().writeEntry(QStringLiteral("url"), url);
 	Q_EMIT urlChanged(url);
 	Q_EMIT configNeedsSaving();
-
-	// Resolve the url in case it is non-local
-	resolveUrl(url);
 }
 
 void
@@ -139,41 +111,19 @@ IconApplet::updateUrlFromJob(KJob *job)
 	}
 }
 
-QString
-IconApplet::genericName() const
-{
-	return m_genericName;
-}
-
-void
-IconApplet::setGenericName(const QString &genericName)
-{
-	if (genericName != m_genericName) {
-		m_genericName = genericName;
-		Q_EMIT genericNameChanged(genericName);
-	}
-}
-
-bool
-IconApplet::isValid() const
-{
-	return appletUrl().isValid();
-}
-
 void
 IconApplet::run()
 {
 	if (hasMenu())
 		toggleMenu();
 	else {	
-		const QUrl url = appletUrl();
-		if (!url.isValid())
+		if (!info().isValid())
 			return;
 
-		if (const KService::Ptr service = PanelMenu::serviceFromUrl(url))
+		if (const KService::Ptr service = info().service())
 			PanelMenu::execService(service);
 		else
-			PanelMenu::execUrl(url);
+			PanelMenu::execUrl(info().url());
 	}
 }
 

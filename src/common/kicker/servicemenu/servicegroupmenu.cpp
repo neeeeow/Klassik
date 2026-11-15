@@ -6,18 +6,12 @@
 
 #include "servicegroupmenu.h"
 
-ServiceGroupMenu::ServiceGroupMenu(ServiceMenuApplet *applet, QWidget *parent)
-	: ServiceGroupMenu(KServiceGroup::root(), applet, parent) {}
+ServiceGroupMenu::ServiceGroupMenu(Plasma::Applet *applet, QWidget *parent)
+	: ServiceGroupMenu(ItemInfo(KServiceGroup::root()), applet, parent) {}
 
-ServiceGroupMenu::ServiceGroupMenu(const KServiceGroup::Ptr &group, ServiceMenuApplet *applet, QWidget *parent)
-	: ServiceMenu(applet, parent)
-{
-	if (group && group->isValid()) {
-		setTitle(escapeMnemonics(group->caption()));
-		setIcon(QIcon::fromTheme(group->icon(), QIcon::fromTheme(QStringLiteral("applications-other"))));
-		m_relPath = group->relPath();
-	}
-
+ServiceGroupMenu::ServiceGroupMenu(const ItemInfo &info, Plasma::Applet *applet, QWidget *parent)
+	: ServiceMenu(info, applet, parent), m_info(info)
+{	
 	// Set the search filter from the parent (if there is one!)
 	if (const auto *parentMenu = qobject_cast<const ServiceGroupMenu *>(parentWidget())) {
 		// Directly assign the variable here since there's no need to fire the signal
@@ -42,8 +36,9 @@ QList<QAction *>
 ServiceGroupMenu::createActionsFromServiceGroup()
 {
 	QList<QAction *> actions;
-	const KServiceGroup::Ptr group = KServiceGroup::group(m_relPath);
-	if (!group || !group->isValid())
+	m_info.refresh(); // Ensure we store an up-to-date ServiceGroup	
+	const KServiceGroup::Ptr group = m_info.group();
+	if (!group)
 		return actions;
 
 	const auto entries = group->entries(true, true, true);
@@ -51,24 +46,26 @@ ServiceGroupMenu::createActionsFromServiceGroup()
 		if (entry->isType(KST_KService)) {
 			// If the entry is a service, it's an individual application
 			const KService::Ptr service(static_cast<KService*>(entry.data()));
-			if (QAction *action = createActionFromService(service)) {
+			if (!service || service->noDisplay())
+				continue;
+			if (QAction *action = createActionFromItemInfo(ItemInfo(service))) {
 				action->setEnabled(filterService(service, searchFilter()));
 				actions.append(action);
 			}
 		} else if (entry->isType(KST_KServiceGroup)) {
 			// If the entry is a service group, we need to make a submenu
 			const KServiceGroup::Ptr subGroup(static_cast<KServiceGroup*>(entry.data()));
-			if (!subGroup || !subGroup->isValid() || subGroup->childCount() == 0)
+			if (!subGroup || !subGroup->isValid() || subGroup->noDisplay() || subGroup->childCount() == 0)
 				continue;
-
-			auto *subMenu = new ServiceGroupMenu(subGroup, applet(), this);
-			auto *action = subMenu->menuAction();
-			action->setData(urlFromServiceGroup(subGroup));
-			action->setEnabled(filterServiceGroup(subGroup, searchFilter()));
-			actions.append(action);
+			if (QAction *action = createActionFromItemInfo(ItemInfo(subGroup))) {
+				action->setEnabled(filterServiceGroup(subGroup, searchFilter()));
+				actions.append(action);
+			}
 		} else if (entry->isType(KST_KServiceSeparator))
 			appendSeparatorActionToList(actions, this);
 	}
+	if (!actions.isEmpty() && actions.last()->isSeparator())
+		delete actions.takeLast();
 	return actions;
 }
 
@@ -94,17 +91,18 @@ ServiceGroupMenu::filterActions(const QList<QAction *> &actions, QStringView fil
 		if (!action || action->isSeparator()) {
 			continue;
 		}
-		const QUrl url = action->data().toUrl();
-		if (!url.isValid())
+		const ItemInfo info = action->data().value<ItemInfo>();
+		if (!info.isValid())
 			continue;
+
 		if (filter.isEmpty()) {
 			action->setEnabled(true);
 			continue;
 		}
 		bool enabled = false; // Whether or not to enable the individual action	   				
-		if (const KService::Ptr service = serviceFromUrl(url))
+		if (const KService::Ptr service = info.service())
 			enabled = filterService(service, filter);
-		else if (const KServiceGroup::Ptr group = serviceGroupFromUrl(url))
+		else if (const KServiceGroup::Ptr group = info.group())
 			enabled = filterServiceGroup(group, filter);
 		
 		action->setEnabled(enabled);
@@ -135,7 +133,7 @@ ServiceGroupMenu::filterService(const KService::Ptr &service, QStringView filter
 bool
 ServiceGroupMenu::filterServiceGroup(const KServiceGroup::Ptr &group, QStringView filter)
 {
-	if (!group || !group->isValid())
+	if (!group || !group->isValid() || group->noDisplay() || group->childCount() == 0)
 		return false;
 
 	if (filter.isEmpty())
