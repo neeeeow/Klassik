@@ -121,22 +121,21 @@ ContainmentItem {
             Containment.applets.forEach(applet => applet.expanded = false);
         }
     }
+
+    Connections {
+        target: Plasmoid.internalAction("klassikConfig")
+        function onTriggered(): void {
+            configDialog.show()
+            configDialog.requestActivate()
+        }
+    }
+
 //END connections
 
 //BEGIN preferences
 
     ConfigDialog {
         id: configDialog
-    }
-    PlasmaCore.Action {
-        id: configAction
-        text: i18n("Klassik Panel Preferences")
-        icon.name: "configure"
-        visible: Plasmoid.immutability !== PlasmaCore.Types.SystemImmutable
-        onTriggered: {
-            configDialog.show()
-            configDialog.requestActivate()
-        }
     }
 
 //END preferences

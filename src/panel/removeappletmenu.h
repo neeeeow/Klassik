@@ -8,12 +8,12 @@
 
 #include "panelmenu.h"
 
-class RemoveMenu final : public PanelMenu
+class RemoveAppletMenu final : public PanelMenu
 {
 	/* Menu which gives the user the option to delete applets and icons from a given panel containment */
 	Q_OBJECT
 public:
-	explicit RemoveMenu(Plasma::Containment *containment, QWidget *parent = nullptr);
+	explicit RemoveAppletMenu(Plasma::Containment *containment, QWidget *parent = nullptr);
 
 protected:
 	void initialize() override;
@@ -22,10 +22,10 @@ private:
 	void populate() override;
 
 	// Populates a given remove submenu with the applets contained in appletList
-	static void populateSubMenu(QMenu *menu, const QList<QPointer<Plasma::Applet>> &appletList);
+	void populateSubMenu(QMenu *menu, const QList<QPointer<Plasma::Applet>> &appletList) const;
 
 	// Removes all applets from a given list
-	static void removeAllApplets(const QList<QPointer<Plasma::Applet>> &appletList);
+    void removeAllApplets(const QList<QPointer<Plasma::Applet>> &appletList) const;
 
 	// Plasma::Applets which contain icons, and all other applets
 	QList<QPointer<Plasma::Applet>> m_icons;

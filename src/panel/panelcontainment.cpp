@@ -6,7 +6,8 @@
 
 #include "panelcontainment.h"
 #include "addappsmenu.h"
-#include "removemenu.h"
+#include "removeappletmenu.h"
+#include "removepanelmenu.h"
 
 #include <QGuiApplication>
 #include <QUrl>
@@ -15,6 +16,8 @@
 #include <KPluginFactory>
 #include <KUrlMimeData>
 #include <KLocalizedString>
+
+#include <Plasma/Corona>
 
 PanelContainment::PanelContainment(QObject *parentObject, const KPluginMetaData &data, const QVariantList &args)
 : Plasma::Containment(parentObject, data, args),
@@ -196,15 +199,93 @@ PanelContainment::customActions()
 	auto *addAppsMenu = new AddAppsMenu(this);
 	connect(this, &QObject::destroyed, addAppsMenu, &QObject::deleteLater);
 	auto *addAppsAction = addAppsMenu->menuAction();
+	connectImmutabilitySlot(addAppsAction);
 	addAppsAction->setText(i18n("Add Application to Panel"));
 	actions.append(addAppsAction);
 
 	// Remove widgets
-	auto *removeMenu = new RemoveMenu(this);
-	connect(this, &QObject::destroyed, removeMenu, &QObject::deleteLater);
-	actions.append(removeMenu->menuAction());
+	auto *removeAppletMenu = new RemoveAppletMenu(this);
+	connect(this, &QObject::destroyed, removeAppletMenu, &QObject::deleteLater);
+	auto *removeAppletAction = removeAppletMenu->menuAction();
+	connectImmutabilitySlot(removeAppletAction);
+	actions.append(removeAppletAction);
+
+	// Separate add/remove applets and panel sections
+	connectImmutabilitySlot(PanelMenu::appendSeparatorActionToList(actions, this));
+
+	// Add panel menu. Luckily here corona has an internal action
+	// for this, so we just use that instead of constructing our own menu
+    if (Plasma::Corona *c = corona()) {
+        if (QAction *addPanel = c->action(QStringLiteral("add panel"))) {
+			connectImmutabilitySlot(addPanel);
+			addPanel->setText(i18n("Add New Panel"));
+            actions.append(addPanel);
+        }    
+	}
+
+	// Remove panel menu
+	auto *removePanelMenu = new RemovePanelMenu(this);
+    connect(this, &Plasma::Applet::contextualActionsAboutToShow, removePanelMenu, &PanelMenu::refreshContents);
+	connect(this, &QObject::destroyed, removePanelMenu, &QObject::deleteLater);
+	auto *removePanelAction = removePanelMenu->menuAction();
+	connectImmutabilitySlot(removePanelAction);
+	actions.append(removePanelAction);
+
+	// Configuration section
+	connectImmutabilitySlot(PanelMenu::appendSeparatorActionToList(actions, this));
+
+	// Lock panel action
+	auto *lock = new QAction(this);
+	connect(this, &Plasma::Applet::contextualActionsAboutToShow, lock, [this, lock]() {
+		const auto immutabilityType = immutability();
+		if (immutabilityType == Plasma::Types::Mutable) {
+			lock->setText(i18n("Lock Panel"));
+			lock->setIcon(QIcon::fromTheme(QStringLiteral("lock")));
+			lock->setEnabled(true);
+			lock->setChecked(false);
+		} else {
+			lock->setText(i18n("Unlock Panel"));
+			lock->setIcon(QIcon::fromTheme(QStringLiteral("unlock")));
+			lock->setEnabled((immutabilityType == Plasma::Types::UserImmutable) ? true : false);
+			lock->setChecked(true);
+		}
+	});
+	connect(lock, &QAction::triggered, this, [this]() {
+		const auto immutabilityType = immutability();
+		if (immutabilityType == Plasma::Types::Mutable)
+			setImmutability(Plasma::Types::UserImmutable);
+		else if (immutabilityType == Plasma::Types::UserImmutable)
+			setImmutability(Plasma::Types::Mutable);
+	});
+	actions.append(lock);
+
+	// KDE plasma panel configuration
+	if (QAction *configure = internalAction(QStringLiteral("configure")))
+		actions.append(configure);
+
+	// Klassik panel configuration
+	auto *klassikConfig = new QAction(QIcon::fromTheme(QStringLiteral("configure")),
+									  i18n("Configure Klassik Panel…"),
+									  this);
+	connectImmutabilitySlot(klassikConfig);
+	setInternalAction(QStringLiteral("klassikConfig"), klassikConfig);
+	actions.append(klassikConfig);
 	
 	return actions;
+}
+
+void
+PanelContainment::connectImmutabilitySlot(QAction *action)
+{
+	if (!action)
+		return;
+
+	connect(this, &Plasma::Applet::contextualActionsAboutToShow, action, [this, action]() {
+		if (immutability() == Plasma::Types::Mutable)
+			action->setVisible(true);
+		else
+			action->setVisible(false);
+	});
 }
 
 K_PLUGIN_CLASS_WITH_JSON(PanelContainment, "metadata.json")

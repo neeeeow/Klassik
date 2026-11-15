@@ -60,8 +60,9 @@ public:
 	static QAction* menuEditorAction(QObject *parent = nullptr);
 	static QAction* menuEditorAction(const ItemInfo &info, QObject *parent = nullptr);	
 
-	// Appends a separator QAction to a given QList
-	static void appendSeparatorActionToList(QList<QAction *> &actions, QObject *parent = nullptr);
+	// Appends a separator QAction to a given QList. Returns the QAction if added (and nullptr
+	// if no separator was added!)
+	static QAction* appendSeparatorActionToList(QList<QAction *> &actions, QObject *parent = nullptr);
 
 	// Cleans up mnemonics from a string
 	static QString escapeMnemonics(QString string);																										 

@@ -4,7 +4,7 @@
   SPDX-License-Identifier: GPL-3.0-or-later
 */
 
-#include "removemenu.h"
+#include "removeappletmenu.h"
 
 #include <KLocalizedString>
 
@@ -12,7 +12,7 @@
 
 using namespace Qt::StringLiterals;
 
-RemoveMenu::RemoveMenu(Plasma::Containment *containment, QWidget *parent)
+RemoveAppletMenu::RemoveAppletMenu(Plasma::Containment *containment, QWidget *parent)
 	: PanelMenu(i18n("Remove From Panel"), containment, parent)
 {
 	if (containment)
@@ -20,7 +20,7 @@ RemoveMenu::RemoveMenu(Plasma::Containment *containment, QWidget *parent)
 }
 
 void
-RemoveMenu::initialize()
+RemoveAppletMenu::initialize()
 {
 	if (initialized()) return;
 	
@@ -34,7 +34,7 @@ RemoveMenu::initialize()
 
 	const QList<Plasma::Applet *> allApplets = containment->applets();
 	for (auto *applet : allApplets) {
-		if (!applet)
+		if (!applet || applet->destroyed())
 			continue;
 		
 		// Icons get added to the icon list, applets get added to the applet list
@@ -48,29 +48,35 @@ RemoveMenu::initialize()
 }
 
 void
-RemoveMenu::populate()
+RemoveAppletMenu::populate()
 {
+	if (!mayAddItem(AddToTarget::Panel))
+		return;
+	
 	// First create the submenus (which always appear!). Here we use regular QMenus
 	QMenu *appletMenu = addMenu(i18n("Applet"));
 	QMenu *iconMenu = addMenu(i18n("Icon"));
 
-	// We disable the menus if no applets are present (but still populate the remove all action, such that
-	// it appears to contain a submenu. This is how KDE 3 did things.
-	appletMenu->menuAction()->setEnabled(!m_applets.isEmpty());
-	iconMenu->menuAction()->setEnabled(!m_icons.isEmpty());
-
-	populateSubMenu(appletMenu, m_applets);
-	populateSubMenu(iconMenu, m_icons);
+	// We disable the menus if no applets are present
+	if (m_applets.isEmpty())
+		appletMenu->menuAction()->setEnabled(false);
+	else
+		populateSubMenu(appletMenu, m_applets);
+	
+	if (m_icons.isEmpty())
+		iconMenu->menuAction()->setEnabled(false);
+	else	
+		populateSubMenu(iconMenu, m_icons);
 }
 
 void
-RemoveMenu::populateSubMenu(QMenu *menu, const QList<QPointer<Plasma::Applet>> &appletList)
+RemoveAppletMenu::populateSubMenu(QMenu *menu, const QList<QPointer<Plasma::Applet>> &appletList) const
 {
 	if (!menu)
 		return;
 
 	for (Plasma::Applet *applet : appletList) {
-		if (!applet)
+		if (!applet || applet->destroyed())
 			continue;
 		QAction *action = menu->addAction(QIcon::fromTheme(applet->icon()), escapeMnemonics(applet->title()));
 		connect(action, &QAction::triggered, applet, &Plasma::Applet::destroy);
@@ -80,14 +86,16 @@ RemoveMenu::populateSubMenu(QMenu *menu, const QList<QPointer<Plasma::Applet>> &
 	if (!menu->isEmpty())
 		menu->addSeparator();
 	QAction *removeAllAction = menu->addAction(i18n("All"));
-	connect(removeAllAction, &QAction::triggered, removeAllAction, [appletList]() {
+	connect(removeAllAction, &QAction::triggered, this, [this, appletList]() {
 		removeAllApplets(appletList);
 	});
 }
 
 void
-RemoveMenu::removeAllApplets(const QList<QPointer<Plasma::Applet>> &appletList)
+RemoveAppletMenu::removeAllApplets(const QList<QPointer<Plasma::Applet>> &appletList) const
 {
+	if (!mayAddItem(AddToTarget::Panel))
+		return;
 	for (Plasma::Applet *applet: appletList)
 		if (applet)
 			applet->destroy();

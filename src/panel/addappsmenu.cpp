@@ -41,7 +41,7 @@ AddAppsMenu::createActionsFromServiceGroup()
 	QList<QAction *> actions;
 	m_info.refresh(); // Ensure we store an up-to-date ServiceGroup	
 	const KServiceGroup::Ptr group = m_info.group();
-	if (!group)
+	if (!group || !mayAddItem(AddToTarget::Panel))
 		return actions;
 
 	const auto entries = group->entries(true, true, true);

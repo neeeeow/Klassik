@@ -49,6 +49,9 @@ private:
 	// Generate our custom contextual actions
 	QList<QAction *> customActions();
 
+	// Makes a QAction's visibility depend on the containment's immutability.
+	void connectImmutabilitySlot(QAction *action);
+
 	QPointer<QQuickPalette> m_quickPalette = nullptr;
 	bool m_colorize = false;
 

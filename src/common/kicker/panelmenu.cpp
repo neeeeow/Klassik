@@ -588,16 +588,17 @@ PanelMenu::menuEditorAction(const ItemInfo &info, QObject *parent)
 	return action;
 }
 
-void
+QAction *
 PanelMenu::appendSeparatorActionToList(QList<QAction *> &actions, QObject *parent)
 {
 	// Avoid placing a separator at the beginning, and avoid doubling separators
 	if (actions.isEmpty() || actions.last()->isSeparator())
-		return;
+		return nullptr;
 				
 	auto *separator = new QAction(parent);
 	separator->setSeparator(true);
 	actions.append(separator);
+	return separator;
 }
 
 
