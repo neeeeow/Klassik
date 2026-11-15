@@ -9,15 +9,10 @@
 #include <KLocalizedString>
 
 AddAppsMenu::AddAppsMenu(Plasma::Applet *applet, QWidget *parent)
-	: AddAppsMenu(KServiceGroup::root(), applet, parent) {}
+	: AddAppsMenu(ItemInfo(KServiceGroup::root()), applet, parent) {}
 
-AddAppsMenu::AddAppsMenu(const KServiceGroup::Ptr &group, Plasma::Applet *applet, QWidget *parent)
-	: PanelMenu(applet, parent), m_info(group)
-{
-	// Set the title/icon
-	setTitle(escapeMnemonics(m_info.name()));
-	setIcon(QIcon::fromTheme(m_info.icon()));
-}
+AddAppsMenu::AddAppsMenu(const ItemInfo &info, Plasma::Applet *applet, QWidget *parent)
+	: PanelMenu(info, applet, parent), m_info(info) {}
 
 void
 AddAppsMenu::populate()
@@ -61,26 +56,34 @@ AddAppsMenu::createActionsFromServiceGroup()
 			if (!info.isValid())
 				continue;
 			
-			auto *action = new QAction(QIcon::fromTheme(info.icon()), escapeMnemonics(info.name()), this);			
+			auto *action = new QAction(QIcon::fromTheme(info.icon()), escapeMnemonics(info.name()), this);
+			action->setToolTip(info.comment());
 			action->setData(QVariant::fromValue(info));
-
-			connect(action, &QAction::triggered, this, [this, info]() {
-				if (!addLauncher(AddToTarget::Panel, info.url()))
+			connect(action, &QAction::triggered, this, [this, url = info.url()]() {
+				if (!addLauncher(AddToTarget::Panel, url))
 					qWarning() << "failed to add launcher to panel!";
 			});
+			actions.append(action);
 		} else if (entry->isType(KST_KServiceGroup)) {
 			// If the entry is a service group, we need to make a submenu
 			const KServiceGroup::Ptr subGroup(static_cast<KServiceGroup*>(entry.data()));
-			if (!subGroup || !subGroup->isValid() || subGroup->childCount() == 0)
+			if (!subGroup || !subGroup->isValid() || subGroup->noDisplay() || subGroup->childCount() == 0)
 				continue;
 
-			auto *subMenu = new AddAppsMenu(subGroup, applet(), this);
-			auto *action = subMenu->menuAction();
-			action->setData(QVariant::fromValue(subMenu->info()));
+			const ItemInfo info(subGroup);
+			if (!info.isValid())
+				continue;
+			
+			auto *subMenu = new AddAppsMenu(info, applet(), this);
+			QAction *action = subMenu->menuAction();
+			action->setToolTip(info.comment());
+			action->setData(QVariant::fromValue(info));
 			actions.append(action);
 		} else if (entry->isType(KST_KServiceSeparator))
 			appendSeparatorActionToList(actions, this);
 	}
 	
+	if (!actions.isEmpty() && actions.last()->isSeparator())
+		delete actions.takeLast();
 	return actions;
 }

@@ -9,8 +9,6 @@
 #include "panelmenu.h"
 #include "iteminfo.h"
 
-#include <KServiceGroup>
-
 class AddAppsMenu final : public PanelMenu
 {
 	/*
@@ -20,13 +18,10 @@ class AddAppsMenu final : public PanelMenu
 	Q_OBJECT
 public:
 	explicit AddAppsMenu(Plasma::Applet *applet, QWidget *parent = nullptr);
-    AddAppsMenu(const KServiceGroup::Ptr &group, Plasma::Applet *applet, QWidget *parent = nullptr);
+    AddAppsMenu(const ItemInfo &info, Plasma::Applet *applet, QWidget *parent = nullptr);
 
 protected:
 	void initialize() override {}
-
-	// Returns the ItemInfo of the menu
-	ItemInfo info() const { return m_info; }
 
 private:
 	void populate() override;

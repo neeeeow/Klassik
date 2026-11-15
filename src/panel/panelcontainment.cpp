@@ -191,6 +191,7 @@ PanelContainment::customActions()
 		actions.append(addWidgets);
 	}
 	auto *addAppsMenu = new AddAppsMenu(this);
+	connect(this, &QObject::destroyed, addAppsMenu, &QObject::deleteLater);
 	auto *addAppsAction = addAppsMenu->menuAction();
 	addAppsAction->setText(i18n("Add Application to Panel"));
 	actions.append(addAppsAction);
