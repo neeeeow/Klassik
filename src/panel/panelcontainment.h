@@ -52,6 +52,10 @@ private:
 	// Makes a QAction's visibility depend on the containment's immutability.
 	void connectImmutabilitySlot(QAction *action);
 
+	// Forces a given QAction to *always* be invisible (used to hide default
+	// panel internal actions).
+	void forceHidden(QAction *action);
+
 	QPointer<QQuickPalette> m_quickPalette = nullptr;
 	bool m_colorize = false;
 

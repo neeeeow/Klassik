@@ -13,7 +13,8 @@
 using namespace Qt::StringLiterals;
 
 RemoveAppletMenu::RemoveAppletMenu(Plasma::Containment *containment, QWidget *parent)
-	: PanelMenu(i18n("Remove From Panel"), containment, parent)
+	: PanelMenu(QIcon::fromTheme(QStringLiteral("list-remove")),
+				i18n("Remove From Panel"), containment, parent)
 {
 	if (containment)
 		connect(containment, &Plasma::Containment::appletsChanged, this, &PanelMenu::reinitialize);

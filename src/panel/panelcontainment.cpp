@@ -32,7 +32,13 @@ void
 PanelContainment::init()
 {
 	Plasma::Containment::init();
+
+	// Get our custom set of contextual actions
 	m_actions = customActions();
+
+	// Ensure the internal configure and remove actions are never shown
+	forceHidden(internalAction(QStringLiteral("configure")));
+	forceHidden(internalAction(QStringLiteral("remove")));
 }
 
 bool
@@ -133,7 +139,7 @@ PanelContainment::tintColor(const QColor &base)
 	int h1, s1, v1, h2, s2, v2, h3, s3, v3;
 	activeTitle.getHsv(&h1, &s1, &v1);
 	inactiveTitle.getHsv(&h2, &s2, &v2);
-    base.getHsv(&h3, &s3, &v3);
+	base.getHsv(&h3, &s3, &v3);
 
 	if ( (qAbs(h1-h3)+qAbs(s1-s3)+qAbs(v1-v3) < qAbs(h2-h3)+qAbs(s2-s3)+qAbs(v2-v3)) &&
 		 ((qAbs(h1-h3)+qAbs(s1-s3)+qAbs(v1-v3) < 32) || (s1 < 32)) && (s2 > s1))
@@ -198,7 +204,7 @@ PanelContainment::customActions()
 	// Add applications / application menus
 	auto *addAppsMenu = new AddAppsMenu(this);
 	connect(this, &QObject::destroyed, addAppsMenu, &QObject::deleteLater);
-	auto *addAppsAction = addAppsMenu->menuAction();
+	QAction *addAppsAction = addAppsMenu->menuAction();
 	connectImmutabilitySlot(addAppsAction);
 	addAppsAction->setText(i18n("Add Application to Panel"));
 	actions.append(addAppsAction);
@@ -206,7 +212,7 @@ PanelContainment::customActions()
 	// Remove widgets
 	auto *removeAppletMenu = new RemoveAppletMenu(this);
 	connect(this, &QObject::destroyed, removeAppletMenu, &QObject::deleteLater);
-	auto *removeAppletAction = removeAppletMenu->menuAction();
+	QAction *removeAppletAction = removeAppletMenu->menuAction();
 	connectImmutabilitySlot(removeAppletAction);
 	actions.append(removeAppletAction);
 
@@ -215,19 +221,19 @@ PanelContainment::customActions()
 
 	// Add panel menu. Luckily here corona has an internal action
 	// for this, so we just use that instead of constructing our own menu
-    if (Plasma::Corona *c = corona()) {
-        if (QAction *addPanel = c->action(QStringLiteral("add panel"))) {
+	if (Plasma::Corona *c = corona()) {
+		if (QAction *addPanel = c->action(QStringLiteral("add panel"))) {
 			connectImmutabilitySlot(addPanel);
 			addPanel->setText(i18n("Add New Panel"));
-            actions.append(addPanel);
-        }    
+			actions.append(addPanel);
+		}	 
 	}
 
 	// Remove panel menu
 	auto *removePanelMenu = new RemovePanelMenu(this);
-    connect(this, &Plasma::Applet::contextualActionsAboutToShow, removePanelMenu, &PanelMenu::refreshContents);
+	connect(this, &Plasma::Applet::contextualActionsAboutToShow, removePanelMenu, &PanelMenu::refreshContents);
 	connect(this, &QObject::destroyed, removePanelMenu, &QObject::deleteLater);
-	auto *removePanelAction = removePanelMenu->menuAction();
+	QAction *removePanelAction = removePanelMenu->menuAction();
 	connectImmutabilitySlot(removePanelAction);
 	actions.append(removePanelAction);
 
@@ -259,17 +265,38 @@ PanelContainment::customActions()
 	});
 	actions.append(lock);
 
+	// Panel configuration menu
+	auto *configMenu = new QMenu(i18n("Configure Panel"));
+	connect(this, &QObject::destroyed, configMenu, &QObject::deleteLater);
+	configMenu->setIcon(QIcon::fromTheme(QStringLiteral("configure")));
+
 	// KDE plasma panel configuration
-	if (QAction *configure = internalAction(QStringLiteral("configure")))
-		actions.append(configure);
+	if (QAction *configure = internalAction(QStringLiteral("configure"))) {
+		// We need to make a copy of the internal configure action to keep the
+		// position of the action constant
+		QAction *configurePanel = configMenu->addAction(configure->icon(), i18n("KDE Panel Configuration…"));		
+		connect(configurePanel, &QAction::triggered, configure, &QAction::trigger);
+	}
 
 	// Klassik panel configuration
-	auto *klassikConfig = new QAction(QIcon::fromTheme(QStringLiteral("configure")),
-									  i18n("Configure Klassik Panel…"),
-									  this);
-	connectImmutabilitySlot(klassikConfig);
+	QAction *klassikConfig = configMenu->addAction(QIcon::fromTheme(QStringLiteral("configure")),
+												   i18n("Klassik Configuration…"));
 	setInternalAction(QStringLiteral("klassikConfig"), klassikConfig);
-	actions.append(klassikConfig);
+
+	// Add the panel configuration menu
+	QAction *configMenuAction = configMenu->menuAction();
+	connectImmutabilitySlot(configMenuAction);
+	actions.append(configMenuAction);
+
+	// Help section (we want the separator between the lock/unlock action and help
+	// submenu to disappear when the panel is locked. THis is how KDE 3 did things
+	connectImmutabilitySlot(PanelMenu::appendSeparatorActionToList(actions, this));
+
+	auto *helpMenu = new QMenu(i18n("Help"));
+	connect(this, &QObject::destroyed, helpMenu, &QObject::deleteLater);
+	helpMenu->setIcon(QIcon::fromTheme(QStringLiteral("system-help")));
+
+	actions.append(helpMenu->menuAction());
 	
 	return actions;
 }
@@ -285,6 +312,17 @@ PanelContainment::connectImmutabilitySlot(QAction *action)
 			action->setVisible(true);
 		else
 			action->setVisible(false);
+	});
+}
+
+void
+PanelContainment::forceHidden(QAction *action)
+{
+	if (!action)
+		return;
+
+	connect(this, &Plasma::Applet::contextualActionsAboutToShow, action, [action]() {
+		action->setVisible(false);
 	});
 }
 
