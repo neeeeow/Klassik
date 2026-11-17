@@ -13,6 +13,7 @@
 #include <QtQuick/private/qquickpalette_p.h>
 
 class QMimeData;
+class AboutDialog;
 
 class PanelContainment : public Plasma::Containment
 {
@@ -60,9 +61,15 @@ private:
 	bool m_colorize = false;
 
 	// Contextual actions
-	QList<QAction *> m_actions;						   
+	QList<QAction *> m_actions;
+
+	// The about dialog currently open (we only ever want a single dialog open)
+	QPointer<AboutDialog> m_aboutDialog;
 
 private Q_SLOTS:
 	// Loads and colorizes the active QPalette in to our QQuickPalette pointer
 	void loadPalette();
+
+	// Creates and shows the about dialog
+	void showAboutDialog();
 };

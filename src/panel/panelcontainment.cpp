@@ -8,6 +8,7 @@
 #include "addappsmenu.h"
 #include "removeappletmenu.h"
 #include "removepanelmenu.h"
+#include "aboutdialog.h"
 
 #include <QGuiApplication>
 #include <QUrl>
@@ -296,6 +297,11 @@ PanelContainment::customActions()
 	connect(this, &QObject::destroyed, helpMenu, &QObject::deleteLater);
 	helpMenu->setIcon(QIcon::fromTheme(QStringLiteral("system-help")));
 
+	// About dialog
+	QAction *aboutAction = helpMenu->addAction(QIcon::fromTheme(QStringLiteral("help-about")),
+											   i18n("About Klassik…"));
+	connect(aboutAction, &QAction::triggered, this, &PanelContainment::showAboutDialog);
+
 	actions.append(helpMenu->menuAction());
 	
 	return actions;
@@ -324,6 +330,20 @@ PanelContainment::forceHidden(QAction *action)
 	connect(this, &Plasma::Applet::contextualActionsAboutToShow, action, [action]() {
 		action->setVisible(false);
 	});
+}
+
+void
+PanelContainment::showAboutDialog()
+{
+	if (m_aboutDialog) {
+		m_aboutDialog->show();
+		m_aboutDialog->raise();
+		m_aboutDialog->activateWindow();
+	} else {
+		m_aboutDialog = new AboutDialog();
+		m_aboutDialog->setAttribute(Qt::WA_DeleteOnClose);
+		m_aboutDialog->show();
+	}
 }
 
 K_PLUGIN_CLASS_WITH_JSON(PanelContainment, "metadata.json")
