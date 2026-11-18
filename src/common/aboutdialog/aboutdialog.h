@@ -10,7 +10,13 @@
 
 class AboutDialog final : public QDialog
 {
+	/* About dialogue for Klassik */
 	Q_OBJECT
 public:
 	explicit AboutDialog(QWidget *parent = nullptr, Qt::WindowFlags f = Qt::WindowFlags());
+
+private:
+	// Returns a QTextBrowser (wrapped in a QWidget with the correct margin) for the
+	// about tab widget
+	QWidget *addTextPage(const QString &html);
 };
