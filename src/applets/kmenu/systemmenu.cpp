@@ -45,7 +45,7 @@ SystemMenu::populate()
 		auto *action = new QAction(icon, escapeMnemonics(title), this);
 		action->setData(QVariant::fromValue(ItemInfo(url)));
 		action->setToolTip(url.toDisplayString(QUrl::PreferLocalFile));	
-		connect(action, &QAction::triggered, action, [url]() {
+		connect(action, &QAction::triggered, action, [url] {
 			execUrl(url);
 		});
 		addAction(action);

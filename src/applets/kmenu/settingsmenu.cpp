@@ -214,7 +214,7 @@ SettingsMenu::createActionFromKCM(const QString &id, const QString &name,
 	auto *action = new QAction(QIcon::fromTheme(icon), escapeMnemonics(name), this);
 	action->setToolTip(info.comment());
 	action->setData(QVariant::fromValue(info));
-	connect(action, &QAction::triggered, action, [id]() {
+	connect(action, &QAction::triggered, action, [id] {
 		auto *job = new KIO::CommandLauncherJob(QStringLiteral("kcmshell6"), {id});
 		job->setUiDelegate(new KNotificationJobUiDelegate(KJobUiDelegate::AutoHandlingEnabled));
 		job->start();

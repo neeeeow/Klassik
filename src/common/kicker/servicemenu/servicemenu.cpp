@@ -38,7 +38,7 @@ ServiceMenu::createActionFromItemInfo(const ItemInfo &info)
 	switch (info.type()) {
 	case ItemInfo::Type::File: {
 	    action = new QAction(QIcon::fromTheme(info.icon()), escapeMnemonics(info.name()), this);
-		connect(action, &QAction::triggered, action, [url = info.url()]() {
+		connect(action, &QAction::triggered, action, [url = info.url()] {
 			execUrl(url);
 		});		
 	    break;
@@ -58,7 +58,7 @@ ServiceMenu::createActionFromItemInfo(const ItemInfo &info)
 		}
 		
 	    action = new QAction(QIcon::fromTheme(info.icon()), title, this);
-		connect(action, &QAction::triggered, action, [service = info.service()]() {
+		connect(action, &QAction::triggered, action, [service = info.service()] {
 			execService(service);
 		});
 		

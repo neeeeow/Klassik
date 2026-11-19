@@ -7,6 +7,7 @@
 #include "removeappletmenu.h"
 
 #include <KLocalizedString>
+#include <KNotification>
 
 #include <Plasma/Containment>
 
@@ -76,20 +77,34 @@ RemoveAppletMenu::populateSubMenu(QMenu *menu, const QList<QPointer<Plasma::Appl
 	if (!menu)
 		return;
 
-	for (Plasma::Applet *applet : appletList) {
+	for (QPointer<Plasma::Applet> applet : appletList) {
 		if (!applet || applet->destroyed())
 			continue;
 		QAction *action = menu->addAction(QIcon::fromTheme(applet->icon()), escapeMnemonics(applet->title()));
-		connect(action, &QAction::triggered, applet, &Plasma::Applet::destroy);
+		connect(action, &QAction::triggered, this, [this, applet] {
+			removeApplet(applet);
+		});
 	}
 
 	// Provide the option to delete *all* applets in the list.
 	if (!menu->isEmpty())
 		menu->addSeparator();
 	QAction *removeAllAction = menu->addAction(i18n("All"));
-	connect(removeAllAction, &QAction::triggered, this, [this, appletList]() {
+	connect(removeAllAction, &QAction::triggered, this, [this, appletList] {
 		removeAllApplets(appletList);
 	});
+}
+
+void
+RemoveAppletMenu::removeApplet(Plasma::Applet *applet) const
+{
+	if (!applet)
+		return;
+
+	if (QAction *removeAction = applet->internalAction(QStringLiteral("remove")))
+		removeAction->trigger();
+	else
+		applet->destroy();
 }
 
 void
@@ -97,7 +112,23 @@ RemoveAppletMenu::removeAllApplets(const QList<QPointer<Plasma::Applet>> &applet
 {
 	if (!mayAddItem(AddToTarget::Panel))
 		return;
-	for (Plasma::Applet *applet: appletList)
-		if (applet)
+
+	bool removedAny = false;
+	for (Plasma::Applet *applet : appletList) {
+		if (applet && !applet->destroyed()) {
 			applet->destroy();
+			removedAny = true;
+		}
+	}
+
+	if (!removedAny)
+		return;
+
+	auto *notification = new KNotification(QStringLiteral("plasmoidDeleted"));
+	notification->setFlags(KNotification::SkipGrouping);
+	notification->setComponentName(QStringLiteral("plasma_workspace"));
+	notification->setIconName(QStringLiteral("edit-delete"));
+	notification->setTitle(i18n("Widgets Removed"));
+	notification->setText(i18n("All widgets have been removed from the panel."));
+	notification->sendEvent();
 }

@@ -24,10 +24,15 @@ private:
 	// Populates a given remove submenu with the applets contained in appletList
 	void populateSubMenu(QMenu *menu, const QList<QPointer<Plasma::Applet>> &appletList) const;
 
-	// Removes all applets from a given list
-    void removeAllApplets(const QList<QPointer<Plasma::Applet>> &appletList) const;
-
 	// Plasma::Applets which contain icons, and all other applets
 	QList<QPointer<Plasma::Applet>> m_icons;
 	QList<QPointer<Plasma::Applet>> m_applets;
+
+private Q_SLOTS:
+	// Removes a given applet
+	void removeApplet(Plasma::Applet *applet) const;
+	
+	// Removes all applets from a given list. Unfortunately, there is no option
+	// to undo this.
+    void removeAllApplets(const QList<QPointer<Plasma::Applet>> &appletList) const;
 };

@@ -22,4 +22,8 @@ private:
 
 	// The panels on the desktop
 	QList<QPointer<Plasma::Containment>> m_panels;
+
+private Q_SLOTS:
+	// Removes a given panel
+	void removePanel(Plasma::Containment *panel) const;
 };

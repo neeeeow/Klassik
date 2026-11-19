@@ -120,14 +120,14 @@ PanelMenu::showContextMenu(const QPoint &pos)
 	
 	if (mayAddDesktop) {
 		QAction *desktopAction = contextMenu->addAction(QIcon::fromTheme(QStringLiteral("list-add")), i18n("Add to Desktop"));
-		connect(desktopAction, &QAction::triggered, this, [this, url = info.url()]() {
+		connect(desktopAction, &QAction::triggered, this, [this, url = info.url()] {
 			if (!addLauncher(AddToTarget::Desktop, url))
 				qWarning() << "failed to add launcher to desktop!";
 		});
 	}
 	if (mayAddPanel) {
 		QAction *panelAction = contextMenu->addAction(QIcon::fromTheme(QStringLiteral("list-add")), i18n("Add to Panel"));
-		connect(panelAction, &QAction::triggered, this, [this, url = info.url()]() {
+		connect(panelAction, &QAction::triggered, this, [this, url = info.url()] {
 			if (!addLauncher(AddToTarget::Panel, url))
 				qWarning() << "failed to add launcher to panel!";
 		});
@@ -406,7 +406,7 @@ PanelMenu::contextualActions(const ItemInfo &info, QObject *parent)
 
 		appendSeparatorActionToList(actions, parent);
 		auto *propertiesAction = new QAction(QIcon::fromTheme(QStringLiteral("document-properties")), i18n("Properties"), parent);
-		connect(propertiesAction, &QAction::triggered, propertiesAction, [url = info.url()]() {
+		connect(propertiesAction, &QAction::triggered, propertiesAction, [url = info.url()] {
 			auto *dlg = new KPropertiesDialog(url);
 			dlg->setAttribute(Qt::WA_DeleteOnClose);
 			dlg->setFileNameReadOnly(true);
@@ -438,7 +438,7 @@ PanelMenu::jumpListActions(const KService::Ptr &service, QObject *parent)
 	// We always add the option to launch the application
     auto *runAction = new QAction(QIcon::fromTheme(QStringLiteral("system-run")),
 								  i18n("Run Application"), parent);
-	connect(runAction, &QAction::triggered, runAction, [service]() {
+	connect(runAction, &QAction::triggered, runAction, [service] {
 		execService(service);
 	});
 	actions.append(runAction);
@@ -454,7 +454,7 @@ PanelMenu::jumpListActions(const KService::Ptr &service, QObject *parent)
 		if (serviceAction.isSeparator())
 			action->setSeparator(true);
 
-		connect(action, &QAction::triggered, action, [service, serviceAction]() {
+		connect(action, &QAction::triggered, action, [service, serviceAction] {
 			auto *job = new KIO::ApplicationLauncherJob(serviceAction);
 			job->setUiDelegate(new KNotificationJobUiDelegate(KJobUiDelegate::AutoHandlingEnabled));
 			job->start();
@@ -485,7 +485,7 @@ PanelMenu::openWithActions(const ItemInfo &info, QObject *parent)
 
 		auto *action = new QAction(QIcon::fromTheme(serviceInfo.icon()),
 								   escapeMnemonics(serviceInfo.name()), parent);
-		connect(action, &QAction::triggered, action, [service, url = info.url()]() {
+		connect(action, &QAction::triggered, action, [service, url = info.url()] {
 			execService(service, url);
 		});
 		actions.append(action);
@@ -509,11 +509,11 @@ PanelMenu::openInFileExplorerAction(const ItemInfo &info, QObject *parent)
 							   i18n("Open in File Explorer"), parent);
 	const QUrl url = info.url();
 	if (info.type() == ItemInfo::Type::Directory) {
-		connect(action, &QAction::triggered, action, [url]() {
+		connect(action, &QAction::triggered, action, [url] {
 			execUrl(url);
 		});
 	} else {
-		connect(action, &QAction::triggered, action, [url]() {
+		connect(action, &QAction::triggered, action, [url] {
 			auto *job = new KIO::OpenFileManagerWindowJob();
 			job->setUiDelegate(new KNotificationJobUiDelegate(KJobUiDelegate::AutoHandlingEnabled));
 			job->setHighlightUrls({url});
@@ -535,7 +535,7 @@ PanelMenu::kRunnerAction(const QString &arg, QObject *parent)
 {		
 	auto *action = new QAction(QIcon::fromTheme(QStringLiteral("krunner"), QIcon::fromTheme(QStringLiteral("system-run"))),
 							   i18n("Put Into Run Dialog"), parent);
-	connect(action, &QAction::triggered, action, [arg](){
+	connect(action, &QAction::triggered, action, [arg] {
 		QDBusMessage query = QDBusMessage::createMethodCall(
 			QStringLiteral("org.kde.krunner"),
 			QStringLiteral("/App"),
@@ -578,7 +578,7 @@ PanelMenu::menuEditorAction(const ItemInfo &info, QObject *parent)
 	auto *action = new QAction(
 		QIcon::fromTheme(editorService->icon(), QIcon::fromTheme(QStringLiteral("kmenuedit"))),
 		escapeMnemonics(title), parent);
-	connect(action, &QAction::triggered, action, [editorService, arg]() {
+	connect(action, &QAction::triggered, action, [editorService, arg] {
     	auto *job = new KIO::CommandLauncherJob(KIO::DesktopExecParser::executablePath(editorService->exec()),
 												{!arg.isEmpty() ? arg : QStringLiteral("/")});
 		job->setDesktopName(editorService->desktopEntryName());

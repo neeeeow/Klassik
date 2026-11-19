@@ -243,21 +243,19 @@ PanelContainment::customActions()
 
 	// Lock panel action
 	auto *lock = new QAction(this);
-	connect(this, &Plasma::Applet::contextualActionsAboutToShow, lock, [this, lock]() {
+	connect(this, &Plasma::Applet::contextualActionsAboutToShow, lock, [this, lock] {
 		const auto immutabilityType = immutability();
 		if (immutabilityType == Plasma::Types::Mutable) {
 			lock->setText(i18n("Lock Panel"));
 			lock->setIcon(QIcon::fromTheme(QStringLiteral("lock")));
 			lock->setEnabled(true);
-			lock->setChecked(false);
 		} else {
 			lock->setText(i18n("Unlock Panel"));
 			lock->setIcon(QIcon::fromTheme(QStringLiteral("unlock")));
 			lock->setEnabled((immutabilityType == Plasma::Types::UserImmutable) ? true : false);
-			lock->setChecked(true);
 		}
 	});
-	connect(lock, &QAction::triggered, this, [this]() {
+	connect(lock, &QAction::triggered, this, [this] {
 		const auto immutabilityType = immutability();
 		if (immutabilityType == Plasma::Types::Mutable)
 			setImmutability(Plasma::Types::UserImmutable);
@@ -305,7 +303,7 @@ PanelContainment::connectImmutabilitySlot(QAction *action)
 	if (!action)
 		return;
 
-	connect(this, &Plasma::Applet::contextualActionsAboutToShow, action, [this, action]() {
+	connect(this, &Plasma::Applet::contextualActionsAboutToShow, action, [this, action] {
 		if (immutability() == Plasma::Types::Mutable)
 			action->setVisible(true);
 		else
@@ -319,7 +317,7 @@ PanelContainment::forceHidden(QAction *action)
 	if (!action)
 		return;
 
-	connect(this, &Plasma::Applet::contextualActionsAboutToShow, action, [action]() {
+	connect(this, &Plasma::Applet::contextualActionsAboutToShow, action, [action] {
 		action->setVisible(false);
 	});
 }

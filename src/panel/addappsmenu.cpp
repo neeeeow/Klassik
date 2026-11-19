@@ -20,7 +20,7 @@ AddAppsMenu::populate()
 	// Add this menu option	
 	if (mayAddItem(AddToTarget::Panel)) {
 		QAction *addThisMenu = addAction(icon(), i18n("Add This Menu"));
-		connect(addThisMenu, &QAction::triggered, this, [this]() {
+		connect(addThisMenu, &QAction::triggered, this, [this] {
 			if (!addLauncher(AddToTarget::Panel, m_info.url()))
 				qWarning() << "failed to add launcher to panel!";
 		});
@@ -59,7 +59,7 @@ AddAppsMenu::createActionsFromServiceGroup()
 			auto *action = new QAction(QIcon::fromTheme(info.icon()), escapeMnemonics(info.name()), this);
 			action->setToolTip(info.comment());
 			action->setData(QVariant::fromValue(info));
-			connect(action, &QAction::triggered, this, [this, url = info.url()]() {
+			connect(action, &QAction::triggered, this, [this, url = info.url()] {
 				if (!addLauncher(AddToTarget::Panel, url))
 					qWarning() << "failed to add launcher to panel!";
 			});

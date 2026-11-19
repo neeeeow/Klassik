@@ -30,6 +30,7 @@ target_link_libraries(com.github.neeeeow.klassik.panel PRIVATE
     klassik_panelmenu
     klassik_helpmenu
     Qt::Qml
+    KF6::Notifications
     Plasma::Plasma
 )
 

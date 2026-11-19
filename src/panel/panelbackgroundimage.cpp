@@ -17,16 +17,9 @@ PanelBackgroundImage::PanelBackgroundImage(QQuickItem *parent)
 }
 
 void
-PanelBackgroundImage::componentComplete()
-{
-	loadImage();
-	PaintedItem::componentComplete();
-}
-
-void
 PanelBackgroundImage::paint(QPainter *p) const
 {
-	if (m_background.isNull())
+	if (m_background.isNull() || rect().isEmpty())
 		return;
 
 	QImage backgroundTile;
@@ -69,7 +62,7 @@ PanelBackgroundImage::loadImage()
 	if (!m_source.isValid())
 		return;
 	m_background.load(QQmlFile::urlToLocalFileOrQrc(m_source));
-	if (m_colorize)
+	if (m_colorize && !m_background.isNull())
 		colorize(m_background);
 }
 

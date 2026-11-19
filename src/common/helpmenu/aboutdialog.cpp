@@ -130,7 +130,7 @@ AboutDialog::AboutDialog(QWidget *parent, Qt::WindowFlags f)
 	}
 
 	connect(buttons, &QDialogButtonBox::rejected, this, &QDialog::reject);
-	connect(buttons, &QDialogButtonBox::helpRequested, buttons, []() {
+	connect(buttons, &QDialogButtonBox::helpRequested, buttons, [] {
 		auto *job = new KIO::OpenUrlJob(QUrl(QStringLiteral(DONATE_URL)));
 		job->setUiDelegate(new KNotificationJobUiDelegate(KJobUiDelegate::AutoHandlingEnabled));
 		job->start();

@@ -62,10 +62,10 @@ ServiceMenuApplet::initMenu()
 		// Create the menu object. If it fails to create, simply bail out.
 		m_menu = createMenu();
 		if (m_menu) {
-			connect(m_menu, &QMenu::aboutToShow, this, [this]() {
+			connect(m_menu, &QMenu::aboutToShow, this, [this] {
 				setActive(true);
 			});
-			connect(m_menu, &QMenu::aboutToHide, this, [this]() {
+			connect(m_menu, &QMenu::aboutToHide, this, [this] {
 				setActive(false);
 			});
 	    
