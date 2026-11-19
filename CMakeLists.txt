@@ -35,6 +35,7 @@ find_package(KF6 REQUIRED COMPONENTS
   CoreAddons
   IconThemes
   Notifications
+  XmlGui
 )
 
 find_package(Plasma REQUIRED)

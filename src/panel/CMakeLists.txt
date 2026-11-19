@@ -28,7 +28,7 @@ plasma_add_applet(com.github.neeeeow.klassik.panel
 target_link_libraries(com.github.neeeeow.klassik.panel PRIVATE
     klassik_painteditem
     klassik_panelmenu
-    klassik_aboutdialog
+    klassik_helpmenu
     Qt::Qml
     Plasma::Plasma
 )

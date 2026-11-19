@@ -62,7 +62,7 @@ AboutDialog::AboutDialog(QWidget *parent, Qt::WindowFlags f)
 	image->setPalette(pal);
 	image->setAutoFillBackground(true);
 
-	image->setPixmap(QPixmap(QStringLiteral(":/klassik/aboutdialog/about.png")));
+	image->setPixmap(QPixmap(QStringLiteral(":/klassik/helpmenu/about.png")));
 	contents->addWidget(image);
 
 	// Tab widget
