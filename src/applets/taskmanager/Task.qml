@@ -156,6 +156,7 @@ ToolButton {
     background: TaskBackground {
         visible: (Plasmoid.configuration.taskAppearance === 1) || task.hovered
         sunken: task.down || task.checked
+        hovered: task.hovered
     }
 
     contentItem: RowLayout {

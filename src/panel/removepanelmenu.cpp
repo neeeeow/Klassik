@@ -94,7 +94,7 @@ RemovePanelMenu::populate()
 void
 RemovePanelMenu::removePanel(Plasma::Containment *panel) const
 {
-	if (!panel)
+	if (!panel || panel->immutable())
 		return;
 
 	const auto type = panel->containmentType();

@@ -21,7 +21,10 @@ class StyledToolButton : public PaintedItem
 	*/
 	  
 	Q_OBJECT
-	QML_ELEMENT
+	QML_NAMED_ELEMENT(ToolButtonBackground)
+
+	// Equivalent to QToolButton's m_autoRaise. Defaults to false.
+	Q_PROPERTY(bool autoRaise MEMBER m_autoRaise NOTIFY propertyChanged)
 public:
     explicit StyledToolButton(QQuickItem *parent = nullptr) : PaintedItem(parent) {}
 
@@ -30,8 +33,13 @@ private:
 		if (!style())
 			return;
 
+		if (m_autoRaise && !isHovered() && !isSunken())
+			return;
+		
 		// Use a regular QStyleOption for the button, no need to use QStyleOptionToolButton here
 		QStyleOption button = baseStyleOption();
 		style()->drawPrimitive(QStyle::PE_PanelButtonTool, &button, p);
 	}
+
+	bool m_autoRaise = false;
 };

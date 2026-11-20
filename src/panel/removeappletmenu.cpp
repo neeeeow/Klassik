@@ -98,7 +98,7 @@ RemoveAppletMenu::populateSubMenu(QMenu *menu, const QList<QPointer<Plasma::Appl
 void
 RemoveAppletMenu::removeApplet(Plasma::Applet *applet) const
 {
-	if (!applet)
+	if (!applet || applet->immutable())
 		return;
 
 	if (QAction *removeAction = applet->internalAction(QStringLiteral("remove")))

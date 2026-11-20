@@ -15,6 +15,8 @@ import org.kde.plasma.core as PlasmaCore
 
 import org.kde.taskmanager as TaskManager
 
+import com.github.neeeeow.klassik.painteditems
+
 PlasmoidItem {
     id: tasks
 

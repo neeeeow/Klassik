@@ -147,13 +147,13 @@ PanelMenu::mayAddItem(AddToTarget target) const
 	switch (target) {
 	case AddToTarget::Desktop: {				
 		if (Plasma::Containment *containment = desktopContainment())
-			return (containment->immutability() == Plasma::Types::Mutable);
+			return (!containment->immutable());
 
 		break;
 	}
 	case AddToTarget::Panel: {				
 		if (Plasma::Containment *containment = panelContainment())
-			return (containment->immutability() == Plasma::Types::Mutable);
+			return (!containment->immutable());
 
 		break;
 	}

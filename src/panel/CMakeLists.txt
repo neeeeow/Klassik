@@ -17,9 +17,6 @@ plasma_add_applet(com.github.neeeeow.klassik.panel
         addappsmenu.cpp
         removeappletmenu.cpp
         removepanelmenu.cpp
-        ${KLASSIK_COMMON_DIR}/painteditems/styledtoolbarhandle.h
-        ${KLASSIK_COMMON_DIR}/painteditems/styledarrow.h
-        ${KLASSIK_COMMON_DIR}/painteditems/styledframe.h
     RESOURCES
         main.xml
         defaultBackground.png

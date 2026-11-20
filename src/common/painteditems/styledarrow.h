@@ -8,8 +8,6 @@
 
 #include "painteditem.h"
 
-#include <Plasma/Plasma>
-
 class StyledArrow : public PaintedItem
 {
 	/*

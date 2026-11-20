@@ -11,6 +11,8 @@ import org.kde.plasma.plasmoid
 import org.kde.plasma.core as PlasmaCore
 import org.kde.kirigami as Kirigami
 
+import com.github.neeeeow.klassik.painteditems
+
 Button {
     id: button
 
@@ -25,6 +27,7 @@ Button {
         id: frame
         visible: button.down || button.checked
         sunken: true
+        hovered: button.hovered
     }
 
     contentItem: Item {
@@ -43,7 +46,6 @@ Button {
             sourceComponent: PanelButtonArrow {
                 location: Plasmoid.location
                 sunken: button.down || button.checked
-                hoverEnabled: false
                 hovered: button.hovered
             }
         }

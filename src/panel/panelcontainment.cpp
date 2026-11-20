@@ -304,7 +304,7 @@ PanelContainment::connectImmutabilitySlot(QAction *action)
 		return;
 
 	connect(this, &Plasma::Applet::contextualActionsAboutToShow, action, [this, action] {
-		if (immutability() == Plasma::Types::Mutable)
+		if (!immutable())
 			action->setVisible(true);
 		else
 			action->setVisible(false);

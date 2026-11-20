@@ -13,6 +13,8 @@ import org.kde.plasma.core as PlasmaCore
 import org.kde.plasma.private.sessions
 import org.kde.kirigami as Kirigami
 
+import com.github.neeeeow.klassik.painteditems
+
 PlasmoidItem {
     id: root
 
@@ -47,18 +49,13 @@ PlasmoidItem {
             }
         }
 
-        ToolButton {
+        StyledToolButton {
             id: lock
             flat: false
             Layout.fillWidth: grid.horizontal ? false : true
             Layout.fillHeight: grid.horizontal ? true : false
             implicitWidth: grid.iconSize + 14
             implicitHeight: grid.iconSize + 14
-
-            background: StyledToolButton {
-                hoverEnabled: lock.hoverEnabled
-                sunken: lock.down || lock.checked
-            }
 
             onClicked: session["lock"]()
             Kirigami.Icon {
@@ -69,18 +66,13 @@ PlasmoidItem {
             }
         }
 
-        ToolButton {
+        StyledToolButton {
             id: logout
             flat: false
             Layout.fillWidth: grid.horizontal ? false : true
             Layout.fillHeight: grid.horizontal ? true : false
             implicitWidth: grid.iconSize + 14
             implicitHeight: grid.iconSize + 14
-
-            background: StyledToolButton {
-                hoverEnabled: logout.hoverEnabled
-                sunken: logout.down || logout.checked
-            }
 
             onClicked: session["requestLogoutPrompt"]()
             Kirigami.Icon {

@@ -11,7 +11,6 @@ plasma_add_applet(com.github.neeeeow.klassik.kmenu
         qml/ConfigGeneral.qml
         qml/config.qml
         qml/main.qml
-        ${KLASSIK_COMMON_DIR}/kicker/servicemenu/qml/ServiceMenuButton.qml
     CPP_SOURCES
         kmenu.cpp
         kmenuapplet.cpp
@@ -20,8 +19,6 @@ plasma_add_applet(com.github.neeeeow.klassik.kmenu
         systemmenu.cpp
         kmenutitleaction.h
         kmenusearchaction.cpp
-        ${KLASSIK_COMMON_DIR}/painteditems/styledframe.h
-        ${KLASSIK_COMMON_DIR}/painteditems/panelbuttonarrow.h
     RESOURCES
         main.xml
         img/kside.png
@@ -30,7 +27,6 @@ plasma_add_applet(com.github.neeeeow.klassik.kmenu
 
 target_link_libraries(com.github.neeeeow.klassik.kmenu PRIVATE
     klassik_servicemenu
-    klassik_painteditem
     KF6::KIOFileWidgets
     Plasma::ActivitiesStats
     PW::KWorkspace

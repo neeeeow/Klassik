@@ -13,6 +13,8 @@ import org.kde.plasma.plasmoid
 
 import org.kde.taskmanager as TaskManager
 
+import com.github.neeeeow.klassik.painteditems
+
 ToolButton {
     id: windowListButton
     focusPolicy: Qt.NoFocus
@@ -26,13 +28,13 @@ ToolButton {
     background: TaskBackground {
         visible: (Plasmoid.configuration.taskAppearance === 1) || windowListButton.hovered || sunken
         sunken: windowListButton.down || windowListButton.checked
+        hovered: windowListButton.hovered
     }
 
     StyledArrow {
         width: Math.min(parent.width, parent.height) - anchors.margins * 2
         height: width
         sunken: windowListButton.down || windowListButton.checked
-        hoverEnabled: false
         hovered: windowListButton.hovered
 
         anchors.margins: 1

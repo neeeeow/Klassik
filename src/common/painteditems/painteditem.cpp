@@ -24,7 +24,6 @@ void
 PaintedItem::componentComplete()
 {
 	QQuickItem::componentComplete();
-	setAcceptHoverEvents(m_hoverEnabled);
 	loadStyle();
 	loadPalette();	
 	connect(qGuiApp, &QGuiApplication::layoutDirectionChanged, this, &PaintedItem::propertyChanged, Qt::UniqueConnection);
@@ -207,24 +206,4 @@ PaintedItem::geometryChange(const QRectF &newGeometry, const QRectF &oldGeometry
 	// position changes, since our HiDPI corrections depend on position
 	else if (newGeometry.topLeft() != oldGeometry.topLeft())
 		update();
-}
-
-void
-PaintedItem::hoverEnterEvent(QHoverEvent *event)
-{
-	QQuickItem::hoverEnterEvent(event);
-	if (!m_hovered) {
-		m_hovered = true;	
-		Q_EMIT propertyChanged();
-	}
-}
-
-void
-PaintedItem::hoverLeaveEvent(QHoverEvent *event)
-{
-	QQuickItem::hoverLeaveEvent(event);
-	if (m_hovered) {
-		m_hovered = false;	
-		Q_EMIT propertyChanged();
-	}
 }

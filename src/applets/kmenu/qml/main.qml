@@ -8,6 +8,8 @@ import QtQuick
 
 import org.kde.plasma.plasmoid
 
+import com.github.neeeeow.klassik.servicemenu
+
 PlasmoidItem {
     id: root
 

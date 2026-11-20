@@ -20,6 +20,8 @@ import org.kde.kirigami as Kirigami
 
 import "LayoutManager.js" as LayoutManager
 
+import com.github.neeeeow.klassik.painteditems
+
 ContainmentItem {
     id: root
     width: 640
@@ -249,7 +251,8 @@ ContainmentItem {
                 function findPositive(first, second) {return first > 0 ? first : second}
 
                 // Handle geometry
-                readonly property bool showHandle: applet?.Plasmoid.metaData.category !== "Application Launchers"
+                readonly property bool showHandle: !Plasmoid.immutable
+                                                && applet?.Plasmoid.metaData.category !== "Application Launchers"
                                                 && applet?.Plasmoid.pluginName !== "org.kde.plasma.icon"
                                                 && applet?.Plasmoid.pluginName !== "com.github.neeeeow.klassik.panel.icon"
                 readonly property int handleExtent: handleLoader.item?.handleExtent ?? 0
@@ -292,7 +295,7 @@ ContainmentItem {
 
                         visible: Plasmoid.configuration.showAppletHandle || hoverHandler.hovered || isMenuOpen
 
-                        ToolButton {
+                        StyledToolButton {
                             id: menuButton
                             Layout.fillWidth: root.isHorizontal ? true : false
                             Layout.fillHeight: root.isHorizontal ? false : true
@@ -301,13 +304,12 @@ ContainmentItem {
                             Layout.row: root.isHorizontal ? (appletHandle.reverse ? 0 : 1) : 0
                             Layout.column: root.isHorizontal ? 0 : (appletHandle.reverse ? 0 : 1)
 
-                            checkable: true
                             checked: appletHandle.isMenuOpen
                             hoverEnabled: true
 
                             contentItem: StyledArrow {
+                                hovered: menuButton.hovered
                                 sunken: menuButton.down || menuButton.checked
-                                hoverEnabled: menuButton.hoverEnabled
                                 direction: {
                                     switch (Plasmoid.location) {
                                         case PlasmaCore.Types.TopEdge:
@@ -339,7 +341,6 @@ ContainmentItem {
                                         const action = actions[i];
                                         const item = newMenuItem(appletMenu);
                                         item.action = action;
-                                        //item.enabled = true;
                                     }
 
                                     // Panel menu
@@ -373,33 +374,26 @@ ContainmentItem {
                             Layout.row: root.isHorizontal ? (appletHandle.reverse ? 1 : 0) : 0
                             Layout.column: root.isHorizontal ? 0 : (appletHandle.reverse ? 1 : 0)
                             horizontal: root.isHorizontal
-                            sunken: handleMouseArea.pressed
-                            hoverEnabled: true
+                            cursorShape: pressed ? Qt.SizeAllCursor : Qt.ArrowCursor
 
-                            MouseArea {
-                                id: handleMouseArea
-                                anchors.fill: parent
-                                hoverEnabled: true
-                                cursorShape: pressed ? Qt.SizeAllCursor : Qt.ArrowCursor
-                                onPressed: {
-                                    cursorOverlay.visible = true;
-                                }
-                                onPositionChanged: mouse => {
-                                    if (!pressed)
-                                        return
+                            onPressed: {
+                                cursorOverlay.visible = true;
+                            }
+                            onPositionChanged: mouse => {
+                                if (!pressed)
+                                    return
                                     const globalPos = mapToItem(currentLayout, mouse.x, mouse.y);
-                                    const targetIndex = LayoutManager.indexAtCoordinates(globalPos.x, globalPos.y);
-                                    if (targetIndex !== container.index)
-                                        LayoutManager.move(container, targetIndex);
-                                }
-                                onReleased: {
-                                    cursorOverlay.visible = false;
-                                    LayoutManager.save();
-                                }
-                                onCanceled: {
-                                    cursorOverlay.visible = false;
-                                    LayoutManager.save();
-                                }
+                                const targetIndex = LayoutManager.indexAtCoordinates(globalPos.x, globalPos.y);
+                                if (targetIndex !== container.index)
+                                    LayoutManager.move(container, targetIndex);
+                            }
+                            onReleased: {
+                                cursorOverlay.visible = false;
+                                LayoutManager.save();
+                            }
+                            onCanceled: {
+                                cursorOverlay.visible = false;
+                                LayoutManager.save();
                             }
                         }
                     }
@@ -410,7 +404,7 @@ ContainmentItem {
                     id: contextMenuMoveAction
                     text: i18n("Move " + applet.Plasmoid.title)
                     icon.name: "transform-move"
-                    visible: Plasmoid.immutability !== PlasmaCore.Types.SystemImmutable // only allow the applet to be moved if the panel isn't immutable
+                    visible: !Plasmoid.immutable // only allow the applet to be moved if the panel isn't immutable
                     onTriggered: globalMove.startDrag(container)
                 }
                 PlasmaCore.Action {

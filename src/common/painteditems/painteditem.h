@@ -23,27 +23,13 @@ class PaintedItem : public QQuickItem
 	Q_OBJECT
 	QML_ANONYMOUS
 
-	// Custom state flags which correspond to QStyle::State_Sunken and
-	// QStyle::State_MouseOver. By default, both flags are off.
-	Q_PROPERTY(bool sunken MEMBER m_sunken NOTIFY propertyChanged FINAL)
+	// Custom state flags which correspond to QStyle::State_MouseOver and
+	// QStyle::State_Sunken. By default, both flags are off.
 	Q_PROPERTY(bool hovered MEMBER m_hovered NOTIFY propertyChanged FINAL)
-
-	// Sets whether or not the QQuickItem should handle the hovered state internally
-	// Set false to manually override the hovered property. Manually setting hovered with hoverEnabled
-	// equal true will lead to undefined behaviour!!!!!
-	Q_PROPERTY(bool hoverEnabled READ isHoverEnabled WRITE setHoverEnabled NOTIFY propertyChanged FINAL)
+	Q_PROPERTY(bool sunken MEMBER m_sunken NOTIFY propertyChanged FINAL)	
 	
 public:
 	explicit PaintedItem(QQuickItem *parent = nullptr);
-
-	bool isHoverEnabled() const { return m_hoverEnabled; }
-	void setHoverEnabled(bool hoverEnabled) {
-		if (hoverEnabled != m_hoverEnabled) {
-			m_hoverEnabled = hoverEnabled;			
-			setAcceptHoverEvents(m_hoverEnabled);
-			Q_EMIT propertyChanged();
-		}
-	}
 	
 Q_SIGNALS:
 	// Signal emitted whenever an internal property (both exposed and hidden from QML, such as
@@ -88,8 +74,6 @@ protected:
 	// Event handling overrides
 	void itemChange(QQuickItem::ItemChange change, const QQuickItem::ItemChangeData &value) override;
 	void geometryChange(const QRectF &newGeometry, const QRectF &oldGeometry) override;
-	void hoverEnterEvent(QHoverEvent *event) override;
-	void hoverLeaveEvent(QHoverEvent *event) override;
 														
 protected Q_SLOTS:	
 	// Triggers a repaint of the QQuickItem
@@ -116,11 +100,8 @@ private:
 	QImage m_paintedImage;
 
 	// State flags used by QStyle
-	bool m_sunken = false;
 	bool m_hovered = false;
-
-	// Whether or not to accept hover events (default false!)
-	bool m_hoverEnabled = false;
+	bool m_sunken = false;	
 
 private Q_SLOTS:
 	void styleChanged();
