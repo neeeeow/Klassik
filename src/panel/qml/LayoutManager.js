@@ -1,8 +1,10 @@
 /*
+    SPDX-FileCopyrightText: 2026 neeeeow <https://github.com/neeeeow>
+
     SPDX-FileCopyrightText: 2013 Marco Martin <mart@kde.org>
     SPDX-FileCopyrightText: 2022 Niccolò Venerandi <niccolo@venerandi.com>
 
-    SPDX-License-Identifier: LGPL-2.0-or-later
+    SPDX-License-Identifier: GPL-3.0-or-later
 */
 
 var layout;
@@ -11,19 +13,9 @@ var appletsModel;
 
 function addApplet(applet, x, y) {
     let appletItem = root.itemFor(applet);
-    // don't show applet if it chooses to be hidden but still make it
-    // accessible in the panelcontroller
-    // Due to the nature of how "visible" propagates in QML, we need to
-    // explicitly set it on the container (so the Layout ignores it)
-    // as well as the applet (so it reliably knows about), otherwise it can
-    // happen that an applet erroneously thinks it's visible, or suddenly
-    // starts thinking that way on teardown (virtual desktop pager)
-    // leading to crashes
+    if (!appletItem)
+        return;
     const new_element = {applet: appletItem};
-
-    appletItem.visible = Qt.binding(function() {
-        return applet.status !== PlasmaCore.Types.HiddenStatus || (!root.plasmoid.immutable && root.plasmoid.userConfiguring) || root.plasmoid.corona.editMode;
-    });
 
     if (x >= 0 && y >= 0) {
         appletsModel.insert(indexAtCoordinates(x, y), new_element)
@@ -33,7 +25,7 @@ function addApplet(applet, x, y) {
 }
 
 function restore() {
-    var configString = String(root.plasmoid.configuration.AppletOrder)
+    var configString = String(root.Plasmoid.configuration.AppletOrder)
 
     //array, a cell for encoded item order
     var itemsArray = configString.split(";");
@@ -49,12 +41,12 @@ function restore() {
         idsOrder[itemsArray[i]] = i;
     }
 
-    for (var i = 0; i < root.plasmoid.applets.length; ++i) {
-        if (idsOrder[root.plasmoid.applets[i].id] !== undefined) {
-            appletsOrder[idsOrder[root.plasmoid.applets[i].id]] = root.plasmoid.applets[i];
+    for (var i = 0; i < root.Containment.applets.length; ++i) {
+        if (idsOrder[root.Containment.applets[i].id] !== undefined) {
+            appletsOrder[idsOrder[root.Containment.applets[i].id]] = root.Containment.applets[i];
         //ones that weren't saved in AppletOrder go to the end
         } else {
-            appletsOrder["unordered"+i] = root.plasmoid.applets[i];
+            appletsOrder["unordered"+i] = root.Containment.applets[i];
         }
     }
 
@@ -68,11 +60,11 @@ function restore() {
 
 function save() {
     const ids = layout.children
-        .map(child => child?.applet?.plasmoid?.id)
+        .map(child => child?.applet?.Plasmoid?.id)
         .filter(id => id !== undefined)
 
-    root.plasmoid.configuration.AppletOrder = ids.join(';');
-    root.plasmoid.configuration.writeConfig();
+    root.Plasmoid.configuration.AppletOrder = ids.join(';');
+    root.Plasmoid.configuration.writeConfig();
 }
 
 function childAtCoordinates(x, y) {
@@ -104,8 +96,8 @@ function childAtCoordinates(x, y) {
 
 function indexAtCoordinates(x, y) {
     let child = childAtCoordinates(x, y)
-    if ((root.plasmoid.formFactor === 3 && y < child.y + child.height/2) ||
-        (root.plasmoid.formFactor !== 3 && x < child.x + child.width/2)) {
+    if ((!root.isHorizontal && y < child.y + child.height/2) ||
+        (root.isHorizontal && x < child.x + child.width/2)) {
         return child.index;
     } else {
         return child.index+1;

@@ -20,7 +20,7 @@ Window {
     minimumWidth: Kirigami.Units.gridUnit * 28
     minimumHeight: Kirigami.Units.gridUnit * 22
 
-    property var customBackgroundUrl
+    property url customBackgroundUrl
 
     function save() {
         Plasmoid.configuration.drawFrame = drawFrame.checked;
@@ -29,6 +29,7 @@ Window {
         Plasmoid.configuration.useBackground = useBackground.checked;
         Plasmoid.configuration.useCustomBackground = useCustomBackground.checked;
         Plasmoid.configuration.customBackgroundUrl = root.customBackgroundUrl;
+        Plasmoid.configuration.writeConfig();
     }
 
     onVisibleChanged: {
@@ -51,7 +52,7 @@ Window {
             FileDialog {
                 id: backgroundDialog
                 title: i18n("Select panel background")
-                nameFilters: ["Image files (*.bmp *.jpg *.jpeg *.png *.pbm *.pgm *.ppm *.xbm *.xpm *.svg)"]
+                nameFilters: [i18n("Image files (*.bmp *.jpg *.jpeg *.png *.pbm *.pgm *.ppm *.xbm *.xpm *.svg)")]
                 fileMode: FileDialog.OpenFile
 
                 onAccepted: {
@@ -96,7 +97,7 @@ Window {
             RowLayout {
                 enabled: useBackground.checked && useCustomBackground.checked
                 Label {
-                    text: "Set custom panel background:"
+                    text: i18n("Set custom panel background:")
                 }
 
                 Button {
@@ -124,35 +125,20 @@ Window {
             }
         }
 
-        RowLayout {
+        DialogButtonBox {
+            Layout.fillWidth: true
             Layout.alignment: Qt.AlignBottom
+            standardButtons: DialogButtonBox.Ok | DialogButtonBox.Apply | DialogButtonBox.Cancel
 
-            Text {
-                text: "Klassik " + Plasmoid.metaData.version
-                color: Kirigami.Theme.textColor
-                font.italic: true
-                font.bold: true
-                font.pointSize: 16
-                opacity: 0.3
-                Layout.fillWidth: true
-                Layout.alignment: Qt.AlignLeft
-                Layout.leftMargin: Kirigami.Units.largeSpacing
+            onAccepted: {
+                root.save()
+                root.close()
             }
-
-            DialogButtonBox {
-                Layout.alignment: Qt.AlignRight
-                standardButtons: DialogButtonBox.Ok | DialogButtonBox.Apply | DialogButtonBox.Cancel
-
-                onAccepted: {
-                    root.save()
-                    root.close()
-                }
-                onApplied: {
-                    root.save()
-                }
-                onRejected: {
-                    root.close()
-                }
+            onApplied: {
+                root.save()
+            }
+            onRejected: {
+                root.close()
             }
         }
     }

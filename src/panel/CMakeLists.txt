@@ -10,6 +10,7 @@ plasma_add_applet(com.github.neeeeow.klassik.panel
     QML_SOURCES
         qml/ConfigDialog.qml
         qml/main.qml
+        qml/AppletHandle.qml
         qml/LayoutManager.js
     CPP_SOURCES
         panelcontainment.cpp

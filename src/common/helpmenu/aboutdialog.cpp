@@ -115,7 +115,7 @@ AboutDialog::AboutDialog(QWidget *parent, Qt::WindowFlags f)
 								  "Klassik's development and can be made through the "
 								  "<a href=\"%1\">GitHub Sponsors page</a>.<br /><br />"
 								  "If you are not in a position to donate, that is completely fine. "
-								  "Simply using Klassik and spreading the word is equally appreciated."
+								  "Simply using Klassik and spreading the word is equally appreciated!"
 								  "</html>",
 								  QStringLiteral(DONATE_URL)
 								 )), i18n("&Support Klassik"));

@@ -25,35 +25,36 @@ PaintedItem::componentComplete()
 {
 	QQuickItem::componentComplete();
 	loadStyle();
-	loadPalette();	
-	connect(qGuiApp, &QGuiApplication::layoutDirectionChanged, this, &PaintedItem::propertyChanged, Qt::UniqueConnection);
+	loadPalette();
+
+	// Connect signals
+	connect(qGuiApp, &QGuiApplication::layoutDirectionChanged, this, &PaintedItem::requestRepaint, Qt::UniqueConnection);
 	connect(this, &PaintedItem::propertyChanged, this, &PaintedItem::requestRepaint, Qt::UniqueConnection);
-	Q_EMIT propertyChanged();
+	connect(this, &PaintedItem::styleChanged, this, &PaintedItem::requestRepaint, Qt::UniqueConnection);
+	connect(this, &PaintedItem::paletteChanged, this, &PaintedItem::requestRepaint, Qt::UniqueConnection);
+
+	// Request the initial repaint
+	requestRepaint();
 }
 
 void
 PaintedItem::loadStyle()
-{	
-	m_style = QApplication::style();
-	// We cannot connect to QEvent::StyleChange, so we do it this way instead
-	if (m_style)
-		connect(m_style, &QObject::destroyed, this, &PaintedItem::styleChanged, Qt::UniqueConnection);
-}	
-void
-PaintedItem::styleChanged()
 {
 	if (QCoreApplication::closingDown())
 		return;
-	loadStyle();
-	Q_EMIT propertyChanged();
-}
+	m_style = QApplication::style();
+	// We cannot connect to QEvent::StyleChange, so we do it this way instead
+	if (m_style)
+		connect(m_style, &QObject::destroyed, this, &PaintedItem::loadStyle, Qt::UniqueConnection);
+	Q_EMIT styleChanged();
+}	
 
 void
 PaintedItem::loadPalette()
 {
     m_quickPalette = qvariant_cast<QQuickPalette *>(property("palette"));
 	if (m_quickPalette)
-		connect(m_quickPalette, &QQuickColorGroup::changed, this, &PaintedItem::propertyChanged, Qt::UniqueConnection);
+		connect(m_quickPalette, &QQuickColorGroup::changed, this, &PaintedItem::paletteChanged, Qt::UniqueConnection);
 }
 
 QPalette
@@ -187,7 +188,7 @@ PaintedItem::itemChange(QQuickItem::ItemChange change, const QQuickItem::ItemCha
 	case ItemAntialiasingHasChanged:
 	case ItemDevicePixelRatioHasChanged:
 	case ItemSceneChange:
-	    Q_EMIT propertyChanged();
+	    requestRepaint();
 		break;
 	default:
 		break;
@@ -201,7 +202,7 @@ PaintedItem::geometryChange(const QRectF &newGeometry, const QRectF &oldGeometry
 
 	// We only need to repaint the image if the geometry size changes ...
 	if (newGeometry.size() != oldGeometry.size())
-		Q_EMIT propertyChanged();
+	    requestRepaint();
 	// ... however, we will need to update the paint node if
 	// position changes, since our HiDPI corrections depend on position
 	else if (newGeometry.topLeft() != oldGeometry.topLeft())

@@ -32,10 +32,18 @@ public:
 	explicit PaintedItem(QQuickItem *parent = nullptr);
 	
 Q_SIGNALS:
-	// Signal emitted whenever an internal property (both exposed and hidden from QML, such as
-	// state flags, or palette, or active QStyle) is changed. By default, this signal is connected
-	// to requestRepaint().
+	// Signal emitted whenever a QML-facing property (that can be set by the user) is
+	// changed. Internal and read-only Q_PROPERTYs should *not* use this signal!!!
 	void propertyChanged();
+
+	// The internal QStyle has changed and a redraw is necessary. This signal can also
+	// be emitted when internal & read-only properties which depend on the QStyle
+	// have changed (e.g. values tied to a QStyle's pixelMetric(...)).
+	void styleChanged();
+
+	// The palette has changed. Shouldn't really be attached to anything other
+	// than the QPalette
+	void paletteChanged();
 	
 protected:
 	// Getter for the active QStyle. Whilst we do guard against it prior to painting
@@ -80,11 +88,8 @@ protected Q_SLOTS:
 	void requestRepaint() {if (isComponentComplete()) polish();}
 	
 private:
-	// Loads the current QStyle
-	void loadStyle();
-
-	// Loads the QML objects QQuickPalette
-	void loadPalette();
+	// Loads the QML object's QQuickPalette
+	void loadPalette();	
 	
 	// Function used for painting to the QQuickItem. This function must be implemented
 	// by subclasses, and must *never* be called directly outside of updatePolish(),
@@ -104,5 +109,6 @@ private:
 	bool m_sunken = false;	
 
 private Q_SLOTS:
-	void styleChanged();
+	// Loads the current QStyle
+	void loadStyle();
 };

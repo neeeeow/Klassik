@@ -12,7 +12,7 @@
     </entry>
     <entry name="showGenericName" type="Bool">
       <label>Detailed menu entries</label>
-      <default>true</default>
+      <default>false</default>
     </entry>
   </group>
 

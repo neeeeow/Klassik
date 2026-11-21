@@ -12,12 +12,13 @@ target_link_libraries(klassik_painteditem PUBLIC
     Qt::QuickPrivate
 )
 
-# The other painted items which get exposed to QML
+# The other generic painted items which get exposed to QML
 add_library(com.github.neeeeow.klassik.painteditems SHARED
     styledarrow.h
     styledframe.h
     styledtoolbarhandle.h
     styledtoolbutton.h
+    styledfocusrect.h
 )
 target_link_libraries(com.github.neeeeow.klassik.painteditems PRIVATE
     klassik_painteditem
