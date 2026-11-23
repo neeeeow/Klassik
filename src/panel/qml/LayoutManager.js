@@ -82,12 +82,12 @@ function childAtCoordinates(x, y) {
         if (root.isHorizontal) {
             // Only yields incorrect results for widgets smaller than the
             // row/column spacing, which is luckily fairly unrealistic
-            x -= Math.max(1, layout.rowSpacing); // now that we set spacing to 0, add this to ensure x,y do get decremented
+            x -= Math.max(1, layout.columnSpacing); // now that we set spacing to 0, add this to ensure x,y do get decremented
         } else {
-            y -= Math.max(1, layout.columnSpacing);
+            y -= Math.max(1, layout.rowSpacing);
         }
         if (x < 0 || y < 0) {
-            return 0;
+            return null;
         }
         child = layout.childAt(x, y);
     }
@@ -95,18 +95,20 @@ function childAtCoordinates(x, y) {
 }
 
 function indexAtCoordinates(x, y) {
-    let child = childAtCoordinates(x, y)
-    if ((!root.isHorizontal && y < child.y + child.height/2) ||
-        (root.isHorizontal && x < child.x + child.width/2)) {
-        return child.index;
-    } else {
-        return child.index+1;
-    }
+    const child = childAtCoordinates(x, y);
+    if (!child)
+        return 0;
+    const idx = ((!root.isHorizontal && y < child.y + child.height / 2) ||
+    (root.isHorizontal && x < child.x + child.width / 2))
+                ? child.index
+                : child.index + 1;
+    return Math.min(idx, appletsModel.count);
 }
 
 function move(applet, end) {
-    var start = applet.index
-    var target = end - (start < end)
-    if (start == target) return;
-    appletsModel.move(start, target, 1)
+    const start = applet.index;
+    const target = Math.max(0, Math.min(end - (start < end ? 1 : 0), appletsModel.count - 1));
+    if (start === target)
+        return;
+    appletsModel.move(start, target, 1);
 }

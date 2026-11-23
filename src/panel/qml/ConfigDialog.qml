@@ -1,8 +1,9 @@
 /*
- *  SPDX-FileCopyrightText: 2026 neeeeow <https://github.com/neeeeow>
- *
- *  SPDX-License-Identifier: GPL-3.0-or-later
+    SPDX-FileCopyrightText: 2026 neeeeow <https://github.com/neeeeow>
+
+    SPDX-License-Identifier: GPL-3.0-or-later
  */
+pragma ComponentBehavior: Bound
 
 import QtQuick
 import QtQuick.Layouts
@@ -22,7 +23,11 @@ Window {
 
     property url customBackgroundUrl
 
-    function save() {
+    function save(): void {
+        if (Plasmoid.immutable)
+            // Don't save if the panel is immutable!
+            return;
+
         Plasmoid.configuration.drawFrame = drawFrame.checked;
         Plasmoid.configuration.showAppletHandle = showAppletHandle.checked;
         Plasmoid.configuration.colorize = colorize.checked;
@@ -101,7 +106,6 @@ Window {
                 }
 
                 Button {
-                    id: setBackground
                     onClicked: backgroundDialog.open()
                     Layout.preferredWidth: 48
                     Layout.preferredHeight: 48
@@ -109,14 +113,12 @@ Window {
                     Layout.maximumHeight: 48
 
                     contentItem: Image {
-                        id: backgroundPreview
                         source: root.customBackgroundUrl
                         fillMode: Image.PreserveAspectFit
                     }
                 }
 
                 TextField {
-                    id: imageUrl
                     readOnly: true
                     Layout.fillWidth: true
                     text: root.customBackgroundUrl.toString()
@@ -129,6 +131,11 @@ Window {
             Layout.fillWidth: true
             Layout.alignment: Qt.AlignBottom
             standardButtons: DialogButtonBox.Ok | DialogButtonBox.Apply | DialogButtonBox.Cancel
+            Component.onCompleted: {
+                // Disable the OK/Apply buttons if the panel is immutable (thus preventing saving)
+                standardButton(DialogButtonBox.Ok).enabled = Qt.binding(() => !Plasmoid.immutable)
+                standardButton(DialogButtonBox.Apply).enabled = Qt.binding(() => !Plasmoid.immutable)
+            }
 
             onAccepted: {
                 root.save()

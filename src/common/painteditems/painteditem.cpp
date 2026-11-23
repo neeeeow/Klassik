@@ -55,6 +55,7 @@ PaintedItem::loadPalette()
     m_quickPalette = qvariant_cast<QQuickPalette *>(property("palette"));
 	if (m_quickPalette)
 		connect(m_quickPalette, &QQuickColorGroup::changed, this, &PaintedItem::paletteChanged, Qt::UniqueConnection);
+	Q_EMIT paletteChanged();
 }
 
 QPalette

@@ -10,6 +10,7 @@
 
 class RemovePanelMenu final : public PanelMenu
 {
+	/* Menu which allows the user to remove other panels on the desktop */
 	Q_OBJECT
 public:
 	explicit RemovePanelMenu(Plasma::Containment *containment, QWidget *parent = nullptr);

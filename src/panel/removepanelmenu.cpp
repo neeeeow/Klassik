@@ -16,8 +16,9 @@ RemovePanelMenu::RemovePanelMenu(Plasma::Containment *containment, QWidget *pare
 				i18n("Remove Panel"), containment, parent)
 {
 	if (containment) {
+		connect(containment, &Plasma::Applet::immutabilityChanged, this, &PanelMenu::reinitialize);
 		if (const auto corona = containment->corona())
-			connect(corona, &Plasma::Corona::containmentAdded, this, &PanelMenu::reinitialize);
+			connect(corona, &Plasma::Corona::containmentAdded, this, &PanelMenu::reinitialize);		
 	}
 }
 
@@ -38,16 +39,19 @@ RemovePanelMenu::initialize()
 		return;
 
 	for (Plasma::Containment *c : corona->containments()) {
-		if (!c || c->destroyed() || c == containment)
+		if (!c || c == containment)
 			// We want to skip this containment when populating our list
 			continue;
 
 		const auto type = c->containmentType();
 		if (type == Plasma::Containment::Panel || type == Plasma::Containment::CustomPanel) {
 			// We need to reinitialize the panel if the containment is deleted
+			connect(c, &QObject::destroyed, this, &PanelMenu::reinitialize, Qt::UniqueConnection);
 			connect(c, &Plasma::Applet::destroyedChanged, this, &PanelMenu::reinitialize, Qt::UniqueConnection);
-			
-			m_panels.append(c);
+
+			if (!c->destroyed())
+				// Don't add destroyed panels to our list!
+				m_panels.append(c);		   			
 		}
 	}
 }
@@ -55,10 +59,12 @@ RemovePanelMenu::initialize()
 void
 RemovePanelMenu::populate()
 {
-	if (!mayAddItem(AddToTarget::Panel))
+	if (!mayAddItem(AddToTarget::Panel)) {
+		menuAction()->setEnabled(false);
 		return;
+	}
 	
-	for (QPointer<Plasma::Containment> panel : m_panels) {
+	for (const QPointer<Plasma::Containment> &panel : std::as_const(m_panels)) {
 		if (!panel || panel->destroyed())
 			continue;
 
@@ -94,7 +100,7 @@ RemovePanelMenu::populate()
 void
 RemovePanelMenu::removePanel(Plasma::Containment *panel) const
 {
-	if (!panel || panel->immutable())
+	if (!panel || panel->immutable() || panel->destroyed())
 		return;
 
 	const auto type = panel->containmentType();

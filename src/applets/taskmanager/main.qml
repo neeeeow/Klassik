@@ -310,7 +310,7 @@ PlasmoidItem {
         }
     }
 
-    function createContextMenu(rootTask, modelIndex) {
+    function createContextMenu(rootTask, modelIndex): void {
         const isGroup = tasksModel.data(modelIndex, TaskManager.AbstractTasksModel.IsGroupParent);
         const component = isGroup ? groupContextMenuComponent : contextMenuComponent;
         return component.createObject(rootTask, {
@@ -319,11 +319,11 @@ PlasmoidItem {
         });
     }
 
-    function createGroupMenu(rootTask, modelIndex) {
+    function createGroupMenu(rootTask, modelIndex): void {
         return groupMenuComponent.createObject(rootTask, {
             visualParent: rootTask,
             modelIndex,
-        });
+        }) as GroupMenu;
     }
 
     function shouldBeMirrored(reverseMode, layoutDirection, vertical): bool {

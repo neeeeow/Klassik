@@ -17,8 +17,13 @@ RemoveAppletMenu::RemoveAppletMenu(Plasma::Containment *containment, QWidget *pa
 	: PanelMenu(QIcon::fromTheme(QStringLiteral("list-remove")),
 				i18n("Remove From Panel"), containment, parent)
 {
-	if (containment)
+	if (containment) {
 		connect(containment, &Plasma::Containment::appletsChanged, this, &PanelMenu::reinitialize);
+
+		// Our QML contextmenu avoids displaying this menu if the panel is immutable, however
+		// we should guard against it here just in case something in QML breaks.
+		connect(containment, &Plasma::Applet::immutabilityChanged, this, &PanelMenu::reinitialize);
+	}
 }
 
 void
@@ -36,7 +41,14 @@ RemoveAppletMenu::initialize()
 
 	const QList<Plasma::Applet *> allApplets = containment->applets();
 	for (auto *applet : allApplets) {
-		if (!applet || applet->destroyed())
+		if (!applet)
+			continue;
+
+		// Avoid populating destroyed applets in to our list. Technically not needed since populateSubmenu() will
+		// skip destroyed applet, but it's a good measure anyways!
+		connect(applet, &Plasma::Applet::destroyedChanged, this, &PanelMenu::reinitialize, Qt::UniqueConnection);
+
+		if (applet->destroyed())
 			continue;
 		
 		// Icons get added to the icon list, applets get added to the applet list
@@ -52,8 +64,10 @@ RemoveAppletMenu::initialize()
 void
 RemoveAppletMenu::populate()
 {
-	if (!mayAddItem(AddToTarget::Panel))
+	if (!mayAddItem(AddToTarget::Panel)) {
+		menuAction()->setEnabled(false);
 		return;
+	}
 	
 	// First create the submenus (which always appear!). Here we use regular QMenus
 	QMenu *appletMenu = addMenu(i18n("Applet"));
@@ -69,6 +83,8 @@ RemoveAppletMenu::populate()
 		iconMenu->menuAction()->setEnabled(false);
 	else	
 		populateSubMenu(iconMenu, m_icons);
+
+    menuAction()->setEnabled(appletMenu->menuAction()->isEnabled() || iconMenu->menuAction()->isEnabled());
 }
 
 void
@@ -77,7 +93,10 @@ RemoveAppletMenu::populateSubMenu(QMenu *menu, const QList<QPointer<Plasma::Appl
 	if (!menu)
 		return;
 
-	for (QPointer<Plasma::Applet> applet : appletList) {
+	for (const QPointer<Plasma::Applet> &applet : appletList) {
+		// We must check if the applet has been destroyed, as when an applet is deletd, there
+		// is the undo grace period, where the applet is marked as destroyed (and musn't be displayed)
+		// in the panel, but appletsChanged hasn't fired yet.
 		if (!applet || applet->destroyed())
 			continue;
 		QAction *action = menu->addAction(QIcon::fromTheme(applet->icon()), escapeMnemonics(applet->title()));
@@ -87,7 +106,10 @@ RemoveAppletMenu::populateSubMenu(QMenu *menu, const QList<QPointer<Plasma::Appl
 	}
 
 	// Provide the option to delete *all* applets in the list.
-	if (!menu->isEmpty())
+	if (menu->isEmpty()) {
+		menu->menuAction()->setEnabled(false);
+		return;
+	} else
 		menu->addSeparator();
 	QAction *removeAllAction = menu->addAction(i18n("All"));
 	connect(removeAllAction, &QAction::triggered, this, [this, appletList] {
@@ -98,7 +120,7 @@ RemoveAppletMenu::populateSubMenu(QMenu *menu, const QList<QPointer<Plasma::Appl
 void
 RemoveAppletMenu::removeApplet(Plasma::Applet *applet) const
 {
-	if (!applet || applet->immutable())
+	if (!applet || applet->immutable() || applet->destroyed())
 		return;
 
 	if (QAction *removeAction = applet->internalAction(QStringLiteral("remove")))
@@ -114,7 +136,7 @@ RemoveAppletMenu::removeAllApplets(const QList<QPointer<Plasma::Applet>> &applet
 		return;
 
 	bool removedAny = false;
-	for (Plasma::Applet *applet : appletList) {
+	for (const QPointer<Plasma::Applet> &applet : appletList) {
 		if (applet && !applet->destroyed()) {
 			applet->destroy();
 			removedAny = true;

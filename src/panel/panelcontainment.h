@@ -8,8 +8,6 @@
 
 #include <Plasma/Containment>
 
-#include <QPalette>
-
 #include <QtQuick/private/qquickpalette_p.h>
 
 class QMimeData;
@@ -33,7 +31,8 @@ public:
 	// Returns true if it performed an action. If false, call ContainmentItem's processMimeData
 	Q_INVOKABLE bool processMimeData(QMimeData *mimeData, int x, int y);
 
-	QList<QAction *> contextualActions() override;
+	// Returns all of the contextual actions (both created in C++ and QML) for a given applet.
+	Q_INVOKABLE static QList<QAction *> allContextualActions(Plasma::Applet *applet);
 
 public Q_SLOTS:
 	void init() override;
@@ -46,21 +45,11 @@ private:
 	// Tints a given QColor according to the selection color
 	static QColor tintColor(const QColor &base);
 
-	// Generate our custom contextual actions
-	QList<QAction *> customActions();
+	// Creates the containment's internal actions
+	void createInternalActions();
 
-	// Makes a QAction's visibility depend on the containment's immutability.
-	void connectImmutabilitySlot(QAction *action);
-
-	// Forces a given QAction to *always* be invisible (used to hide default
-	// panel internal actions).
-	void forceHidden(QAction *action);
-
-	QPointer<QQuickPalette> m_quickPalette = nullptr;
+    QQuickPalette *m_quickPalette = nullptr;
 	bool m_colorize = false;
-
-	// Contextual actions
-	QList<QAction *> m_actions;
 
 private Q_SLOTS:
 	// Loads and colorizes the active QPalette in to our QQuickPalette pointer

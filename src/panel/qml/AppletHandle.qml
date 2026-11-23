@@ -18,19 +18,14 @@ Item {
     id: root
 
     required property ContainmentItem panel
-    required property Item applet
+    required property PlasmoidItem applet // dndspacer will never have a handle, so use PlasmoidItem here.
 
-    readonly property bool isHorizontal: panel.isHorizontal
+    readonly property bool isHorizontal: Plasmoid.formFactor !== PlasmaCore.Types.Vertical
     readonly property int handleExtent: grabHandle.handleExtent
 
     signal dragStarted()
     signal dragMoved(Item handle, real mouseX, real mouseY)
     signal dragFinished()
-
-    Component { id: menuComponent;     PlasmaExtras.Menu {} }
-    Component { id: menuItemComponent; PlasmaExtras.MenuItem {} }
-    function newMenu(parent)     { return menuComponent.createObject(parent) }
-    function newMenuItem(parent) { return menuItemComponent.createObject(parent) }
 
     HoverHandler {
         id: hoverHandler
@@ -44,7 +39,8 @@ Item {
 
         // if the panel is on the bottom or the left, the handle goes first
         readonly property bool reverse: Plasmoid.location === PlasmaCore.Types.BottomEdge || Plasmoid.location === PlasmaCore.Types.RightEdge
-        readonly property bool isMenuOpen: appletMenu.status === PlasmaExtras.Menu.Open
+        property ContextMenu contextMenu: null
+        readonly property bool isMenuOpen: contextMenu?.status === PlasmaExtras.Menu.Open
 
         visible: Plasmoid.configuration.showAppletHandle || hoverHandler.hovered || grabHandle.pressed || isMenuOpen
 
@@ -77,42 +73,12 @@ Item {
                 }
             }
 
-            onClicked: appletMenu.show()
-
-            PlasmaExtras.Menu {
-                id: appletMenu
-                function show(): void {
-                    populateMenu();
-                    open();
-                }
-                function populateMenu(): void {
-                    clearMenuItems();
-
-                    // Applet actions
-                    root.applet.prepareContextualActions();
-                    const actions = root.applet.Plasmoid.contextualActions;
-                    for (let i = 0; i < actions.length; ++i) {
-                        const item = root.newMenuItem(appletMenu);
-                        item.action = actions[i];
-                    }
-
-                    // Panel menu
-                    root.panel.prepareContextualActions();
-                    const panelActions = Plasmoid.contextualActions;
-                    if (panelActions.length > 0) {
-                        const separator = root.newMenuItem(appletMenu);
-                        separator.separator = true;
-
-                        const panelMenuItem = root.newMenuItem(appletMenu);
-                        panelMenuItem.text = i18n("Panel Menu");
-
-                        const panelMenu = root.newMenu(panelMenuItem);
-                        for (let j = 0; j < panelActions.length; ++j) {
-                            const item = root.newMenuItem(panelMenu);
-                            item.action = panelActions[j];
-                        }
-                        panelMenu.visualParent = panelMenuItem.action;
-                    }
+            onClicked: {
+                if (appletHandle.isMenuOpen)
+                    appletHandle.contextMenu.close();
+                else {
+                    appletHandle.contextMenu?.destroy(); // just in case we have a context menu instance
+                    appletHandle.contextMenu = root.panel.openContextMenu(root.applet, menuButton);
                 }
             }
         }

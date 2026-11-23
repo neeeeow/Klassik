@@ -34,15 +34,17 @@ ContainmentItem {
     }
     Layout.fillHeight: Layout.fillWidth
 
-    property bool isHorizontal: Plasmoid.formFactor !== PlasmaCore.Types.Vertical
-    property int fixedWidth: 0
-    property int fixedHeight: 0
-    property bool hasSpacer
+    readonly property bool isHorizontal: Plasmoid.formFactor !== PlasmaCore.Types.Vertical
+    property real fixedWidth: 0
+    property real fixedHeight: 0
+    property bool hasSpacer: false
 
     readonly property int panelMargin: 2
 
     property bool appletRequestsInhibitDnD: false
     property Item dndSpacer: null
+
+    readonly property Component contextMenuComponent: Qt.createComponent("ContextMenu.qml")
 
     Binding {
         target: root.Plasmoid
@@ -53,7 +55,7 @@ ContainmentItem {
 //END properties
 
 //BEGIN functions
-    function checkLastSpacer() {
+    function checkLastSpacer(): void {
         for (var i = 0; i < appletsModel.count; ++i) {
             const applet = appletsModel.get(i).applet;
             if (!applet || !applet.visible || !applet.Layout) {
@@ -68,7 +70,7 @@ ContainmentItem {
         hasSpacer = false;
     }
 
-    function showDndSpacer(x, y) {
+    function showDndSpacer(x, y): void {
         if (dndSpacer) {
             return; // already showing, so don't show any others
         }
@@ -79,7 +81,7 @@ ContainmentItem {
         appletsModel.insert(LayoutManager.indexAtCoordinates(x, y), {applet: dndSpacer});
     }
 
-    function hideDndSpacer() {
+    function hideDndSpacer(): void {
         if (!dndSpacer) {
             return;
         }
@@ -90,6 +92,16 @@ ContainmentItem {
         }
         dndSpacer.destroy();
         dndSpacer = null;
+    }
+    function openContextMenu(applet: PlasmoidItem, visualParent: Item, x = undefined, y = undefined): ContextMenu {
+        const menu = contextMenuComponent.createObject(visualParent, {
+            panel: root,
+            applet: applet,
+            visualParent: visualParent,
+        }) as ContextMenu;
+        if (menu)
+            menu.show(x, y);
+        return menu;
     }
 //END functions
 
@@ -123,7 +135,11 @@ ContainmentItem {
 
     Plasmoid.onUserConfiguringChanged: {
         if (Plasmoid.userConfiguring) {
-            Containment.applets.forEach(applet => applet.expanded = false);
+            Containment.applets.forEach(applet => {
+                const item = root.itemFor(applet);
+                if (item)
+                    item.expanded = false;
+            });
         }
     }
 
@@ -131,14 +147,19 @@ ContainmentItem {
         // Kill off any active moves if the panel becomes immutable mid drag.
         // Can't imagine how this can happen, but better to be safe.
         if (Plasmoid.immutable) {
-            cursorOverlay.visible = false;
+            if (cursorOverlay.visible) {
+                cursorOverlay.visible = false;
+                LayoutManager.save();
+            }
             if (globalMove.visible)
                 globalMove.finishDrag();
+            hideDndSpacer();
+            fixedWidth = fixedHeight = 0;
         }
     }
 
     Connections {
-        target: Plasmoid.internalAction("klassikConfig")
+        target: Plasmoid.internalAction("configure klassik")
         function onTriggered(): void {
             configDialog.show()
             configDialog.requestActivate()
@@ -178,247 +199,239 @@ ContainmentItem {
             }
         }
 
-        StyledFrame {
+        Loader {
             anchors.fill: parent
-            visible: Plasmoid.configuration.drawFrame
-            lineWidth: root.panelMargin
+            active: Plasmoid.configuration.drawFrame
+            sourceComponent: StyledFrame { lineWidth: root.panelMargin }
         }
     }
 
 //END background
 
-    DragDrop.DropArea {
-        id: dropArea
+    MouseArea {
+        // This area will swallow up contextmenu requests, allowing us to use our custom contextmenu
+        id: contextMenuArea
+        anchors.fill: parent
+        acceptedButtons: Qt.RightButton
 
-        Component.onCompleted: {
-            LayoutManager.root = root;
-            LayoutManager.layout = currentLayout;
-            LayoutManager.appletsModel = appletsModel;
-            LayoutManager.restore();
+        onPressed: mouse => {
+            const pos = mapToItem(currentLayout, mouse.x, mouse.y);
+            const child = currentLayout.childAt(pos.x, pos.y);
+            const clickedApplet = (child && child.applet && child.applet !== root.dndSpacer)
+            ? child.applet
+            : null;
+
+            root.openContextMenu(clickedApplet, contextMenuArea, mouse.x, mouse.y);
         }
 
-        onDragEnter: event => {
-            if (Plasmoid.immutable || root.appletRequestsInhibitDnD) {
-                event.ignore();
-                return;
+        DragDrop.DropArea {
+            id: dropArea
+
+            Component.onCompleted: {
+                LayoutManager.root = root;
+                LayoutManager.layout = currentLayout;
+                LayoutManager.appletsModel = appletsModel;
+                LayoutManager.restore();
             }
-            //during drag operations we disable panel auto resize
-            root.fixedWidth = root.Layout.preferredWidth;
-            root.fixedHeight = root.Layout.preferredHeight;
-            root.showDndSpacer(event.x, event.y);
-        }
 
-        onDragMove: event => {
-            if (Plasmoid.immutable || !root.dndSpacer) return;
-            LayoutManager.move(root.dndSpacer.parent, LayoutManager.indexAtCoordinates(event.x, event.y));
-        }
-
-        onDragLeave: event => {
-            root.hideDndSpacer();
-            root.fixedWidth = root.fixedHeight = 0;
-        }
-
-        onDrop: event => {
-            root.hideDndSpacer();
-            if (Plasmoid.immutable) {
-                event.ignore();
-            } else {
-                if (!Plasmoid.processMimeData(event.mimeData, event.x, event.y))
-                    root.processMimeData(event.mimeData, event.x, event.y);
-                event.accept(event.proposedAction);
+            onDragEnter: event => {
+                if (Plasmoid.immutable || root.appletRequestsInhibitDnD) {
+                    event.ignore();
+                    return;
+                }
+                //during drag operations we disable panel auto resize
+                root.fixedWidth = root.Layout.preferredWidth;
+                root.fixedHeight = root.Layout.preferredHeight;
+                root.showDndSpacer(event.x, event.y);
             }
-            root.fixedWidth = root.fixedHeight = 0;
-        }
+
+            onDragMove: event => {
+                if (Plasmoid.immutable || !root.dndSpacer) return;
+                LayoutManager.move(root.dndSpacer.parent, LayoutManager.indexAtCoordinates(event.x, event.y));
+            }
+
+            onDragLeave: event => {
+                root.hideDndSpacer();
+                root.fixedWidth = root.fixedHeight = 0;
+            }
+
+            onDrop: event => {
+                root.hideDndSpacer();
+                if (Plasmoid.immutable) {
+                    event.ignore();
+                } else {
+                    if (!Plasmoid.processMimeData(event.mimeData, event.x, event.y))
+                        root.processMimeData(event.mimeData, event.x, event.y);
+                    event.accept(event.proposedAction);
+                }
+                root.fixedWidth = root.fixedHeight = 0;
+            }
 
 //BEGIN components
-        Component {
-            id: appletContainerComponent
-            Item {
-                id: container
+            Component {
+                id: appletContainerComponent
+                Item {
+                    id: container
 
-                palette: Plasmoid.palette
+                    palette: Plasmoid.palette
 
-                required property Item applet
-                required property int index
-                visible: applet?.Plasmoid?.status !== PlasmaCore.Types.HiddenStatus || (!Plasmoid.immutable && Plasmoid.userConfiguring) || Containment.corona.editMode;
+                    required property Item applet
+                    required property int index
+                    visible: applet?.Plasmoid?.status !== PlasmaCore.Types.HiddenStatus || (!Plasmoid.immutable && Plasmoid.userConfiguring) || (Containment.corona?.editMode ?? false);
 
-                readonly property bool wantsToFillWidth: applet?.Layout.fillWidth ?? false
-                readonly property bool wantsToFillHeight: applet?.Layout.fillHeight ?? false
+                    readonly property bool wantsToFillWidth: applet?.Layout.fillWidth ?? false
+                    readonly property bool wantsToFillHeight: applet?.Layout.fillHeight ?? false
 
-                readonly property real availWidth: root.width - Layout.leftMargin - Layout.rightMargin
-                readonly property real availHeight: root.height - Layout.topMargin - Layout.bottomMargin
+                    readonly property real availWidth: root.width - Layout.leftMargin - Layout.rightMargin
+                    readonly property real availHeight: root.height - Layout.topMargin - Layout.bottomMargin
 
-                readonly property real margin:
-                    applet?.Plasmoid && !(applet.Plasmoid.constraintHints & Plasmoid.CanFillArea) ? root.panelMargin : 0
+                    readonly property real margin:
+                        applet?.Plasmoid && !(applet.Plasmoid.constraintHints & Plasmoid.CanFillArea) ? root.panelMargin : 0
 
-                Layout.topMargin:    root.isHorizontal ? margin : 0
-                Layout.bottomMargin: root.isHorizontal ? margin : 0
-                Layout.leftMargin:   root.isHorizontal ? 0 : margin
-                Layout.rightMargin:  root.isHorizontal ? 0 : margin
+                    Layout.topMargin:    root.isHorizontal ? margin : 0
+                    Layout.bottomMargin: root.isHorizontal ? margin : 0
+                    Layout.leftMargin:   root.isHorizontal ? 0 : margin
+                    Layout.rightMargin:  root.isHorizontal ? 0 : margin
 
-                // Always fill width/height, in order to still shrink the applet when there is not enough space.
-                // When the applet doesn't want to expand set a Layout.maximumWidth accordingly
-                // https://bugs.kde.org/show_bug.cgi?id=473420
-                Layout.fillWidth: true
-                Layout.fillHeight: true
+                    // Always fill width/height, in order to still shrink the applet when there is not enough space.
+                    // When the applet doesn't want to expand set a Layout.maximumWidth accordingly
+                    // https://bugs.kde.org/show_bug.cgi?id=473420
+                    Layout.fillWidth: true
+                    Layout.fillHeight: true
 
-                onWantsToFillWidthChanged: root.checkLastSpacer()
-                onWantsToFillHeightChanged: root.checkLastSpacer()
+                    onWantsToFillWidthChanged: root.checkLastSpacer()
+                    onWantsToFillHeightChanged: root.checkLastSpacer()
 
-                function findPositive(first, second) {return first > 0 ? first : second}
+                    function findPositive(first, second) {return first > 0 ? first : second}
 
-                // Handle geometry
-                readonly property bool showHandle: !Plasmoid.immutable
-                                                && applet !== root.dndSpacer
-                                                && applet?.Plasmoid?.metaData?.category !== "Application Launchers"
-                                                && applet?.Plasmoid?.pluginName !== "org.kde.plasma.icon"
-                                                && applet?.Plasmoid?.pluginName !== "com.github.neeeeow.klassik.panel.icon"
-                readonly property int handleExtent: handleLoader.item?.handleExtent ?? 0
+                    // Handle geometry
+                    readonly property bool showHandle: !Plasmoid.immutable
+                                                    && applet !== null
+                                                    && applet !== root.dndSpacer
+                                                    && applet?.Plasmoid?.metaData?.category !== "Application Launchers"
+                                                    && applet?.Plasmoid?.pluginName !== "org.kde.plasma.icon"
+                                                    && applet?.Plasmoid?.pluginName !== "com.github.neeeeow.klassik.panel.icon"
+                    readonly property int handleExtent: (handleLoader.item as AppletHandle)?.handleExtent ?? 0
 
-                // Compute applet geometry
-                readonly property real appletMinW: findPositive(applet?.Layout.minimumWidth, availHeight)
-                readonly property real appletMinH: findPositive(applet?.Layout.minimumHeight, availWidth)
-                readonly property real appletPrefW: findPositive(applet?.Layout.preferredWidth, appletMinW)
-                readonly property real appletPrefH: findPositive(applet?.Layout.preferredHeight, appletMinH)
-                Layout.minimumWidth: root.isHorizontal ? appletMinW + handleExtent : availWidth
-                Layout.minimumHeight: !root.isHorizontal ? appletMinH + handleExtent : availHeight
-                Layout.preferredWidth: root.isHorizontal ? appletPrefW + handleExtent : availWidth
-                Layout.preferredHeight: !root.isHorizontal ? appletPrefH + handleExtent : availHeight
-                Layout.maximumWidth: root.isHorizontal ? (wantsToFillWidth ? findPositive(applet?.Layout.maximumWidth, root.width) : Math.min(applet?.Layout.maximumWidth, appletPrefW)) + handleExtent : availWidth
-                Layout.maximumHeight: !root.isHorizontal ? (wantsToFillHeight ? findPositive(applet?.Layout.maximumHeight, root.height) : Math.min(applet?.Layout.maximumHeight, appletPrefH)) + handleExtent : availHeight
+                    // Compute applet geometry
+                    readonly property real appletMinW: findPositive(applet?.Layout.minimumWidth, availHeight)
+                    readonly property real appletMinH: findPositive(applet?.Layout.minimumHeight, availWidth)
+                    readonly property real appletPrefW: findPositive(applet?.Layout.preferredWidth, appletMinW)
+                    readonly property real appletPrefH: findPositive(applet?.Layout.preferredHeight, appletMinH)
+                    Layout.minimumWidth: root.isHorizontal ? appletMinW + handleExtent : availWidth
+                    Layout.minimumHeight: !root.isHorizontal ? appletMinH + handleExtent : availHeight
+                    Layout.preferredWidth: root.isHorizontal ? appletPrefW + handleExtent : availWidth
+                    Layout.preferredHeight: !root.isHorizontal ? appletPrefH + handleExtent : availHeight
+                    Layout.maximumWidth: root.isHorizontal ? (wantsToFillWidth ? findPositive(applet?.Layout.maximumWidth, root.width) : Math.min(applet?.Layout.maximumWidth, appletPrefW)) + handleExtent : availWidth
+                    Layout.maximumHeight: !root.isHorizontal ? (wantsToFillHeight ? findPositive(applet?.Layout.maximumHeight, root.height) : Math.min(applet?.Layout.maximumHeight, appletPrefH)) + handleExtent : availHeight
 
-                Loader {
-                    id: handleLoader
-                    active: container.showHandle
-                    width: root.isHorizontal ? container.handleExtent : container.width
-                    height: root.isHorizontal ? container.height : container.handleExtent
-                    anchors.top: parent.top
-                    anchors.left: parent.left
+                    Loader {
+                        id: handleLoader
+                        active: container.showHandle
+                        width: root.isHorizontal ? container.handleExtent : container.width
+                        height: root.isHorizontal ? container.height : container.handleExtent
+                        anchors.top: parent.top
+                        anchors.left: parent.left
 
-                    sourceComponent: AppletHandle {
-                        anchors.fill: parent
-                        panel: root
-                        applet: container.applet
+                        sourceComponent: AppletHandle {
+                            anchors.fill: parent
+                            panel: root
+                            applet: container.applet as PlasmoidItem
 
-                        onDragStarted: cursorOverlay.visible = true
-                        onDragMoved: (handle, mouseX, mouseY) => {
-                            const globalPos = handle.mapToItem(currentLayout, mouseX, mouseY);
-                            const targetIndex = LayoutManager.indexAtCoordinates(globalPos.x, globalPos.y);
-                            LayoutManager.move(container, targetIndex);
-                        }
-                        onDragFinished: {
-                            cursorOverlay.visible = false;
-                            LayoutManager.save();
-                        }
-                    }
-                }
-
-                // Custom move action
-                PlasmaCore.Action {
-                    id: contextMenuMoveAction
-                    text: i18n("Move %1", applet?.Plasmoid?.title ?? "")
-                    icon.name: "transform-move"
-                    enabled: !Plasmoid.immutable // only allow the applet to be moved if the panel isn't immutable
-                    visible: enabled
-                    onTriggered: globalMove.startDrag(container)
-                }
-                PlasmaCore.Action {
-                    id: separatorAction
-                    isSeparator: true
-                }
-
-                onAppletChanged: {
-                    if (applet) {
-                        applet.parent = container;
-                        applet.anchors.fill = container;
-                        applet.anchors.leftMargin = Qt.binding(() => root.isHorizontal ? container.handleExtent : 0);
-                        applet.anchors.topMargin  = Qt.binding(() => root.isHorizontal ? 0 : container.handleExtent);
-
-                        // Add our custom move action to the applet's internal actions
-                        if (applet !== root.dndSpacer) {
-                            applet.Plasmoid.setInternalAction("move", contextMenuMoveAction);
-                        }
-                    } else {
-                        appletsModel.remove(index);
-                    }
-                }
-
-                Connections {
-                    target: applet ? applet.Plasmoid : null
-                    function onContextualActionsAboutToShow() {
-                        // When the contextual menu is about to show, we need to append our custom actions. We do this here as
-                        // the number of contextual actions may change. Note, we don't do this for a dndSpacer, it shouldn't
-                        // have any internal actions to begin with
-                        if (applet !== root.dndSpacer) {
-                            if (applet.Plasmoid.contextualActions.length > 0)
-                                applet.Plasmoid.contextualActions.push(separatorAction);
-
-                            // Append all required internal actions to the applet's contextual actions. This allows us to easily
-                            // query the required contextual actions to appletMenu. NB: doing so makes the applet skip adding these
-                            // actions as part of the normal internal action menu population, so actions do *not* get added twice.
-                            for (const name of ["move", "remove", "configure", "alternatives"]) {
-                                const action = applet.Plasmoid.internalAction(name);
-                                if (action && action.enabled && action.visible)
-                                    applet.Plasmoid.contextualActions.push(action);
+                            onDragStarted: cursorOverlay.visible = true
+                            onDragMoved: (handle, mouseX, mouseY) => {
+                                const globalPos = handle.mapToItem(currentLayout, mouseX, mouseY);
+                                const targetIndex = LayoutManager.indexAtCoordinates(globalPos.x, globalPos.y);
+                                LayoutManager.move(container, targetIndex);
+                            }
+                            onDragFinished: {
+                                cursorOverlay.visible = false;
+                                LayoutManager.save();
                             }
                         }
                     }
+
+                    // Custom move action
+                    PlasmaCore.Action {
+                        id: contextMenuMoveAction
+                        text: i18n("Move %1", container.applet?.Plasmoid?.title ?? "")
+                        icon.name: "transform-move"
+                        enabled: !Plasmoid.immutable // only allow the applet to be moved if the panel isn't immutable
+                        visible: enabled
+                        onTriggered: globalMove.startDrag(container)
+                    }
+
+                    onAppletChanged: {
+                        if (applet) {
+                            applet.parent = container;
+                            applet.anchors.fill = container;
+                            applet.anchors.leftMargin = Qt.binding(() => root.isHorizontal ? container.handleExtent : 0);
+                            applet.anchors.topMargin  = Qt.binding(() => root.isHorizontal ? 0 : container.handleExtent);
+
+                            // Add our custom move action to the applet's internal actions
+                            if (applet !== root.dndSpacer) {
+                                applet.Plasmoid.setInternalAction("move", contextMenuMoveAction);
+                            }
+                        } else {
+                            appletsModel.remove(index);
+                        }
+                    }
                 }
             }
-        }
 
-        Component {
-            id: dndSpacerComponent
-            StyledFocusRect {}
-        }
+            Component {
+                id: dndSpacerComponent
+                StyledFocusRect {}
+            }
 //END components
 
 //BEGIN UI elements
 
-        anchors {
-            fill: parent
-            leftMargin: root.isHorizontal ? root.panelMargin : 0
-            rightMargin: root.isHorizontal ? root.panelMargin : 0
-            topMargin: root.isHorizontal ? 0 : root.panelMargin
-            bottomMargin: root.isHorizontal ? 0 : root.panelMargin
-        }
-
-        ListModel {
-            id: appletsModel
-        }
-
-        GridLayout {
-            id: currentLayout
-
-            Repeater {
-                model: appletsModel
-                delegate: appletContainerComponent
+            anchors {
+                fill: parent
+                leftMargin: root.isHorizontal ? root.panelMargin : 0
+                rightMargin: root.isHorizontal ? root.panelMargin : 0
+                topMargin: root.isHorizontal ? 0 : root.panelMargin
+                bottomMargin: root.isHorizontal ? 0 : root.panelMargin
             }
 
-            anchors.fill: parent
-            rowSpacing: 0
-            columnSpacing: 0
-
-    // BEGIN BUG 454095: use lastSpacer to left align applets, as implicitWidth is updated too late
-            Item {
-                id: lastSpacer
-                visible: !root.hasSpacer
-                Layout.fillWidth: true
-                Layout.fillHeight: true
-
-                /**
-                * This index will be used when adding a new panel.
-                *
-                * @see LayoutManager.indexAtCoordinates
-                */
-                readonly property alias index: appletsModel.count
+            ListModel {
+                id: appletsModel
             }
-    // END BUG 454095
 
-            rows: root.isHorizontal ? 1 : currentLayout.children.length
-            columns: root.isHorizontal ? currentLayout.children.length : 1
-            flow: root.isHorizontal ? GridLayout.LeftToRight : GridLayout.TopToBottom
-            layoutDirection: Application.layoutDirection
+            GridLayout {
+                id: currentLayout
+
+                Repeater {
+                    model: appletsModel
+                    delegate: appletContainerComponent
+                }
+
+                anchors.fill: parent
+                rowSpacing: 0
+                columnSpacing: 0
+
+        // BEGIN BUG 454095: use lastSpacer to left align applets, as implicitWidth is updated too late
+                Item {
+                    id: lastSpacer
+                    visible: !root.hasSpacer
+                    Layout.fillWidth: true
+                    Layout.fillHeight: true
+
+                    /**
+                    * This index will be used when adding a new panel.
+                    *
+                    * @see LayoutManager.indexAtCoordinates
+                    */
+                    readonly property alias index: appletsModel.count
+                }
+        // END BUG 454095
+
+                rows: root.isHorizontal ? 1 : currentLayout.children.length
+                columns: root.isHorizontal ? currentLayout.children.length : 1
+                flow: root.isHorizontal ? GridLayout.LeftToRight : GridLayout.TopToBottom
+                layoutDirection: Application.layoutDirection
+            }
         }
     }
 //END UI elements
@@ -446,14 +459,18 @@ ContainmentItem {
         acceptedButtons: Qt.AllButtons
 
         property Item targetContainer: null // the container which we're dragging
+        onTargetContainerChanged: {
+            if (!targetContainer && visible)
+                finishDrag();
+        }
 
-        function startDrag(containerItem) {
+        function startDrag(containerItem: Item): void {
             if (Plasmoid.immutable) return; // we never want to move things on an immutable panel
             targetContainer = containerItem;
             enabled = true;
             visible = true;
         }
-        function finishDrag() {
+        function finishDrag(): void {
             enabled = false;
             visible = false;
             targetContainer = null;

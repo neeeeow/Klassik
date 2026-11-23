@@ -23,6 +23,9 @@ class PanelBackgroundImage : public PaintedItem
 	Q_PROPERTY(Plasma::Types::Location location MEMBER m_location NOTIFY propertyChanged REQUIRED)
 public:
 	explicit PanelBackgroundImage(QQuickItem *parent = nullptr);
+
+protected:
+	void componentComplete() override;
 	
 private:
 	void paint(QPainter *p) const override;	

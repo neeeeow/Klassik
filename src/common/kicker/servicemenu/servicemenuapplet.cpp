@@ -193,11 +193,7 @@ ServiceMenuApplet::contextualActions()
 	for (auto action : m_actions)
 		action->deleteLater();
 	m_actions.clear();
-
-	m_actions = PanelMenu::contextualActions(m_info, this);
-
-	// Append a separator to separate out contextual actions from the internal actions
-	PanelMenu::appendSeparatorActionToList(m_actions, this);
 	
+	m_actions = PanelMenu::contextualActions(m_info, this);	
 	return m_actions + Applet::contextualActions();
 }

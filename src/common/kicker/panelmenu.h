@@ -74,6 +74,9 @@ public Q_SLOTS:
 
 	// Refreshes the contents of the menu
 	void refreshContents();
+
+	// Forces a refresh of the contents, even if m_fresh was true
+	void forceRefresh() { m_fresh = false; refreshContents(); }
 	
 protected:
 	enum class AddToTarget {

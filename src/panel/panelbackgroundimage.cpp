@@ -14,50 +14,66 @@ PanelBackgroundImage::PanelBackgroundImage(QQuickItem *parent)
 	: PaintedItem(parent)
 {
 	connect(this, &PaintedItem::propertyChanged, this, &PanelBackgroundImage::loadImage);
+	connect(this, &PaintedItem::paletteChanged, this, &PanelBackgroundImage::loadImage);
+}
+
+void
+PanelBackgroundImage::componentComplete()
+{
+	PaintedItem::componentComplete();
+	loadImage();
 }
 
 void
 PanelBackgroundImage::paint(QPainter *p) const
 {
-	if (m_background.isNull() || rect().isEmpty())
+	if (m_background.isNull() || rect().isEmpty() || scaledRect().isEmpty())
 		return;
+
+	const qreal dpr = p->device() ? p->device()->devicePixelRatio() : 1.0;
 
 	QImage backgroundTile;
 	switch (m_location) {
 	case Plasma::Types::LeftEdge: {
 		QTransform transform;
-		transform.rotate(90);			
-		backgroundTile = m_background.transformed(transform).scaledToWidth(rect().width());
+		transform.rotate(90);
+		backgroundTile = m_background.transformed(transform)
+			.scaledToWidth(scaledRect().width(), Qt::SmoothTransformation);
 		break;
 	}
 	case Plasma::Types::TopEdge: {
 		QTransform transform;
-		transform.rotate(180);			
-		backgroundTile = m_background.transformed(transform).scaledToHeight(rect().height());
+		transform.rotate(180);
+		backgroundTile = m_background.transformed(transform)
+			.scaledToHeight(scaledRect().height(), Qt::SmoothTransformation);
 		break;
 	}
 	case Plasma::Types::RightEdge: {
 		QTransform transform;
-		transform.rotate(270);			
-		backgroundTile = m_background.transformed(transform).scaledToWidth(rect().width());
+		transform.rotate(270);
+		backgroundTile = m_background.transformed(transform)
+			.scaledToWidth(scaledRect().width(), Qt::SmoothTransformation);
 		break;
 	}
-	default: {
-		backgroundTile = m_background.scaledToHeight(rect().height());
+	default:
+		backgroundTile = m_background.scaledToHeight(scaledRect().height(), Qt::SmoothTransformation);
 		break;
 	}
-	}
-	
+
+	backgroundTile.setDevicePixelRatio(dpr);
+
 	p->save();
 	p->setBrush(QBrush(backgroundTile));
 	p->setPen(Qt::NoPen);
-	p->drawRect(rect());		
+	p->drawRect(rect());
 	p->restore();
 }
 
 void
 PanelBackgroundImage::loadImage()
 {
+	if (!isComponentComplete())
+		return;
 	m_background = QImage();
 	if (!m_source.isValid())
 		return;
@@ -71,15 +87,15 @@ PanelBackgroundImage::colorize(QImage &image) const
 {
 	QColor color;
 	
-	const QPalette pal = palette();
-	const QColor activeTitle = pal.color(QPalette::Active, QPalette::Highlight);
-	const QColor inactiveTitle = pal.color(QPalette::Inactive, QPalette::Highlight);
+	const QPalette palette = QGuiApplication::palette();
+	const QColor activeTitle = palette.color(QPalette::Active, QPalette::Highlight);
+	const QColor inactiveTitle = palette.color(QPalette::Inactive, QPalette::Highlight);
 
 	// figure out which color is most suitable for recoloring to
-    int h1, s1, v1, h2, s2, v2, h3, s3, v3;
-    activeTitle.getHsv(&h1, &s1, &v1);
-    inactiveTitle.getHsv(&h2, &s2, &v2);
-    pal.color(QPalette::Active, QPalette::Window).getHsv(&h3, &s3, &v3);
+	int h1, s1, v1, h2, s2, v2, h3, s3, v3;
+	activeTitle.getHsv(&h1, &s1, &v1);
+	inactiveTitle.getHsv(&h2, &s2, &v2);
+	palette.color(QPalette::Active, QPalette::Window).getHsv(&h3, &s3, &v3);
 
 	if ( (qAbs(h1-h3)+qAbs(s1-s3)+qAbs(v1-v3) < qAbs(h2-h3)+qAbs(s2-s3)+qAbs(v2-v3)) &&
 		 ((qAbs(h1-h3)+qAbs(s1-s3)+qAbs(v1-v3) < 32) || (s1 < 32)) && (s2 > s1))
@@ -97,7 +113,7 @@ PanelBackgroundImage::colorize(QImage &image) const
 	} else if (gray < 76) {
 		r = (r + (76 - gray) > 255 ? 255 : r + (76 - gray));
 		g = (g + (76 - gray) > 255 ? 255 : g + (76 - gray));
-        b = (b + (76 - gray) > 255 ? 255 : b + (76 - gray));
+		b = (b + (76 - gray) > 255 ? 255 : b + (76 - gray));
 	}
 	color.setRgb(r, g, b);
 
@@ -107,7 +123,7 @@ PanelBackgroundImage::colorize(QImage &image) const
 	}
 
 	int rval, gval, bval, val, alpha;
-    float rcol = color.red(), gcol = color.green(), bcol = color.blue();
+	float rcol = color.red(), gcol = color.green(), bcol = color.blue();
 
 	for (int y = 0; y < image.height(); ++y) {
 		QRgb *line = reinterpret_cast<QRgb*>(image.scanLine(y));
