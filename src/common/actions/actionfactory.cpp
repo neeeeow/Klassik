@@ -6,13 +6,12 @@
 
 #include "actionfactory.h"
 #include "popuptitle.h"
+#include "popupcalendar.h"
 
 #include <QIcon>
 
 ActionFactory::ActionFactory(QObject *parent) :
-	QObject(parent)
-{
-}
+	QObject(parent) {}
 
 QAction *
 ActionFactory::popupTitle(const QString &icon, const QString &title, QObject *parent)
@@ -24,4 +23,10 @@ QAction *
 ActionFactory::popupTitle(const QString &title, QObject *parent)
 {
 	return new PopupTitle(title, parent);
+}
+
+QAction *
+ActionFactory::popupCalendar(QObject *parent)
+{
+	return new PopupCalendar(parent);
 }

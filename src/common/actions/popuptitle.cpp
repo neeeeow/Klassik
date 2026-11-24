@@ -45,7 +45,8 @@ Widgets::PopupTitleWidget::paintEvent(QPaintEvent *)
 		titleRect = style()->visualRect(
 			header.direction, rect(),
 			QRect(iconExtent + 8, 0, width() - iconExtent - 12, height()));
-		tf = Qt::AlignVCenter | Qt::TextSingleLine | ((header.direction == Qt::RightToLeft) ? Qt::AlignRight : Qt::AlignLeft);
+		tf = Qt::AlignVCenter | Qt::TextSingleLine | Qt::TextHideMnemonic
+			| ((header.direction == Qt::RightToLeft) ? Qt::AlignRight : Qt::AlignLeft);
 
 		const QPixmap pixmap = m_icon.pixmap(QSize(iconExtent, iconExtent), devicePixelRatioF());
 		QRect pmr(QPoint(0, 0), pixmap.size() / pixmap.devicePixelRatio());
@@ -53,7 +54,7 @@ Widgets::PopupTitleWidget::paintEvent(QPaintEvent *)
 		p.drawPixmap(pmr.topLeft(), pixmap);
 	} else {
 		titleRect = rect().adjusted(4,0,-4,0);
-		tf = Qt::AlignCenter | Qt::TextSingleLine;
+		tf = Qt::AlignCenter | Qt::TextSingleLine | Qt::TextHideMnemonic;
 	}
 
 	if (!m_title.isEmpty()) {
@@ -72,7 +73,8 @@ Widgets::PopupTitleWidget::sizeHint() const
 	const int iconExtent = style()->pixelMetric(QStyle::PM_SmallIconSize);
 	const bool hasIcon = !m_icon.isNull();
 	
-	const int w = fm.horizontalAdvance(m_title) + (hasIcon ? iconExtent + 12 : 8);
+	const int textWidth = fm.size(Qt::TextSingleLine | Qt::TextHideMnemonic, m_title).width();
+	const int w = textWidth + (hasIcon ? iconExtent + 12 : 8);
 	const int h = qMax(hasIcon ? iconExtent : 0, fm.height()) + 8;
-	return QSize(w,h);
+	return QSize(w, h);
 }

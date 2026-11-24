@@ -1,8 +1,9 @@
 /*
- *  SPDX-FileCopyrightText: 2026 neeeeow <https://github.com/neeeeow>
- *
- *  SPDX-License-Identifier: GPL-3.0-or-later
+    SPDX-FileCopyrightText: 2026 neeeeow <https://github.com/neeeeow>
+
+    SPDX-License-Identifier: GPL-3.0-or-later
  */
+pragma ComponentBehavior: Bound
 
 import QtQuick
 import QtQuick.Layouts
@@ -15,7 +16,9 @@ import org.kde.plasma.clock
 PlasmoidItem {
     id: root
 
-    Plasmoid.onActivated: calendar.togglePopup()
+// BEGIN properties
+
+    Plasmoid.onActivated: calendar.open()
 
     // Copy all sizing logic from mainLayout
     implicitWidth: mainLayout.implicitWidth
@@ -27,15 +30,16 @@ PlasmoidItem {
     Layout.maximumWidth: mainLayout.Layout.maximumWidth
     Layout.maximumHeight: mainLayout.Layout.maximumHeight
 
+// END properties
+
+// BEGIN UI elements
+
     Clock {
         id: clock
         trackSeconds: Plasmoid.configuration.showSeconds
     }
 
-    CalendarPopup {
-        id: calendar
-        location: Plasmoid.location
-    }
+    CalendarMenu { id: calendar }
 
     ColumnLayout {
         id: mainLayout
@@ -157,7 +161,7 @@ PlasmoidItem {
         acceptedButtons: Qt.LeftButton
 
         onClicked: mouse => {
-            calendar.togglePopup();
+            calendar.open(); // use open() here since we don't need it to open relative to anything
         }
     }
 
@@ -167,4 +171,6 @@ PlasmoidItem {
         subText: Qt.formatDate(clock.dateTime, Qt.locale().dateFormat(Locale.LongFormat))
         icon: Plasmoid.icon
     }
+
+// END UI elements
 }

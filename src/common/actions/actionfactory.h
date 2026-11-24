@@ -26,4 +26,7 @@ public:
 	// Returns a pointer to a PopupTitle (port of KDE 3's KPopupTitle) QAction
 	Q_INVOKABLE QAction *popupTitle(const QString &icon, const QString &title, QObject *parent = nullptr);
 	Q_INVOKABLE QAction *popupTitle(const QString &title, QObject *parent = nullptr);
+
+	// Returns a QAction containing a calendar (built with KDatePicker)
+	Q_INVOKABLE QAction *popupCalendar(QObject *parent = nullptr);
 };
