@@ -55,7 +55,7 @@ PlasmaExtras.Menu {
     }
 
     // Analogous to QMenu::addAction, just here the target menu is specified
-    function addAction(target: PlasmaExtras.Menu, action: QtObject): PlasmaExtras.MenuItem {
+    function addAction(target: PlasmaExtras.Menu, action: PlasmaCore.Action): PlasmaExtras.MenuItem {
         if (!action || !action.visible)
             return null;
         const item = newMenuItem(target);

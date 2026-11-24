@@ -356,7 +356,7 @@ ContainmentItem {
                         text: i18n("Move %1", container.applet?.Plasmoid?.title ?? "")
                         icon.name: "transform-move"
                         enabled: !Plasmoid.immutable // only allow the applet to be moved if the panel isn't immutable
-                        visible: enabled
+                        visible: !Plasmoid.immutable
                         onTriggered: globalMove.startDrag(container)
                     }
 
