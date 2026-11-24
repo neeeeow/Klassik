@@ -93,14 +93,13 @@ ContainmentItem {
         dndSpacer.destroy();
         dndSpacer = null;
     }
-    function openContextMenu(applet: PlasmoidItem, visualParent: Item, x = undefined, y = undefined): ContextMenu {
+    function showContextMenu(applet: PlasmoidItem, visualParent: Item, x = undefined, y = undefined): ContextMenu {
         const menu = contextMenuComponent.createObject(visualParent, {
             panel: root,
             applet: applet,
             visualParent: visualParent,
         }) as ContextMenu;
-        if (menu)
-            menu.show(x, y);
+        menu?.show(x, y);
         return menu;
     }
 //END functions
@@ -221,7 +220,7 @@ ContainmentItem {
             ? child.applet
             : null;
 
-            root.openContextMenu(clickedApplet, contextMenuArea, mouse.x, mouse.y);
+            root.showContextMenu(clickedApplet, contextMenuArea, mouse.x, mouse.y);
         }
 
         DragDrop.DropArea {

@@ -78,7 +78,7 @@ Item {
                     appletHandle.contextMenu.close();
                 else {
                     appletHandle.contextMenu?.destroy(); // just in case we have a context menu instance
-                    appletHandle.contextMenu = root.panel.openContextMenu(root.applet, menuButton);
+                    appletHandle.contextMenu = root.panel.showContextMenu(root.applet, menuButton);
                 }
             }
         }

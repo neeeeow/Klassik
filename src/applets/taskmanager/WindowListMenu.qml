@@ -3,53 +3,30 @@
 
     SPDX-License-Identifier: GPL-3.0-or-later
 */
+pragma ComponentBehavior: Bound
 
 import QtQuick
 import org.kde.plasma.plasmoid
-import org.kde.plasma.core as PlasmaCore
 import org.kde.plasma.extras as PlasmaExtras
 import org.kde.taskmanager as TaskManager
+
+import com.github.neeeeow.klassik.actionfactory
 
 PlasmaExtras.Menu {
     id: menu
 
-    required property var tasksModel
-    readonly property TaskManager.VirtualDesktopInfo virtualDesktopInfo: TaskManager.VirtualDesktopInfo {}
-    readonly property ActionFactory actionFactory: ActionFactory {}
+    required property /*main.qml*/ Item tasksRoot
+    required property TaskManager.TasksModel tasksModel
 
-    placement: {
-        if (Plasmoid.location === PlasmaCore.Types.LeftEdge) {
-            return PlasmaExtras.Menu.RightPosedTopAlignedPopup;
-        } else if (Plasmoid.location === PlasmaCore.Types.TopEdge) {
-            return PlasmaExtras.Menu.BottomPosedLeftAlignedPopup;
-        } else if (Plasmoid.location === PlasmaCore.Types.RightEdge) {
-            return PlasmaExtras.Menu.LeftPosedTopAlignedPopup;
-        } else {
-            return PlasmaExtras.Menu.TopPosedLeftAlignedPopup;
-        }
-    }
-
-    onStatusChanged: {
-        if (status === PlasmaExtras.Menu.Closed) {
-            menu.destroy();
-        }
-    }
+    placement: tasksRoot.menuPlacement
 
     function show(): void {
         populateMenu();
         openRelative();
     }
 
-    function newMenuItem(parent: QtObject): PlasmaExtras.MenuItem {
-        return Qt.createQmlObject(`
-        import org.kde.plasma.extras as PlasmaExtras
-
-        PlasmaExtras.MenuItem {}
-        `, parent) as PlasmaExtras.MenuItem;
-    }
-
-    function createTaskItem(modelIndex): PlasmaExtras.MenuItem {
-        const item = newMenuItem(menu);
+    function createTaskItem(modelIndex: /*QModelIndex*/ var): void {
+        const item = tasksRoot.newMenuItem(menu);
         const isActive = tasksModel.data(modelIndex, TaskManager.AbstractTasksModel.IsActive);
 
         item.text = tasksModel.data(modelIndex, Qt.DisplayRole) || "";
@@ -68,16 +45,15 @@ PlasmaExtras.Menu {
                 tasksModel.requestActivate(modelIndex);
             }
         });
-
-        return item;
     }
 
     function populateMenu(): void {
         clearMenuItems();
 
+        const virtualDesktopInfo = tasksRoot.virtualDesktopInfo;
         // IDs of each desktop
         const desktopIds = virtualDesktopInfo.desktopIds.map(String);
-        // model indices of each task per destop
+        // model indices of each task per desktop
         const desktopTasks = desktopIds.map(() => []);
 
         // Iterate through each task
@@ -107,17 +83,17 @@ PlasmaExtras.Menu {
                 continue;
             }
 
-            const title = newMenuItem(menu);
-            title.action = actionFactory.popupTitle(menu, virtualDesktopInfo.desktopNames[i], "user-desktop");
+            const title = tasksRoot.newMenuItem(menu);
+            title.action = ActionFactory.popupTitle("user-desktop", virtualDesktopInfo.desktopNames[i], title);
 
             for (const modelIndex of desktopTasks[i]) {
-                addMenuItem(createTaskItem(modelIndex));
+                createTaskItem(modelIndex);
             }
         }
 
         // If the menu is empty...
         if (menu.content.length === 0) {
-            const emptyItem = newMenuItem(menu);
+            const emptyItem = tasksRoot.newMenuItem(menu);
             emptyItem.enabled = false;
             emptyItem.text = i18n("No Tasks");
         }

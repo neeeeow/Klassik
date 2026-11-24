@@ -19,9 +19,11 @@ class ActionFactory : public QObject
 	 */
 	Q_OBJECT
 	QML_ELEMENT
+	QML_SINGLETON
 public:
 	explicit ActionFactory(QObject *parent = nullptr);
 
 	// Returns a pointer to a PopupTitle (port of KDE 3's KPopupTitle) QAction
-	Q_INVOKABLE QAction *popupTitle(QObject *parent, const QString &title, const QString &icon = QString());
+	Q_INVOKABLE QAction *popupTitle(const QString &icon, const QString &title, QObject *parent = nullptr);
+	Q_INVOKABLE QAction *popupTitle(const QString &title, QObject *parent = nullptr);
 };

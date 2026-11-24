@@ -15,7 +15,7 @@ namespace Widgets {
 	{
 		Q_OBJECT
 	public:
-	    PopupTitleWidget(const QString &title, const QIcon &icon, QWidget *parent = nullptr);
+	    PopupTitleWidget(const QIcon &icon, const QString &title, QWidget *parent = nullptr);
 
 		QSize sizeHint() const override;
 
@@ -23,8 +23,8 @@ namespace Widgets {
 		void paintEvent(QPaintEvent *) override;
 	
 	private:
-		QString m_title;
 		QIcon m_icon;
+		QString m_title;		
 	};
 
 }
@@ -44,6 +44,6 @@ public:
 
 protected:
 	QWidget* createWidget(QWidget *parent) override {
-		return new Widgets::PopupTitleWidget(text(), icon(), parent);
+		return new Widgets::PopupTitleWidget(icon(), text(), parent);
 	}
 };

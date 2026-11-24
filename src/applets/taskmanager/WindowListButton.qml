@@ -1,5 +1,7 @@
 /*
     SPDX-FileCopyrightText: 2026 neeeeow <https://github.com/neeeeow>
+
+    SPDX-License-Identifier: GPL-3.0-or-later
 */
 
 pragma ComponentBehavior: Bound
@@ -17,16 +19,27 @@ import com.github.neeeeow.klassik.painteditems
 
 ToolButton {
     id: windowListButton
+    required property /*main.qml*/ Item tasksRoot
+
     focusPolicy: Qt.NoFocus
-    checked: windowListButton.menu?.status === PlasmaExtras.Menu.Open
-    onClicked: showMenu()
+    checked: windowListMenu.status === PlasmaExtras.Menu.Open
+    onClicked: windowListMenu.show()
     enabled: allTasksModel.count > 0
     hoverEnabled: true
+    rotation: windowListButton.tasksRoot.rotation
 
-    rotation: Plasmoid.configuration.reverseMode && Plasmoid.formFactor === PlasmaCore.Types.Vertical ? 180 : 0
+    // Task model used to display *all* tasks across each desktop
+    readonly property TaskManager.TasksModel allTasksModel: TaskManager.TasksModel {
+        filterByVirtualDesktop: false
+        filterByScreen: false
+        filterByActivity: false
+        filterNotMinimized: false
+        groupMode: TaskManager.TasksModel.GroupDisabled
+        sortMode: TaskManager.TasksModel.SortVirtualDesktop
+    }
 
     background: TaskBackground {
-        visible: (Plasmoid.configuration.taskAppearance === 1) || windowListButton.hovered || sunken
+        // NB: we want this button to *always* be visible, regardless if tasks are classic or elegant
         sunken: windowListButton.down || windowListButton.checked
         hovered: windowListButton.hovered
     }
@@ -67,32 +80,18 @@ ToolButton {
         }
     }
 
+    WindowListMenu {
+        id: windowListMenu
+        tasksRoot: windowListButton.tasksRoot
+        visualParent: windowListButton
+        tasksModel: windowListButton.allTasksModel
+    }
+
     PlasmaCore.ToolTipArea {
         anchors.fill: parent
-        active: windowListButton.menu?.status !== PlasmaExtras.Menu.Open
+        active: windowListMenu.status !== PlasmaExtras.Menu.Open
         location: Plasmoid.location
         mainText: i18n("Window List")
         icon: Plasmoid.icon
-    }
-
-    // Task model used to display *all* tasks across each desktop
-    readonly property TaskManager.TasksModel allTasksModel: TaskManager.TasksModel {
-        filterByVirtualDesktop: false
-        filterByScreen: false
-        filterByActivity: false
-        filterNotMinimized: false
-        groupMode: TaskManager.TasksModel.GroupDisabled
-        sortMode: TaskManager.TasksModel.SortVirtualDesktop
-    }
-
-    // Set up the menu which displays the task list
-    readonly property Component menuComponent: Qt.createComponent("WindowListMenu.qml")
-    property QtObject menu: null
-    function showMenu(): void {
-        menu = menuComponent.createObject(windowListButton, {
-            visualParent: windowListButton,
-            tasksModel: windowListButton.allTasksModel,
-        }) as WindowListMenu;
-        menu.show();
     }
 }

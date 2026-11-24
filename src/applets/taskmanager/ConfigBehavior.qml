@@ -3,6 +3,7 @@
 
     SPDX-License-Identifier: GPL-2.0-or-later
 */
+pragma ComponentBehavior: Bound
 
 import QtQuick
 import QtQuick.Controls as QQC2
@@ -223,7 +224,6 @@ KCMUtils.SimpleKCM {
 
         QQC2.RadioButton {
             id: reverseMode
-            checked: Plasmoid.configuration.reverseMode === true
             text: {
                 if (Plasmoid.formFactor === PlasmaCore.Types.Vertical) {
                     return i18nc("@option:check completes sentence: New tasks appear", "On the top")

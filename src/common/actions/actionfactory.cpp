@@ -15,9 +15,13 @@ ActionFactory::ActionFactory(QObject *parent) :
 }
 
 QAction *
-ActionFactory::popupTitle(QObject *parent, const QString &title, const QString &icon)
+ActionFactory::popupTitle(const QString &icon, const QString &title, QObject *parent)
 {
-	if (icon.isEmpty())
-		return new PopupTitle(title, parent);
 	return new PopupTitle(QIcon::fromTheme(icon), title, parent);
+}
+
+QAction *
+ActionFactory::popupTitle(const QString &title, QObject *parent)
+{
+	return new PopupTitle(title, parent);
 }

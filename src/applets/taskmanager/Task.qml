@@ -1,11 +1,11 @@
 /*
- SPDX-FileCopyrightText: 2026 neeeeow *<https://github.com/neeeeow>
+    SPDX-FileCopyrightText: 2026 neeeeow <https://github.com/neeeeow>
 
- SPDX-FileCopyrightText: 2012-2013 Eike Hein <hein@kde.org>
- SPDX-FileCopyrightText: 2024 Nate Graham <nate@kde.org>
+    SPDX-FileCopyrightText: 2012-2013 Eike Hein <hein@kde.org>
+    SPDX-FileCopyrightText: 2024 Nate Graham <nate@kde.org>
 
- SPDX-License-Identifier: GPL-3.0-or-later
- */
+    SPDX-License-Identifier: GPL-3.0-or-later
+*/
 
 pragma ComponentBehavior: Bound
 
@@ -23,10 +23,12 @@ import org.kde.taskmanager as TaskManager
 ToolButton {
     id: task
 
+// BEGIN properties
+
     // To achieve a bottom-to-top layout on vertical panels, the task manager
     // is rotated by 180 degrees(see main.qml). This makes the tasks rotated,
     // so un-rotate them here to fix that.
-    rotation: Plasmoid.configuration.reverseMode && Plasmoid.formFactor === PlasmaCore.Types.Vertical ? 180 : 0
+    rotation: tasksRoot.rotation
 
     Layout.fillWidth: true
     Layout.fillHeight: true
@@ -51,8 +53,8 @@ ToolButton {
     property bool isWindow: model.IsWindow
     property int childCount: model.ChildCount
     property int previousChildCount: 0
-    property QtObject contextMenu: null
-    property QtObject groupMenu: null
+    property PlasmaExtras.Menu contextMenu: null
+    property GroupMenu groupMenu: null
 
     property bool completed: false
 
@@ -65,34 +67,53 @@ ToolButton {
         BringToCurrentDesktop
     }
 
+// END properties
+
+// BEGIN functions
+
     function modelIndex(): /*QModelIndex*/ var {
-        return tasksModel.makeModelIndex(index);
+        return tasksRoot.tasksModel.makeModelIndex(index);
     }
 
     function showContextMenu(): void {
         toolTipArea.hideImmediately();
-        contextMenu = tasksRoot.createContextMenu(task, modelIndex()) as PlasmaExtras.Menu;
-        contextMenu.show();
+        const index = modelIndex();
+        const isGroup = tasksRoot.tasksModel.data(index, TaskManager.AbstractTasksModel.IsGroupParent);
+        const component = isGroup ? tasksRoot.groupContextMenuComponent : tasksRoot.contextMenuComponent;
+        contextMenu = component.createObject(task, {
+            tasksRoot: task.tasksRoot,
+            visualParent: task,
+            modelIndex: index
+        }) as PlasmaExtras.Menu;
+        contextMenu?.show();
     }
 
     function showGroupMenu(): void {
         toolTipArea.hideImmediately();
-        groupMenu = tasksRoot.createGroupMenu(task, modelIndex()) as GroupMenu;
-        groupMenu.show();
+        groupMenu = tasksRoot.groupMenuComponent.createObject(task, {
+            tasksRoot: task.tasksRoot,
+            visualParent: task,
+            modelIndex: modelIndex()
+        }) as GroupMenu;
+        groupMenu?.show();
     }
+
+// END functions
+
+// BEGIN connections
 
     onXChanged: if (completed) tasksRoot.requestLayout()
     onYChanged: if (completed) tasksRoot.requestLayout()
 
     onIsWindowChanged: {
         if (model.IsWindow) {
-            taskInitComponent.createObject(task);
+            tasksRoot.taskInitComponent.createObject(task);
         }
     }
 
     onChildCountChanged: {
         if (TaskTools.taskManagerInstanceCount < 2 && childCount > previousChildCount) {
-            tasksModel.requestPublishDelegateGeometry(modelIndex(), tasksRoot.globalRect(task), task);
+            tasksRoot.tasksModel.requestPublishDelegateGeometry(modelIndex(), tasksRoot.globalRect(task), task);
         }
 
         previousChildCount = childCount;
@@ -110,6 +131,17 @@ ToolButton {
         TaskTools.activateTask(modelIndex(), model, task, Plasmoid, tasksRoot);
     }
 
+    Component.onCompleted: {
+        if (model.IsWindow) {
+            tasksRoot.taskInitComponent.createObject(task);
+        }
+        completed = true;
+    }
+
+// END connections
+
+// BEGIN UI elements
+
     MouseArea {
         anchors.fill: parent
         acceptedButtons: Qt.RightButton | Qt.MiddleButton
@@ -120,21 +152,21 @@ ToolButton {
             } else if (mouse.button === Qt.MiddleButton) {
                 switch (Plasmoid.configuration.middleClickAction) {
                     case Task.MiddleClickAction.Close:
-                        tasksModel.requestClose(modelIndex());
+                        task.tasksRoot.tasksModel.requestClose(task.modelIndex());
                         break;
                     case Task.MiddleClickAction.NewInstance:
-                        tasksModel.requestNewInstance(modelIndex());
+                        task.tasksRoot.tasksModel.requestNewInstance(task.modelIndex());
                         break;
                     case Task.MiddleClickAction.ToggleMinimized:
-                        tasksModel.requestToggleMinimized(modelIndex());
+                        task.tasksRoot.tasksModel.requestToggleMinimized(task.modelIndex());
                         break;
                     case Task.MiddleClickAction.ToggleGrouping:
-                        tasksModel.requestToggleGrouping(modelIndex());
+                        task.tasksRoot.tasksModel.requestToggleGrouping(task.modelIndex());
                         break;
                     case Task.MiddleClickAction.BringToCurrentDesktop:
                         TaskTools.foreachChildTask((childIndex) => {
-                            tasksModel.requestVirtualDesktops(childIndex, [virtualDesktopInfo.currentDesktopByScreenGeometry(tasksModel.data(childIndex, TaskManager.AbstractTasksModel.ScreenGeometry))]);
-                        }, modelIndex(), tasksModel);
+                            task.tasksRoot.tasksModel.requestVirtualDesktops(childIndex, [task.tasksRoot.virtualDesktopInfo.currentDesktopByScreenGeometry(task.tasksRoot.tasksModel.data(childIndex, TaskManager.AbstractTasksModel.ScreenGeometry))]);
+                        }, task.modelIndex(), task.tasksRoot.tasksModel);
                         break;
                     default:
                         break;
@@ -176,7 +208,7 @@ ToolButton {
             Loader {
                 anchors.fill: parent
                 active: task.model.IsStartup
-                sourceComponent: busyIndicator
+                sourceComponent: task.tasksRoot.busyIndicator
             }
         }
 
@@ -194,10 +226,5 @@ ToolButton {
         }
     }
 
-    Component.onCompleted: {
-        if (!model.IsWindow) {
-            taskInitComponent.createObject(task);
-        }
-        completed = true;
-    }
+// END UI elements
 }

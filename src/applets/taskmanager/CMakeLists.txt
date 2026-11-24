@@ -22,7 +22,6 @@ plasma_add_applet(com.github.neeeeow.klassik.taskmanager
         code/TaskTools.js
         KlassikBusyIndicator.qml
     CPP_SOURCES
-        ${KLASSIK_COMMON_DIR}/actions/actionfactory.cpp
         taskbackground.h
     RESOURCES
         main.xml
@@ -31,7 +30,6 @@ plasma_add_applet(com.github.neeeeow.klassik.taskmanager
 )
 
 target_link_libraries(com.github.neeeeow.klassik.taskmanager PRIVATE
-    klassik_actions
     klassik_painteditem
     Qt::Core
     Qt::Qml

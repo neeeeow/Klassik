@@ -10,8 +10,8 @@
 #include <QStyle>
 #include <QStyleOptionHeader>
 
-Widgets::PopupTitleWidget::PopupTitleWidget(const QString &title, const QIcon &icon, QWidget *parent)
-	: QWidget(parent), m_title(title), m_icon(icon)
+Widgets::PopupTitleWidget::PopupTitleWidget(const QIcon &icon, const QString &title, QWidget *parent)
+	: QWidget(parent), m_icon(icon), m_title(title)
 {
 	setAttribute(Qt::WA_TransparentForMouseEvents);
 }

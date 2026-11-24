@@ -1,34 +1,24 @@
 /*
- *    SPDX-FileCopyrightText: 2026 neeeeow <https://github.com/neeeeow>
- *
- *    SPDX-License-Identifier: GPL-3.0-or-later
+    SPDX-FileCopyrightText: 2026 neeeeow <https://github.com/neeeeow>
+
+    SPDX-License-Identifier: GPL-3.0-or-later
  */
+pragma ComponentBehavior: Bound
 
 import QtQuick
 import org.kde.plasma.plasmoid
-import org.kde.plasma.core as PlasmaCore
 import org.kde.plasma.extras as PlasmaExtras
 import org.kde.taskmanager as TaskManager
 
 PlasmaExtras.Menu {
     id: menu
 
+    required property /*main.qml*/ Item tasksRoot
     required property /*QModelIndex*/var modelIndex
 
+    placement: tasksRoot.menuPlacement
 
-    placement: {
-        if (Plasmoid.location === PlasmaCore.Types.LeftEdge) {
-            return PlasmaExtras.Menu.RightPosedTopAlignedPopup;
-        } else if (Plasmoid.location === PlasmaCore.Types.TopEdge) {
-            return PlasmaExtras.Menu.BottomPosedLeftAlignedPopup;
-        } else if (Plasmoid.location === PlasmaCore.Types.RightEdge) {
-            return PlasmaExtras.Menu.LeftPosedTopAlignedPopup;
-        } else {
-            return PlasmaExtras.Menu.TopPosedLeftAlignedPopup;
-        }
-    }
-
-    minimumWidth: (visualParent as Item).width
+    minimumWidth: (visualParent as Item)?.width ?? 0
 
     onStatusChanged: {
         if (status === PlasmaExtras.Menu.Closed) {
@@ -39,21 +29,17 @@ PlasmaExtras.Menu {
     function show(): void {
         populateMenu();
         openRelative();
-    }
 
-    function newMenuItem(parent: QtObject): PlasmaExtras.MenuItem {
-        return Qt.createQmlObject(`
-        import org.kde.plasma.extras as PlasmaExtras
-
-        PlasmaExtras.MenuItem {}
-        `, parent) as PlasmaExtras.MenuItem;
+        if (status === PlasmaExtras.Menu.Closed)
+            menu.destroy();
     }
 
     function populateMenu(): void {
         clearMenuItems();
 
+        const tasksModel = tasksRoot.tasksModel;
         TaskTools.foreachChildTask((childIndex) => {
-            const item = newMenuItem(menu);
+            const item = tasksRoot.newMenuItem(menu);
             const isActive = tasksModel.data(childIndex, TaskManager.AbstractTasksModel.IsActive);
 
             item.text = tasksModel.data(childIndex, Qt.DisplayRole) || "";
