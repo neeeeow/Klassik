@@ -13,6 +13,8 @@ import org.kde.plasma.core as PlasmaCore
 import org.kde.plasma.extras as PlasmaExtras
 import org.kde.plasma.plasmoid
 import org.kde.plasma.clock
+import org.kde.kcmutils as KCMUtils
+import org.kde.config as KConfig
 
 import com.github.neeeeow.klassik.actionfactory
 
@@ -44,6 +46,40 @@ PlasmoidItem {
                 Plasmoid.configuration.lastSelectedTimezone = Plasmoid.configuration.selectedTimeZones[0] ?? "Local";
             }
         }
+    }
+
+    Connections {
+        target: Plasmoid
+        function onContextualActionsAboutToShow(): void {
+            // Fill the time zone menu
+            timeZoneMenu.clearMenuItems();
+            const zones = Plasmoid.configuration.selectedTimeZones;
+            for (let i = 0; i < zones.length; ++i) {
+                const zone = zones[i];
+                const item = root.newMenuItem(timeZoneMenu);
+                item.text = zone === "Local" ? i18n("Local Timezone") : zone;
+                item.checkable = true;
+                item.checked = (Plasmoid.configuration.lastSelectedTimezone === zone);
+                item.clicked.connect(() => {
+                    Plasmoid.configuration.lastSelectedTimezone = zone;
+                });
+            }
+
+            // Update the clipboard menu's properties
+            ClipboardMenu.secondsIncluded = Plasmoid.configuration.showSeconds;
+            ClipboardMenu.timezone = clock.timeZone;
+        }
+    }
+
+    Component.onCompleted: {
+        ClipboardMenu.setupMenu(clipboardAction); // Link the clipboard menu to its action
+        Plasmoid.contextualActions = [
+            ActionFactory.popupTitle("clock", i18n("Clock"), root),
+            clockTypeAction,
+            timeZoneAction,
+            clipboardAction, // technically, KDE 3 had this action at the bottom, but this makes more sense
+            adjustDateTimeAction
+        ];
     }
 
 // END connections
@@ -81,7 +117,7 @@ PlasmoidItem {
 
             Connections {
                 target: clock
-                function onDateTimeChanged() {
+                function onDateTimeChanged(): void {
                     if (digitalClock.blinkingDots) {
                         // Start each time update with the dots visible. This is technically not 100% accurate per KDE 3 behaviour, but
                         // it looks way more consistent.
@@ -109,6 +145,9 @@ PlasmoidItem {
         }
     }
 
+    readonly property Component _menuItemComponent:  Component { PlasmaExtras.MenuItem {} }
+    function newMenuItem(parent: QtObject): PlasmaExtras.MenuItem  { return _menuItemComponent.createObject(parent) as PlasmaExtras.MenuItem }
+
 // END components
 
 // BEGIN UI elements
@@ -117,20 +156,6 @@ PlasmoidItem {
         id: clock
         timeZone: Plasmoid.configuration.lastSelectedTimezone
         trackSeconds: Plasmoid.configuration.showSeconds
-    }
-
-    PlasmaExtras.Menu {
-        id: calendar
-
-        PlasmaExtras.MenuItem {
-            id: titleItem
-            Component.onCompleted: action = ActionFactory.popupTitle("office-calendar", i18n("Calendar"), titleItem)
-        }
-
-        PlasmaExtras.MenuItem {
-            id: calendarItem
-            Component.onCompleted: action = ActionFactory.popupCalendar(calendarItem)
-        }
     }
 
     ColumnLayout {
@@ -188,6 +213,15 @@ PlasmoidItem {
         }
     }
 
+    // Tooltip area
+    PlasmaCore.ToolTipArea {
+        anchors.fill: parent
+        mainText: Plasmoid.configuration.use24hFormat ? Qt.formatTime(clock.dateTime, "HH:mm") : Qt.formatTime(clock.dateTime, "h:mm ap")
+        subText: Qt.formatDate(clock.dateTime, Qt.locale().dateFormat(Locale.LongFormat))
+        icon: Plasmoid.icon
+    }
+
+    // Calendar popup
     MouseArea {
         anchors.fill: parent
         acceptedButtons: Qt.LeftButton
@@ -196,12 +230,67 @@ PlasmoidItem {
             calendar.open(); // use open() here since we don't need it to open relative to anything
         }
     }
+    PlasmaExtras.Menu {
+        id: calendar
 
-    PlasmaCore.ToolTipArea {
-        anchors.fill: parent
-        mainText: Plasmoid.configuration.use24hFormat ? Qt.formatTime(clock.dateTime, "HH:mm") : Qt.formatTime(clock.dateTime, "h:mm ap")
-        subText: Qt.formatDate(clock.dateTime, Qt.locale().dateFormat(Locale.LongFormat))
-        icon: Plasmoid.icon
+        PlasmaExtras.MenuItem {
+            id: calendarTitle
+            Component.onCompleted: action = ActionFactory.popupTitle("office-calendar", i18n("Calendar"), calendarTitle)
+        }
+        PlasmaExtras.MenuItem {
+            id: calendarItem
+            Component.onCompleted: action = ActionFactory.popupCalendar(calendarItem)
+        }
+    }
+
+    // Select clock type menu
+    PlasmaCore.Action {
+        id: clockTypeAction
+        text: i18n("Type")
+    }
+    PlasmaExtras.Menu {
+        visualParent: clockTypeAction
+
+        PlasmaExtras.MenuItem {
+            text: i18n("Digital")
+            checkable: true
+            checked: Plasmoid.configuration.clockType === 0
+            onClicked: Plasmoid.configuration.clockType = 0
+        }
+
+        PlasmaExtras.MenuItem {
+            text: i18n("Analog")
+            checkable: true
+            checked: Plasmoid.configuration.clockType === 1
+            onClicked: Plasmoid.configuration.clockType = 1
+        }
+    }
+
+    // Select time zone menu
+    PlasmaCore.Action {
+        id: timeZoneAction
+        text: i18n("Show Time&zone")
+        icon.name: "globe" // KDE 3 never had an icon for this, but we improvise
+    }
+    PlasmaExtras.Menu {
+        id: timeZoneMenu
+        visualParent: timeZoneAction
+    }
+
+    // Copy to clipboard action
+    PlasmaCore.Action {
+        id: clipboardAction
+        text: i18n("Copy to Clipboard")
+        icon.name: "edit-copy"
+    }
+
+    // kcm_clock action
+    PlasmaCore.Action {
+        id: adjustDateTimeAction
+        text: i18n("Adjust Date && Time…")
+        icon.name: "preferences-system-time"
+        visible: KConfig.KAuthorized.authorizeControlModule("kcm_clock.desktop")
+        onTriggered: KCMUtils.KCMLauncher.open(["kcm_clock"])
     }
 
 // END UI elements

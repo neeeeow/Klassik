@@ -179,7 +179,7 @@ Kirigami.PageRow {
                         text: i18n("Switch Systemwide Time Zone…")
                         icon.name: "preferences-system-time"
                         font.bold: false
-                        onClicked: KCMUtils.KCMLauncher.openSystemSettings("kcm_clock")
+                        onClicked: KCMUtils.KCMLauncher.open(["kcm_clock"])
                     }
 
                     QQC2.Button {
@@ -213,7 +213,7 @@ Kirigami.PageRow {
                     leftMargin: Kirigami.Units.largeSpacing * 6
                     rightMargin: Kirigami.Units.largeSpacing * 6
                 }
-                text: i18n("Add more time zones to display all of them in the applet's pop-up, or use one of them for the clock itself")
+                text: i18n("Add more time zones to display on the clock")
             }
         }
 

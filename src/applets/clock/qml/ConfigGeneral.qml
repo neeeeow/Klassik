@@ -2,7 +2,8 @@
     SPDX-FileCopyrightText: 2026 neeeeow <https://github.com/neeeeow>
 
     SPDX-License-Identifier: GPL-3.0-or-later
- */
+*/
+pragma ComponentBehavior: Bound
 
 import QtQuick
 import QtQuick.Controls
@@ -10,8 +11,6 @@ import QtQuick.Layouts
 
 import org.kde.kcmutils as KCMUtils
 import org.kde.kirigami as Kirigami
-import org.kde.plasma.core as PlasmaCore
-import org.kde.plasma.plasmoid
 import org.kde.kquickcontrols
 
 KCMUtils.SimpleKCM {
@@ -89,19 +88,19 @@ KCMUtils.SimpleKCM {
                 ColumnLayout {
                     RadioButton {
                         text: i18n("Use system colors")
-                        checked: cfg_colorTheme === 0
-                        onToggled: cfg_colorTheme = 0
+                        checked: configGeneral.cfg_colorTheme === 0
+                        onToggled: configGeneral.cfg_colorTheme = 0
                     }
                     RadioButton {
                         text: i18n("LCD look")
-                        checked: cfg_colorTheme === 1
-                        onToggled: cfg_colorTheme = 1
+                        checked: configGeneral.cfg_colorTheme === 1
+                        onToggled: configGeneral.cfg_colorTheme = 1
                     }
                     RadioButton {
                         id: useCustomColors
                         text: i18n("Custom colors")
-                        checked: cfg_colorTheme === 2
-                        onToggled: cfg_colorTheme = 2
+                        checked: configGeneral.cfg_colorTheme === 2
+                        onToggled: configGeneral.cfg_colorTheme = 2
                     }
                 }
 
