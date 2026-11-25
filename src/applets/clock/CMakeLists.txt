@@ -9,7 +9,6 @@ configure_file(
 plasma_add_applet(com.github.neeeeow.klassik.clock
     QML_SOURCES
         qml/main.qml
-        qml/CalendarMenu.qml
         qml/config.qml
         qml/ConfigGeneral.qml
         qml/ConfigTimeZones.qml

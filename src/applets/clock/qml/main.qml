@@ -10,8 +10,11 @@ import QtQuick.Layouts
 import QtQuick.Controls
 
 import org.kde.plasma.core as PlasmaCore
+import org.kde.plasma.extras as PlasmaExtras
 import org.kde.plasma.plasmoid
 import org.kde.plasma.clock
+
+import com.github.neeeeow.klassik.actionfactory
 
 PlasmoidItem {
     id: root
@@ -116,7 +119,19 @@ PlasmoidItem {
         trackSeconds: Plasmoid.configuration.showSeconds
     }
 
-    CalendarMenu { id: calendar }
+    PlasmaExtras.Menu {
+        id: calendar
+
+        PlasmaExtras.MenuItem {
+            id: titleItem
+            Component.onCompleted: action = ActionFactory.popupTitle("office-calendar", i18n("Calendar"), titleItem)
+        }
+
+        PlasmaExtras.MenuItem {
+            id: calendarItem
+            Component.onCompleted: action = ActionFactory.popupCalendar(calendarItem)
+        }
+    }
 
     ColumnLayout {
         id: mainLayout
