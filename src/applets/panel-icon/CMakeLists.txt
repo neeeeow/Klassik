@@ -11,10 +11,12 @@ plasma_add_applet(com.github.neeeeow.klassik.panel.icon
         iconapplet.cpp
     QML_SOURCES
         qml/main.qml
+        ${KLASSIK_COMMON_DIR}/kicker/servicemenu/qml/ServiceMenuButton.qml
     RESOURCES
         main.xml
 )
 
 target_link_libraries(com.github.neeeeow.klassik.panel.icon PRIVATE
     klassik_servicemenu
+    klassik_painteditems
 )

@@ -11,22 +11,3 @@ target_link_libraries(klassik_servicemenu PUBLIC
     klassik_panelmenu
     KF6::ConfigQml
 )
-
-# Button used to popup a servicemenu
-add_library(com.github.neeeeow.klassik.servicemenu SHARED
-    panelbuttonarrow.h
-)
-target_link_libraries(com.github.neeeeow.klassik.servicemenu PRIVATE
-    klassik_painteditem
-    Plasma::Plasma
-)
-ecm_add_qml_module(com.github.neeeeow.klassik.servicemenu
-    URI "com.github.neeeeow.klassik.servicemenu"
-    GENERATE_PLUGIN_SOURCE
-)
-ecm_target_qml_sources(com.github.neeeeow.klassik.servicemenu
-    SOURCES
-        qml/ServiceMenuButton.qml
-)
-ecm_finalize_qml_module(com.github.neeeeow.klassik.servicemenu DESTINATION ${KDE_INSTALL_QMLDIR})
-install(TARGETS com.github.neeeeow.klassik.servicemenu ${KDE_INSTALL_TARGETS_DEFAULT_ARGS})

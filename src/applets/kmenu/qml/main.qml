@@ -4,11 +4,11 @@
     SPDX-License-Identifier: GPL-3.0-or-later
 */
 
+pragma ComponentBehavior: Bound
+
 import QtQuick
 
 import org.kde.plasma.plasmoid
-
-import com.github.neeeeow.klassik.servicemenu
 
 PlasmoidItem {
     id: root

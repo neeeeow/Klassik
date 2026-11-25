@@ -1,8 +1,10 @@
 /*
-   SPDX-FileCopyrightText: 2026 neeeeow <https://github.com/neeeeow>
+    SPDX-FileCopyrightText: 2026 neeeeow <https://github.com/neeeeow>
 
-   SPDX-License-Identifier: GPL-3.0-or-later
- */
+    SPDX-License-Identifier: GPL-3.0-or-later
+*/
+
+pragma ComponentBehavior: Bound
 
 import QtQuick
 import QtQuick.Controls
@@ -36,7 +38,7 @@ Button {
             source: button.icon.name
             active: button.hovered
 
-            scale: ((button.down || button.checked) && (width > 0)) ? (width - 2 * frame.lineWidth) / width : 1.0
+            scale: ((button.down || button.checked) && (width > 0)) ? Math.max((width - 2 * frame.lineWidth), 0) / width : 1.0
             transformOrigin: Item.Center
         }
         Loader {
@@ -54,6 +56,7 @@ Button {
     PlasmaCore.ToolTipArea {
         id: tooltip
         anchors.fill: parent
+        active: !button.checked
         icon: button.icon.name
     }
 }

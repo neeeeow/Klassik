@@ -19,9 +19,11 @@ add_library(com.github.neeeeow.klassik.painteditems SHARED
     styledtoolbarhandle.h
     styledtoolbutton.h
     styledfocusrect.h
+    panelbuttonarrow.h
 )
 target_link_libraries(com.github.neeeeow.klassik.painteditems PRIVATE
     klassik_painteditem
+    Plasma::Plasma
 )
 ecm_add_qml_module(com.github.neeeeow.klassik.painteditems
     URI "com.github.neeeeow.klassik.painteditems"
