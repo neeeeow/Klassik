@@ -42,19 +42,6 @@ PlasmoidItem {
     readonly property real taskAreaWidth: Math.max(0, tasks.width - 2*margin - (Plasmoid.configuration.showAllTasksMenu ? (vertical ? 0 : windowListButtonExtent) : 0))
     readonly property real taskAreaHeight: Math.max(0, tasks.height - 2*margin - (Plasmoid.configuration.showAllTasksMenu ? (vertical ? windowListButtonExtent : 0) : 0))
 
-    // Contextual menus required
-    readonly property Component contextMenuComponent: Qt.createComponent("ContextMenu.qml")
-    readonly property Component groupMenuComponent: Qt.createComponent("GroupMenu.qml")
-    readonly property Component groupContextMenuComponent: Qt.createComponent("GroupContextMenu.qml")
-
-    // Menu item creation helpers
-    readonly property Component _menuComponent:      Component { PlasmaExtras.Menu {} }
-    readonly property Component _menuItemComponent:  Component { PlasmaExtras.MenuItem {} }
-    readonly property Component _separatorComponent: Component { PlasmaExtras.MenuItem { separator: true } }
-    function newMenu(parent: QtObject): PlasmaExtras.Menu          { return _menuComponent.createObject(parent) as PlasmaExtras.Menu }
-    function newMenuItem(parent: QtObject): PlasmaExtras.MenuItem  { return _menuItemComponent.createObject(parent) as PlasmaExtras.MenuItem }
-    function newSeparator(parent: QtObject): PlasmaExtras.MenuItem { return _separatorComponent.createObject(parent) as PlasmaExtras.MenuItem }
-
     // Menu popup location
     readonly property int menuPlacement: {
         if (Plasmoid.location === PlasmaCore.Types.LeftEdge) {
@@ -71,7 +58,6 @@ PlasmoidItem {
     property alias taskList: taskList
     readonly property alias virtualDesktopInfo: virtualDesktopInfo
     readonly property alias activityInfo: activityInfo
-    readonly property Component busyIndicator: Component { KlassikBusyIndicator {} }
 
     readonly property TaskManager.TasksModel tasksModel: TaskManager.TasksModel {
         // The main tasks model used by the task manager
@@ -99,31 +85,31 @@ PlasmoidItem {
 
         function sortModeEnumValue(index: int): /*TaskManager.TasksModel.SortMode*/ int {
             switch (index) {
-            case 0:
-                return TaskManager.TasksModel.SortDisabled;
-            // skip 1 (manual sort), since that functionality was not present in KDE 3
-            case 2:
-                return TaskManager.TasksModel.SortAlpha;
-            case 3:
-                return TaskManager.TasksModel.SortVirtualDesktop;
-            case 4:
-                return TaskManager.TasksModel.SortActivity;
-            // 5 is SortLastActivated, skipped
-            case 6:
-                return TaskManager.TasksModel.SortWindowPositionHorizontal;
-            default:
-                return TaskManager.TasksModel.SortDisabled;
+                case 0:
+                    return TaskManager.TasksModel.SortDisabled;
+                    // skip 1 (manual sort), since that functionality was not present in KDE 3
+                case 2:
+                    return TaskManager.TasksModel.SortAlpha;
+                case 3:
+                    return TaskManager.TasksModel.SortVirtualDesktop;
+                case 4:
+                    return TaskManager.TasksModel.SortActivity;
+                    // 5 is SortLastActivated, skipped
+                case 6:
+                    return TaskManager.TasksModel.SortWindowPositionHorizontal;
+                default:
+                    return TaskManager.TasksModel.SortDisabled;
             }
         }
 
         function groupModeEnumValue(index: int): /*TaskManager.TasksModel.GroupMode*/ int {
             switch (index) {
-            case 0:
-                return TaskManager.TasksModel.GroupDisabled;
-            case 1:
-                return TaskManager.TasksModel.GroupApplications;
-            default:
-                return TaskManager.TasksModel.GroupDisabled;
+                case 0:
+                    return TaskManager.TasksModel.GroupDisabled;
+                case 1:
+                    return TaskManager.TasksModel.GroupApplications;
+                default:
+                    return TaskManager.TasksModel.GroupDisabled;
             }
         }
 
@@ -132,21 +118,6 @@ PlasmoidItem {
 
             // Only hook up view only after the above churn is done.
             taskRepeater.model = tasksModel;
-        }
-    }
-
-    readonly property Component taskInitComponent: Component {
-        Timer {
-            interval: 200
-            running: true
-
-            onTriggered: {
-                const task = parent as Task;
-                if (task) {
-                    tasks.tasksModel.requestPublishDelegateGeometry(task.modelIndex(), tasks.globalRect(task), task);
-                }
-                destroy();
-            }
         }
     }
 
@@ -256,6 +227,40 @@ PlasmoidItem {
     }
 
 // END connections
+
+// BEGIN components
+
+    // Contextual menus required
+    readonly property Component contextMenuComponent: Qt.createComponent("ContextMenu.qml")
+    readonly property Component groupMenuComponent: Qt.createComponent("GroupMenu.qml")
+    readonly property Component groupContextMenuComponent: Qt.createComponent("GroupContextMenu.qml")
+
+    // Menu item creation helpers
+    readonly property Component _menuComponent:      Component { PlasmaExtras.Menu {} }
+    readonly property Component _menuItemComponent:  Component { PlasmaExtras.MenuItem {} }
+    readonly property Component _separatorComponent: Component { PlasmaExtras.MenuItem { separator: true } }
+    function newMenu(parent: QtObject): PlasmaExtras.Menu          { return _menuComponent.createObject(parent) as PlasmaExtras.Menu }
+    function newMenuItem(parent: QtObject): PlasmaExtras.MenuItem  { return _menuItemComponent.createObject(parent) as PlasmaExtras.MenuItem }
+    function newSeparator(parent: QtObject): PlasmaExtras.MenuItem { return _separatorComponent.createObject(parent) as PlasmaExtras.MenuItem }
+
+    readonly property Component busyIndicator: Component { KlassikBusyIndicator {} }
+
+    readonly property Component taskInitComponent: Component {
+        Timer {
+            interval: 200
+            running: true
+
+            onTriggered: {
+                const task = parent as Task;
+                if (task) {
+                    tasks.tasksModel.requestPublishDelegateGeometry(task.modelIndex(), tasks.globalRect(task), task);
+                }
+                destroy();
+            }
+        }
+    }
+
+// END components
 
 // BEGIN UI elements
 

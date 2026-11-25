@@ -12,6 +12,7 @@ plasma_add_applet(com.github.neeeeow.klassik.clock
         qml/CalendarMenu.qml
         qml/config.qml
         qml/ConfigGeneral.qml
+        qml/ConfigTimeZones.qml
     CPP_SOURCES
         clock.cpp
     RESOURCES

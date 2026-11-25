@@ -14,4 +14,9 @@ ConfigModel {
         icon: "preferences-system-time"
         source: "ConfigGeneral.qml"
     }
+    ConfigCategory {
+        name: i18n("Time Zones")
+        icon: "preferences-system-time"
+        source: "ConfigTimeZones.qml"
+    }
 }

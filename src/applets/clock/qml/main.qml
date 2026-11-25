@@ -32,10 +32,87 @@ PlasmoidItem {
 
 // END properties
 
+// BEGIN connections
+
+    Connections {
+        target: Plasmoid.configuration
+        function onSelectedTimeZonesChanged(): void {
+            if (Plasmoid.configuration.selectedTimeZones.indexOf(Plasmoid.configuration.lastSelectedTimezone) === -1) {
+                Plasmoid.configuration.lastSelectedTimezone = Plasmoid.configuration.selectedTimeZones[0] ?? "Local";
+            }
+        }
+    }
+
+// END connections
+
+// BEGIN components
+
+    readonly property Component digitalComponent: Component {
+        DigitalClock {
+            id: digitalClock
+            showFrame: Plasmoid.configuration.showFrame
+            colorTheme: Plasmoid.configuration.colorTheme
+            fgColor: Plasmoid.configuration.fgColor
+            shadowColor: Plasmoid.configuration.shadowColor
+            bgColor: Plasmoid.configuration.bgColor
+
+            readonly property bool blinkingDots: Plasmoid.configuration.blinkingDots
+            property bool dotsVisible: true // whether or not the dots are visible *if* blinkingDots is enabled
+
+            text: { // String containing the digits for the clock
+                const separator = (dotsVisible || !blinkingDots) ? ":" : " ";
+                const seconds = Plasmoid.configuration.showSeconds ? separator + "ss" : "";
+                const format = Plasmoid.configuration.use24hFormat
+                ? "HH" + separator + "mm" + seconds
+                : "h" + separator+ "mm" + seconds + "|AP";
+                return Qt.formatTime(clock.dateTime, format).split("|")[0];
+            }
+
+            Timer {
+                id: blinkingDotsTimer
+                interval: 500
+                repeat: true
+                running: digitalClock.blinkingDots
+                onTriggered: digitalClock.dotsVisible = !digitalClock.dotsVisible
+            }
+
+            Connections {
+                target: clock
+                function onDateTimeChanged() {
+                    if (digitalClock.blinkingDots) {
+                        // Start each time update with the dots visible. This is technically not 100% accurate per KDE 3 behaviour, but
+                        // it looks way more consistent.
+                        digitalClock.dotsVisible = true;
+                        blinkingDotsTimer.restart();
+                    }
+                }
+            }
+        }
+    }
+
+    readonly property Component analogComponent: Component {
+        AnalogClock {
+            id: analogClock
+            antialiasing: Plasmoid.configuration.antialiasing
+
+            showSeconds: Plasmoid.configuration.showSeconds
+            showFrame: Plasmoid.configuration.showFrame
+            colorTheme: Plasmoid.configuration.colorTheme
+            fgColor: Plasmoid.configuration.fgColor
+            shadowColor: Plasmoid.configuration.shadowColor
+            bgColor: Plasmoid.configuration.bgColor
+
+            dateTime: clock.dateTime
+        }
+    }
+
+// END components
+
 // BEGIN UI elements
 
     Clock {
         id: clock
+        timeZone: Plasmoid.configuration.lastSelectedTimezone
         trackSeconds: Plasmoid.configuration.showSeconds
     }
 
@@ -81,68 +158,8 @@ PlasmoidItem {
             Layout.minimumHeight: vertical ? Layout.preferredHeight : -1
             Layout.maximumHeight: vertical ? Layout.preferredHeight : -1
 
-            sourceComponent: Plasmoid.configuration.useDigitalClock ? digitalComponent : analogComponent
-
-            Component {
-                id: digitalComponent
-                DigitalClock {
-                    id: digitalClock
-                    showFrame: Plasmoid.configuration.showFrame
-                    colorTheme: Plasmoid.configuration.colorTheme
-                    fgColor: Plasmoid.configuration.fgColor
-                    shadowColor: Plasmoid.configuration.shadowColor
-                    bgColor: Plasmoid.configuration.bgColor
-
-                    readonly property bool blinkingDots: Plasmoid.configuration.blinkingDots
-                    property bool dotsVisible: true // whether or not the dots are visible *if* blinkingDots is enabled
-
-                    text: { // String containing the digits for the clock
-                        const separator = (dotsVisible || !blinkingDots) ? ":" : " ";
-                        const seconds = Plasmoid.configuration.showSeconds ? separator + "ss" : "";
-                        const format = Plasmoid.configuration.use24hFormat
-                        ? "HH" + separator + "mm" + seconds
-                        : "h" + separator+ "mm" + seconds + "|AP";
-                        return Qt.formatTime(clock.dateTime, format).split("|")[0];
-                    }
-
-                    Timer {
-                        id: blinkingDotsTimer
-                        interval: 500
-                        repeat: true
-                        running: digitalClock.blinkingDots
-                        onTriggered: digitalClock.dotsVisible = !digitalClock.dotsVisible
-                    }
-
-                    Connections {
-                        target: clock
-                        function onDateTimeChanged() {
-                            if (digitalClock.blinkingDots) {
-                                // Start each time update with the dots visible. This is technically not 100% accurate per KDE 3 behaviour, but
-                                // it looks way more consistent.
-                                digitalClock.dotsVisible = true;
-                                blinkingDotsTimer.restart();
-                            }
-                        }
-                    }
-                }
-            }
-
-            Component {
-                id: analogComponent
-                AnalogClock {
-                    id: analogClock
-                    antialiasing: Plasmoid.configuration.antialiasing
-
-                    showSeconds: Plasmoid.configuration.showSeconds
-                    showFrame: Plasmoid.configuration.showFrame
-                    colorTheme: Plasmoid.configuration.colorTheme
-                    fgColor: Plasmoid.configuration.fgColor
-                    shadowColor: Plasmoid.configuration.shadowColor
-                    bgColor: Plasmoid.configuration.bgColor
-
-                    dateTime: clock.dateTime
-                }
-            }
+            // use digital clock by default!!
+            sourceComponent: Plasmoid.configuration.clockType === 1 ? root.analogComponent : root.digitalComponent
         }
 
         Label {

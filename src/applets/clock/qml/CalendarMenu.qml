@@ -6,11 +6,7 @@
 pragma ComponentBehavior: Bound
 
 import QtQuick
-
-import org.kde.plasma.plasmoid
-import org.kde.plasma.core as PlasmaCore
 import org.kde.plasma.extras as PlasmaExtras
-
 import com.github.neeeeow.klassik.actionfactory
 
 PlasmaExtras.Menu {
@@ -21,7 +17,9 @@ PlasmaExtras.Menu {
 
     Component.onCompleted: {
         const title = newMenuItem(menu);
-        title.action = ActionFactory.popupTitle("date", i18n("Calendar"), title);
+        // NB: KDE 3 used 'date' for the icon, but office-calendar is the icon used in KDE 6,
+        // so we follow that convention for compatibility with newer icon sets.
+        title.action = ActionFactory.popupTitle("office-calendar", i18n("Calendar"), title);
 
         const calendar = newMenuItem(menu);
         calendar.action = ActionFactory.popupCalendar(calendar);

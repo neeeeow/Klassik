@@ -1,7 +1,7 @@
 /*
- *  SPDX-FileCopyrightText: 2026 neeeeow <https://github.com/neeeeow>
- *
- *  SPDX-License-Identifier: GPL-3.0-or-later
+    SPDX-FileCopyrightText: 2026 neeeeow <https://github.com/neeeeow>
+
+    SPDX-License-Identifier: GPL-3.0-or-later
  */
 
 import QtQuick
@@ -17,7 +17,7 @@ import org.kde.kquickcontrols
 KCMUtils.SimpleKCM {
     id: configGeneral
 
-    property alias cfg_useDigitalClock: useDigitalClock.checked
+    property int cfg_clockType: 0
 
     property alias cfg_showDate: showDate.checked
     property alias cfg_showSeconds: showSeconds.checked
@@ -38,12 +38,14 @@ KCMUtils.SimpleKCM {
 
         RowLayout {
             RadioButton {
-                id: useDigitalClock
                 text: i18n("Digital clock")
+                checked: configGeneral.cfg_clockType === 0
+                onToggled: configGeneral.cfg_clockType = 0
             }
             RadioButton {
-                checked: !useDigitalClock.checked
                 text: i18n("Analog clock")
+                checked: configGeneral.cfg_clockType === 1
+                onToggled: configGeneral.cfg_clockType = 1
             }
         }
 
@@ -67,12 +69,12 @@ KCMUtils.SimpleKCM {
                     text: i18n("24H format")
                 }
                 CheckBox {
-                    visible: useDigitalClock.checked
+                    visible: configGeneral.cfg_clockType === 0
                     id: blinkingDots
                     text: i18n("Blinking dots")
                 }
                 CheckBox {
-                    visible: !useDigitalClock.checked
+                    visible: configGeneral.cfg_clockType === 1
                     id: antialiasing
                     text: i18n("Antialiasing")
                 }
