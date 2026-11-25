@@ -4,9 +4,10 @@
     SPDX-License-Identifier: GPL-3.0-or-later
 */
 
+pragma ComponentBehavior: Bound
+
 import QtQuick
 import QtQuick.Layouts
-import QtQuick.Controls
 
 import org.kde.plasma.plasmoid
 import org.kde.plasma.core as PlasmaCore
@@ -52,12 +53,13 @@ PlasmoidItem {
         StyledToolButton {
             id: lock
             flat: false
-            Layout.fillWidth: grid.horizontal ? false : true
-            Layout.fillHeight: grid.horizontal ? true : false
+            Layout.fillWidth: !grid.horizontal
+            Layout.fillHeight: grid.horizontal
             implicitWidth: grid.iconSize + 14
             implicitHeight: grid.iconSize + 14
 
-            onClicked: session["lock"]()
+            enabled: session.canLock
+            onClicked: session.lock()
             Kirigami.Icon {
                 source: "system-lock-screen"
                 width: grid.iconSize
@@ -69,12 +71,13 @@ PlasmoidItem {
         StyledToolButton {
             id: logout
             flat: false
-            Layout.fillWidth: grid.horizontal ? false : true
-            Layout.fillHeight: grid.horizontal ? true : false
+            Layout.fillWidth: !grid.horizontal
+            Layout.fillHeight: grid.horizontal
             implicitWidth: grid.iconSize + 14
             implicitHeight: grid.iconSize + 14
 
-            onClicked: session["requestLogoutPrompt"]()
+            enabled: session.canLogout
+            onClicked: session.requestLogoutPrompt()
             Kirigami.Icon {
                 source: "system-log-out"
                 width: grid.iconSize
