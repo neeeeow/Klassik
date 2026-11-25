@@ -8,7 +8,6 @@
 
 #include "painteditem.h"
 
-#include <QPainter>
 #include <QColor>
 #include <QDateTime>
 
@@ -70,7 +69,7 @@ class DigitalClock : public Clock
 {
 	Q_OBJECT
 	QML_ELEMENT
-	Q_PROPERTY(QString text MEMBER m_timeString NOTIFY propertyChanged REQUIRED)	
+	Q_PROPERTY(QString text MEMBER m_timeString NOTIFY propertyChanged REQUIRED FINAL)	
 public:
 	explicit DigitalClock(QQuickItem *parent = nullptr);
 	
@@ -94,8 +93,8 @@ class AnalogClock : public Clock
 {
 	Q_OBJECT
 	QML_ELEMENT
-	Q_PROPERTY(QDateTime dateTime MEMBER m_dateTime NOTIFY propertyChanged REQUIRED)
-	Q_PROPERTY(bool showSeconds MEMBER m_showSeconds NOTIFY propertyChanged)
+	Q_PROPERTY(QDateTime dateTime MEMBER m_dateTime NOTIFY propertyChanged REQUIRED FINAL)
+	Q_PROPERTY(bool showSeconds MEMBER m_showSeconds NOTIFY propertyChanged FINAL)
 public:
 	explicit AnalogClock(QQuickItem *parent = nullptr);
 

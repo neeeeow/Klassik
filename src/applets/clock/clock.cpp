@@ -6,6 +6,7 @@
 
 #include "clock.h"
 
+#include <QPainter>
 #include <QPalette>
 #include <QColor>
 #include <QPolygon>
@@ -224,16 +225,6 @@ DigitalClock::drawDigit(const QPoint &pos, const QColor &color, QPainter &p, int
 	}
 }
 
-
-
-static void
-addPoint(QPolygon &a, const QPoint &p)
-{
-	const uint n = a.size();
-	a.resize(n + 1);
-	a.setPoint(n, p);
-}
-
 void
 DigitalClock::drawSegment(const QPoint &pos, const QColor &color, char segmentNo,
 						  QPainter &p, int segLen) const
@@ -241,7 +232,7 @@ DigitalClock::drawSegment(const QPoint &pos, const QColor &color, char segmentNo
 	QPoint pt = pos;
 	const int width = segLen/5; 
 
-#define LINETO(X,Y) addPoint(a, QPoint(pt.x() + (X),pt.y() + (Y)))
+#define LINETO(X,Y) a.append(QPoint(pt.x() + (X), pt.y() + (Y)))
 #define LIGHT
 #define DARK
 
@@ -375,18 +366,20 @@ AnalogClock::AnalogClock(QQuickItem *parent)
 int
 AnalogClock::preferredWidthForHeight(int h) const
 {
-	return h;
+	return qMax(h, 0);
 }
 
 int
 AnalogClock::preferredHeightForWidth(int w) const
 {
-	return w;
+	return qMax(w, 0);
 }
 
 void
 AnalogClock::drawContents(QPainter *p) const
-{	
+{
+	if (!m_dateTime.isValid())
+		return;
 	const QTime time = m_dateTime.time();
 
 	p->setRenderHint(QPainter::Antialiasing, antialiasing());
@@ -412,7 +405,7 @@ AnalogClock::drawContents(QPainter *p) const
 		matrix.scale( d/1000.0F, d/1000.0F );
 
 		// hour
-		const qreal h_angle = 30*(time.hour()%12-3) + time.minute()/2;
+		const qreal h_angle = 30*(time.hour()%12-3) + time.minute()/2.0F;
 		matrix.rotate( h_angle );
 		p->setTransform( matrix );
 		pts.setPoints( 4, -20,0,  0,-20, 300,0, 0,20 );
