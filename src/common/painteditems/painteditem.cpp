@@ -24,14 +24,18 @@ void
 PaintedItem::componentComplete()
 {
 	QQuickItem::componentComplete();
+
+	// Load the active QStyle
 	loadStyle();
-	loadPalette();
+
+	// Load in the QQuickPalette
+	m_quickPalette = qvariant_cast<QQuickPalette *>(property("palette"));
 
 	// Connect signals
 	connect(qGuiApp, &QGuiApplication::layoutDirectionChanged, this, &PaintedItem::requestRepaint, Qt::UniqueConnection);
 	connect(this, &PaintedItem::propertyChanged, this, &PaintedItem::requestRepaint, Qt::UniqueConnection);
 	connect(this, &PaintedItem::styleChanged, this, &PaintedItem::requestRepaint, Qt::UniqueConnection);
-	connect(this, &PaintedItem::paletteChanged, this, &PaintedItem::requestRepaint, Qt::UniqueConnection);
+	connect(this, &QQuickItem::paletteChanged, this, &PaintedItem::requestRepaint, Qt::UniqueConnection);
 
 	// Request the initial repaint
 	requestRepaint();
@@ -48,15 +52,6 @@ PaintedItem::loadStyle()
 		connect(m_style, &QObject::destroyed, this, &PaintedItem::loadStyle, Qt::UniqueConnection);
 	Q_EMIT styleChanged();
 }	
-
-void
-PaintedItem::loadPalette()
-{
-    m_quickPalette = qvariant_cast<QQuickPalette *>(property("palette"));
-	if (m_quickPalette)
-		connect(m_quickPalette, &QQuickColorGroup::changed, this, &PaintedItem::paletteChanged, Qt::UniqueConnection);
-	Q_EMIT paletteChanged();
-}
 
 QPalette
 PaintedItem::palette() const
@@ -110,10 +105,6 @@ void
 PaintedItem::updatePolish()
 {
 	QQuickItem::updatePolish();
-
-	// The palette should always be loaded, but re-load it in case it has been destroyed for some reason
-	if (!m_quickPalette)
-		loadPalette();
 
 	// Here we paint the control to the internal QImage
 	if (size().isEmpty() || !window() || !m_style) {

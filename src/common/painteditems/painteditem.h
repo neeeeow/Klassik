@@ -40,10 +40,6 @@ Q_SIGNALS:
 	// be emitted when internal & read-only properties which depend on the QStyle
 	// have changed (e.g. values tied to a QStyle's pixelMetric(...)).
 	void styleChanged();
-
-	// The palette has changed. Shouldn't really be attached to anything other
-	// than the QPalette
-	void paletteChanged();
 	
 protected:
 	// Getter for the active QStyle. Whilst we do guard against it prior to painting
@@ -87,19 +83,16 @@ protected Q_SLOTS:
 	// Triggers a repaint of the QQuickItem
 	void requestRepaint() {if (isComponentComplete()) polish();}
 	
-private:
-	// Loads the QML object's QQuickPalette
-	void loadPalette();	
-	
+private:	
 	// Function used for painting to the QQuickItem. This function must be implemented
 	// by subclasses, and must *never* be called directly outside of updatePolish(),
 	// otherwise things will break;
 	virtual void paint(QPainter *painter) const = 0;
 
-	QPointer<QStyle> m_style = nullptr; // Declare this a QPointer, since the QStyle might get destroyed by something else
+	QPointer<QStyle> m_style; // Declare this a QPointer, since the QStyle might get destroyed by something else
 
 	// QPointer to the internal QML item palette
-	QPointer<QQuickPalette> m_quickPalette = nullptr;
+	QPointer<QQuickPalette> m_quickPalette;
 
 	// QImage to which contents are painted on
 	QImage m_paintedImage;

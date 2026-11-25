@@ -14,7 +14,7 @@ PanelBackgroundImage::PanelBackgroundImage(QQuickItem *parent)
 	: PaintedItem(parent)
 {
 	connect(this, &PaintedItem::propertyChanged, this, &PanelBackgroundImage::loadImage);
-	connect(this, &PaintedItem::paletteChanged, this, &PanelBackgroundImage::loadImage);
+	connect(this, &QQuickItem::paletteChanged, this, &PanelBackgroundImage::loadImage);
 }
 
 void
