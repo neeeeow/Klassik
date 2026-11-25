@@ -38,6 +38,7 @@ public:
 		: PopupTitle(QIcon(), title, parent) {}
 	explicit PopupTitle(const QIcon &icon, const QString &title, QObject *parent = nullptr)
 		: QWidgetAction(parent) {
+		setEnabled(false);
 		setIcon(icon);
 		setText(title);		
 	}

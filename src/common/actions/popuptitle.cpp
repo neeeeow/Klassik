@@ -24,6 +24,7 @@ Widgets::PopupTitleWidget::paintEvent(QPaintEvent *)
 	// Draw the background
 	QStyleOptionHeader header;
 	header.initFrom(this);
+	header.state |= QStyle::State_Enabled;
 	style()->drawControl(QStyle::CE_HeaderSection, &header, &p, this);
 
 	// Set up QPainter
@@ -58,7 +59,7 @@ Widgets::PopupTitleWidget::paintEvent(QPaintEvent *)
 	}
 
 	if (!m_title.isEmpty()) {
-		p.setPen(palette().buttonText().color());
+		p.setPen(palette().color(QPalette::Active, QPalette::ButtonText));
 		p.drawText(titleRect, tf, m_title);
 	}
 }
