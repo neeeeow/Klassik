@@ -35,7 +35,39 @@ PlasmoidItem {
     Layout.maximumWidth: mainLayout.Layout.maximumWidth
     Layout.maximumHeight: mainLayout.Layout.maximumHeight
 
+    readonly property string activeTimeZone: clock.timeZone
+    readonly property string systemTimeZone: systemClock.timeZone
+
 // END properties
+
+// BEGIN functions
+
+    function timeZones(): list<string> {
+        // List of time zones, with duplicates removed
+        return Plasmoid.configuration.selectedTimeZones.filter(
+            tz => tz === "Local" || tz !== root.systemTimeZone
+        );
+    }
+
+    function formatZoneName(zone: string): string {
+        if (zone === "Local") {
+            return i18n("Local Timezone");
+        }
+        return zone.slice(zone.lastIndexOf("/") + 1).replace(/_/g, " ");
+    }
+
+    function formatTooltipTime(dateTime: date): string {
+        if (Plasmoid.configuration.use24hFormat) {
+            return Qt.formatTime(dateTime, Plasmoid.configuration.showSeconds ? "HH:mm:ss" : "HH:mm");
+        }
+        return Qt.formatTime(dateTime, Plasmoid.configuration.showSeconds ? "h:mm:ss ap" : "h:mm ap");
+    }
+
+    function formatTooltipDate(dateTime: date): string {
+        return Qt.formatDate(dateTime, Qt.locale().dateFormat(Locale.LongFormat));
+    }
+
+// END functions
 
 // BEGIN connections
 
@@ -53,13 +85,15 @@ PlasmoidItem {
         function onContextualActionsAboutToShow(): void {
             // Fill the time zone menu
             timeZoneMenu.clearMenuItems();
-            const zones = Plasmoid.configuration.selectedTimeZones;
+            const zones = root.timeZones();
             for (let i = 0; i < zones.length; ++i) {
                 const zone = zones[i];
                 const item = root.newMenuItem(timeZoneMenu);
-                item.text = zone === "Local" ? i18n("Local Timezone") : zone;
+                item.text = root.formatZoneName(zone);
                 item.checkable = true;
-                item.checked = (Plasmoid.configuration.lastSelectedTimezone === zone);
+                item.checked = (zone === "Local"
+                    ? root.activeTimeZone === root.systemTimeZone
+                    : root.activeTimeZone === zone);
                 item.clicked.connect(() => {
                     Plasmoid.configuration.lastSelectedTimezone = zone;
                 });
@@ -157,6 +191,10 @@ PlasmoidItem {
         timeZone: Plasmoid.configuration.lastSelectedTimezone
         trackSeconds: Plasmoid.configuration.showSeconds
     }
+    Clock {
+        // system time, used to avoid duplication of time zones
+        id: systemClock
+    }
 
     ColumnLayout {
         id: mainLayout
@@ -214,12 +252,60 @@ PlasmoidItem {
     }
 
     // Tooltip area
-    PlasmaCore.ToolTipArea {
-        anchors.fill: parent
-        mainText: Plasmoid.configuration.use24hFormat ? Qt.formatTime(clock.dateTime, "HH:mm") : Qt.formatTime(clock.dateTime, "h:mm ap")
-        subText: Qt.formatDate(clock.dateTime, Qt.locale().dateFormat(Locale.LongFormat))
-        icon: Plasmoid.icon
+    Instantiator {
+        id: extraClocks
+        active: toolTipArea.containsMouse && root.timeZones().length > 1
+        model: root.timeZones()
+        delegate: Clock {
+            required property string modelData
+            readonly property string resolvedTimeZone: timeZone
+            timeZone: modelData
+            trackSeconds: Plasmoid.configuration.showSeconds
+        }
     }
+    PlasmaCore.ToolTipArea {
+        id: toolTipArea
+        anchors.fill: parent
+        textFormat: Text.StyledText
+        icon: Plasmoid.icon
+
+        mainText: {
+            const time = root.formatTooltipTime(clock.dateTime);
+            const date = root.formatTooltipDate(clock.dateTime);
+            if (root.timeZones().length <= 1) {
+                return time;
+            }
+            const prefix = root.activeTimeZone === root.systemTimeZone ? "" : (root.formatZoneName(root.activeTimeZone) + "  ");
+            return prefix + time + "\n" + date;
+        }
+
+        subText: {
+            const zones = root.timeZones();
+            if (zones.length <= 1) {
+                let text = root.formatTooltipDate(clock.dateTime);
+                if (root.activeTimeZone !== root.systemTimeZone) {
+                    text += "<br>" + root.formatZoneName(root.activeTimeZone);
+                }
+                return text;
+            }
+
+            // Ensure re-evaluation on every clock tick
+            clock.dateTime;
+
+            const lines = [];
+            for (let i = 0; i < extraClocks.count; ++i) {
+                const tzClock = extraClocks.objectAt(i);
+                if (!tzClock || tzClock.resolvedTimeZone === root.activeTimeZone) {
+                    continue;
+                }
+                lines.push("<b>" + root.formatZoneName(tzClock.modelData) + "</b> "
+                    + root.formatTooltipTime(tzClock.dateTime) + ", "
+                    + root.formatTooltipDate(tzClock.dateTime));
+            }
+            return lines.join("<br>");
+        }
+    }
+
 
     // Calendar popup
     MouseArea {
