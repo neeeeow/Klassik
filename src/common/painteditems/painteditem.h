@@ -96,6 +96,7 @@ private:
 
 	// QImage to which contents are painted on
 	QImage m_paintedImage;
+	bool m_imageDirty = false;
 
 	// State flags used by QStyle
 	bool m_hovered = false;

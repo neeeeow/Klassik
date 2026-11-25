@@ -18,7 +18,7 @@ class StyledArrow : public PaintedItem
 	QML_ELEMENT	
 	// Direction in which the arrow should be facing. Directly corresponds to
 	// QStyle arrow primitive elements
-	Q_PROPERTY(StyledArrow::Direction direction MEMBER m_direction NOTIFY propertyChanged REQUIRED)
+	Q_PROPERTY(StyledArrow::Direction direction MEMBER m_direction NOTIFY propertyChanged REQUIRED FINAL)
 public:
 	explicit StyledArrow(QQuickItem *parent = nullptr) : PaintedItem(parent) {}
 

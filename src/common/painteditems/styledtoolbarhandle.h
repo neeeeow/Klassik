@@ -17,9 +17,9 @@ class StyledToolBarHandle : public PaintedItem
 	Q_OBJECT
 	QML_NAMED_ELEMENT(ToolBarHandle)
 	// Whether or not to apply the QStyle::State_Horizontal flag to the handle 
-	Q_PROPERTY(bool horizontal MEMBER m_horizontal NOTIFY propertyChanged)
+	Q_PROPERTY(bool horizontal MEMBER m_horizontal NOTIFY propertyChanged FINAL)
 	// The width of the handle. Cannot be set manually; depends on the QStyle
-	Q_PROPERTY(int handleExtent READ handleExtent NOTIFY styleChanged)
+	Q_PROPERTY(int handleExtent READ handleExtent NOTIFY styleChanged FINAL)
 public:
     explicit StyledToolBarHandle(QQuickItem *parent = nullptr) : PaintedItem(parent) {}
 	int handleExtent() const {

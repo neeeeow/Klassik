@@ -24,6 +24,7 @@ private:
 
 		QStyleOptionFocusRect fr;
 		fr.QStyleOption::operator=(baseStyleOption());
+		fr.backgroundColor = fr.palette.color(QPalette::Window);
 		style()->drawPrimitive(QStyle::PE_FrameFocusRect, &fr, p);
 	}
 };

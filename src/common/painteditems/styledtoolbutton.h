@@ -8,9 +8,6 @@
 
 #include "painteditem.h"
 
-#include <QStyleOptionToolButton>
-#include <QPainter>
-
 class StyledToolButton : public PaintedItem
 {
 	/*
@@ -24,7 +21,7 @@ class StyledToolButton : public PaintedItem
 	QML_NAMED_ELEMENT(ToolButtonBackground)
 
 	// Equivalent to QToolButton's m_autoRaise. Defaults to false.
-	Q_PROPERTY(bool autoRaise MEMBER m_autoRaise NOTIFY propertyChanged)
+	Q_PROPERTY(bool autoRaise MEMBER m_autoRaise NOTIFY propertyChanged FINAL)
 public:
     explicit StyledToolButton(QQuickItem *parent = nullptr) : PaintedItem(parent) {}
 

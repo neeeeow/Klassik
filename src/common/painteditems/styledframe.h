@@ -19,9 +19,16 @@ class StyledFrame : public PaintedItem
 	// Line width to be used by the frame. Leave unset to use the default value assigned
 	// by the active QStyle. Here we use the propertyChanged() signal, even if it
 	// depends on the QStyle by default.
-	Q_PROPERTY(int lineWidth READ lineWidth WRITE setLineWidth RESET resetLineWidth NOTIFY propertyChanged)
+	Q_PROPERTY(int lineWidth READ lineWidth WRITE setLineWidth RESET resetLineWidth NOTIFY propertyChanged FINAL)
 public:
-	explicit StyledFrame(QQuickItem *parent = nullptr) : PaintedItem(parent) {}
+	explicit StyledFrame(QQuickItem *parent = nullptr) : PaintedItem(parent) {
+		connect(this, &PaintedItem::styleChanged, this, [this]() {
+			// If the active QStyle has changed and the linewidth hasn't been
+			// manually set, we inform QML that the line width has changed.
+			if (!m_lineWidth)
+				Q_EMIT propertyChanged();
+		});
+	}
 	int lineWidth() const {
 		if (m_lineWidth)
 			return *m_lineWidth;
@@ -40,8 +47,8 @@ public:
 		Q_EMIT propertyChanged();
 	}
 	
-private:    	
-    void paint(QPainter *p) const override {
+private:		
+	void paint(QPainter *p) const override {
 		if (!style())
 			return;
 

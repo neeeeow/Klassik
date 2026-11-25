@@ -48,8 +48,10 @@ PaintedItem::loadStyle()
 		return;
 	m_style = QApplication::style();
 	// We cannot connect to QEvent::StyleChange, so we do it this way instead
-	if (m_style)
-		connect(m_style, &QObject::destroyed, this, &PaintedItem::loadStyle, Qt::UniqueConnection);
+	if (m_style) {
+	    connect(m_style, &QObject::destroyed, this, &PaintedItem::loadStyle,
+				static_cast<Qt::ConnectionType>(Qt::QueuedConnection | Qt::UniqueConnection));
+	}
 	Q_EMIT styleChanged();
 }	
 
@@ -59,12 +61,12 @@ PaintedItem::palette() const
 	if (!m_quickPalette)
 		return QPalette();
 	QPalette palette = m_quickPalette->toQPalette();
-	if (window() && !window()->isActive())
+	if (!isEnabled())
+		palette.setCurrentColorGroup(QPalette::Disabled);
+	else if (window() && !window()->isActive())
 		palette.setCurrentColorGroup(QPalette::Inactive);
-	else if (isEnabled())
-		palette.setCurrentColorGroup(QPalette::Active);
 	else
-		palette.setCurrentColorGroup(QPalette::Disabled);   
+		palette.setCurrentColorGroup(QPalette::Active);
 	return palette;
 }
 
@@ -109,6 +111,7 @@ PaintedItem::updatePolish()
 	// Here we paint the control to the internal QImage
 	if (size().isEmpty() || !window() || !m_style) {
 		m_paintedImage = QImage(); // Clear out the QImage if invalid
+		m_imageDirty = false;
 		update();
 		return;
 	}
@@ -124,7 +127,8 @@ PaintedItem::updatePolish()
 	QPainter painter(&m_paintedImage);
 	paint(&painter);
 	painter.end();
-	
+
+	m_imageDirty = true;
 	update();
 }
 
@@ -141,15 +145,20 @@ PaintedItem::updatePaintNode(QSGNode *oldNode, QQuickItem::UpdatePaintNodeData *
 		return nullptr;
 	}
 
-	auto *texture = window()->createTextureFromImage(m_paintedImage, QQuickWindow::TextureCanUseAtlas);
-	if (!texture) {
-		delete node;
-		return nullptr;
-	}
+	if (!node || m_imageDirty) {
+		auto *texture = window()->createTextureFromImage(m_paintedImage, QQuickWindow::TextureCanUseAtlas);
+		if (!texture) {
+			delete node;
+			return nullptr;
+		}
 
-	if (!node) {
-		node = new QSGSimpleTextureNode();
-		node->setOwnsTexture(true);
+		if (!node) {
+			node = new QSGSimpleTextureNode();
+			node->setOwnsTexture(true);
+		}
+
+		node->setTexture(texture);
+		m_imageDirty = false;
 	}
 
 	// Bounding rect for texture
@@ -165,7 +174,6 @@ PaintedItem::updatePaintNode(QSGNode *oldNode, QQuickItem::UpdatePaintNodeData *
 	bounds.translate(adjustedScenePos - scenePos);
 
 	node->setRect(bounds);
-	node->setTexture(texture);
 	
 	return node;
 }
@@ -180,7 +188,7 @@ PaintedItem::itemChange(QQuickItem::ItemChange change, const QQuickItem::ItemCha
 	case ItemAntialiasingHasChanged:
 	case ItemDevicePixelRatioHasChanged:
 	case ItemSceneChange:
-	    requestRepaint();
+		requestRepaint();
 		break;
 	default:
 		break;
@@ -194,7 +202,7 @@ PaintedItem::geometryChange(const QRectF &newGeometry, const QRectF &oldGeometry
 
 	// We only need to repaint the image if the geometry size changes ...
 	if (newGeometry.size() != oldGeometry.size())
-	    requestRepaint();
+		requestRepaint();
 	// ... however, we will need to update the paint node if
 	// position changes, since our HiDPI corrections depend on position
 	else if (newGeometry.topLeft() != oldGeometry.topLeft())
