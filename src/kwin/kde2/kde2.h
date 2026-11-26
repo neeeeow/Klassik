@@ -75,7 +75,6 @@ public:
 						KDecoration3::DecorationButtonGroup::Position position,
 						KDecoration3::Decoration *decoration,
 						QObject *parent = nullptr);
-	~KDE2Button() override = default;
 
 	static KDE2Button *create(KDecoration3::DecorationButtonType type,
 							  KDecoration3::DecorationButtonGroup::Position position,

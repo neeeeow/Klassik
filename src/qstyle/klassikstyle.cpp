@@ -129,10 +129,19 @@ KlassikStyle::KlassikStyle(StyleType type)
 void
 KlassikStyle::polish(QWidget *widget)
 {
-	if (widget->inherits("QAbstractButton"))
+	if (widget && widget->inherits("QAbstractButton"))
 		widget->setAttribute(Qt::WA_Hover, true);
 	
 	QCommonStyle::polish(widget);
+}
+
+void
+KlassikStyle::unpolish(QWidget *widget)
+{
+	if (widget && widget->inherits("QAbstractButton"))
+		widget->setAttribute(Qt::WA_Hover, false);
+	
+	QCommonStyle::unpolish(widget);
 }
 
 void
@@ -1043,7 +1052,7 @@ KlassikStyle::drawControl(ControlElement control, const QStyleOption *opt,
 
 		QRect textRect = button->rect;
 		int tf = Qt::AlignVCenter | Qt::TextShowMnemonic;
-		if (proxy()->styleHint(SH_UnderlineShortcut, button, widget))
+		if (!proxy()->styleHint(SH_UnderlineShortcut, button, widget))
 			tf |= Qt::TextHideMnemonic;
 
 		
@@ -1392,12 +1401,12 @@ KlassikStyle::drawControl(ControlElement control, const QStyleOption *opt,
 		QRect cr(x, y, checkcol, h); // Check mark rect
 		QRect sr(x + w - arrowHMargin - 2*itemFrame - dim, y + h / 2 - dim / 2, dim, dim); // Sub menu indicator
 		QRect tr(sr.left() - tab - itemHMargin, y, tab, h); // tab/accelerator text
-		QRect ir(cr.right() + itemHMargin, y, tr.left() - cr.right() - 2 * itemHMargin - x, h); // text
+		QRect ir(cr.right() + itemHMargin, y, tr.left() - cr.right() - 2 * itemHMargin, h); // text
 		if ( reverse ) {
 			cr = visualRect( opt->direction, menuitem->rect, cr );
 			sr = visualRect( opt->direction, menuitem->rect, sr );
 			tr = visualRect( opt->direction, menuitem->rect, tr );
-			ir = visualRect( opt->direction, menuitem->rect, tr );
+			ir = visualRect( opt->direction, menuitem->rect, ir );
 		}
 
 		// Do we have an icon?
@@ -1511,9 +1520,9 @@ KlassikStyle::drawControl(ControlElement control, const QStyleOption *opt,
 				
 		} else {
 			const int progress = qMax(bar->progress, bar->minimum);
-			const int totalSteps = qMax(Q_INT64_C(1), qint64(bar->maximum) - bar->minimum);
-            const int progressSteps = qint64(progress) - bar->minimum;
-            const int length = progressSteps * (horizontal ? w : h) / totalSteps;
+			const qint64 totalSteps = qMax(Q_INT64_C(1), qint64(bar->maximum) - bar->minimum);
+            const qint64 progressSteps = qint64(progress) - bar->minimum;
+            const int length = static_cast<int>(progressSteps * (horizontal ? w : h) / totalSteps);
 
 			if (horizontal)
 				progressBar = visualRect( bar->direction, bar->rect,
@@ -1558,39 +1567,41 @@ KlassikStyle::drawControl(ControlElement control, const QStyleOption *opt,
 		const bool vertical = !(bar->state & QStyle::State_Horizontal);
 		const bool inverted = bar->invertedAppearance;
 		const bool reverse = (bar->direction == Qt::RightToLeft) ^ inverted;
-		const int totalSteps = qMax(Q_INT64_C(1), qint64(bar->maximum) - bar->minimum);
-		const int progressSteps = qint64(bar->progress) - bar->minimum;
-		const int progressIndicatorPos = progressSteps * (vertical ? rect.height() : rect.width()) / totalSteps;
+		const qint64 totalSteps = qMax(Q_INT64_C(1), qint64(bar->maximum) - bar->minimum);
+		const qint64 progressSteps = qint64(bar->progress) - bar->minimum;
+		const int progressIndicatorPos = static_cast<int>(progressSteps * (vertical ? rect.height() : rect.width()) / totalSteps);
 
 		if (vertical) {
 			if (progressIndicatorPos >= 0 && progressIndicatorPos <= rect.height()) {
 				if (inverted) {
 					leftRect.setHeight(progressIndicatorPos);
-					rightRect.setY(progressIndicatorPos);
+					rightRect.setY(rect.y() + progressIndicatorPos);
 				} else {
 					leftRect.setHeight(rect.height() - progressIndicatorPos);
-					rightRect.setY(rect.height() - progressIndicatorPos);
+					rightRect.setY(rect.y() + rect.height() - progressIndicatorPos);
 				}
 			}
 		} else {
 			if (progressIndicatorPos >= 0 && progressIndicatorPos <= rect.width()) {
 				if (reverse) {
 					leftRect.setWidth(rect.width() - progressIndicatorPos);
-					rightRect.setX(rect.width() - progressIndicatorPos);
+					rightRect.setX(rect.x() + rect.width() - progressIndicatorPos);
 				} else {
 					leftRect.setWidth(progressIndicatorPos);
-					rightRect.setX(progressIndicatorPos);
+					rightRect.setX(rect.x() + progressIndicatorPos);
 				}
 			}
 		}
 
 		const auto firstIsHighlightedColor = (vertical && !inverted) || (!vertical && reverse);
+		p->save();
 		p->setClipRect(rightRect);
 		p->setPen(firstIsHighlightedColor ? highlightedTextColor : textColor);
 		p->drawText(rect, bar->text, QTextOption(Qt::AlignAbsolute | Qt::AlignHCenter | Qt::AlignVCenter));
 		p->setPen(firstIsHighlightedColor ? textColor : highlightedTextColor);
 		p->setClipRect(leftRect);
 		p->drawText(rect, bar->text, QTextOption(Qt::AlignAbsolute | Qt::AlignHCenter | Qt::AlignVCenter));
+		p->restore();
 
 		break;
 	}
@@ -1616,7 +1627,6 @@ KlassikStyle::subElementRect(SubElement element, const QStyleOption *opt,
 		if (!btn)
 			return QCommonStyle::subElementRect(element, opt, widget);
 
-		QRect r;
 		int dbw1 = 0, dbw2 = 0;
 		if (btn->features & QStyleOptionButton::AutoDefaultButton){
 			dbw1 = proxy()->pixelMetric(PM_ButtonDefaultIndicator, btn, widget);

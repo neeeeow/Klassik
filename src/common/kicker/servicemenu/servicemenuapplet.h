@@ -93,4 +93,8 @@ private:
 
 	// The item info of what this applet points to
 	ItemInfo m_info;
+
+private Q_SLOTS:
+	// Rebuilds m_actions.
+	void refreshContextualActions();
 };

@@ -48,6 +48,9 @@ ServiceMenuApplet::init()
 
 	// Re-initialize the menu if the item info has changed
 	connect(this, &ServiceMenuApplet::infoChanged, this, &ServiceMenuApplet::initMenu);
+
+	// Refresh contextual actions whenever the contextual menu is requested
+	connect(this, &Plasma::Applet::contextualActionsAboutToShow, this, &ServiceMenuApplet::refreshContextualActions);
 }
 
 void
@@ -186,8 +189,8 @@ ServiceMenuApplet::popupPosition()
 	return dialogPos;
 }
 
-QList<QAction *>
-ServiceMenuApplet::contextualActions()
+void
+ServiceMenuApplet::refreshContextualActions()
 {
 	// First clear out the old set of actions
 	for (auto action : m_actions)
@@ -195,5 +198,10 @@ ServiceMenuApplet::contextualActions()
 	m_actions.clear();
 	
 	m_actions = PanelMenu::contextualActions(m_info, this);	
+}
+
+QList<QAction *>
+ServiceMenuApplet::contextualActions()
+{
 	return m_actions + Applet::contextualActions();
 }

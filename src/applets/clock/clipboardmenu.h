@@ -1,9 +1,9 @@
 /*
-    SPDX-FileCopyrightText: 2026 neeeeow <https://github.com/neeeeow>
+  SPDX-FileCopyrightText: 2026 neeeeow <https://github.com/neeeeow>
 	
-	SPDX-FileCopyrightText: 2016 Kai Uwe Broulik <kde@privat.broulik.de>
+  SPDX-FileCopyrightText: 2016 Kai Uwe Broulik <kde@privat.broulik.de>
 
-	SPDX-License-Identifier: GPL-3.0
+  SPDX-License-Identifier: GPL-3.0
 */
 
 #pragma once

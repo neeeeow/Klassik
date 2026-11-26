@@ -28,6 +28,7 @@ public:
 	explicit KlassikStyle(StyleType type = Default);
 
 	void polish(QWidget *widget) override;
+	void unpolish(QWidget *widget) override;
 
 	void drawPrimitive(PrimitiveElement pe, const QStyleOption *opt,
 					   QPainter *p, const QWidget *widget = nullptr) const override;

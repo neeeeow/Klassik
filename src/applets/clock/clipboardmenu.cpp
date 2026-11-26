@@ -1,9 +1,9 @@
 /*
-    SPDX-FileCopyrightText: 2026 neeeeow <https://github.com/neeeeow>
+  SPDX-FileCopyrightText: 2026 neeeeow <https://github.com/neeeeow>
 	
-	SPDX-FileCopyrightText: 2016 Kai Uwe Broulik <kde@privat.broulik.de>
+  SPDX-FileCopyrightText: 2016 Kai Uwe Broulik <kde@privat.broulik.de>
 
-	SPDX-License-Identifier: GPL-3.0
+  SPDX-License-Identifier: GPL-3.0
 */
 
 #include "clipboardmenu.h"
@@ -18,12 +18,14 @@ ClipboardMenu::ClipboardMenu(QObject *parent)
 {
 }
 
-QByteArray ClipboardMenu::timezone() const
+QByteArray
+ClipboardMenu::timezone() const
 {
 	return m_timezone;
 }
 
-void ClipboardMenu::setTimezone(const QByteArray &timezone)
+void
+ClipboardMenu::setTimezone(const QByteArray &timezone)
 {
 	if (m_timezone != timezone) {
 		m_timezone = timezone;
@@ -31,12 +33,14 @@ void ClipboardMenu::setTimezone(const QByteArray &timezone)
 	}
 }
 
-bool ClipboardMenu::secondsIncluded() const
+bool
+ClipboardMenu::secondsIncluded() const
 {
 	return m_secondsIncluded;
 }
 
-void ClipboardMenu::setSecondsIncluded(bool secondsIncluded)
+void
+ClipboardMenu::setSecondsIncluded(bool secondsIncluded)
 {
 	if (m_secondsIncluded != secondsIncluded) {
 		m_secondsIncluded = secondsIncluded;
@@ -44,11 +48,15 @@ void ClipboardMenu::setSecondsIncluded(bool secondsIncluded)
 	}
 }
 
-void ClipboardMenu::setupMenu(QAction *action)
+void
+ClipboardMenu::setupMenu(QAction *action)
 {
+	if (!action)
+		return;
 	auto *menu = new QMenu;
 
 	connect(menu, &QMenu::aboutToShow, this, [this, menu] {
+		qDeleteAll(menu->findChildren<QMenu *>(Qt::FindDirectChildrenOnly));
 		menu->clear();
 		QDateTime currentDateTime = QDateTime::currentDateTime();
 		if (const QTimeZone tz(m_timezone); tz.isValid()) {
@@ -100,7 +108,7 @@ void ClipboardMenu::setupMenu(QAction *action)
 
 		// e.g 2022-04-28 12:30 PM or 2022-04-28 12:30:01 PM -03
 		timeString = m_secondsIncluded ? date.toString(Qt::ISODate) + spaceCharacter + QLocale::system().toString(time, QLocale::LongFormat)
-									   : date.toString(Qt::ISODate) + spaceCharacter + QLocale::system().toString(time, QLocale::ShortFormat);
+			: date.toString(Qt::ISODate) + spaceCharacter + QLocale::system().toString(time, QLocale::ShortFormat);
 		menuOption = menu->addAction(timeString);
 		menuOption->setData(timeString);
 
@@ -109,9 +117,9 @@ void ClipboardMenu::setupMenu(QAction *action)
 		QMenu *otherCalendarsMenu = menu->addMenu(i18n("Other Calendars"));
 
 		/* Add ICU Calendars if QLocale is ready for
-				Chinese, Coptic, Ethiopic, (Gregorian), Hebrew, Indian, Islamic, Persian
+		   Chinese, Coptic, Ethiopic, (Gregorian), Hebrew, Indian, Islamic, Persian
 
-				otherCalendarsMenu->addSeparator();
+		   otherCalendarsMenu->addSeparator();
 		*/
 		timeString = QString::number(currentDateTime.toMSecsSinceEpoch() / 1000);
 		menuOption = otherCalendarsMenu->addAction(i18nc("unix timestamp (seconds since 1.1.1970)", "%1 (UNIX Time)", timeString));

@@ -28,7 +28,6 @@ plasma_add_applet(com.github.neeeeow.klassik.kmenu
 
 target_link_libraries(com.github.neeeeow.klassik.kmenu PRIVATE
     klassik_servicemenu
-    klassik_painteditems
     KF6::KIOFileWidgets
     Plasma::ActivitiesStats
     PW::KWorkspace

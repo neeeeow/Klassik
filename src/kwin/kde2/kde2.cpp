@@ -77,73 +77,44 @@ drawGradient(QPixmap &pixmap, const QColor &ca, const QColor &cb,
 static QPixmap&
 pixmapIntensity(QPixmap &pixmap, float percent)
 {
-	/* Reimplementation of KDE 3's KPixmapEffect/KImageEffect::intensity
-	   Copyright (C) 1998, 1999, 2001, 2002 Daniel M. Duley <mosfet@kde.org>
-	   (C) 1998, 1999 Christian Tibirna <ctibirna@total.net>
-	   (C) 1998, 1999 Dirk Mueller <mueller@kde.org>
-	   (C) 1999 Geert Jansen <g.t.jansen@stud.tue.nl>
-	   (C) 2000 Josef Weidendorfer <weidendo@in.tum.de>
-	   (C) 2004 Zack Rusin <zack@kde.org>
-	*/
+	if (pixmap.isNull())
+		return pixmap;
 
 	QImage image = pixmap.toImage();
+	if (image.format() != QImage::Format_ARGB32)
+		image = image.convertToFormat(QImage::Format_ARGB32);
 
-	int segColors = image.depth() > 8 ? 256 : image.colorCount();
-	int pixels = image.depth() > 8 ? image.width() * image.height() :
-		image.colorCount();
-	unsigned int *data = image.depth() > 8 ? (unsigned int *)image.bits() :
-		(unsigned int *)image.colorTable().data();
-	
-	bool brighten = (percent >= 0);
-	if (percent < 0)
+	const bool brighten = (percent >= 0.0f);
+	if (percent < 0.0f)
 		percent = -percent;
 
-	unsigned char *segTbl = new unsigned char[segColors];
-	int tmp;
-	if(brighten){ // keep overflow check out of loops
-		for(int i=0; i < segColors; ++i){
-			tmp = (int)(i*percent);
-			if(tmp > 255)
-				tmp = 255;
-			segTbl[i] = tmp;
-		}
+	unsigned char segTbl[256];
+	for (int i = 0; i < 256; ++i) {
+		segTbl[i] = static_cast<unsigned char>(qBound(0, static_cast<int>(i * percent), 255));
 	}
-	else{
-		for(int i=0; i < segColors; ++i){
-			tmp = (int)(i*percent);
-			if(tmp < 0)
-				tmp = 0;
-			segTbl[i] = tmp;
+
+	for (int y = 0; y < image.height(); ++y) {
+		QRgb *line = reinterpret_cast<QRgb *>(image.scanLine(y));
+		for (int x = 0; x < image.width(); ++x) {
+			int r = qRed(line[x]);
+			int g = qGreen(line[x]);
+			int b = qBlue(line[x]);
+			const int a = qAlpha(line[x]);
+
+			if (brighten) {
+				r = qMin(255, r + segTbl[r]);
+				g = qMin(255, g + segTbl[g]);
+				b = qMin(255, b + segTbl[b]);
+			} else {
+				r = qMax(0, r - segTbl[r]);
+				g = qMax(0, g - segTbl[g]);
+				b = qMax(0, b - segTbl[b]);
+			}
+			line[x] = qRgba(r, g, b, a);
 		}
 	}
 
-	if(brighten){ // same here
-		for(int i=0; i < pixels; ++i){
-			int r = qRed(data[i]);
-			int g = qGreen(data[i]);
-			int b = qBlue(data[i]);
-			int a = qAlpha(data[i]);
-			r = r + segTbl[r] > 255 ? 255 : r + segTbl[r];
-			g = g + segTbl[g] > 255 ? 255 : g + segTbl[g];
-			b = b + segTbl[b] > 255 ? 255 : b + segTbl[b];
-			data[i] = qRgba(r, g, b,a);
-		}
-	}
-	else{
-		for(int i=0; i < pixels; ++i){
-			int r = qRed(data[i]);
-			int g = qGreen(data[i]);
-			int b = qBlue(data[i]);
-			int a = qAlpha(data[i]);
-			r = r - segTbl[r] < 0 ? 0 : r - segTbl[r];
-			g = g - segTbl[g] < 0 ? 0 : g - segTbl[g];
-			b = b - segTbl[b] < 0 ? 0 : b - segTbl[b];
-			data[i] = qRgba(r, g, b, a);
-		}
-	}
-	delete [] segTbl;
 	pixmap = QPixmap::fromImage(image);
-
 	return pixmap;
 }
 
@@ -379,7 +350,7 @@ KDE2Decoration::createPixmaps()
 		p.drawLine(0, 0, 0, y2);
 		p.setPen(light);
 		p.drawLine(x2, 0, x2, y2);
-		p.drawLine(0, x2, y2, x2);
+	    p.drawLine(0, y2, x2, y2);
 		p.setPen(dark);
 		p.drawRect(1, 1, w-3, h-3);
 		p.setPen(sunken ? mid : light);
@@ -387,7 +358,7 @@ KDE2Decoration::createPixmaps()
 		p.drawLine(2, 2, 2, y2-2);
 		p.setPen(sunken ? light : mid);
 		p.drawLine(x2-2, 2, x2-2, y2-2);
-		p.drawLine(2, x2-2, y2-2, x2-2);
+		p.drawLine(2, y2-2, x2-2, y2-2);
 	};
 
 	// Button backgrounds	
@@ -462,7 +433,7 @@ KDE2Decoration::paint(QPainter *p, const QRectF &repaintRegion)
 
 	// Fill the background of the decoration with the window color, since
 	// with HiDPI scaling small 1px gaps can sometimes appear due to qdrawutil.h's rounding
-	p->fillRect(r.adjusted(-1,-1,-1,-1), palette.window());
+	p->fillRect(r.adjusted(-1,-1,1,1), palette.window());
 
 	// Determine where to place the extended left titlebar
 	int leftFrameStart = (h > 42) ? y+scaledTitleHeight+26 : y+scaledTitleHeight;

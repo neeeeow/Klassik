@@ -8,7 +8,6 @@ set_target_properties(kde2-decoration PROPERTIES
 
 target_link_libraries(kde2-decoration
   PRIVATE
-  Qt6::DBus
   Qt6::Widgets
   KF6::CoreAddons
   KF6::IconThemes
