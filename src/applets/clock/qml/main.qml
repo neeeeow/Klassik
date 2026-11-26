@@ -58,9 +58,9 @@ PlasmoidItem {
 
     function formatTooltipTime(dateTime: date): string {
         if (Plasmoid.configuration.use24hFormat) {
-            return Qt.formatTime(dateTime, Plasmoid.configuration.showSeconds ? "HH:mm:ss" : "HH:mm");
+            return Qt.formatTime(dateTime, "HH:mm");
         }
-        return Qt.formatTime(dateTime, Plasmoid.configuration.showSeconds ? "h:mm:ss ap" : "h:mm ap");
+        return Qt.formatTime(dateTime, "h:mm ap");
     }
 
     function formatTooltipDate(dateTime: date): string {
@@ -254,7 +254,7 @@ PlasmoidItem {
     // Tooltip area
     Instantiator {
         id: extraClocks
-        active: toolTipArea.containsMouse && root.timeZones().length > 1
+        active: toolTipArea.active && toolTipArea.containsMouse && root.timeZones().length > 1
         model: root.timeZones()
         delegate: Clock {
             required property string modelData
@@ -268,6 +268,7 @@ PlasmoidItem {
         anchors.fill: parent
         textFormat: Text.StyledText
         icon: Plasmoid.icon
+        active: calendar.status !== PlasmaExtras.Menu.Open
 
         mainText: {
             const time = root.formatTooltipTime(clock.dateTime);
@@ -318,6 +319,12 @@ PlasmoidItem {
     }
     PlasmaExtras.Menu {
         id: calendar
+
+        onStatusChanged: {
+            if (status === PlasmaExtras.Menu.Open) {
+                toolTipArea.hideImmediately();
+            }
+        }
 
         PlasmaExtras.MenuItem {
             id: calendarTitle
