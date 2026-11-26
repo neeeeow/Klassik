@@ -128,6 +128,8 @@ AboutDialog::AboutDialog(QWidget *parent, Qt::WindowFlags f)
 		help->setText(i18n("&Donate"));
 		help->setIcon(QIcon::fromTheme(QStringLiteral("help-donate")));
 	}
+	if (QPushButton *close = buttons->button(QDialogButtonBox::Close))
+		close->setDefault(true);
 
 	connect(buttons, &QDialogButtonBox::rejected, this, &QDialog::reject);
 	connect(buttons, &QDialogButtonBox::helpRequested, buttons, [] {
