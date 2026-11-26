@@ -7,6 +7,8 @@
         ],
         "BugReportUrl": "https://github.com/neeeeow/Klassik/issues",
         "Category": "",
+        "Description": "Classic KDE 3 style panel for KDE Plasma, built using Qt 6, Qt Quick, and KDE Frameworks 6.",
+        "Icon": "user-desktop",
         "License": "GPLv3+",
         "Name": "Klassik Panel",
         "Version": "@PROJECT_VERSION@",

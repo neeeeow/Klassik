@@ -10,7 +10,6 @@
         "Description": "Classic KDE 3 style application menu",
         "Icon": "start-here-kde",
         "License": "GPLv3+",
-        "Id": "com.github.neeeeow.klassik.kmenu",
         "Name": "Klassik K Menu",
         "Version": "@PROJECT_VERSION@",
         "Website": "https://github.com/neeeeow/Klassik"

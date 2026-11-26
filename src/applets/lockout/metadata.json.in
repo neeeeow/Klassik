@@ -10,7 +10,6 @@
         "Description": "Classic KDE 3 style panel buttons for lock/log out",
         "Icon": "system-shutdown",
         "License": "GPLv3+",
-        "Id": "com.github.neeeeow.klassik.lockout",
         "Name": "Klassik Lock/Log Out",
         "Version": "@PROJECT_VERSION@",
         "Website": "https://github.com/neeeeow/Klassik"

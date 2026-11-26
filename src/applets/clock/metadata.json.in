@@ -10,7 +10,6 @@
         "Description": "Classic KDE 3 style digital/analog clock",
         "Icon": "preferences-system-time",
         "License": "GPLv3+",
-        "Id": "com.github.neeeeow.klassik.clock",
         "Name": "Klassik Clock",
         "Version": "@PROJECT_VERSION@",
         "Website": "https://github.com/neeeeow/Klassik"
