@@ -1,5 +1,5 @@
 /*
-   SPDX-FileCopyrightText: 2026 neeeeow <https://github.com/neeeeow>
+   SPDX-FileCopyrightText: 2026-2027 neeeeow <https://github.com/neeeeow>
  
    SPDX-FileCopyrightText: 2001-2002 Karol Szwed <gallium@kde.org>
    SPDX-FileCopyrightText: 2001-2002 Fredrik Höglund <fredrik@kde.org>

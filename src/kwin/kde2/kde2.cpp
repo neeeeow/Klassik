@@ -1,5 +1,5 @@
 /*
-   SPDX-FileCopyrightText: 2026 neeeeow <https://github.com/neeeeow>
+   SPDX-FileCopyrightText: 2026-2027 neeeeow <https://github.com/neeeeow>
 
    SPDX-FileCopyrightText: 1999-2001 Daniel Duley <mosfet@kde.org>
    SPDX-FileCopyrightText: 1999-2001 Matthias Ettrich <ettrich@kde.org>

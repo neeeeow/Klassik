@@ -1,5 +1,5 @@
 /*
-    SPDX-FileCopyrightText: 2026 neeeeow <https://github.com/neeeeow>
+    SPDX-FileCopyrightText: 2026-2027 neeeeow <https://github.com/neeeeow>
 
     SPDX-FileCopyrightText: 2013 Marco Martin <mart@kde.org>
     SPDX-FileCopyrightText: 2022 Niccolò Venerandi <niccolo@venerandi.com>

@@ -1,5 +1,5 @@
 /*
-  SPDX-FileCopyrightText: 2026 neeeeow <https://github.com/neeeeow>
+  SPDX-FileCopyrightText: 2026-2027 neeeeow <https://github.com/neeeeow>
 	
   SPDX-FileCopyrightText: 2016 Kai Uwe Broulik <kde@privat.broulik.de>
 

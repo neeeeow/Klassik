@@ -1,5 +1,5 @@
 /*
- *  SPDX-FileCopyrightText: 2026 neeeeow <https://github.com/neeeeow>
+ *  SPDX-FileCopyrightText: 2026-2027 neeeeow <https://github.com/neeeeow>
  *
  *  SPDX-FileCopyrightText: 2012-2013 Eike Hein <hein@kde.org>
  *
