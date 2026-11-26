@@ -3,7 +3,8 @@ cmake_minimum_required(VERSION 3.16)
 project(klassik VERSION 1.0.1)
 
 set(QT_MIN_VERSION "6.6.0")
-set(KF6_MIN_VERSION "6.0.0")
+set(KF6_MIN_VERSION "6.9.0")
+set(PLASMA_MIN_VERSION "6.4.0")
 
 set(CMAKE_CXX_STANDARD 23)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
@@ -19,7 +20,7 @@ include(FeatureSummary)
 include(CheckIncludeFiles)
 include(ECMQmlModule)
 
-find_package(Qt6 REQUIRED COMPONENTS
+find_package(Qt6 ${QT_MIN_VERSION} REQUIRED COMPONENTS
   Core
   Widgets
   Qml
@@ -27,7 +28,7 @@ find_package(Qt6 REQUIRED COMPONENTS
   QuickPrivate
 )
 
-find_package(KF6 REQUIRED COMPONENTS
+find_package(KF6 ${KF6_MIN_VERSION} REQUIRED COMPONENTS
   I18n
   Service
   KIO
@@ -39,11 +40,11 @@ find_package(KF6 REQUIRED COMPONENTS
   WidgetsAddons
 )
 
-find_package(Plasma REQUIRED)
-find_package(PlasmaActivitiesStats REQUIRED)
-find_package(PlasmaActivities REQUIRED)
-find_package(PlasmaQuick REQUIRED)
-find_package(LibKWorkspace REQUIRED)
-find_package(KDecoration3 REQUIRED)
+find_package(Plasma ${PLASMA_MIN_VERSION} REQUIRED)
+find_package(PlasmaActivitiesStats ${PLASMA_MIN_VERSION} REQUIRED)
+find_package(PlasmaActivities ${PLASMA_MIN_VERSION} REQUIRED)
+find_package(PlasmaQuick ${PLASMA_MIN_VERSION} REQUIRED)
+find_package(LibKWorkspace ${PLASMA_MIN_VERSION} REQUIRED)
+find_package(KDecoration3 ${PLASMA_MIN_VERSION} REQUIRED)
 
 add_subdirectory(src)
