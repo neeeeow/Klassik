@@ -28,6 +28,7 @@ public:
 
 public Q_SLOTS:
 	void init() override;
+	void configChanged() override;
 
 Q_SIGNALS:
 	void urlChanged(const QUrl &url);

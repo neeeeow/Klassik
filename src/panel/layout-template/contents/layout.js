@@ -7,11 +7,12 @@ panel.addWidget("com.github.neeeeow.klassik.kmenu")
 
 // Add icons
 let icon = panel.addWidget("com.github.neeeeow.klassik.panel.icon")
-icon.currentConfigGroup = ["General"]
+icon.writeConfig("url", "file://" + userDataPath())
+
+icon = panel.addWidget("com.github.neeeeow.klassik.panel.icon")
 icon.writeConfig("url", "file:///usr/share/applications/org.kde.dolphin.desktop")
 
 icon = panel.addWidget("com.github.neeeeow.klassik.panel.icon")
-icon.currentConfigGroup = ["General"]
 icon.writeConfig("url", "file:///usr/share/applications/org.kde.konsole.desktop")
 
 panel.addWidget("org.kde.plasma.pager")

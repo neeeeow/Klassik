@@ -40,6 +40,15 @@ IconApplet::init()
 	Q_EMIT urlChanged(config().readEntry(QStringLiteral("url"), QUrl()));
 }
 
+void
+IconApplet::configChanged()
+{
+	ServiceMenuApplet::configChanged();
+	const QUrl newUrl = config().readEntry(QStringLiteral("url"), QUrl());
+	if (info().url() != newUrl)
+		Q_EMIT urlChanged(newUrl);
+}
+
 ServiceMenu *
 IconApplet::createMenu()
 {
