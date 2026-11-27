@@ -33,7 +33,7 @@ PlasmoidItem {
     readonly property bool vertical: Plasmoid.formFactor === PlasmaCore.Types.Vertical
 
     // Margin applied to the task manager
-    readonly property real margin: Plasmoid.configuration.drawFrame ? sunkenFrame.lineWidth : 0
+    readonly property real margin: sunkenFrame.item?.lineWidth ?? 0
 
     // Width reserved for the window list button
     readonly property real windowListButtonExtent: 12
@@ -309,12 +309,14 @@ PlasmoidItem {
         }
     }
 
-    StyledFrame {
+    Loader {
         id: sunkenFrame
         anchors.fill: parent
-        visible: Plasmoid.configuration.drawFrame
-        lineWidth: 1
-        sunken: true
+        active: Plasmoid.configuration.drawFrame
+        sourceComponent: StyledFrame {
+            lineWidth: 1
+            sunken: true
+        }
     }
 
     GridLayout {
