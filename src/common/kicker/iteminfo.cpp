@@ -178,10 +178,10 @@ ItemInfo::populateFromServiceGroup(const KServiceGroup::Ptr &group)
 	m_comment = i18np("%1 application", "%1 applications", group->childCount());
 	m_mimetype = QStringLiteral("inode/directory"); // We want servicegroups to appear as directories
 	if (group->relPath() == QLatin1Char('/')) {
-		// If the relpath is '/', we have the root KServiceGroup, in which case we use
-		// the KDE 3 default icon - package
+		// If the relpath is '/', we have the root KServiceGroup, in which case we assign
+		// a name and icon ourselves!
 		m_name = i18n("Applications");
-		m_icon = QStringLiteral("package");
+		m_icon = QStringLiteral("applications-all");
 	} else {
 		m_name = group->caption();
 		m_icon = !group->icon().isEmpty() ? group->icon() : QStringLiteral("applications-other");
